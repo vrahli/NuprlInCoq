@@ -255,6 +255,7 @@ Inductive CanonicalOp {p : POpid} : tuniv :=
  | NInt           : CanonicalOp
  | NNatNum        : CanonicalOp (* type of natural numbers *)
  | NQNat          : CanonicalOp (* Nat\\True *)
+ | NQLt           : CanonicalOp
  | NQTime         : CanonicalOp (* Nat\\True *)
  | NCSName        : nat -> CanonicalOp (* type of choice sequence names *)
  | NAtom          : CanonicalOp
@@ -329,6 +330,7 @@ Definition OpBindingsCan {p} (c : @CanonicalOp p) : opsign :=
   | NInt           => []
   | NNatNum        => []
   | NQNat          => []
+  | NQLt           => [0,0]
   | NQTime         => [0]
   | NCSName _      => []
   | NBase          => []

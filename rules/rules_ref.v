@@ -139,9 +139,11 @@ Proof.
   apply equality_in_qnat.
   apply in_ext_implies_all_in_ex_bar; introv xt.
 
-  assert (safe_library lib'1) as safe' by eauto 4 with slow.
-  unfold equality_of_qnat.
-  dands; eauto 3 with slow.
+  introv xt'.
+  assert (safe_library lib'1) as safea by eauto 4 with slow.
+  assert (safe_library lib'2) as safeb by eauto 2 with slow.
+  eapply exists_ccomputes_to_valc_mkc_last_cs_choice_seq in hyp0; try exact safeb; exrepnd.
+  eexists; dands; spcast; eauto 3 with slow.
 Qed.
 
 

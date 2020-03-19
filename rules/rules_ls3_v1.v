@@ -33,6 +33,7 @@
 
 
 Require Export per_props_qtime_nat.
+Require Export per_props_qnat.
 Require Export rules_choice_util4.
 
 
@@ -57,12 +58,22 @@ Proof.
   apply isprog_vars_qtime; sp.
 Qed.
 
-Definition mkcv_qtime {p} vs (t : @CVTerm p vs) : CVTerm vs :=
+Definition mkcv_qtime {o} vs (t : @CVTerm o vs) : CVTerm vs :=
   let (a,x) := t in
-    exist (isprog_vars vs) (mk_qtime a) (isprog_vars_qtime_implies a vs x).
+  exist (isprog_vars vs) (mk_qtime a) (isprog_vars_qtime_implies a vs x).
 
 Definition mkcv_qtnat {o} vs : @CVTerm o vs :=
   mkcv_qtime _ (mkcv_tnat _).
+
+Lemma isprog_vars_qnat_implies {o} :
+  forall vs, @isprog_vars o vs mk_qnat.
+Proof.
+  introv; repeat constructor; simpl.
+  apply assert_sub_vars; simpl; tcsp.
+Qed.
+
+Definition mkcv_qnat {o} vs : @CVTerm o vs :=
+  exist (isprog_vars vs) mk_qnat (isprog_vars_qnat_implies vs).
 
 Lemma nt_wf_mk_lib_depth {o} : @nt_wf o mk_lib_depth.
 Proof.
@@ -101,7 +112,7 @@ Definition ls3 {o} (A a b n : NVar) (i : nat) : @NTerm o :=
           (mk_fun
              (mk_apply (mk_var A) (mk_var a))
              (mk_exists
-                mk_qtnat
+                mk_qnat
                 n
                 (mk_function
                    (mk_csname 0)
@@ -129,7 +140,7 @@ Definition ls3c {o} (A a b n : NVar) (i : nat) : @CTerm o :=
              (mkcv_apply _ (mk_cv_app_l [a] _ (mkc_var A)) (mk_cv_app_r [A] _ (mkc_var a)))
              (mkcv_exists
                 _
-                (mkcv_qtnat _)
+                (mkcv_qnat _)
                 n
                 (mkcv_function
                    _
@@ -260,10 +271,34 @@ Proof.
 Qed.
 Hint Resolve zero_equal_in_int : slow.
 
-(*
-Lemma equality_mkc_qtnat_implies_tequality_mkc_natk {o} :
+Lemma implies_cequivc_mkc_less_than {o} :
+  forall lib (f g a b : @CTerm o),
+    cequivc lib f g
+    -> cequivc lib a b
+    -> cequivc lib (mkc_less_than f a) (mkc_less_than g b).
+Proof.
+  introv ceqa ceqb.
+  repeat rewrite cvterm2.mkc_less_than_eq.
+  apply implies_cequivc_less; eauto 3 with slow.
+Qed.
+Hint Resolve implies_cequivc_mkc_less_than : slow.
+
+Lemma implies_ccequivc_ext_mkc_less_than {o} :
+  forall lib (f g a b : @CTerm o),
+    ccequivc_ext lib f g
+    -> ccequivc_ext lib a b
+    -> ccequivc_ext lib (mkc_less_than f a) (mkc_less_than g b).
+Proof.
+  introv ceqa ceqb ext.
+  applydup ceqa in ext.
+  applydup ceqb in ext.
+  spcast; eauto 3 with slow.
+Qed.
+Hint Resolve implies_ccequivc_ext_mkc_less_than : slow.
+
+Lemma equality_mkc_qnat_implies_tequality_mkc_natk {o} :
   forall lib (a b : @CTerm o),
-    equality lib a b mkc_qtnat
+    equality lib a b mkc_qnat
     -> tequality lib (mkc_natk a) (mkc_natk b).
 Proof.
   introv equ.
@@ -286,31 +321,38 @@ Proof.
   eapply equality_monotone in equa; eauto.
   clear dependent lib; rename lib'0 into lib.
 
-  apply equality_in_qtnat in equ.
-
+  apply equality_in_qnat in equ.
 
   apply all_in_ex_bar_tequality_implies_tequality.
   eapply in_open_bar_pres;[|exact equ]; clear equ.
   introv ext equ; exrepnd.
 
-  eapply equality_monotone in equa; eauto.
-  eapply lib_extends_inhabited_type in inh; eauto.
-  clear dependent lib; rename lib' into lib.
-  apply equality_in_int in equa.
+  assert (ccequivc_ext lib' a b) as ceq.
+  { introv x; apply equ in x; exrepnd; spcast.
+    apply computes_to_valc_implies_cequivc in x1.
+    apply computes_to_valc_implies_cequivc in x0.
+    eapply cequivc_trans;[eauto|].
+    apply cequivc_sym; auto. }
 
+  eapply tequality_respects_cequivc_left;
+    [apply implies_ccequivc_ext_mkc_less_than;
+     [apply ccequivc_ext_refl|apply ccequivc_ext_sym;eauto] |].
+
+  applydup @equality_in_int_implies_cequiv in equa.
+  apply ccequivc_ext_bar_iff_ccequivc_bar in equa0.
   apply all_in_ex_bar_tequality_implies_tequality.
-  eapply in_open_bar_comb;[|exact equ1]; clear equ1.
-  eapply in_open_bar_pres;[|exact equa]; clear equa.
-  introv ext equa equb.
-  unfold equality_of_int in *; exrepnd.
+  eapply lib_extends_preserves_in_open_bar in equa0; eauto.
+  eapply in_open_bar_pres;[|exact equa0]; clear equa0.
+  introv xt ceq'.
 
-SearchAbout tequality mkc_less_than.
-SearchAbout (_ ~=~(_) _) (_ ===>(_) _).
+  eapply tequality_respects_cequivc_left;
+    [apply implies_ccequivc_ext_mkc_less_than;
+     [apply ccequivc_ext_sym;eauto|apply ccequivc_ext_refl] |].
 
-  eapply tequality_mkc_le_aux; eauto.
-  destruct (Z_le_gt_dec k k0); [left|right]; dands; auto; try omega.
+SearchAbout mkc_less_than mkc_le.
+SearchAbout type mkc_less_than.
+Locate type_mkc_less_than_aux.
 Qed.
-*)
 
 Lemma tequality_ls3c_aux7 {o} :
   forall (lib : @library o) a1 a'0 a'1 a2 a'2 a3,
@@ -318,7 +360,7 @@ Lemma tequality_ls3c_aux7 {o} :
     -> safe_library lib
     -> lib_cond_sat_def lib
     -> equality lib a1 a'0 (mkc_csname 0)
-    -> equality lib a2 a'1 mkc_qtnat
+    -> equality lib a2 a'1 mkc_qnat
     -> equality lib a3 a'2 (mkc_csname 0)
     -> tequality lib (mkc_equality a1 a3 (natk2nat a2)) (mkc_equality a'0 a'2 (natk2nat a'1)).
 Proof.

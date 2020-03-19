@@ -293,6 +293,26 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Lemma sub_lib_per_equality_of_qlt_bar_lib_per {o} :
+  forall {lib lib'} (x : @lib_extends o lib' lib) a b,
+    sub_lib_per (equality_of_qlt_bar_lib_per lib a b) x.
+Proof.
+  introv h z; simpl in *.
+  unfold equality_of_qlt_bar in *.
+  eapply lib_extends_preserves_in_open_bar;[|eauto]; auto.
+Qed.
+Hint Resolve sub_lib_per_equality_of_qlt_bar_lib_per : slow.
+
+Lemma per_qlt_monotone_func2 {o} :
+  forall (ts : cts(o)), type_monotone_func2 (per_qlt ts).
+Proof.
+  introv per.
+  unfold per_qlt in *; exrepnd.
+
+  exists (equality_of_qlt_bar_lib_per lib a b); introv; simpl; dands; eauto 3 with slow.
+  eexists; eexists; eexists; eexists; dands; eauto 3 with slow.
+Qed.
+
 Lemma sub_per_per_bar_eq2 {o} :
   forall {lib lib' lib'' : @library o}
          (x : lib_extends lib' lib)
@@ -673,6 +693,12 @@ Proof.
 
   - Case "CL_qtime".
     pose proof (per_qtime_monotone_func2 (close ts) lib T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
+      repnd; dands; eauto 3 with slow.
+
+  - Case "CL_qlt".
+    pose proof (per_qlt_monotone_func2 (close ts) lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.

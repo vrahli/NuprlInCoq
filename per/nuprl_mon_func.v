@@ -193,6 +193,23 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Definition equality_of_qlt_bar_lib_per {o}
+           (lib : @library o) (a b : @CTerm o) : lib-per(lib,o).
+Proof.
+  exists (fun lib' (x : lib_extends lib' lib) => equality_of_qlt_bar lib' a b).
+  introv x y; tcsp.
+Defined.
+
+Lemma per_qlt_monotone_func {o} :
+  forall (ts : cts(o)), type_monotone_func (per_qlt ts).
+Proof.
+  introv per.
+  unfold per_qlt in *; exrepnd.
+
+  exists (equality_of_qlt_bar_lib_per lib a b); introv; simpl; dands; eauto 3 with slow.
+  eexists; eexists; eexists; eexists; dands; eauto 3 with slow.
+Qed.
+
 Definition per_union_eq_bar_lib_per {o}
            (lib : @library o)
            (eqa : lib-per(lib,o))
@@ -633,6 +650,12 @@ Proof.
 
   - Case "CL_qtime".
     pose proof (per_qtime_monotone_func (close ts) lib T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
+      repnd; dands; eauto 3 with slow.
+
+  - Case "CL_qlt".
+    pose proof (per_qlt_monotone_func (close ts) lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.

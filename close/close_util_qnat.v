@@ -64,7 +64,8 @@ Lemma equality_of_qnat_sym {o} :
     equality_of_qnat lib t1 t2
     -> equality_of_qnat lib t2 t1.
 Proof.
-  introv e; unfold equality_of_qnat in *; exrepnd; spcast; dands; eexists; spcast; eauto.
+  introv e; introv ext; apply e in ext; clear e;
+    exrepnd; spcast; dands; eexists; spcast; dands; spcast; eauto.
 Qed.
 Hint Resolve equality_of_qnat_sym : slow.
 
@@ -76,10 +77,8 @@ Proof.
   apply h in e; apply h.
   unfold equality_of_qnat_bar in *.
   eapply in_open_bar_pres; eauto; clear e; introv ext e.
-  unfold equality_of_qnat in *; exrepnd.
-  dands.
-  { exists n; dands; eauto 3 with slow. }
-  { exists n0; dands; eauto 3 with slow. }
+  introv xt; apply e in xt; clear e; exrepnd.
+  dands; try (complete (eexists; dands; eauto 3 with slow)).
 Qed.
 Hint Resolve per_qnat_bar_term_symmetric : slow.
 
@@ -114,9 +113,9 @@ Proof.
   apply h in e; apply h; clear h.
   unfold equality_of_qnat_bar in *.
   eapply in_open_bar_pres; eauto; clear e; introv ext e.
-  unfold equality_of_qnat in *; exrepnd; GC; dands; eauto.
-  pose proof (ceq _ ext) as ceq; simpl in *; spcast.
-  exists n; spcast.
+  introv xt; applydup e in xt; clear e; exrepnd.
+  pose proof (ceq _ (lib_extends_trans xt ext)) as ceq; simpl in *; spcast.
+  exists n; spcast; dands; spcast; auto.
   apply cequivc_nat_implies_computes_to_valc.
   eapply cequivc_trans;[|eauto].
   apply cequivc_sym.
@@ -159,9 +158,11 @@ Proof.
   eapply in_open_bar_comb; try exact j; clear j.
   eapply in_open_bar_comb; try exact i; clear i.
   apply in_ext_implies_in_open_bar; introv ext i j.
-
-  unfold equality_of_qnat in *; exrepnd.
-  dands; eexists; eauto.
+  introv e; applydup i in e; applydup j in e.
+  exrepnd; spcast.
+  eapply computes_to_valc_eq in e3; try exact e1; ginv.
+  apply mkc_nat_eq_implies in e3; subst.
+  dands; eexists; dands; spcast; eauto.
 Qed.
 Hint Resolve per_qnat_bar_term_transitive : slow.
 

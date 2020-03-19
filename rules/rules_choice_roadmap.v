@@ -51,3 +51,5 @@ Require Export rules_choice5.
 
 (* A proof of a simple version of LS3 *)
 Require Export rules_ls3_v0.
+(* Another version of LS3, that uses a time-squashed nat instead *)
+(*Require Export rules_ls3_v1.*)

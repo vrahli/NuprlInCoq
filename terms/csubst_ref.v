@@ -322,3 +322,145 @@ Proof.
   exists w c.
   apply lsubstc_mk_qtime.
 Qed.
+
+Lemma isprogram_qlt_implies_ex {o} :
+  forall (l : list (@BTerm o)),
+    isprogram (oterm (Can NQLt) l)
+    -> {t : NTerm
+        & {u : NTerm
+        & l = [nobnd t, nobnd u]
+        # isprogram t
+        # isprogram u}}.
+Proof.
+  introv isp.
+  unfold isprogram, closed in *; repnd; simpl in *.
+  inversion isp as [|? ? imp eqm]; subst; simpl in *.
+  repeat (destruct l; simpl in *; ginv).
+  destruct b as [l1 t1].
+  destruct b0 as [l2 t2].
+  unfold num_bvars in *; simpl in *.
+  destruct l1, l2; simpl in *; ginv.
+  autorewrite with slow in *.
+  allrw app_eq_nil_iff; repnd.
+  pose proof (imp (bterm [] t1)) as q1; autodimp q1 hyp.
+  pose proof (imp (bterm [] t2)) as q2; autodimp q2 hyp.
+  allrw @bt_wf_iff.
+  exists t1 t2; dands; auto.
+Qed.
+
+Definition mk_qlt {o} (t u : @NTerm o) := oterm (Can NQLt) [nobnd t, nobnd u].
+
+Lemma isprogram_qlt_implies {o} :
+  forall (a b : @NTerm o),
+    isprogram (mk_qlt a b)
+    -> isprogram a # isprogram b.
+Proof.
+  introv isp.
+  apply isprogram_qlt_implies_ex in isp; exrepnd; ginv; tcsp.
+Qed.
+
+Lemma cover_vars_qlt {o} :
+  forall (a b : @NTerm o) sub,
+    cover_vars (mk_qlt a b) sub
+    <=> (cover_vars a sub # cover_vars b sub).
+Proof.
+  sp; repeat (rw @cover_vars_eq); unfold cover_vars_upto; simpl.
+  rw @remove_nvars_nil_l; rw app_nil_r.
+  allrw subvars_app_l.
+  allrw subvars_remove_nvars; simpl.
+  allrw app_nil_r.
+  allrw @dom_csub_csub_filter; sp.
+Qed.
+
+Lemma implies_isprog_qlt {o} :
+  forall (a b : @NTerm o),
+    isprog a
+    -> isprog b
+    -> isprog (mk_qlt a b).
+Proof.
+  introv ispa ispb.
+  allrw <- @isprogram_eq.
+  destruct ispa as [cla wfa].
+  destruct ispb as [clb wfb].
+  split.
+  { unfold closed; simpl; rw cla; rw clb; simpl; auto. }
+  { repeat constructor; simpl; introv xx; repndors; subst; tcsp;apply bt_wf_iff; auto. }
+Qed.
+
+Lemma implies_isprogram_qlt {o} :
+  forall (a b : @NTerm o),
+    isprogram a
+    -> isprogram b
+    -> isprogram (mk_qlt a b).
+Proof.
+  introv ispa ispb.
+  allrw @isprogram_eq.
+  apply implies_isprog_qlt; auto.
+Qed.
+
+Lemma wf_qlt {o} :
+  forall (a b : @NTerm o),
+    wf_term (mk_qlt a b) <=> (wf_term a # wf_term b).
+Proof.
+  introv; allrw @wf_term_eq; split; intro h; repnd.
+  { inversion h as [|? ? imp e]; subst; simpl in *; clear e.
+    pose proof (imp (nobnd a)) as impa; autodimp impa hyp.
+    pose proof (imp (nobnd b)) as impb; autodimp impb hyp.
+    allrw @bt_wf_iff; auto. }
+  { repeat constructor; simpl; introv xx; repndors; subst; tcsp; apply bt_wf_iff; auto. }
+Qed.
+
+Lemma nt_wf_qlt {o} :
+  forall (a b : @NTerm o),
+    nt_wf (mk_qlt a b) <=> (nt_wf a # nt_wf b).
+Proof.
+  introv.
+  allrw @nt_wf_eq; apply wf_qlt.
+Qed.
+
+Definition mkc_qlt {p} (t u : @CTerm p) : CTerm :=
+  let (a,x) := t in
+  let (b,y) := u in
+  exist isprog (mk_qlt a b) (implies_isprog_qlt a b x y).
+
+Lemma lsubstc_mk_qlt {o} :
+  forall (t1 t2 : @NTerm o) sub
+         (w1 : wf_term t1)
+         (w2 : wf_term t2)
+         (w  : wf_term (mk_qlt t1 t2))
+         (c1 : cover_vars t1 sub)
+         (c2 : cover_vars t2 sub)
+         (c  : cover_vars (mk_qlt t1 t2) sub),
+    lsubstc (mk_qlt t1 t2) w sub c
+    = mkc_qlt (lsubstc t1 w1 sub c1) (lsubstc t2 w2 sub c2).
+Proof.
+  sp; unfold lsubstc; simpl.
+  apply cterm_eq; simpl.
+  unfold csubst; simpl.
+  change_to_lsubst_aux4; simpl.
+  rw @sub_filter_nil_r; allrw @fold_nobnd.
+  allrw @sub_filter_csub2sub; sp.
+Qed.
+
+Lemma lsubstc_mk_qlt_ex {o} :
+  forall (t1 t2 : @NTerm o) sub
+         (w : wf_term (mk_qlt t1 t2))
+         (c : cover_vars (mk_qlt t1 t2) sub),
+    {w1 : wf_term t1
+     & {w2 : wf_term t2
+     & {c1 : cover_vars t1 sub
+     & {c2 : cover_vars t2 sub
+     & lsubstc (mk_qlt t1 t2) w sub c
+       = mkc_qlt (lsubstc t1 w1 sub c1) (lsubstc t2 w2 sub c2) }}}}.
+Proof.
+  sp.
+
+  duplicate w.
+  rw @wf_qlt in w; sp.
+
+  duplicate c.
+  rw @cover_vars_qlt in c; sp.
+
+  exists w1 w c1 c.
+  apply lsubstc_mk_qlt.
+Qed.

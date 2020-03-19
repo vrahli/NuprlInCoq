@@ -297,6 +297,6 @@ Proof.
   unfold equality_of_qnat_bar.
   apply in_ext_implies_in_open_bar; introv xt.
   unfold equality_of_qnat.
-  dands; eexists; spcast; eauto 3 with slow.
+  eexists; dands; spcast; eauto 3 with slow.
 Qed.
 Hint Resolve equality_nat_in_qnat : slow.

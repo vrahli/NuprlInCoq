@@ -482,6 +482,38 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Lemma lib_extends_preserves_ccequivc_ext {o} :
+  forall lib lib' (a b : @CTerm o),
+    lib_extends lib' lib
+    -> ccequivc_ext lib a b
+    -> ccequivc_ext lib' a b.
+Proof.
+  introv ext ceq x; eapply ceq; eauto 3 with slow.
+Qed.
+Hint Resolve lib_extends_preserves_ccequivc_ext : slow.
+
+Lemma sub_per_equality_of_qlt_bar {o} :
+  forall (lib lib' : @library o) (ext : lib_extends lib' lib) a b,
+    sub_per (equality_of_qlt_bar lib a b)
+            (equality_of_qlt_bar lib' a b).
+Proof.
+  introv ext h.
+  unfold equality_of_qlt_bar in *.
+  eapply lib_extends_preserves_in_open_bar; eauto.
+Qed.
+Hint Resolve sub_per_equality_of_qlt_bar : slow.
+
+Lemma per_qlt_monotone {o} :
+  forall (ts : cts(o)), type_monotone (per_qlt ts).
+Proof.
+  introv per ext.
+  unfold per_qlt in *; exrepnd.
+
+  exists (equality_of_qlt_bar lib' a b).
+  dands; eauto 3 with slow;[].
+  eexists; eexists; eexists; eexists; dands; eauto 3 with slow.
+Qed.
+
 (*Definition raise_bar_per {o} :
   forall {lib lib'} (bar : @BarLib o lib) (ext : lib_extends lib' lib),
     bar-per(lib,bar,o) -> bar-per(lib',raise_bar bar ext,o).
@@ -523,16 +555,6 @@ Proof.
   apply (lib_extends_preserves_in_open_bar_ext _ _ _ ext) in per1; simpl in *; auto.
 Qed.
 Hint Resolve per_bar_monotone : slow.
-
-Lemma lib_extends_preserves_ccequivc_ext {o} :
-  forall lib lib' (a b : @CTerm o),
-    lib_extends lib' lib
-    -> ccequivc_ext lib a b
-    -> ccequivc_ext lib' a b.
-Proof.
-  introv ext ceq x; eapply ceq; eauto 3 with slow.
-Qed.
-Hint Resolve lib_extends_preserves_ccequivc_ext : slow.
 
 Lemma sub_per_and_lib_extends_preserve_eqorceq {o} :
   forall lib lib' (a b : @CTerm o) eqa eqb,
@@ -834,6 +856,11 @@ Proof.
 
   - Case "CL_qtime".
     pose proof (per_qtime_monotone (close ts) lib lib' T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; dands; auto.
+
+  - Case "CL_qlt".
+    pose proof (per_qlt_monotone (close ts) lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 

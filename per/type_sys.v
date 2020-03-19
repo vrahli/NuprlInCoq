@@ -1893,6 +1893,18 @@ Proof.
   eauto with pi.
 Qed.
 
+Lemma mkc_qlt_eq {p} :
+  forall a b c d : @CTerm p,
+    mkc_qlt a b = mkc_qlt c d
+    -> a = c # b = d.
+Proof.
+  intros.
+  destruct_cterms.
+  allunfold @mkc_qlt.
+  inversion H; subst.
+  eauto with pi.
+Qed.
+
 Ltac eqconstr0 name :=
   match type of name with
     | mkc_uni _           = mkc_uni _           => apply mkc_uni_eq            in name
@@ -1924,6 +1936,7 @@ Ltac eqconstr0 name :=
     | mkc_equality _ _ _  = mkc_equality _ _ _  => apply mkc_equality_eq       in name
     | mkc_requality _ _ _ = mkc_requality _ _ _ => apply mkc_requality_eq      in name
     | mkc_tequality _ _   = mkc_tequality _ _   => apply mkc_tequality_eq      in name
+    | mkc_qlt _ _         = mkc_qlt _ _         => apply mkc_qlt_eq            in name
 
     | mkc_isect _ _ _    = mkc_isect _ _ _    => appdup mkc_isect_eq1    name; repd; subst; apply mkc_isect_eq2    in name
     | mkc_disect _ _ _   = mkc_disect _ _ _   => appdup mkc_disect_eq1   name; repd; subst; apply mkc_disect_eq2   in name
@@ -2498,6 +2511,45 @@ Proof.
   exists (mk_cterm a' isp0) (mk_cterm b' isp); simpl; sp.
 Qed.
 
+Lemma isprogram_qlt_iff {p} :
+  forall a b : @NTerm p,
+    (isprogram a # isprogram b) <=> isprogram (mk_qlt a b).
+Proof.
+  split; intro h.
+  { apply implies_isprogram_qlt; repnd; auto. }
+  { apply isprogram_qlt_implies in h; tcsp. }
+Qed.
+
+Lemma cequiv_mk_qlt {p} :
+  forall lib t t' a b,
+    computes_to_value lib t (mk_qlt a b)
+    -> cequiv lib t t'
+    -> {a', b' : @NTerm p $
+         computes_to_value lib t' (mk_qlt a' b')
+         # cequiv lib a a'
+         # cequiv lib b b'}.
+Proof.
+  prove_cequiv_mk; allrw <- @isprogram_qlt_iff; sp.
+Qed.
+
+Lemma cequivc_mkc_qlt {p} :
+  forall lib t t' a b,
+    computes_to_valc lib t (mkc_qlt a b)
+    -> cequivc lib t t'
+    -> {a', b' : @CTerm p $
+         computes_to_valc lib t' (mkc_qlt a' b')
+         # cequivc lib a a'
+         # cequivc lib b b'}.
+Proof.
+  unfold computes_to_valc, cequivc; intros; destruct_cterms; allsimpl.
+  generalize (cequiv_mk_qlt lib x2 x1 x0 x); intro k.
+  repeat (dest_imp k hyp); exrepnd.
+  applydup @computes_to_value_isvalue in k0 as j.
+  inversion j as [u isp v]; subst.
+  allrw <- @isprogram_qlt_iff; repnd.
+  exists (mk_cterm a' isp0) (mk_cterm b' isp); simpl; sp.
+Qed.
+
 Ltac apply_cequivc_val :=
 
   (* mkc_approx *)
@@ -2716,6 +2768,59 @@ Ltac apply_cequivc_val :=
     try (hide_hyp H);
     apply cequivc_sym in c;
     eapply cequivc_mkc_union in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [b [c [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+
+  (* mkc_qlt *)
+
+  | [ H : cequivc _ (mkc_qlt _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    eapply cequivc_mkc_qlt in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [b [H [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ (mkc_qlt _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    apply cequivc_sym in H;
+    eapply cequivc_mkc_qlt in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [b [H [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib (mkc_qlt _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_mkc_qlt in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [b [c [h1 h2] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ (mkc_qlt _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_mkc_qlt in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
     destruct c as [a [b [c [h1 h2] ] ] ];
     apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
     try (eqconstr H)

@@ -1061,6 +1061,20 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         destruct name as [c2 name];
         clear_irr; tac
 
+    (* QLt *)
+    | context [lsubstc (mk_qlt ?a ?b) ?w ?s ?c] =>
+      let w1 := fresh "w1" in
+      let w2 := fresh "w2" in
+      let c1 := fresh "c1" in
+      let c2 := fresh "c2" in
+      generalize (lsubstc_mk_qlt_ex a b s w c);
+        intro name;
+        destruct name as [w1 name];
+        destruct name as [w2 name];
+        destruct name as [c1 name];
+        destruct name as [c2 name];
+        clear_irr; tac
+
     (* QTime *)
     | context [lsubstc (mk_qtime ?a ) ?w ?s ?c] =>
       let w1 := fresh "w1" in

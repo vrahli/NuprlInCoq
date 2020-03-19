@@ -54,6 +54,7 @@ Require Export close_type_sys_per_union.
 Require Export close_type_sys_per_image.
 Require Export close_type_sys_per_qtime.
 Require Export close_type_sys_per_ffdefs.
+Require Export close_type_sys_per_qlt.
 
 (*Require Export close_type_sys_per_req.
  Require Export close_type_sys_per_teq.
@@ -399,6 +400,9 @@ Proof.
 
   - Case "CL_qtime".
     eapply close_type_system_qtime; eauto; eauto 3 with slow.
+
+  - Case "CL_qlt".
+    eapply close_type_system_qlt; eauto; eauto 3 with slow.
 
   - Case "CL_func".
     eapply close_type_system_func; eauto; eauto 3 with slow.

@@ -866,7 +866,6 @@ Lemma close_implies_per_bar {o} :
 Proof.
   introv tib cl.
   close_cases (induction cl using @close_ind') Case; introv; auto; eauto 3 with slow.
-
   Case "CL_init".
   rename_hyp_with ts tsts.
   apply tib in tsts.

@@ -10763,6 +10763,13 @@ Proof.
 Qed.
 Hint Rewrite @swap_cs_cterm_mkc_free_from_defs : slow.
 
+Lemma swap_cs_cterm_mkc_qlt {o} :
+  forall sw a b, @swap_cs_cterm o sw (mkc_qlt a b) = mkc_qlt (swap_cs_cterm sw a) (swap_cs_cterm sw b).
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @swap_cs_cterm_mkc_qlt : slow.
+
 Lemma swap_cs_cterm_mkc_function {o} :
   forall sw a x (b : @CVTerm o [x]), @swap_cs_cterm o sw (mkc_function a x b) = mkc_function (swap_cs_cterm sw a) x (swap_cs_cvterm sw b).
 Proof.
@@ -10912,18 +10919,21 @@ Proof.
   { apply h in q; clear h.
     eapply in_open_bar_swap_cs_lib_pres; try exact q; clear q; auto.
     introv ext q.
-    unfold equality_of_qnat in *; exrepnd.
-    apply (swap_ccomputes_to_valc sw) in q1.
-    apply (swap_ccomputes_to_valc sw) in q2.
+    introv xt; apply lib_extends_swap_right_to_left in xt; auto.
+    apply q in xt; exrepnd.
+    apply (swap_ccomputes_to_valc sw) in xt1.
+    apply (swap_ccomputes_to_valc sw) in xt0.
     autorewrite with slow in *.
     eexists; dands; eauto. }
   { apply h; clear h.
     unfold equality_of_nat_bar in *.
     eapply in_open_bar_swap_cs_lib_pres2; try exact q; clear q; auto.
     introv ext q.
-    unfold equality_of_qnat in *; exrepnd.
-    apply (swap_ccomputes_to_valc sw) in q1.
-    apply (swap_ccomputes_to_valc sw) in q2.
+    introv xt.
+    apply (swap_lib_extends sane) in xt.
+    apply q in xt; exrepnd.
+    apply (swap_ccomputes_to_valc sw) in xt1.
+    apply (swap_ccomputes_to_valc sw) in xt0.
     autorewrite with slow in *.
     eexists; dands; eauto. }
 Qed.
@@ -11388,6 +11398,34 @@ Proof.
     autorewrite with slow; apply lib_per_cond. }
 Qed.
 
+Lemma swap_per_qlt_eq_bar {o} :
+  forall sw (sane : sane_swapping sw) lib (eq : per(o)) (a b : @CTerm o),
+    (eq <=2=> (equality_of_qlt_bar lib a b))
+    -> (swap_cs_per sw eq) <=2=> (equality_of_qlt_bar (swap_cs_lib sw lib) (swap_cs_cterm sw a) (swap_cs_cterm sw b)).
+Proof.
+  introv sane h; introv; unfold swap_cs_per; split; intro q.
+  { apply h in q; clear h.
+    eapply in_open_bar_swap_cs_lib_pres; try exact q; clear q; auto.
+    introv ext q; simpl in *.
+    unfold equality_of_qlt in *; repnd.
+    introv xt.
+    remember (lib_extends_swap_cs_lib_twice_implies (swap_lib_extends sane xt)) as xe; clear Heqxe.
+    apply q in xe; clear q; exrepnd.
+    apply (swap_ccomputes_to_valc sw) in xe0; auto.
+    apply (swap_ccomputes_to_valc sw) in xe2; auto.
+    autorewrite with slow in *; eauto. }
+  { apply h; clear h.
+    eapply in_open_bar_swap_cs_lib_pres2; try exact q; clear q; auto.
+    introv ext q; simpl in *.
+    unfold equality_of_qlt in *; repnd.
+    introv xt.
+    apply (swap_lib_extends sane) in xt.
+    apply q in xt; exrepnd.
+    apply (swap_ccomputes_to_valc sw) in xt0; auto.
+    apply (swap_ccomputes_to_valc sw) in xt2; auto.
+    autorewrite with slow in *; eauto. }
+Qed.
+
 Lemma swap_per_bar_eq {o} :
   forall sw (sane : sane_swapping sw) lib (eq : per(o)) (eqa : lib-per(lib,o)),
     (eq <=2=> (per_bar_eq lib eqa))
@@ -11592,6 +11630,16 @@ Proof.
       introv; unfold swap_cs_per; simpl; apply lib_per_cond. }
 
     apply swap_per_qtime_eq_bar; auto. }
+
+  { Case "CL_qlt".
+    apply CL_qlt; clear per.
+    apply (swap_ccomputes_to_valc_ext sw) in c1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in c2; auto.
+    apply (swap_ccequivc_ext sw) in ceqa; auto.
+    apply (swap_ccequivc_ext sw) in ceqb; auto.
+    autorewrite with slow in *.
+    eexists; eexists; eexists; eexists; dands; eauto.
+    apply swap_per_qlt_eq_bar; auto. }
 
   { Case "CL_func".
     apply CL_func; clear per.
@@ -17733,6 +17781,447 @@ Proof.
     exists n; dands; eauto 3 with slow. }
 Qed.
 
+Lemma in_lib_swap_two_names_implies {o} :
+  forall n name c name' c' (lib : @plibrary o),
+    in_lib n (swap_two_names name c name' c' lib)
+    -> exists e,
+      List.In e lib
+      /\ same_entry_name n (entry2name (swap_two_names_entry name c name' c' e)).
+Proof.
+  induction lib; introv h; simpl in *.
+  { unfold in_lib in *; simpl in *; exrepnd; tcsp. }
+  apply in_lib_cons in h; simpl in *; repndors.
+  { destruct a; simpl in *; boolvar; subst; simpl in *; tcsp;
+      try (complete (eexists; dands; eauto;
+                     simpl; boolvar; subst; simpl in *; tcsp;
+                     destruct n; simpl in *; tcsp; subst; auto)). }
+  { apply IHlib in h; exrepnd.
+    eexists; dands; eauto. }
+Qed.
+
+Lemma in_swap_two_names_implies {o} :
+  forall e name c name' c' (lib : @plibrary o),
+    List.In e (swap_two_names name c name' c' lib)
+    -> exists (e' : library_entry),
+      List.In e' lib
+      /\ e = swap_two_names_entry name c name' c' e'.
+Proof.
+  induction lib; introv h; simpl in *; tcsp.
+  repndors; subst.
+  { eexists; dands; eauto. }
+  apply IHlib in h; exrepnd.
+  eexists; dands; eauto.
+Qed.
+
+Lemma lin_swap_two_names_implies {o} :
+  forall e name c name' c' (lib : @plibrary o),
+    LIn e (swap_two_names name c name' c' lib)
+    -> {e' : library_entry &
+      List.In e' lib
+      /\ e = swap_two_names_entry name c name' c' e'}.
+Proof.
+  induction lib; introv h; simpl in *; tcsp.
+  repndors; subst.
+  { eexists; dands; eauto. }
+  apply IHlib in h; exrepnd.
+  eexists; dands; eauto.
+Qed.
+
+Lemma implies_in_swap_two_names {o} :
+  forall e name c name' c' (lib : @plibrary o),
+    LIn e lib
+    -> LIn (swap_two_names_entry name c name' c' e) (swap_two_names name c name' c' lib).
+Proof.
+  induction lib; introv h; simpl in *; tcsp.
+  repndors; subst; tcsp.
+Qed.
+
+Lemma in_lib_implies_in_lib_names {o} :
+  forall name (lib : @plibrary o),
+    in_lib (entry_name_cs name) lib
+    -> LIn (entry_name_cs name) (lib_names lib).
+Proof.
+  introv i; unfold in_lib in *; exrepnd.
+  apply LIn_iff_In; eauto 3 with slow; exrepnd.
+  apply List.in_map_iff; eexists; dands; eauto.
+  destruct e; simpl in *; subst; tcsp.
+Qed.
+Hint Resolve in_lib_implies_in_lib_names : slow.
+
+Lemma implies_in_lib_names_swap_two_names {o} :
+  forall name name' c c' (lib : @plibrary o),
+    LIn (entry_name_cs name) (lib_names lib)
+    -> LIn (entry_name_cs name') (lib_names (swap_two_names name c name' c' lib)).
+Proof.
+  induction lib; introv h; simpl in *; tcsp.
+  repndors; tcsp.
+  destruct a; simpl in *; ginv; boolvar; subst; GC; tcsp.
+Qed.
+Hint Resolve implies_in_lib_names_swap_two_names : slow.
+
+Lemma implies_in_lib_names_swap_two_names2 {o} :
+  forall name name' c c' (lib : @plibrary o),
+    LIn (entry_name_cs name') (lib_names lib)
+    -> LIn (entry_name_cs name) (lib_names (swap_two_names name c name' c' lib)).
+Proof.
+  induction lib; introv h; simpl in *; tcsp.
+  repndors; tcsp.
+  destruct a; simpl in *; ginv; boolvar; subst; GC; tcsp.
+Qed.
+Hint Resolve implies_in_lib_names_swap_two_names2 : slow.
+
+Lemma implies_in_lib_names_swap_two_names3 {o} :
+  forall name name' c c' (lib : @plibrary o),
+    LIn (entry_name_cs name') (lib_names (swap_two_names name c name' c' lib))
+    -> LIn (entry_name_cs name) (lib_names lib).
+Proof.
+  induction lib; introv h; simpl in *; tcsp.
+  repndors; tcsp.
+  destruct a; simpl in *; ginv; boolvar; subst; GC; tcsp.
+  simpl in *; ginv; tcsp.
+Qed.
+Hint Resolve implies_in_lib_names_swap_two_names3 : slow.
+
+Lemma implies_in_lib_names_swap_two_names4 {o} :
+  forall name name' c c' (lib : @plibrary o),
+    LIn (entry_name_cs name) (lib_names (swap_two_names name c name' c' lib))
+    -> LIn (entry_name_cs name') (lib_names lib).
+Proof.
+  induction lib; introv h; simpl in *; tcsp.
+  repndors; tcsp.
+  destruct a; simpl in *; ginv; boolvar; subst; GC; tcsp.
+  simpl in *; ginv; tcsp.
+Qed.
+Hint Resolve implies_in_lib_names_swap_two_names4 : slow.
+
+Lemma implies_in_lib_names_swap_two_names5 {o} :
+  forall name0 name name' c c' (lib : @plibrary o),
+    name0 <> name
+    -> name0 <> name'
+    -> LIn (entry_name_cs name0) (lib_names lib)
+    -> LIn (entry_name_cs name0) (lib_names (swap_two_names name c name' c' lib)).
+Proof.
+  induction lib; introv da db h; simpl in *; tcsp.
+  repndors; tcsp.
+  destruct a; simpl in *; ginv; boolvar; subst; GC; tcsp.
+Qed.
+Hint Resolve implies_in_lib_names_swap_two_names5 : slow.
+
+Lemma implies_in_lib_names_swap_two_names6 {o} :
+  forall name0 name name' c c' (lib : @plibrary o),
+    name0 <> name
+    -> name0 <> name'
+    -> LIn (entry_name_cs name0) (lib_names (swap_two_names name c name' c' lib))
+    -> LIn (entry_name_cs name0) (lib_names lib).
+Proof.
+  induction lib; introv da db h; simpl in *; tcsp.
+  repndors; tcsp.
+  destruct a; simpl in *; ginv; boolvar; subst; GC; tcsp; simpl in *; ginv; tcsp.
+Qed.
+Hint Resolve implies_in_lib_names_swap_two_names6 : slow.
+
+Lemma implies_eqset_lib_names_swap_two_names {o} :
+  forall name c name' c' (lib : @plibrary o),
+    in_lib (entry_name_cs name) lib
+    -> in_lib (entry_name_cs name') lib
+    -> eqset (lib_names (swap_two_names name c name' c' lib)) (lib_names lib).
+Proof.
+  introv ia ib; introv; split; intro h.
+  { apply in_map_iff in h; exrepnd; subst; simpl in *.
+    apply lin_swap_two_names_implies in h1; exrepnd; subst.
+    destruct e'; simpl in *; boolvar; subst; simpl in *; tcsp; eauto 3 with slow.
+    { apply LIn_iff_In; eauto 3 with slow; exrepnd.
+      apply List.in_map_iff; eexists; dands; eauto; tcsp. }
+    { apply LIn_iff_In; eauto 3 with slow; exrepnd.
+      apply List.in_map_iff; eexists; dands; eauto; tcsp. } }
+  { apply in_map_iff in h; exrepnd; subst.
+    apply (implies_in_swap_two_names _ name c name' c') in h1.
+    destruct a; simpl in *; boolvar; subst; tcsp; eauto 3 with slow;
+      apply in_map_iff; eexists; dands; eauto. }
+Qed.
+
+Lemma in_lib_names_implies_in_lib {o} :
+  forall name (lib : @plibrary o),
+    LIn (entry_name_cs name) (lib_names lib)
+    -> in_lib (entry_name_cs name) lib.
+Proof.
+  introv h.
+  apply in_map_iff in h; exrepnd.
+  apply LIn_implies_In in h1.
+  eexists; dands; eauto.
+  rewrite <- h0; simpl; auto.
+Qed.
+Hint Resolve in_lib_names_implies_in_lib : slow.
+
+Lemma in_lib_abs_swap_two_names {o} :
+  forall op name c name' c' (lib : @plibrary o),
+    in_lib (entry_name_abs op) (swap_two_names name c name' c' lib)
+    <-> in_lib (entry_name_abs op) lib.
+Proof.
+  induction lib; introv; split; simpl in *; introv h; tcsp.
+  { allrw @in_lib_cons; repndors; tcsp.
+    { destruct a; simpl in *; tcsp; boolvar; subst; simpl in *; tcsp. }
+    { apply IHlib in h; tcsp. } }
+  { allrw @in_lib_cons; repndors; tcsp.
+    { destruct a; simpl in *; tcsp; boolvar; subst; simpl in *; tcsp. }
+    { apply IHlib in h; tcsp. } }
+Qed.
+Hint Rewrite @in_lib_abs_swap_two_names : slow.
+
+Lemma implies_lib_nodup_swap_two_names {o} :
+  forall name c name' c' (lib : @plibrary o),
+    lib_nodup lib
+    -> lib_nodup (swap_two_names name c name' c' lib).
+Proof.
+  induction lib; introv nodup; simpl in *; tcsp; repnd.
+  dands; tcsp.
+  destruct a; simpl in *; simpl; boolvar; subst; simpl in *; tcsp.
+  { intro xx; apply in_lib_implies_in_lib_names in xx.
+    apply implies_in_lib_names_swap_two_names3 in xx; destruct nodup0; eauto 3 with slow. }
+  { intro xx; apply in_lib_implies_in_lib_names in xx.
+    apply implies_in_lib_names_swap_two_names4 in xx; destruct nodup0; eauto 3 with slow. }
+  { intro xx; apply in_lib_implies_in_lib_names in xx.
+    apply implies_in_lib_names_swap_two_names6 in xx; destruct nodup0; eauto 3 with slow. }
+  { intro xx; autorewrite with slow in xx; tcsp. }
+Qed.
+Hint Resolve implies_lib_nodup_swap_two_names : slow.
+
+Lemma implies_lib_nodup_swap_names {o} :
+  forall name name' (lib : @library o),
+    lib_nodup lib
+    -> lib_nodup (swap_names name name' lib).
+Proof.
+  destruct lib as [lib cond]; simpl; introv h.
+  unfold pre_swap_names.
+  remember (find_cs lib name) as fcsa; symmetry in Heqfcsa.
+  remember (find_cs lib name') as fcsb; symmetry in Heqfcsb.
+  destruct fcsa, fcsb; simpl in *; tcsp; eauto 3 with slow.
+Qed.
+Hint Resolve implies_lib_nodup_swap_names : slow.
+
+(*Lemma implies_lib_nodup_swap_names {o} :
+  forall name name' (lib lib1 lib2 : @library o),
+    lib_nodup lib1
+    -> sat_lib_cond lib1
+    -> strong_safe_library lib1
+    -> swapped_css_libs name name' lib1 lib2
+    -> lib_extends lib lib1
+    -> lib_nodup (swap_names name name' lib).
+Proof.
+  introv nodup sat safe swap ext.
+  eapply lib_extends_preserves_perm_libs in ext; eauto; repnd.
+  eauto 3 with slow.
+Qed.
+Hint Resolve implies_lib_nodup_swap_names : slow.*)
+
+Lemma strong_safe_library_swap_cs_plib {o} :
+  forall sw (lib : @plibrary o),
+    sane_swapping sw
+    -> strong_safe_library lib
+    -> strong_safe_library (swap_cs_plib sw lib).
+Proof.
+  introv sane safe i.
+  apply in_swap_library_iff in i; exrepnd; subst.
+  apply safe in i1; eauto 3 with slow.
+Qed.
+Hint Resolve strong_safe_library_swap_cs_plib : slow.
+
+Lemma implies_sat_lib_cond_swap_names {o} :
+  forall name name' (lib : @library o),
+    lib_nodup lib
+    -> sat_lib_cond lib
+    -> sat_lib_cond (swap_names name name' lib).
+Proof.
+  destruct lib as [lib cond]; simpl; introv nodup h.
+  unfold sat_lib_cond, swap_names in *; simpl in *.
+  introv i.
+  unfold pre_swap_names in *.
+  remember (find_cs lib name) as fcsa; symmetry in Heqfcsa.
+  remember (find_cs lib name') as fcsb; symmetry in Heqfcsb.
+  destruct fcsa, fcsb; simpl in *; tcsp; eauto 3 with slow.
+  apply entry_in_library_implies_in in i.
+  apply in_swap_two_names_implies in i; exrepnd; subst.
+  apply in_implies_entry_in_library_if_nodup in i1; auto.
+  apply h in i1.
+  apply find_cs_some_implies_entry_in_library in Heqfcsa.
+  apply find_cs_some_implies_entry_in_library in Heqfcsb.
+  apply h in Heqfcsa; apply h in Heqfcsb.
+  clear h.
+  unfold lib_cond_sat_entry in *.
+  destruct e'; simpl in *; tcsp.
+  boolvar; subst; tcsp.
+Qed.
+Hint Resolve implies_sat_lib_cond_swap_names : slow.
+
+Lemma implies_strong_safe_library_swap_names {o} :
+  forall name name' (lib : @library o),
+    strong_safe_library lib
+    -> strong_safe_library (swap_names name name' lib).
+Proof.
+  destruct lib as [lib cond]; simpl; introv safe i.
+  unfold pre_swap_names in *.
+  remember (find_cs lib name) as fcsa; symmetry in Heqfcsa.
+  remember (find_cs lib name') as fcsb; symmetry in Heqfcsb.
+  destruct fcsa, fcsb; simpl in *; tcsp; eauto 3 with slow.
+  apply in_swap_two_names_implies in i; exrepnd; subst.
+
+  apply safe in i1.
+  apply find_cs_some_implies_list_in in Heqfcsa; apply safe in Heqfcsa.
+  apply find_cs_some_implies_list_in in Heqfcsb; apply safe in Heqfcsb.
+  destruct e'; simpl in *; tcsp.
+  boolvar; subst; tcsp.
+Qed.
+Hint Resolve implies_strong_safe_library_swap_names : slow.
+
+Lemma swap_sames_same_not_in {o} :
+  forall name name' (lib : @library o),
+    (~in_lib (entry_name_cs name) lib \/ ~in_lib (entry_name_cs name') lib)
+    -> swap_names name name' lib = lib.
+Proof.
+  introv h.
+  destruct lib as [lib cond]; simpl in *.
+  unfold swap_names; simpl; f_equal.
+  unfold pre_swap_names.
+  remember (find_cs lib name) as fcsa; symmetry in Heqfcsa.
+  remember (find_cs lib name') as fcsb; symmetry in Heqfcsb.
+  destruct fcsa, fcsb; simpl in *; auto.
+  apply find_cs_some_implies_in_lib in Heqfcsa.
+  apply find_cs_some_implies_in_lib in Heqfcsb; tcsp.
+Qed.
+
+Lemma swap_names_same {o} :
+  forall name (lib : @library o),
+    lib_nodup lib
+    -> swap_names name name lib = lib.
+Proof.
+  introv nodup; destruct lib as [lib cond]; unfold swap_names; simpl; f_equal.
+  unfold pre_swap_names.
+  remember (find_cs lib name) as fcsa; symmetry in Heqfcsa.
+  destruct fcsa; simpl in *; auto.
+  rewrite swap_two_names_same; auto.
+Qed.
+
+Hint Rewrite length_app : slow.
+
+Lemma swapped_css_swap_two_names {o} :
+  forall name name' c c' (lib : @plibrary o),
+    name <> name'
+    -> find_cs lib name = Some c
+    -> find_cs lib name' = Some c'
+    -> lib_nodup lib
+    -> swapped_css (name, name') (swap_two_names name c name' c' lib) lib.
+Proof.
+  introv dn ia ib nodup.
+  applydup @find_cs_some_implies_entry_in_library in ia.
+  applydup @find_cs_some_implies_entry_in_library in ib.
+  apply entry_in_library_split in ia0.
+  apply entry_in_library_split in ib0.
+  exrepnd; subst; simpl in *.
+  apply app_eq_app_implies in ib1.
+  boolvar; exrepnd; subst; simpl in *.
+
+  { destruct l0; simpl in *; ginv; repeat (autorewrite with slow in *; simpl in *; repnd;tcsp).
+    rewrite in_lib_app in nodup5; apply not_or in nodup5; tcsp;repnd.
+    rewrite in_lib_cons in nodup5; apply not_or in nodup5; repnd.
+    rewrite swap_two_names_split_fst_eq; tcsp.
+    rewrite swap_two_names_split_snd_eq; tcsp.
+    rewrite swap_two_names_split_eq_not_in; tcsp. }
+
+  { destruct l; simpl in *; ginv; repeat (autorewrite with slow in *; simpl in *; repnd;tcsp).
+    rewrite in_lib_app in nodup; apply not_or in nodup; tcsp;repnd.
+    rewrite in_lib_cons in nodup; apply not_or in nodup; repnd.
+    rewrite <- app_assoc; simpl.
+    rewrite swap_two_names_split_snd_eq; tcsp.
+    rewrite swap_two_names_split_fst_eq; tcsp.
+    rewrite swap_two_names_split_eq_not_in; tcsp. }
+Qed.
+Hint Resolve swapped_css_swap_two_names : slow.
+
+Lemma swapped_css_libs_swap_names {o} :
+  forall name name' (lib : @library o),
+    name <> name'
+    -> in_lib (entry_name_cs name) lib
+    -> in_lib (entry_name_cs name') lib
+    -> lib_nodup lib
+    -> swapped_css_libs name name' (swap_names name name' lib) lib.
+Proof.
+  introv dn ia ib nodup.
+  destruct lib as [lib cond]; simpl in *.
+  unfold swapped_css_libs, swap_names, same_conds; simpl; dands; auto.
+  unfold pre_swap_names.
+  remember (find_cs lib name) as fcsa; symmetry in Heqfcsa.
+  remember (find_cs lib name') as fcsb; symmetry in Heqfcsb.
+  destruct fcsa, fcsb;
+    try apply find_cs_non_implies_not_in_lib2 in Heqfcsa;
+    try apply find_cs_non_implies_not_in_lib2 in Heqfcsb;
+    tcsp; eauto 3 with slow.
+Qed.
+Hint Resolve swapped_css_libs_swap_names : slow.
+
+Lemma implies_lib_extends_swap_names_left {o} :
+  forall name name' (lib1 lib0 : @library o),
+    lib_nodup lib0
+    -> sat_lib_cond lib0
+    -> strong_safe_library lib0
+    -> name <> name'
+    -> in_lib (entry_name_cs name) lib0
+    -> in_lib (entry_name_cs name') lib0
+    -> lib_extends lib1 (swap_names name name' lib0)
+    -> lib_extends (swap_names name name' lib1) lib0.
+Proof.
+  introv nodup sat safe dn ia ib ext.
+  eapply lib_extends_preserves_perm_libs; try exact ext; eauto 3 with slow.
+Qed.
+
+Lemma implies_in_lib_swap_names1 {o} :
+  forall name name' (lib : @library o),
+    in_lib (entry_name_cs name) lib
+    -> in_lib (entry_name_cs name') lib
+    -> in_lib (entry_name_cs name) (swap_names name name' lib).
+Proof.
+  introv i j.
+  destruct lib as [lib cond]; simpl in *.
+  unfold pre_swap_names.
+  remember (find_cs lib name) as fcsa; symmetry in Heqfcsa.
+  remember (find_cs lib name') as fcsb; symmetry in Heqfcsb.
+  destruct fcsa, fcsb; eauto 3 with slow.
+  apply in_lib_names_implies_in_lib.
+  apply implies_eqset_lib_names_swap_two_names; auto; eauto 3 with slow.
+Qed.
+Hint Resolve implies_in_lib_swap_names1 : slow.
+
+Lemma implies_in_lib_swap_names2 {o} :
+  forall name name' (lib : @library o),
+    in_lib (entry_name_cs name) lib
+    -> in_lib (entry_name_cs name') lib
+    -> in_lib (entry_name_cs name') (swap_names name name' lib).
+Proof.
+  introv i j.
+  destruct lib as [lib cond]; simpl in *.
+  unfold pre_swap_names.
+  remember (find_cs lib name) as fcsa; symmetry in Heqfcsa.
+  remember (find_cs lib name') as fcsb; symmetry in Heqfcsb.
+  destruct fcsa, fcsb; eauto 3 with slow.
+  apply in_lib_names_implies_in_lib.
+  apply implies_eqset_lib_names_swap_two_names; auto; eauto 3 with slow.
+Qed.
+Hint Resolve implies_in_lib_swap_names2 : slow.
+
+Lemma lib_extends_preserves_in_lib {o} :
+  forall (lib1 lib2 : @library o) (name : EntryName),
+    lib_extends lib1 lib2
+    -> in_lib name lib2
+    -> in_lib name lib1.
+Proof.
+  introv ext i.
+  unfold in_lib in *; exrepnd.
+  apply implies_lib_extends_sub in ext.
+  apply ext in i1; exrepnd.
+  eexists; dands; eauto.
+  apply entry_extends_implies_same_entry_name in i2; eauto 3 with slow.
+Qed.
+Hint Resolve lib_extends_preserves_in_lib : slow.
+
 Lemma swapped_css_libs_equality_of_qnat_bar {o} :
   forall name name' (lib lib' : @library o),
     lib_nodup lib
@@ -17743,32 +18232,50 @@ Lemma swapped_css_libs_equality_of_qnat_bar {o} :
 Proof.
   introv nodup sat safe swap; introv; split; intro h.
   { eapply in_open_bar_swapped_css_libs_pres; try exact h; eauto.
-    clear h; introv ext h.
-    unfold equality_of_qnat in *; exrepnd.
-    eapply swapped_css_libs_ccomputes_to_valc in h2; eauto;
-      try eapply lib_extends_preserves_perm_libs; eauto; eauto 3 with slow; exrepnd.
+    clear h; introv ext h xt.
+    destruct (in_lib_dec (entry_name_cs name) lib'0) as [d1|d1];[|rewrite swap_sames_same_not_in in xt; tcsp];[].
+    destruct (in_lib_dec (entry_name_cs name') lib'0) as [d2|d2];[|rewrite swap_sames_same_not_in in xt; tcsp];[].
+    destruct (choice_sequence_name_deq name' name) as [d3|d3]; subst;[rewrite swap_names_same in xt; eauto 3 with slow|];[].
+    pose proof (h (swap_names name name' lib'1)) as h.
+    autodimp h hyp.
+    { apply implies_lib_extends_swap_names_left; eauto 3 with slow. }
+    cbv beta in h; exrepnd.
+    eapply swapped_css_libs_ccomputes_to_valc in h0; eauto;
+      try eapply lib_extends_preserves_perm_libs; eauto; eauto 3 with slow; exrepnd;
+        try (apply implies_lib_nodup_swap_names; eauto 4 with slow);
+        try (eapply lib_extends_trans;[|eauto];
+             apply implies_lib_extends_swap_names_left; eauto 3 with slow).
     eapply swapped_css_libs_ccomputes_to_valc in h1; eauto;
-      try eapply lib_extends_preserves_perm_libs; eauto; eauto 3 with slow; exrepnd.
+      try eapply lib_extends_preserves_perm_libs; eauto; eauto 3 with slow; exrepnd;
+        try (apply implies_lib_nodup_swap_names; eauto 4 with slow);
+        try (eapply lib_extends_trans;[|eauto];
+             apply implies_lib_extends_swap_names_left; eauto 3 with slow).
     spcast.
-    apply alphaeqc_mkc_nat_implies in h0; subst.
+    apply alphaeqc_mkc_nat_implies in h2; subst.
     apply alphaeqc_mkc_nat_implies in h3; subst.
-    dands.
-    { exists n0; spcast; auto. }
-    { exists n; spcast; auto. } }
+    rewrite swap_names_twice in h0; eauto 4 with slow.
+    rewrite swap_names_twice in h1; eauto 4 with slow.
+    eexists; dands; spcast; eauto. }
   { dup swap as swap'; apply swapped_css_libs_sym in swap'.
     eapply in_open_bar_swapped_css_libs_pres; try exact h; eauto; eauto 3 with slow.
-    clear h; introv ext h.
-    unfold equality_of_qnat in *; exrepnd.
-    eapply swapped_css_libs_ccomputes_to_valc in h2; eauto;
-      try eapply lib_extends_preserves_perm_libs; try exact ext; eauto; eauto 3 with slow.
+    clear h; introv ext h xt.
+    destruct (in_lib_dec (entry_name_cs name) lib'0) as [d1|d1];[|rewrite swap_sames_same_not_in in xt; tcsp];[].
+    destruct (in_lib_dec (entry_name_cs name') lib'0) as [d2|d2];[|rewrite swap_sames_same_not_in in xt; tcsp];[].
+    destruct (choice_sequence_name_deq name' name) as [d3|d3]; subst;[rewrite swap_names_same in xt; eauto 3 with slow|];[].
+    pose proof (h (swap_names name name' lib'1)) as h.
+    autodimp h hyp.
+    { apply implies_lib_extends_swap_names_left; eauto 3 with slow. }
+    cbv beta in h; exrepnd.
+    eapply swapped_css_libs_ccomputes_to_valc in h0; eauto;
+      try (apply swapped_css_libs_swap_names; eauto 5 with slow);
+      try (apply implies_lib_nodup_swap_names; eauto 5 with slow).
     eapply swapped_css_libs_ccomputes_to_valc in h1; eauto;
-      try eapply lib_extends_preserves_perm_libs; try exact ext; eauto; eauto 3 with slow.
+      try (apply swapped_css_libs_swap_names; eauto 5 with slow);
+      try (apply implies_lib_nodup_swap_names; eauto 5 with slow).
     exrepnd; spcast.
-    apply alphaeqc_mkc_nat_implies in h0; subst.
+    apply alphaeqc_mkc_nat_implies in h2; subst.
     apply alphaeqc_mkc_nat_implies in h3; subst.
-    dands.
-    { exists n0; spcast; auto. }
-    { exists n; spcast; auto. } }
+    eexists; dands; spcast; eauto. }
 Qed.
 
 Lemma swapped_css_libs_equality_of_csname_bar {o} :
@@ -17898,21 +18405,6 @@ Proof.
   pose proof (imp (swap_names name name' lib'0) q0) as imp; simpl in imp.
   rewrite swap_names_twice in imp; eauto 3 with slow.
 Qed.
-
-Lemma implies_lib_nodup_swap_names {o} :
-  forall name name' (lib lib1 lib2 : @library o),
-    lib_nodup lib1
-    -> sat_lib_cond lib1
-    -> strong_safe_library lib1
-    -> swapped_css_libs name name' lib1 lib2
-    -> lib_extends lib lib1
-    -> lib_nodup (swap_names name name' lib).
-Proof.
-  introv nodup sat safe swap ext.
-  eapply lib_extends_preserves_perm_libs in ext; eauto; repnd.
-  eauto 3 with slow.
-Qed.
-Hint Resolve implies_lib_nodup_swap_names : slow.
 
 Lemma ccapproxc_swap_names_iff {o} :
   forall (lib1 lib2 : @library o) name name' (lib : @library o) a b,
@@ -18328,6 +18820,62 @@ Proof.
     eapply lib_per_cond; eauto. }
 Qed.
 
+Lemma swapped_css_libs_equality_of_qlt_bar {o} :
+  forall name name' (lib lib' : @library o) a b
+         (nodup : lib_nodup lib)
+         (sat   : sat_lib_cond lib)
+         (safe  : strong_safe_library lib)
+         (swap  : swapped_css_libs name name' lib lib'),
+    (equality_of_qlt_bar lib a b) <=2=> (equality_of_qlt_bar lib' a b).
+Proof.
+  introv; introv; split; intro h.
+  { eapply in_open_bar_swapped_css_libs_pres; try exact h; eauto.
+    clear h; introv ext h xt.
+    destruct (in_lib_dec (entry_name_cs name) lib'0) as [d1|d1];[|rewrite swap_sames_same_not_in in xt; tcsp];[].
+    destruct (in_lib_dec (entry_name_cs name') lib'0) as [d2|d2];[|rewrite swap_sames_same_not_in in xt; tcsp];[].
+    destruct (choice_sequence_name_deq name' name) as [d3|d3]; subst;[rewrite swap_names_same in xt; eauto 3 with slow|];[].
+    pose proof (h (swap_names name name' lib'1)) as h.
+    autodimp h hyp.
+    { apply implies_lib_extends_swap_names_left; eauto 3 with slow. }
+    cbv beta in h; exrepnd.
+    eapply swapped_css_libs_ccomputes_to_valc in h0; eauto;
+      try eapply lib_extends_preserves_perm_libs; eauto; eauto 3 with slow; exrepnd;
+        try (apply implies_lib_nodup_swap_names; eauto 4 with slow);
+        try (eapply lib_extends_trans;[|eauto];
+             apply implies_lib_extends_swap_names_left; eauto 3 with slow).
+    eapply swapped_css_libs_ccomputes_to_valc in h2; eauto;
+      try eapply lib_extends_preserves_perm_libs; eauto; eauto 3 with slow; exrepnd;
+        try (apply implies_lib_nodup_swap_names; eauto 4 with slow);
+        try (eapply lib_extends_trans;[|eauto];
+             apply implies_lib_extends_swap_names_left; eauto 3 with slow).
+    spcast.
+    apply alphaeqc_mkc_nat_implies in h3; subst.
+    apply alphaeqc_mkc_nat_implies in h4; subst.
+    rewrite swap_names_twice in h0; eauto 4 with slow.
+    rewrite swap_names_twice in h2; eauto 4 with slow.
+    eexists; eexists; dands; spcast; eauto. }
+  { dup swap as swap'; apply swapped_css_libs_sym in swap'.
+    eapply in_open_bar_swapped_css_libs_pres; try exact h; eauto; eauto 3 with slow.
+    clear h; introv ext h xt.
+    destruct (in_lib_dec (entry_name_cs name) lib'0) as [d1|d1];[|rewrite swap_sames_same_not_in in xt; tcsp];[].
+    destruct (in_lib_dec (entry_name_cs name') lib'0) as [d2|d2];[|rewrite swap_sames_same_not_in in xt; tcsp];[].
+    destruct (choice_sequence_name_deq name' name) as [d3|d3]; subst;[rewrite swap_names_same in xt; eauto 3 with slow|];[].
+    pose proof (h (swap_names name name' lib'1)) as h.
+    autodimp h hyp.
+    { apply implies_lib_extends_swap_names_left; eauto 3 with slow. }
+    cbv beta in h; exrepnd.
+    eapply swapped_css_libs_ccomputes_to_valc in h0; eauto;
+      try (apply swapped_css_libs_swap_names; eauto 5 with slow);
+      try (apply implies_lib_nodup_swap_names; eauto 5 with slow).
+    eapply swapped_css_libs_ccomputes_to_valc in h2; eauto;
+      try (apply swapped_css_libs_swap_names; eauto 5 with slow);
+      try (apply implies_lib_nodup_swap_names; eauto 5 with slow).
+    exrepnd; spcast.
+    apply alphaeqc_mkc_nat_implies in h3; subst.
+    apply alphaeqc_mkc_nat_implies in h4; subst.
+    eexists; eexists; dands; spcast; eauto. }
+Qed.
+
 Lemma swapped_css_libs_equality_of_image_bar {o} :
   forall name name' (lib lib' : @library o) eqa f
          (nodup : lib_nodup lib)
@@ -18563,6 +19111,18 @@ Proof.
       apply lib_per_cond. }
     eapply eq_term_equals_trans;[eauto|].
     eapply swapped_css_libs_equality_of_qtime_bar; eauto. }
+
+  { Case "CL_qlt".
+    apply CL_qlt.
+    clear per.
+    unfold per_qlt in *.
+    apply (swapped_css_libs_ccomputes_to_valc_ext nodup sat safe swap) in c1.
+    apply (swapped_css_libs_ccomputes_to_valc_ext nodup sat safe swap) in c2.
+    apply (swapped_css_libs_ccequivc_ext nodup sat safe swap) in ceqa.
+    apply (swapped_css_libs_ccequivc_ext nodup sat safe swap) in ceqb.
+    eexists; eexists; eexists; eexists; dands; eauto.
+    eapply eq_term_equals_trans;[eauto|].
+    eapply swapped_css_libs_equality_of_qlt_bar; eauto. }
 
   { Case "CL_func".
     apply CL_func.
@@ -18950,18 +19510,6 @@ Proof.
   introv nodup safe sat swap m.
   unfold member in *; eapply equality_swapped_css_libs; eauto.
 Qed.
-
-Lemma strong_safe_library_swap_cs_plib {o} :
-  forall sw (lib : @plibrary o),
-    sane_swapping sw
-    -> strong_safe_library lib
-    -> strong_safe_library (swap_cs_plib sw lib).
-Proof.
-  introv sane safe i.
-  apply in_swap_library_iff in i; exrepnd; subst.
-  apply safe in i1; eauto 3 with slow.
-Qed.
-Hint Resolve strong_safe_library_swap_cs_plib : slow.
 
 Lemma sat_lib_cond_swap_cs_lib {o} :
   forall sw (lib : @library o),

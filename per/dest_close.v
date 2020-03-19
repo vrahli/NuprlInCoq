@@ -66,6 +66,7 @@ Require Export dest_close_uatom.
 Require Export dest_close_uni.
 Require Export dest_close_tuni.
 Require Export dest_close_ffdefs.
+Require Export dest_close_qlt.
 
 
 
@@ -475,6 +476,21 @@ Ltac dest_close_lr h :=
         H' : context[per_ffdefs_eq_bar ?lib ?ea]
       |- _ ] =>
       generalize (dest_close_per_ffdefs_r ts lib T A B A' T' eq ea H1 H2 H3 H4 H5); intro h; no_duplicate h
+
+    (* qlt *)
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : ccomputes_to_valc_ext ?lib ?T (mkc_qlt ?a ?b),
+        H4 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_qlt_l ts lib T a b T' eq H1 H2 H3 H4); intro h; no_duplicate h
+
+    | [ H1 : type_system ?ts,
+        H2 : defines_only_universes ?ts,
+        H3 : ccomputes_to_valc_ext ?lib ?T' (mkc_qlt ?a ?b),
+        H4 : close ?ts ?lib ?T ?T' ?eq
+      |- _ ] =>
+      generalize (dest_close_per_qlt_r ts lib T a b T' eq H1 H2 H3 H4); intro h; no_duplicate h
 
     (*
     (* partial *)
