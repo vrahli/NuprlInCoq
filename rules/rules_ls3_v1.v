@@ -36,6 +36,9 @@ Require Export per_props_qtime_nat.
 Require Export per_props_qnat.
 Require Export rules_choice_util4.
 
+Require Export List.
+Require Export list.
+
 
 Lemma isprog_vars_qtime {p} :
   forall (a : @NTerm p) vs,
@@ -100,6 +103,74 @@ Definition mkc_lib_depth {o} : @CTerm o :=
   exist isprog mk_lib_depth isprog_lib_depth.
 
 
+Definition mk_qnatk_aux {p} vi n : @NTerm p :=
+  mk_set
+    mk_tnat
+    vi
+    (mk_qlt (mk_var vi) n).
+
+Definition mk_qnatk {p} n : @NTerm p :=
+  let v := newvar n in mk_qnatk_aux v n.
+
+Lemma isprog_vars_qlt {p} :
+  forall (f a : @NTerm p) vs,
+    isprog_vars vs (mk_qlt f a) <=> (isprog_vars vs f # isprog_vars vs a).
+Proof.
+  introv.
+  repeat (rw @isprog_vars_eq; simpl); autorewrite with slow.
+  rw subvars_app_l.
+  allrw <- @wf_term_eq.
+  allrw @wf_qlt; split; sp.
+Qed.
+
+Lemma isprog_vars_qlt_implies {p} :
+  forall (a b : @NTerm p) vs,
+    isprog_vars vs a
+    -> isprog_vars vs b
+    -> isprog_vars vs (mk_qlt a b).
+Proof.
+  introv ispa ispb.
+  apply isprog_vars_qlt; sp.
+Qed.
+Hint Resolve isprog_vars_qlt_implies : slow.
+
+Lemma isprog_vars_qnatk {p} :
+  forall vs (n : @NTerm p),
+    isprog_vars vs n
+    -> isprog_vars vs (mk_qnatk n).
+Proof.
+  introv isp.
+  apply isprog_vars_set; eauto 3 with slow.
+  apply isprog_vars_qlt_implies; simpl; eauto 3 with slow.
+Qed.
+
+Definition mkcv_qnatk {o} vs (n : @CVTerm o vs) : CVTerm vs :=
+  let (t,x) := n in
+  exist (isprog_vars vs) (mk_qnatk t) (isprog_vars_qnatk vs t x).
+
+Definition mkcv_qnatk2nat {o} vs (t : @CVTerm o vs) :=
+  mkcv_fun vs (mkcv_qnatk vs t) (mkcv_tnat vs).
+
+Lemma isprog_qnatk {p} :
+  forall (n : @NTerm p),
+    isprog n
+    -> isprog (mk_qnatk n).
+Proof.
+  introv isp.
+  apply isprog_vars_nil_iff_isprog.
+  apply isprog_vars_qnatk.
+  apply isprog_vars_nil_iff_isprog; auto.
+Qed.
+
+Definition mk_qnatk2nat {o} (t : @NTerm o) : @NTerm o :=
+  mk_fun (mk_qnatk t) mk_tnat.
+
+Definition mkc_qnatk {o} (n : @CTerm o) : CTerm :=
+  let (t,x) := n in
+  exist isprog (mk_qnatk t) (isprog_qnatk t x).
+
+Definition mkc_qnatk2nat {o} (t : @CTerm o) := mkc_fun (mkc_qnatk t) mkc_tnat.
+
 Definition ls3 {o} (A a b n : NVar) (i : nat) : @NTerm o :=
   mk_function
     (mk_csprop i)
@@ -118,7 +189,7 @@ Definition ls3 {o} (A a b n : NVar) (i : nat) : @NTerm o :=
                    (mk_csname 0)
                    b
                    (mk_fun
-                      (mk_equality (mk_var a) (mk_var b) (mk_natk2nat (mk_var n)))
+                      (mk_equality (mk_var a) (mk_var b) (mk_qnatk2nat (mk_var n)))
                       (mk_squash (mk_apply (mk_var A) (mk_var b))))))))).
 
 Definition ls3c {o} (A a b n : NVar) (i : nat) : @CTerm o :=
@@ -152,7 +223,7 @@ Definition ls3c {o} (A a b n : NVar) (i : nat) : @CTerm o :=
                          _
                          (mk_cv_app_r [A] _ (mk_cv_app_l [b,n] _ (mkc_var a)))
                          (mk_cv_app_r [n,a,A] _ (mkc_var b))
-                         (mkcv_natk2nat _ (mk_cv_app_r [a,A] _ (mk_cv_app_l [b] _ (mkc_var n)))))
+                         (mkcv_qnatk2nat _ (mk_cv_app_r [a,A] _ (mk_cv_app_l [b] _ (mkc_var n)))))
                       (mkcv_squash
                          _
                          (mkcv_apply
@@ -296,63 +367,576 @@ Proof.
 Qed.
 Hint Resolve implies_ccequivc_ext_mkc_less_than : slow.
 
+Lemma implies_alpha_eq_mk_qlt {o} :
+  forall f1 f2 a1 a2 : @NTerm o,
+    alpha_eq f1 f2
+    -> alpha_eq a1 a2
+    -> alpha_eq (mk_qlt f1 a1) (mk_qlt f2 a2).
+Proof.
+  introv aeq1 aeq2.
+  apply alpha_eq_oterm_combine; simpl; dands; auto.
+  introv i; repndors; tcsp; ginv; apply alphaeqbt_nilv2; auto.
+Qed.
+
+Lemma alpha_eq_lsubst_mk_qnatk {o} :
+  forall (t : @NTerm o) sub,
+    cl_sub sub
+    -> alpha_eq (lsubst (mk_qnatk t) sub) (mk_qnatk (lsubst t sub)).
+Proof.
+  introv cl.
+  repeat unflsubst; simpl; autorewrite with slow.
+  unfold mk_qnatk, mk_qnatk_aux.
+  fold_terms.
+
+  match goal with
+  | [ |- alpha_eq (mk_set _ _ ?a) (mk_set _ _ ?b) ] =>
+    pose proof (ex_fresh_var ((fresh_var (newvar t :: free_vars t))
+                                :: fresh_var (newvar (lsubst_aux t sub) :: free_vars (lsubst_aux t sub))
+                                :: all_vars a ++ all_vars b)) as fvv
+  end.
+  exrepnd.
+  rw @in_cons_iff in fvv0;rw @in_cons_iff in fvv0;rw @in_app_iff in fvv0.
+  rw not_over_or in fvv0;rw not_over_or in fvv0;rw not_over_or in fvv0.
+  repnd.
+
+  apply (alpha_eq_mk_set v); auto;[].
+  unfold subst_aux; simpl in *; autorewrite with slow in *; fold_terms.
+
+  repeat (rewrite lsubst_aux_sub_filter;
+          [|apply disjoint_singleton_r; eauto 2 with slow];[]).
+  repeat (rewrite lsubst_aux_sub_filter in fvv1;
+          [|apply disjoint_singleton_r; eauto 2 with slow];[]).
+
+  apply implies_alpha_eq_mk_qlt; eauto 3 with slow.
+
+  {
+    rewrite (lsubst_aux_trivial3 (lsubst_aux t sub));
+      [|simpl; introv h; repndors; tcsp; ginv; simpl; dands; eauto 3 with slow;
+        apply disjoint_singleton_l; intro xx;
+        destruct fvv0; right;
+        rw in_app_iff; right; simpl; tcsp].
+
+    rewrite (lsubst_aux_trivial3 (lsubst_aux t sub));
+      [|simpl; introv h; repndors; tcsp; ginv; simpl; dands; eauto 3 with slow;
+        apply disjoint_singleton_l; intro xx;
+        destruct fvv0; right;
+        rw in_app_iff; right; simpl; tcsp];[].
+
+    auto.
+  }
+Qed.
+Hint Resolve alpha_eq_lsubst_mk_qnatk : slow.
+
+Lemma substc5_mkcv_qnatk {o} :
+  forall (t1 t2 t3 : @CTerm o) x v w z a,
+    alphaeqcv
+      _
+      (substc5 x t1 v t2 w t3 z (mkcv_qnatk _ a))
+      (mkcv_qnatk _ (substc5 x t1 v t2 w t3 z a)).
+Proof.
+  introv; destruct_cterms; unfold alphaeqcv; simpl.
+  remember [(z, x0), (w, x1), (v, x2)] as sub.
+  assert (cl_sub sub) as cl by (subst; repeat (apply cl_sub_cons; dands; eauto 3 with slow)).
+  eauto 3 with slow.
+Qed.
+Hint Resolve substc5_mkcv_qnatk : slow.
+
+Lemma substc5_mkcv_qnatk2nat {o} :
+  forall (t1 t2 t3 : @CTerm o) x v w z a,
+    alphaeqcv
+      _
+      (substc5 x t1 v t2 w t3 z (mkcv_qnatk2nat _ a))
+      (mkcv_qnatk2nat _ (substc5 x t1 v t2 w t3 z a)).
+Proof.
+  introv; unfold mkcv_qnatk2nat.
+  eapply alphaeqcv_trans;[apply substc5_mkcv_fun|].
+  autorewrite with slow; eauto 3 with slow.
+Qed.
+
+Definition mkcv_qlt {o} vs (t u : @CVTerm o vs) : CVTerm vs :=
+  let (a,x) := t in
+  let (b,y) := u in
+  exist (isprog_vars vs) (mk_qlt a b) (isprog_vars_qlt_implies a b vs x y).
+
+Lemma mkc_qnatk_eq {o} :
+  forall (t : @CTerm o),
+    mkc_qnatk t
+    = mkc_set
+        mkc_tnat
+        nvarx
+        (mkcv_qlt [nvarx] (mkc_var nvarx) (mk_cv [nvarx] t)).
+Proof.
+  introv.
+  destruct_cterms.
+  apply cterm_eq; simpl; auto.
+  unfold mk_qnatk.
+  rw @newvar_prog; auto.
+Qed.
+
+Lemma mkcv_qnatk_eq {o} :
+  forall vs (t : @CVTerm o vs),
+    mkcv_qnatk vs t
+    = let v := newvar (get_cvterm vs t) in
+      mkcv_set vs (mkcv_tnat vs)
+               v
+               (mkcv_qlt (v :: vs) (mk_cv_app_r vs [v] (mkc_var v)) (mk_cv_app_l [v] vs t)).
+Proof.
+  introv.
+  destruct_cterms.
+  apply cvterm_eq; simpl; tcsp.
+Qed.
+
+Lemma implies_alpha_eq_mk_set {o} :
+  forall x v (a b : @NTerm o),
+    alpha_eq a b
+    -> alpha_eq (mk_set x v a) (mk_set x v b).
+Proof.
+  introv aeq.
+  constructor; simpl; auto.
+  introv len.
+  repeat (destruct n; tcsp).
+  unfold selectbt; simpl.
+  apply alpha_eq_bterm_congr; auto.
+Qed.
+
+Lemma implies_alpha_eq_mk_function {o} :
+  forall x v (a b : @NTerm o),
+    alpha_eq a b
+    -> alpha_eq (mk_function x v a) (mk_function x v b).
+Proof.
+  introv aeq.
+  constructor; simpl; auto.
+  introv len.
+  repeat (destruct n; tcsp).
+  unfold selectbt; simpl.
+  apply alpha_eq_bterm_congr; auto.
+Qed.
+
+Lemma mkcv_qnatk_substc {o} :
+  forall v a (t : @CTerm o),
+    alphaeqc
+      (substc t v (mkcv_qnatk [v] a))
+      (mkc_qnatk (substc t v a)).
+Proof.
+  introv.
+  rw @mkc_qnatk_eq.
+  rw @mkcv_qnatk_eq.
+
+  destruct_cterms.
+  unfold alphaeqc; simpl.
+
+  (* brute force *)
+
+  remember (newvar x0) as nv1.
+  pose proof (newvar_prop x0) as nvp1; rw <- Heqnv1 in nvp1.
+  clear Heqnv1.
+  rw @cl_subst_subst_aux; eauto 2 with slow.
+  unfold subst_aux; simpl; allrw @sub_filter_nil_r; allrw memvar_singleton.
+  pose proof (newvar_prog (@mk_void o)) as nvv; autodimp nvv hyp; tcsp;eauto 2 with slow;[].
+  rw nvv.
+
+  Opaque beq_var.
+  repeat (boolvar; allsimpl; tcsp; repndors; subst; tcsp; GC).
+
+  { eapply isprog_vars_disjoint_implies_isprog in i0; allrw disjoint_singleton_l; auto.
+    rw @subst_trivial; auto; autorewrite with slow.
+    prove_alpha_eq4.
+    introv k.
+    repeat (destruct n; tcsp);[]; clear k.
+
+    pose proof (ex_fresh_var (nvary :: nvarx
+                                    :: bound_vars x0
+                                    ++ free_vars x0)) as fv1.
+    destruct fv1 as [v1 fv1].
+    exrepnd; allsimpl; allrw in_app_iff; allrw not_over_or; repnd; GC.
+    apply (al_bterm_aux [v1]); simpl; auto;[|].
+
+    { apply disjoint_singleton_l; autorewrite with slow; simpl.
+      unfold all_vars; simpl; autorewrite with slow.
+      repeat (allrw in_app_iff; simpl; autorewrite with slow).
+      intro xx; repndors; subst; tcsp. }
+
+    apply implies_alpha_eq_mk_qlt; auto.
+    repeat (rw @lsubst_aux_trivial_cl_term2; eauto 3 with slow). }
+
+  { prove_alpha_eq4.
+    introv k.
+    repeat (destruct n; tcsp);[]; clear k.
+    fold_terms; autorewrite with slow.
+
+    pose proof (ex_fresh_var (nv1 :: nvary :: nvarx
+                                  :: bound_vars x0
+                                  ++ free_vars x0
+                                  ++ free_vars (lsubst_aux x0 [(nvary, x)])
+                                  ++ bound_vars (lsubst_aux x0 [(nvary, x)])
+                                  ++ free_vars (subst x0 nvary x)
+                                  ++ bound_vars (subst x0 nvary x))) as fv1.
+    destruct fv1 as [v1 fv1].
+    exrepnd; allsimpl; allrw in_app_iff; allrw not_over_or; repnd; GC.
+    apply (al_bterm_aux [v1]); simpl; auto;[|].
+
+    { apply disjoint_singleton_l; autorewrite with slow; simpl.
+      unfold all_vars; simpl; autorewrite with slow.
+      repeat (allrw in_app_iff; simpl; autorewrite with slow).
+      intro xx; repndors; subst; tcsp. }
+
+    boolvar; tcsp.
+    apply implies_alpha_eq_mk_qlt; auto.
+    unfsubst.
+    repeat (rewrite (lsubst_aux_trivial_cl_term2 (lsubst_aux x0 [(nvary,x)]));
+            [|apply closed_lsubst_aux; eauto 3 with slow]); auto. }
+
+  { prove_alpha_eq4.
+    introv k.
+    repeat (destruct n; tcsp);[]; clear k.
+    fold_terms; autorewrite with slow.
+    eapply isprog_vars_disjoint_implies_isprog in i0; allrw disjoint_singleton_l; auto.
+    rw @subst_trivial; auto. }
+
+  { destruct Heqb1; tcsp. }
+
+  { eapply isprog_vars_disjoint_implies_isprog in i0; allrw disjoint_singleton_l; auto.
+    rewrite subst_trivial; eauto 3 with slow; autorewrite with slow.
+    prove_alpha_eq4.
+    introv k.
+    repeat (destruct n; tcsp); clear k; fold_terms; autorewrite with slow.
+
+    pose proof (ex_fresh_var (nv1 :: nvary :: nvarx
+                                  :: bound_vars x0
+                                  ++ free_vars x0)) as fv1.
+    destruct fv1 as [v1 fv1].
+    exrepnd; allsimpl; allrw in_app_iff; allrw not_over_or; repnd; GC.
+    apply (al_bterm_aux [v1]); simpl; auto;[|].
+
+    { apply disjoint_singleton_l; autorewrite with slow; simpl.
+      unfold all_vars; simpl; autorewrite with slow.
+      repeat (allrw in_app_iff; simpl; autorewrite with slow).
+      intro xx; repndors; subst; tcsp. }
+
+    apply implies_alpha_eq_mk_qlt; auto; boolvar; tcsp.
+    repeat (rw @lsubst_aux_trivial_cl_term2; eauto 3 with slow). }
+
+  { prove_alpha_eq4.
+    introv k.
+    repeat (destruct n; tcsp);[]; clear k.
+    fold_terms; autorewrite with slow.
+
+    pose proof (ex_fresh_var (nv1 :: nvary :: nvarx
+                                  :: bound_vars x0
+                                  ++ free_vars x0
+                                  ++ free_vars (lsubst_aux x0 [(nvarx, x)])
+                                  ++ bound_vars (lsubst_aux x0 [(nvarx, x)])
+                                  ++ free_vars (subst x0 nvarx x)
+                                  ++ bound_vars (subst x0 nvarx x))) as fv1.
+    destruct fv1 as [v1 fv1].
+    exrepnd; allsimpl; allrw in_app_iff; allrw not_over_or; repnd; GC.
+    apply (al_bterm_aux [v1]); simpl; auto;[|].
+
+    { apply disjoint_singleton_l; autorewrite with slow; simpl.
+      unfold all_vars; simpl; autorewrite with slow.
+      repeat (allrw in_app_iff; simpl; autorewrite with slow).
+      intro xx; repndors; subst; tcsp. }
+
+    boolvar; tcsp.
+    apply implies_alpha_eq_mk_qlt; auto.
+    unfsubst.
+    repeat (rewrite (lsubst_aux_trivial_cl_term2 (lsubst_aux x0 [(nvarx,x)]));
+            [|apply closed_lsubst_aux; eauto 3 with slow]); auto. }
+
+  { destruct Heqb2; tcsp. }
+
+  { prove_alpha_eq4.
+    introv k.
+    repeat (destruct n; tcsp);[]; clear k.
+    fold_terms; autorewrite with slow.
+
+    pose proof (ex_fresh_var (nv1 :: nvary :: nvarx
+                                  :: bound_vars x0
+                                  ++ free_vars x0
+                                  ++ free_vars (lsubst_aux x0 [(v, x)])
+                                  ++ bound_vars (lsubst_aux x0 [(v, x)])
+                                  ++ free_vars (subst x0 v x)
+                                  ++ bound_vars (subst x0 v x))) as fv1.
+    destruct fv1 as [v1 fv1].
+    exrepnd; allsimpl; allrw in_app_iff; allrw not_over_or; repnd; GC.
+    apply (al_bterm_aux [v1]); simpl; auto;[|].
+
+    { apply disjoint_singleton_l; autorewrite with slow; simpl.
+      unfold all_vars; simpl; autorewrite with slow.
+      repeat (allrw in_app_iff; simpl; autorewrite with slow).
+      intro xx; repndors; subst; tcsp. }
+
+    boolvar; tcsp.
+    apply implies_alpha_eq_mk_qlt; auto.
+    unfsubst.
+    repeat (rewrite (lsubst_aux_trivial_cl_term2 (lsubst_aux x0 [(v,x)]));
+            [|apply closed_lsubst_aux; eauto 3 with slow]); auto. }
+Qed.
+
+Lemma substc_mkcv_qnatk2nat {o} :
+  forall v (t : @CVTerm o [v]) a,
+    alphaeqc
+      (substc a v (mkcv_qnatk2nat [v] t))
+      (mkc_qnatk2nat (substc a v t)).
+Proof.
+  introv; unfold mkcv_natk2nat.
+  eapply alphaeqc_trans;[apply substc_mkcv_fun|].
+  unfold natk2nat.
+  autorewrite with slow.
+  apply alphaeqc_mkc_fun; eauto 3 with slow.
+  eapply alphaeqc_trans;[apply mkcv_qnatk_substc|].
+  eauto 3 with slow.
+Qed.
+
+Lemma mkcv_qlt_substc {o} :
+  forall v a b (t : @CTerm o),
+    substc t v (mkcv_qlt [v] a b)
+    = mkc_qlt (substc t v a) (substc t v b).
+Proof.
+  introv.
+  destruct_cterms.
+  apply cterm_eq; simpl.
+  repeat unfsubst.
+Qed.
+Hint Rewrite @mkcv_qlt_substc : slow.
+
+Lemma type_extensionality_per_qlt_nuprl {o} :
+  @type_extensionality o (per_qlt nuprl).
+Proof.
+  introv per e.
+  unfold per_qlt in *; exrepnd.
+  eexists; eexists; eexists; eexists; dands; eauto.
+  eapply eq_term_equals_trans;[|eauto].
+  apply eq_term_equals_sym; auto.
+Qed.
+Hint Resolve type_extensionality_per_qlt_nuprl : slow.
+
+Lemma uniquely_valued_per_qlt_nuprl {o} :
+  @uniquely_valued o (per_qlt nuprl).
+Proof.
+  introv pera perb.
+  unfold per_qlt in *; exrepnd.
+
+  eapply eq_term_equals_trans;[eauto|].
+  eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
+
+  computes_to_eqval_ext.
+  hide_hyp pera2.
+  computes_to_eqval_ext.
+  apply cequivc_ext_mkc_qlt_right in ceq.
+  apply cequivc_ext_mkc_qlt_right in ceq0.
+  repnd.
+
+  apply implies_eq_term_equals_per_qlt_bar2; eauto 3 with slow.
+Qed.
+Hint Resolve uniquely_valued_per_qlt_nuprl : slow.
+
+Lemma local_per_bar_per_qlt_nuprl {o} :
+  @local_ts o (per_bar (per_qlt nuprl)).
+Proof.
+  apply local_per_bar; eauto 3 with slow.
+Qed.
+Hint Resolve local_per_bar_per_qlt_nuprl : slow.
+
+Lemma dest_nuprl_per_qlt_l {o} :
+  forall (ts : cts(o)) lib T a b T' eq,
+    ts = univ
+    -> ccomputes_to_valc_ext lib T (mkc_qlt a b)
+    -> close ts lib T T' eq
+    -> per_bar (per_qlt (close ts)) lib T T' eq.
+Proof.
+  introv equ comp cl.
+  assert (type_system ts) as sys by (subst; eauto 3 with slow).
+  assert (defines_only_universes ts) as dou by (subst; eauto 3 with slow).
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
+
+  eapply local_per_bar_per_qlt_nuprl; eauto.
+  eapply in_open_bar_ext_pres; try exact reca; clear reca; introv reca.
+  eapply reca; eauto 3 with slow.
+Qed.
+
+Lemma isvalue_qlt {o} :
+  forall (a b : @NTerm o), isprogram (mk_qlt a b) -> isvalue (mk_qlt a b).
+Proof.
+  introv; constructor; tcsp.
+Qed.
+
+Lemma implies_isvalue_qlt {o} :
+  forall (a b : @NTerm o),
+    isprog a
+    -> isprog b
+    -> isvalue (mk_qlt a b).
+Proof.
+  introv ispa ispb.
+  apply isvalue_qlt.
+  apply implies_isprogram_qlt; allrw <- @isprog_eq; auto.
+Qed.
+
+Lemma iscvalue_mkc_qlt {o} :
+  forall (a b : @CTerm o), iscvalue (mkc_qlt a b).
+Proof.
+  introv; destruct_cterms; unfold iscvalue; simpl.
+  apply implies_isvalue_qlt; tcsp.
+Qed.
+Hint Resolve iscvalue_mkc_qlt : slow.
+
+Lemma dest_nuprl_qlt {o} :
+  forall (lib : @library o) (a b c d : @CTerm o) eq,
+    nuprl lib (mkc_qlt a b) (mkc_qlt c d) eq
+    -> per_bar (per_qlt nuprl) lib (mkc_qlt a b) (mkc_qlt c d) eq.
+Proof.
+  introv cl.
+  unfold nuprl in cl.
+  eapply dest_nuprl_per_qlt_l in cl; auto;
+    try (apply computes_to_valc_refl; eauto 3 with slow); eauto 3 with slow.
+Qed.
+
+Lemma dest_nuprl_qlt2 {o} :
+  forall lib (eq : per(o)) a b c d,
+    nuprl lib (mkc_qlt a b) (mkc_qlt c d) eq
+    ->
+    (eq <=2=> (per_bar_eq lib (equality_of_qlt_bar_lib_per lib a b))
+     # in_open_bar lib (fun lib' => ccequivc_ext lib' a c)
+     # in_open_bar lib (fun lib' => ccequivc_ext lib' b d)).
+Proof.
+  introv u.
+  apply dest_nuprl_qlt in u.
+  unfold per_bar in u; exrepnd.
+
+  unfold per_qlt in u1.
+  dands.
+
+  { eapply eq_term_equals_trans;[eauto|].
+    apply implies_eq_term_equals_per_bar_eq.
+    eapply in_open_bar_ext_pres; eauto; clear u1; introv h; exrepnd.
+    repeat ccomputes_to_valc_ext_val.
+    eapply eq_term_equals_trans;[eauto|]; simpl.
+    apply implies_eq_term_equals_per_qlt_bar2; eauto 3 with slow. }
+
+  { eapply in_open_bar_comb2; eauto; clear u1; apply in_ext_ext_implies_in_open_bar_ext.
+    introv h; exrepnd.
+    repeat ccomputes_to_valc_ext_val; eauto 4 with slow. }
+
+  { eapply in_open_bar_comb2; eauto; clear u1; apply in_ext_ext_implies_in_open_bar_ext.
+    introv h; exrepnd.
+    repeat ccomputes_to_valc_ext_val; eauto 4 with slow. }
+Qed.
+
+Lemma tequality_mkc_qlt {o} :
+  forall (lib : @library o) a b c d,
+    tequality lib (mkc_qlt a b) (mkc_qlt c d)
+    <=>
+    (
+      in_open_bar lib (fun lib => ccequivc_ext lib a c)
+      # in_open_bar lib (fun lib => ccequivc_ext lib b d)
+    ).
+Proof.
+  introv; split; intro h.
+
+  { unfold tequality in h; exrepnd.
+    apply dest_nuprl_qlt2 in h0; repnd; auto. }
+
+  { repnd.
+    apply all_in_ex_bar_tequality_implies_tequality.
+    eapply in_open_bar_comb; try exact h; clear h.
+    eapply in_open_bar_pres; try exact h0; clear h0.
+    introv ext h q.
+    exists (equality_of_qlt_bar lib' a b).
+    apply CL_qlt.
+    exists a b c d; dands; eauto 3 with slow. }
+Qed.
+
+Lemma equality_in_qnat_implies_ccequivc_ext_bar {o} :
+  forall lib (a b : @CTerm o),
+    equality lib a b mkc_qnat
+    -> ccequivc_ext_bar lib a b.
+Proof.
+  introv equ.
+  apply equality_in_qnat in equ.
+  eapply in_open_bar_pres; try exact equ; clear equ.
+  introv ext h xt.
+  apply h in xt; exrepnd; spcast.
+  apply computes_to_valc_implies_cequivc in xt1.
+  apply computes_to_valc_implies_cequivc in xt0.
+  eapply cequivc_trans;[eauto|].
+  apply cequivc_sym; auto.
+Qed.
+
 Lemma equality_mkc_qnat_implies_tequality_mkc_natk {o} :
   forall lib (a b : @CTerm o),
     equality lib a b mkc_qnat
-    -> tequality lib (mkc_natk a) (mkc_natk b).
+    -> tequality lib (mkc_qnatk a) (mkc_qnatk b).
 Proof.
   introv equ.
-  repeat rewrite mkc_natk_eq.
+  repeat rewrite mkc_qnatk_eq.
 
   apply tequality_set; dands; eauto 3 with slow.
   introv exta equa.
-  eapply tequality_respects_alphaeqc_left;[apply alphaeqc_sym;apply mkcv_prod_substc|].
-  eapply tequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply mkcv_prod_substc|].
   autorewrite with slow.
+  apply tequality_mkc_qlt.
 
-  apply tequality_mkc_prod; dands; eauto 3 with slow.
-
-  { apply implies_equality_in_int_implies_tequality_mkc_le; eauto 3 with slow. }
-
-  introv ext inh.
-  eapply equality_monotone in equ; eauto.
-  clear dependent lib; rename lib' into lib.
-  eapply equality_monotone in equ; eauto.
-  eapply equality_monotone in equa; eauto.
-  clear dependent lib; rename lib'0 into lib.
-
-  apply equality_in_qnat in equ.
-
-  apply all_in_ex_bar_tequality_implies_tequality.
-  eapply in_open_bar_pres;[|exact equ]; clear equ.
-  introv ext equ; exrepnd.
-
-  assert (ccequivc_ext lib' a b) as ceq.
-  { introv x; apply equ in x; exrepnd; spcast.
-    apply computes_to_valc_implies_cequivc in x1.
-    apply computes_to_valc_implies_cequivc in x0.
-    eapply cequivc_trans;[eauto|].
-    apply cequivc_sym; auto. }
-
-  eapply tequality_respects_cequivc_left;
-    [apply implies_ccequivc_ext_mkc_less_than;
-     [apply ccequivc_ext_refl|apply ccequivc_ext_sym;eauto] |].
-
-  applydup @equality_in_int_implies_cequiv in equa.
-  apply ccequivc_ext_bar_iff_ccequivc_bar in equa0.
-  apply all_in_ex_bar_tequality_implies_tequality.
-  eapply lib_extends_preserves_in_open_bar in equa0; eauto.
-  eapply in_open_bar_pres;[|exact equa0]; clear equa0.
-  introv xt ceq'.
-
-  eapply tequality_respects_cequivc_left;
-    [apply implies_ccequivc_ext_mkc_less_than;
-     [apply ccequivc_ext_sym;eauto|apply ccequivc_ext_refl] |].
-
-SearchAbout mkc_less_than mkc_le.
-SearchAbout type mkc_less_than.
-Locate type_mkc_less_than_aux.
+  apply equality_int_nat_implies_cequivc in equa.
+  apply ccequivc_ext_bar_iff_ccequivc_bar in equa.
+  apply equality_in_qnat_implies_ccequivc_ext_bar in equ.
+  dands;tcsp; eauto 3 with slow.
 Qed.
+Hint Resolve equality_mkc_qnat_implies_tequality_mkc_natk : slow.
+
+Lemma equality_in_mkc_qnatk_implies_equality_in_mkc_tnat {o} :
+  forall lib (a b : @CTerm o) n,
+    equality lib a b (mkc_qnatk n)
+    -> equality lib a b mkc_tnat.
+Proof.
+  introv equ.
+  rewrite mkc_qnatk_eq in equ.
+  apply equality_in_set in equ; repnd; auto.
+Qed.
+Hint Resolve equality_in_mkc_qnatk_implies_equality_in_mkc_tnat : slow.
+
+Lemma equality_nat2nat_to_qnatk2nat {o} :
+  forall lib (n f g : @CTerm o),
+    member lib n mkc_qnat
+    -> equality lib f g nat2nat
+    -> equality lib f g (mkc_qnatk2nat n).
+Proof.
+  introv m e.
+
+  apply equality_in_fun; repnd; dands; eauto 3 with slow.
+
+  { apply equality_mkc_qnat_implies_tequality_mkc_natk; auto. }
+
+  introv xt equ.
+  apply equality_nat2nat_apply; eauto 3 with slow.
+Qed.
+Hint Resolve equality_nat2nat_to_qnatk2nat : slow.
+
+Lemma isprog_qnat {o} : @isprog o mk_qnat.
+Proof.
+  repeat constructor.
+Qed.
+Hint Resolve isprog_qnat : slow.
+
+Lemma substc2_mkcv_qnat {o} :
+  forall v (t : @CTerm o) x,
+    substc2 v t x (mkcv_qnat [v,x]) = mkcv_qnat [v].
+Proof.
+  introv.
+  destruct_cterms.
+  apply cvterm_eq; simpl.
+  apply subst_trivial; eauto 2 with slow.
+Qed.
+Hint Rewrite @substc2_mkcv_qnat : slow.
+
+Lemma mkcv_qnat_substc {o} :
+  forall v (t : @CTerm o),
+    substc t v (mkcv_qnat [v])
+    = mkc_qnat.
+Proof.
+  introv.
+  destruct_cterms; apply cterm_eq; simpl.
+  unfsubst.
+Qed.
+Hint Rewrite @mkcv_qnat_substc : slow.
 
 Lemma tequality_ls3c_aux7 {o} :
   forall (lib : @library o) a1 a'0 a'1 a2 a'2 a3,
@@ -362,38 +946,19 @@ Lemma tequality_ls3c_aux7 {o} :
     -> equality lib a1 a'0 (mkc_csname 0)
     -> equality lib a2 a'1 mkc_qnat
     -> equality lib a3 a'2 (mkc_csname 0)
-    -> tequality lib (mkc_equality a1 a3 (natk2nat a2)) (mkc_equality a'0 a'2 (natk2nat a'1)).
+    -> tequality lib (mkc_equality a1 a3 (mkc_qnatk2nat a2)) (mkc_equality a'0 a'2 (mkc_qnatk2nat a'1)).
 Proof.
   introv norep safe sat; introv equb eque equf.
 
-  apply tequality_mkc_equality_if_equal.
-  { apply tequality_fun; dands; eauto 3 with slow.
+  apply tequality_mkc_equality_if_equal; eauto 3 with slow.
 
-SearchAbout tequality mkc_natk.
-SearchAbout tequality mkc_fun.
+  { apply tequality_fun; dands; eauto 3 with slow. }
 
+  { apply equality_refl in eque.
+    apply equality_nat2nat_to_qnatk2nat; eauto 3 with slow. }
 
-XXXXXXXXXXX
-
-apply equality_in_tnat in eque.
-    apply all_in_ex_bar_tequality_implies_tequality.
-    unfold equality_of_nat_bar in eque.
-    eapply lib_extends_preserves_in_open_bar in eque; eauto.
-    eapply in_open_bar_comb; eauto.
-    apply in_ext_implies_in_open_bar; introv xt e.
-    unfold equality_of_nat in e; exrepnd.
-    eapply tequality_natk2nat_aux;eauto.
-    introv xx; apply Z_of_nat_complete in xx; exrepnd; subst.
-    destruct (lt_dec n0 n);[left|right]; dands;
-      allrw <- Nat2Z.inj_lt; allrw <- Nat2Z.inj_le; auto; try omega. }
-
-  { apply equality_nat2nat_to_natk2nat.
-    { apply equality_refl in eque; eauto 3 with slow. }
-    apply equality_in_csname_implies_equality_in_nat2nat in equb; eauto 3 with slow. }
-
-  { apply equality_nat2nat_to_natk2nat.
-    { apply equality_refl in eque; eauto 3 with slow. }
-    apply equality_in_csname_implies_equality_in_nat2nat in equf; eauto 3 with slow. }
+  { apply equality_refl in eque.
+    apply equality_nat2nat_to_qnatk2nat; eauto 3 with slow. }
 Qed.
 
 Lemma tequality_ls3c_aux6 {o} :
@@ -403,12 +968,12 @@ Lemma tequality_ls3c_aux6 {o} :
     -> lib_cond_sat_def lib
     -> equality lib a0 a' (mkc_csprop i)
     -> equality lib a1 a'0 (mkc_csname 0)
-    -> equality lib a2 a'1 mkc_tnat
+    -> equality lib a2 a'1 mkc_qnat
     -> equality lib a3 a'2 (mkc_csname 0)
     -> tequality
          lib
-         (mkc_fun (mkc_equality a1 a3 (natk2nat a2)) (mkc_squash (mkc_apply a0 a3)))
-         (mkc_fun (mkc_equality a'0 a'2 (natk2nat a'1)) (mkc_squash (mkc_apply a' a'2))).
+         (mkc_fun (mkc_equality a1 a3 (mkc_qnatk2nat a2)) (mkc_squash (mkc_apply a0 a3)))
+         (mkc_fun (mkc_equality a'0 a'2 (mkc_qnatk2nat a'1)) (mkc_squash (mkc_apply a' a'2))).
 Proof.
   introv norep safe sat; introv equa equb eque equf.
 
@@ -435,7 +1000,7 @@ Lemma tequality_ls3c_aux5 {o} :
     -> lib_cond_sat_def lib
     -> equality lib a0 a' (mkc_csprop i)
     -> equality lib a1 a'0 (mkc_csname 0)
-    -> equality lib a2 a'1 mkc_qtnat
+    -> equality lib a2 a'1 mkc_qnat
     -> tequality lib
     (mkc_function (mkc_csname 0) b
        (substc5 b a2 n a1 a a0 A
@@ -444,7 +1009,7 @@ Lemma tequality_ls3c_aux5 {o} :
                 (mk_cv_app_r [A] ([b, n] ++ [a])
                    (mk_cv_app_l [b, n] [a] (mkc_var a)))
                 (mk_cv_app_r [n, a, A] [b] (mkc_var b))
-                (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                (mkcv_qnatk2nat (([b] ++ [n]) ++ [a, A])
                    (mk_cv_app_r [a, A] ([b] ++ [n])
                       (mk_cv_app_l [b] [n] (mkc_var n)))))
              (mkcv_squash ([b, n, a] ++ [A])
@@ -457,7 +1022,7 @@ Lemma tequality_ls3c_aux5 {o} :
                 (mk_cv_app_r [A] ([b, n] ++ [a])
                    (mk_cv_app_l [b, n] [a] (mkc_var a)))
                 (mk_cv_app_r [n, a, A] [b] (mkc_var b))
-                (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                (mkcv_qnatk2nat (([b] ++ [n]) ++ [a, A])
                    (mk_cv_app_r [a, A] ([b] ++ [n])
                                 (mk_cv_app_l [b] [n] (mkc_var n)))))
              (mkcv_squash ([b, n, a] ++ [A])
@@ -485,19 +1050,20 @@ Proof.
   eapply tequality_respects_alphaeqc_left;
     [apply alphaeqc_mkc_fun;apply alphaeqc_sym;[|apply alphaeqc_refl];
      apply implies_alphaeqc_mkc_equality;[apply alphaeqc_refl|apply alphaeqc_refl|];
-     apply substc_alphaeqcv; apply substc5_mkcv_natk2nat;auto|].
+     apply substc_alphaeqcv; apply substc5_mkcv_qnatk2nat;auto|].
   eapply tequality_respects_alphaeqc_right;
     [apply alphaeqc_mkc_fun;apply alphaeqc_sym;[|apply alphaeqc_refl];
      apply implies_alphaeqc_mkc_equality;[apply alphaeqc_refl|apply alphaeqc_refl|];
-     apply substc_alphaeqcv; apply substc5_mkcv_natk2nat;auto|].
+     apply substc_alphaeqcv; apply substc5_mkcv_qnatk2nat;auto|].
+
   eapply tequality_respects_alphaeqc_left;
     [apply alphaeqc_mkc_fun;apply alphaeqc_sym;[|apply alphaeqc_refl];
      apply implies_alphaeqc_mkc_equality;[apply alphaeqc_refl|apply alphaeqc_refl|];
-     apply substc_mkcv_natk2nat;auto|].
+     apply substc_mkcv_qnatk2nat;auto|].
   eapply tequality_respects_alphaeqc_right;
     [apply alphaeqc_mkc_fun;apply alphaeqc_sym;[|apply alphaeqc_refl];
      apply implies_alphaeqc_mkc_equality;[apply alphaeqc_refl|apply alphaeqc_refl|];
-     apply substc_mkcv_natk2nat;auto|].
+     apply substc_mkcv_qnatk2nat;auto|].
   repeat (rewrite substc5_var1; auto;[]).
   autorewrite with slow.
 
@@ -518,7 +1084,7 @@ Lemma tequality_ls3c_aux4 {o} :
     -> equality lib a0 a' (mkc_csprop i)
     -> equality lib a1 a'0 (mkc_csname 0)
     -> tequality lib
-    (mkc_product mkc_qtnat n
+    (mkc_product mkc_qnat n
        (substc2 n a1 a
           (substc3 n a a0 A
              (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
@@ -527,14 +1093,14 @@ Lemma tequality_ls3c_aux4 {o} :
                       (mk_cv_app_r [A] ([b, n] ++ [a])
                          (mk_cv_app_l [b, n] [a] (mkc_var a)))
                       (mk_cv_app_r [n, a, A] [b] (mkc_var b))
-                      (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                      (mkcv_qnatk2nat (([b] ++ [n]) ++ [a, A])
                          (mk_cv_app_r [a, A] ([b] ++ [n])
                             (mk_cv_app_l [b] [n] (mkc_var n)))))
                    (mkcv_squash ([b, n, a] ++ [A])
                    (mkcv_apply ([b, n, a] ++ [A])
                       (mk_cv_app_l [b, n, a] [A] (mkc_var A))
                       (mk_cv_app_r [n, a, A] [b] (mkc_var b)))))))))
-    (mkc_product mkc_qtnat n
+    (mkc_product mkc_qnat n
        (substc2 n a'0 a
           (substc3 n a a' A
              (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
@@ -543,7 +1109,7 @@ Lemma tequality_ls3c_aux4 {o} :
                       (mk_cv_app_r [A] ([b, n] ++ [a])
                          (mk_cv_app_l [b, n] [a] (mkc_var a)))
                       (mk_cv_app_r [n, a, A] [b] (mkc_var b))
-                      (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                      (mkcv_qnatk2nat (([b] ++ [n]) ++ [a, A])
                          (mk_cv_app_r [a, A] ([b] ++ [n])
                             (mk_cv_app_l [b] [n] (mkc_var n)))))
                    (mkcv_squash ([b, n, a] ++ [A])
@@ -578,39 +1144,37 @@ Lemma tequality_ls3c_aux3 {o} :
     -> equality lib a1 a'0 (mkc_csname 0)
     -> tequality lib
     (mkc_fun (mkc_apply a0 a1)
-       (mkc_squash
           (substc2 a a0 A
-             (mkcv_exists [a, A] (mkcv_tnat [a, A]) n
+             (mkcv_exists [a, A] (mkcv_qnat [a, A]) n
                 (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
                    (mkcv_fun (([b, n] ++ [a]) ++ [A])
                       (mkcv_equality (([b, n] ++ [a]) ++ [A])
                          (mk_cv_app_r [A] ([b, n] ++ [a])
                             (mk_cv_app_l [b, n] [a] (mkc_var a)))
                          (mk_cv_app_r [n, a, A] [b] (mkc_var b))
-                         (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                         (mkcv_qnatk2nat (([b] ++ [n]) ++ [a, A])
                             (mk_cv_app_r [a, A] ([b] ++ [n])
                                (mk_cv_app_l [b] [n] (mkc_var n)))))
                       (mkcv_squash ([b, n, a] ++ [A])
                       (mkcv_apply ([b, n, a] ++ [A])
                          (mk_cv_app_l [b, n, a] [A] (mkc_var A))
-                         (mk_cv_app_r [n, a, A] [b] (mkc_var b)))))))) [[a \\ a1]]))
+                         (mk_cv_app_r [n, a, A] [b] (mkc_var b)))))))) [[a \\ a1]])
     (mkc_fun (mkc_apply a' a'0)
-       (mkc_squash
           (substc2 a a' A
-             (mkcv_exists [a, A] (mkcv_tnat [a, A]) n
+             (mkcv_exists [a, A] (mkcv_qnat [a, A]) n
                 (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
                    (mkcv_fun [b, n, a, A]
                       (mkcv_equality (([b, n] ++ [a]) ++ [A])
                          (mk_cv_app_r [A] ([b, n] ++ [a])
                             (mk_cv_app_l [b, n] [a] (mkc_var a)))
                          (mk_cv_app_r [n, a, A] [b] (mkc_var b))
-                         (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                         (mkcv_qnatk2nat (([b] ++ [n]) ++ [a, A])
                             (mk_cv_app_r [a, A] ([b] ++ [n])
                                (mk_cv_app_l [b] [n] (mkc_var n)))))
                       (mkcv_squash ([b, n, a] ++ [A])
                       (mkcv_apply [b, n, a, A]
                          (mk_cv_app_l [b, n, a] [A] (mkc_var A))
-                         (mk_cv_app_r [n, a, A] [b] (mkc_var b)))))))) [[a \\ a'0]])).
+                         (mk_cv_app_r [n, a, A] [b] (mkc_var b)))))))) [[a \\ a'0]]).
 Proof.
   introv da db dc dd de df norep safe sat; introv equa equb.
 
@@ -619,7 +1183,6 @@ Proof.
   { apply (equality_in_mkc_csprop_implies_tequality _ _ _ _ _ i); eauto; eauto 3 with slow. }
 
   introv extd equd.
-  apply tequality_mkc_squash.
   eapply tequality_respects_alphaeqc_left;
     [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_product;auto|].
   eapply tequality_respects_alphaeqc_right;
@@ -652,21 +1215,20 @@ Lemma tequality_ls3c_aux2 {o} :
           (mkcv_fun ([a] ++ [A])
              (mkcv_apply ([a] ++ [A]) (mk_cv_app_l [a] [A] (mkc_var A))
                 (mk_cv_app_r [A] [a] (mkc_var a)))
-             (mkcv_squash [a, A]
-                (mkcv_exists [a, A] (mkcv_tnat [a, A]) n
+                (mkcv_exists [a, A] (mkcv_qnat [a, A]) n
                    (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
                       (mkcv_fun (([b, n] ++ [a]) ++ [A])
                          (mkcv_equality (([b, n] ++ [a]) ++ [A])
                             (mk_cv_app_r [A] ([b, n] ++ [a])
                                (mk_cv_app_l [b, n] [a] (mkc_var a)))
                             (mk_cv_app_r [n, a, A] [b] (mkc_var b))
-                            (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                            (mkcv_qnatk2nat (([b] ++ [n]) ++ [a, A])
                                (mk_cv_app_r [a, A] ([b] ++ [n])
                                   (mk_cv_app_l [b] [n] (mkc_var n)))))
                          (mkcv_squash ([b, n, a] ++ [A])
                          (mkcv_apply ([b, n, a] ++ [A])
                             (mk_cv_app_l [b, n, a] [A] (mkc_var A))
-                            (mk_cv_app_r [n, a, A] [b] (mkc_var b)))))))))) [[a \\
+                            (mk_cv_app_r [n, a, A] [b] (mkc_var b))))))))) [[a \\
        a1]])
     (mkc_fun
        (substc2 a a' A
@@ -676,21 +1238,20 @@ Lemma tequality_ls3c_aux2 {o} :
           (mkcv_fun ([a] ++ [A])
              (mkcv_apply ([a] ++ [A]) (mk_cv_app_l [a] [A] (mkc_var A))
                 (mk_cv_app_r [A] [a] (mkc_var a)))
-             (mkcv_squash [a, A]
-                (mkcv_exists [a, A] (mkcv_tnat [a, A]) n
+                (mkcv_exists [a, A] (mkcv_qnat [a, A]) n
                    (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
                       (mkcv_fun [b, n, a, A]
                          (mkcv_equality (([b, n] ++ [a]) ++ [A])
                             (mk_cv_app_r [A] ([b, n] ++ [a])
                                (mk_cv_app_l [b, n] [a] (mkc_var a)))
                             (mk_cv_app_r [n, a, A] [b] (mkc_var b))
-                            (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                            (mkcv_qnatk2nat (([b] ++ [n]) ++ [a, A])
                                (mk_cv_app_r [a, A] ([b] ++ [n])
                                   (mk_cv_app_l [b] [n] (mkc_var n)))))
                          (mkcv_squash ([b, n, a] ++ [A])
                          (mkcv_apply [b, n, a, A]
                             (mk_cv_app_l [b, n, a] [A] (mkc_var A))
-                            (mk_cv_app_r [n, a, A] [b] (mkc_var b)))))))))) [[a \\
+                            (mk_cv_app_r [n, a, A] [b] (mkc_var b))))))))) [[a \\
        a'0]]).
 Proof.
   introv da db dc dd de df norep safe sat; introv equa equb.
@@ -744,14 +1305,14 @@ Lemma tequality_ls3c_aux1 {o} :
              (mkcv_fun ([a] ++ [A])
                 (mkcv_apply ([a] ++ [A]) (mk_cv_app_l [a] [A] (mkc_var A))
                    (mk_cv_app_r [A] [a] (mkc_var a)))
-                   (mkcv_exists [a, A] (mkcv_qtnat [a, A]) n
+                   (mkcv_exists [a, A] (mkcv_qnat [a, A]) n
                       (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
                          (mkcv_fun (([b, n] ++ [a]) ++ [A])
                             (mkcv_equality (([b, n] ++ [a]) ++ [A])
                                (mk_cv_app_r [A] ([b, n] ++ [a])
                                   (mk_cv_app_l [b, n] [a] (mkc_var a)))
                                (mk_cv_app_r [n, a, A] [b] (mkc_var b))
-                               (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                               (mkcv_qnatk2nat (([b] ++ [n]) ++ [a, A])
                                   (mk_cv_app_r [a, A] ([b] ++ [n])
                                      (mk_cv_app_l [b] [n] (mkc_var n)))))
                             (mkcv_squash ([b, n, a] ++ [A])
@@ -766,14 +1327,14 @@ Lemma tequality_ls3c_aux1 {o} :
              (mkcv_fun ([a] ++ [A])
                 (mkcv_apply ([a] ++ [A]) (mk_cv_app_l [a] [A] (mkc_var A))
                    (mk_cv_app_r [A] [a] (mkc_var a)))
-                   (mkcv_exists [a, A] (mkcv_qtnat [a, A]) n
+                   (mkcv_exists [a, A] (mkcv_qnat [a, A]) n
                       (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
                          (mkcv_fun [b, n, a, A]
                             (mkcv_equality (([b, n] ++ [a]) ++ [A])
                                (mk_cv_app_r [A] ([b, n] ++ [a])
                                   (mk_cv_app_l [b, n] [a] (mkc_var a)))
                                (mk_cv_app_r [n, a, A] [b] (mkc_var b))
-                               (mkcv_natk2nat (([b] ++ [n]) ++ [a, A])
+                               (mkcv_qnatk2nat (([b] ++ [n]) ++ [a, A])
                                   (mk_cv_app_r [a, A] ([b] ++ [n])
                                      (mk_cv_app_l [b] [n] (mkc_var n)))))
                             (mkcv_squash ([b, n, a] ++ [A])
@@ -797,7 +1358,6 @@ Proof.
 
   apply tequality_ls3c_aux2; eauto 3 with slow.
 Qed.
-*)
 
 Lemma tequality_ls3c {o} :
   forall (lib : @library o) A a b n i,
@@ -829,17 +1389,17 @@ Qed.
 
 Definition rule_ls3 {o}
            (lib : @library o)
-           (A a b n x y : NVar)
+           (A a b n x y z : NVar)
            (i : nat)
            (H : @bhyps o) :=
   mk_rule
-    (mk_baresequent H (mk_concl (ls3 A a b n i) (ls3_extract A a x y)))
+    (mk_baresequent H (mk_concl (ls3 A a b n i) (ls3_extract A a x y b z)))
     []
     [].
 
 Lemma rule_ls3_true {o} :
   forall (lib : library)
-         (A a b n x y : NVar) (i : nat) (H : @bhyps o)
+         (A a b n x y z : NVar) (i : nat) (H : @bhyps o)
          (d1 : A <> a)
          (d2 : n <> A)
          (d3 : n <> a)
@@ -852,7 +1412,7 @@ Lemma rule_ls3_true {o} :
          (sat   : sat_lib_cond lib)
          (satd  : lib_cond_sat_def lib)
          (nocs  : has_lib_cond_no_cs lib),
-    rule_true lib (rule_ls3 lib A a b n x y i H).
+    rule_true lib (rule_ls3 lib A a b n x y z i H).
 Proof.
   unfold rule_ls3, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -862,7 +1422,7 @@ Proof.
   destseq; allsimpl.
   dLin_hyp; exrepnd.
 
-  assert (@covered o (ls3_extract A a x y) (nh_vars_hyps H)) as cv.
+  assert (@covered o (ls3_extract A a x y b z) (nh_vars_hyps H)) as cv.
   { dwfseq; tcsp; introv h; autorewrite with slow in *; simpl in *; tcsp. }
   exists cv.
 
@@ -995,7 +1555,6 @@ Proof.
     eapply equality_in_mkc_csprop_implies_tequality; eauto. }
 
   { introv xt inh.
-    apply tequality_mkc_squash.
     eapply tequality_respects_alphaeqc_left;
       [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_product;auto|].
     eapply tequality_respects_alphaeqc_right;
@@ -1021,6 +1580,10 @@ Proof.
   eapply equality_respects_cequivc_right;
     [apply ccequivc_ext_sym;apply apply3_ls3c_extract_ccequivc_ext|].
 
+  eapply alphaeqc_preserving_equality;
+    [|apply alphaeqc_sym;apply substc_alphaeqcv;apply substc2_product;tcsp];[].
+
+(*
   apply equality_in_mkc_squash_ax.
   apply equality_refl in eqA.
   apply equality_refl in eqa.
@@ -1034,6 +1597,7 @@ Proof.
 
   eapply inhabited_type_bar_respects_alphaeqc;
     [apply alphaeqc_sym;apply substc_alphaeqcv;apply substc2_product;tcsp|];[].
+*)
 
   rewrite mkcv_product_substc; auto;[].
   autorewrite with slow.
