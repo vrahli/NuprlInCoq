@@ -42,8 +42,8 @@ Lemma close_type_system_qlt {o} :
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T (mkc_qlt a b)
     -> ccomputes_to_valc_ext lib T' (mkc_qlt a' b')
-    -> ccequivc_ext lib a a'
-    -> ccequivc_ext lib b b'
+    -> equality_of_qnat lib a a'
+    -> equality_of_qnat lib b b'
     -> (eq <=2=> (equality_of_qlt_bar lib a b))
     -> type_sys_props4 (close ts) lib T T' eq.
 Proof.
@@ -77,14 +77,14 @@ Proof.
       eapply ccequivc_ext_qlt in ceq;[|eauto]; exrepnd; spcast.
       eexists; eexists; eexists; eexists; dands; try exact c2; try exact eqiff; eauto 3 with slow.
       eapply eq_term_equals_trans;[eauto|].
-      apply implies_eq_term_equals_per_qlt_bar2; auto.
+      apply implies_eq_term_equals_per_qlt_bar2; auto; eauto 3 with slow.
     }
 
   - SCase "type_value_respecting_trans1".
-    eapply implies_type_value_respecting_trans1_per_qlt; eauto.
+    eapply implies_type_value_respecting_trans1_per_qlt; eauto; eauto 3 with slow.
 
   - SCase "type_value_respecting_trans2".
-    eapply implies_type_value_respecting_trans2_per_qlt; eauto.
+    eapply implies_type_value_respecting_trans2_per_qlt; eauto; eauto 3 with slow.
 
   - SCase "term_symmetric".
     introv ee.

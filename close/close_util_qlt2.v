@@ -34,6 +34,7 @@ Require Export type_sys_useful.
 Require Export dest_close.
 Require Export per_ceq_bar.
 
+Require Export close_util_qnat.
 Require Export close_util_qlt.
 Require Export close_util1.
 Require Export close_util2.
@@ -129,6 +130,20 @@ Proof.
   introv ceq comp; eauto 3 with slow.
 Qed.
 
+Lemma equality_of_qnat_implies_ccequivc_ext {o} :
+  forall (lib : @library o) a b,
+    equality_of_qnat lib a b
+    -> ccequivc_ext lib a b.
+Proof.
+  introv equ ext.
+  apply equ in ext; exrepnd; spcast.
+  apply computes_to_valc_implies_cequivc in ext1.
+  apply computes_to_valc_implies_cequivc in ext0.
+  eapply cequivc_trans;eauto.
+  apply cequivc_sym; auto.
+Qed.
+Hint Resolve equality_of_qnat_implies_ccequivc_ext : slow.
+
 Lemma per_qlt_sym {o} :
   forall ts lib (T1 T2 : @CTerm o) equ,
     per_qlt ts lib T1 T2 equ
@@ -140,6 +155,57 @@ Proof.
   eapply eq_term_equals_trans;[eauto|];[];apply eq_term_equals_sym.
   apply implies_eq_term_equals_per_qlt_bar2; eauto 3 with slow.
 Qed.
+
+Lemma equality_of_qnat_ccequivc_ext_trans {o} :
+  forall (lib : @library o) a b c,
+    equality_of_qnat lib a b
+    -> ccequivc_ext lib b c
+    -> equality_of_qnat lib a c.
+Proof.
+  introv equ ceq ext.
+  applydup equ in ext.
+  applydup ceq in ext.
+  exrepnd; spcast.
+  apply computes_to_valc_implies_cequivc in ext2.
+  apply cequivc_sym in ext1.
+  eapply cequivc_trans in ext2; eauto.
+  apply cequivc_sym in ext2.
+  apply @cequivc_nat_implies_computes_to_valc in ext2.
+  exists n; dands; spcast; auto.
+Qed.
+Hint Resolve equality_of_qnat_ccequivc_ext_trans : slow.
+
+Lemma ccequivc_ext_equality_of_qnat_trans {o} :
+  forall (lib : @library o) a b c,
+    ccequivc_ext lib a b
+    -> equality_of_qnat lib b c
+    -> equality_of_qnat lib a c.
+Proof.
+  introv ceq equ ext.
+  applydup equ in ext.
+  applydup ceq in ext.
+  exrepnd; spcast.
+  apply computes_to_valc_implies_cequivc in ext0.
+  eapply cequivc_trans in ext0; eauto.
+  apply cequivc_sym in ext0.
+  apply @cequivc_nat_implies_computes_to_valc in ext0.
+  exists n; dands; spcast; auto.
+Qed.
+Hint Resolve ccequivc_ext_equality_of_qnat_trans : slow.
+
+Lemma equality_of_qnat_trans {o} :
+  forall lib (a b c : @CTerm o),
+    equality_of_qnat lib a b
+    -> equality_of_qnat lib b c
+    -> equality_of_qnat lib a c.
+Proof.
+  introv h q ext; applydup h in ext; applydup q in ext; exrepnd.
+  spcast.
+  eapply computes_to_valc_eq in ext3; try exact ext1.
+  apply mkc_nat_eq_implies in ext3; subst.
+  eexists; dands; spcast; eauto.
+Qed.
+Hint Resolve equality_of_qnat_trans : slow.
 
 Lemma per_qlt_trans1 {o} :
   forall ts lib (T T1 T2 : @CTerm o) eq1 eq2,
@@ -216,10 +282,12 @@ Proof.
 
   eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact e].
   eapply lib_extends_preserves_ccomputes_to_valc in comp2;[|exact e].
+  eapply lib_extends_preserves_ccequivc_ext in ceqa; eauto.
+  eapply lib_extends_preserves_ccequivc_ext in ceqb; eauto.
 
   spcast; computes_to_eqval_ext.
   apply cequivc_ext_mkc_qlt_right in ceq; repnd.
-  eexists; eexists; eexists; eexists; dands; eauto 4 with slow.
+  eexists; eexists; eexists; eexists; dands; eauto 3 with slow;[].
   eapply eq_term_equals_trans;[eauto|];[];apply eq_term_equals_sym.
   apply implies_eq_term_equals_per_qlt_bar2; eauto 3 with slow.
 Qed.
@@ -242,6 +310,8 @@ Proof.
 
   eapply lib_extends_preserves_ccomputes_to_valc in comp1;[|exact e].
   eapply lib_extends_preserves_ccomputes_to_valc in comp2;[|exact e].
+  eapply lib_extends_preserves_ccequivc_ext in ceqa; eauto.
+  eapply lib_extends_preserves_ccequivc_ext in ceqb; eauto.
 
   spcast; computes_to_eqval_ext.
   apply cequivc_ext_mkc_qlt_right in ceq; repnd.
@@ -249,7 +319,7 @@ Proof.
   eapply lib_extends_preserves_ccequivc_ext in ceqb; eauto.
   eexists; eexists; eexists; eexists; dands; eauto; eauto 4 with slow.
   eapply eq_term_equals_trans;[eauto|];[];apply eq_term_equals_sym.
-  apply implies_eq_term_equals_per_qlt_bar2; eauto 4 with slow.
+  apply implies_eq_term_equals_per_qlt_bar2; eauto 5 with slow.
 Qed.
 
 Lemma implies_type_value_respecting_trans1_per_qlt {o} :

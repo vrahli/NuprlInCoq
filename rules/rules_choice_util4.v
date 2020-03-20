@@ -10473,6 +10473,21 @@ Proof.
   apply (swap_ccequivc sw) in ceq; autorewrite with slow in ceq; auto.
 Qed.
 
+Lemma swap_equality_of_qnat {o} :
+  forall sw lib (a b : @CTerm o),
+    sane_swapping sw
+    -> equality_of_qnat lib a b
+    -> equality_of_qnat (swap_cs_lib sw lib) (swap_cs_cterm sw a) (swap_cs_cterm sw b).
+Proof.
+  introv sane ceq ext.
+  pose proof (ceq _ (lib_extends_swap_right_to_left sane ext)) as ceq; simpl in *; exrepnd.
+  apply (swap_ccomputes_to_valc sw) in ceq1.
+  apply (swap_ccomputes_to_valc sw) in ceq0.
+  autorewrite with slow in *.
+  eexists; dands; spcast; eauto.
+Qed.
+Hint Resolve swap_equality_of_qnat : slow.
+
 Lemma swap_eqorceq_ext {o} :
   forall sw (sane : sane_swapping sw) lib eqa (a b : @CTerm o),
     eqorceq_ext lib eqa a b
@@ -11635,8 +11650,8 @@ Proof.
     apply CL_qlt; clear per.
     apply (swap_ccomputes_to_valc_ext sw) in c1; auto.
     apply (swap_ccomputes_to_valc_ext sw) in c2; auto.
-    apply (swap_ccequivc_ext sw) in ceqa; auto.
-    apply (swap_ccequivc_ext sw) in ceqb; auto.
+    apply (swap_equality_of_qnat sw) in ceqa; auto.
+    apply (swap_equality_of_qnat sw) in ceqb; auto.
     autorewrite with slow in *.
     eexists; eexists; eexists; eexists; dands; eauto.
     apply swap_per_qlt_eq_bar; auto. }
@@ -18790,6 +18805,44 @@ Proof.
   apply swapped_css_libs_sym; eauto.
 Qed.
 
+Lemma swapped_css_libs_equality_of_qnat {o} :
+  forall {name name'} {lib lib' : @library o} {a b : @CTerm o},
+    lib_nodup lib
+    -> sat_lib_cond lib
+    -> strong_safe_library lib
+    -> swapped_css_libs name name' lib lib'
+    -> equality_of_qnat lib a b
+    -> equality_of_qnat lib' a b.
+Proof.
+  introv nodup sat safe swap ceq ext.
+  applydup @swapped_css_libs_sym in swap as swap'.
+  eapply lib_extends_preserves_perm_libs in ext; eauto; eauto 3 with slow; repnd.
+  pose proof (ceq _ ext0) as ceq.
+  cbv beta in ceq; exrepnd.
+  eapply swapped_css_libs_ccomputes_to_valc in ceq1; eauto;
+    try eapply lib_extends_preserves_perm_libs; eauto; eauto 3 with slow; exrepnd;
+      try (apply implies_lib_nodup_swap_names; eauto 4 with slow);
+      try (eapply lib_extends_trans;[|eauto];
+           apply implies_lib_extends_swap_names_left; eauto 3 with slow).
+  eapply swapped_css_libs_ccomputes_to_valc in ceq0; eauto;
+    try eapply lib_extends_preserves_perm_libs; eauto; eauto 3 with slow; exrepnd;
+      try (apply implies_lib_nodup_swap_names; eauto 4 with slow);
+      try (eapply lib_extends_trans;[|eauto];
+           apply implies_lib_extends_swap_names_left; eauto 3 with slow).
+  spcast.
+  apply alphaeqc_mkc_nat_implies in ceq2; subst.
+  apply alphaeqc_mkc_nat_implies in ceq3; subst.
+  rewrite swap_names_twice in ceq0; eauto 4 with slow;
+    [|apply swapped_css_libs_sym in ext;
+      eapply swapped_css_libs_preserves_lib_nodup; eauto;
+      eauto 3 with slow].
+  rewrite swap_names_twice in ceq1; eauto 4 with slow;
+    [|apply swapped_css_libs_sym in ext;
+      eapply swapped_css_libs_preserves_lib_nodup; eauto;
+      eauto 3 with slow].
+  eexists; dands; spcast; eauto.
+Qed.
+
 Lemma swapped_css_libs_equality_of_ffdefs_bar {o} :
   forall name name' (lib lib' : @library o) eqa f
          (nodup : lib_nodup lib)
@@ -19118,8 +19171,8 @@ Proof.
     unfold per_qlt in *.
     apply (swapped_css_libs_ccomputes_to_valc_ext nodup sat safe swap) in c1.
     apply (swapped_css_libs_ccomputes_to_valc_ext nodup sat safe swap) in c2.
-    apply (swapped_css_libs_ccequivc_ext nodup sat safe swap) in ceqa.
-    apply (swapped_css_libs_ccequivc_ext nodup sat safe swap) in ceqb.
+    apply (swapped_css_libs_equality_of_qnat nodup sat safe swap) in ceqa.
+    apply (swapped_css_libs_equality_of_qnat nodup sat safe swap) in ceqb.
     eexists; eexists; eexists; eexists; dands; eauto.
     eapply eq_term_equals_trans;[eauto|].
     eapply swapped_css_libs_equality_of_qlt_bar; eauto. }

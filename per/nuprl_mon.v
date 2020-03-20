@@ -492,6 +492,16 @@ Proof.
 Qed.
 Hint Resolve lib_extends_preserves_ccequivc_ext : slow.
 
+Lemma lib_extends_preserves_equality_of_qnat {o} :
+  forall lib lib' (a b : @CTerm o),
+    lib_extends lib' lib
+    -> equality_of_qnat lib a b
+    -> equality_of_qnat lib' a b.
+Proof.
+  introv ext ceq x; eapply ceq; eauto 3 with slow.
+Qed.
+Hint Resolve lib_extends_preserves_equality_of_qnat : slow.
+
 Lemma sub_per_equality_of_qlt_bar {o} :
   forall (lib lib' : @library o) (ext : lib_extends lib' lib) a b,
     sub_per (equality_of_qlt_bar lib a b)

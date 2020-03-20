@@ -796,8 +796,8 @@ Lemma dest_nuprl_qlt2 {o} :
     nuprl lib (mkc_qlt a b) (mkc_qlt c d) eq
     ->
     (eq <=2=> (per_bar_eq lib (equality_of_qlt_bar_lib_per lib a b))
-     # in_open_bar lib (fun lib' => ccequivc_ext lib' a c)
-     # in_open_bar lib (fun lib' => ccequivc_ext lib' b d)).
+     # equality_of_qnat_bar lib a c
+     # equality_of_qnat_bar lib b d).
 Proof.
   introv u.
   apply dest_nuprl_qlt in u.
@@ -827,8 +827,8 @@ Lemma tequality_mkc_qlt {o} :
     tequality lib (mkc_qlt a b) (mkc_qlt c d)
     <=>
     (
-      in_open_bar lib (fun lib => ccequivc_ext lib a c)
-      # in_open_bar lib (fun lib => ccequivc_ext lib b d)
+      equality_of_qnat_bar lib a c
+      # equality_of_qnat_bar lib b d
     ).
 Proof.
   introv; split; intro h.
@@ -862,6 +862,34 @@ Proof.
   apply cequivc_sym; auto.
 Qed.
 
+Lemma equality_of_nat_implies_equality_of_qnat {o} :
+  forall (lib : @library o) a b,
+    equality_of_nat lib a b
+    -> equality_of_qnat lib a b.
+Proof.
+  introv equ ext.
+  unfold equality_of_nat in *; exrepnd.
+  applydup equ1 in ext.
+  applydup equ0 in ext.
+  exrepnd; spcast.
+  apply choiceseq.cequivc_nat_implies_computes_to_valc in ext4.
+  apply choiceseq.cequivc_nat_implies_computes_to_valc in ext2.
+  apply computes_to_valc_isvalue_eq in ext4; eauto 3 with slow; subst.
+  apply computes_to_valc_isvalue_eq in ext2; eauto 3 with slow; subst.
+  eexists; dands; spcast; eauto.
+Qed.
+Hint Resolve equality_of_nat_implies_equality_of_qnat : slow.
+
+Lemma equality_of_nat_bar_implies_equality_of_qnat_bar {o} :
+  forall (lib : @library o) a b,
+    equality_of_nat_bar lib a b
+    -> equality_of_qnat_bar lib a b.
+Proof.
+  introv equ.
+  eapply in_open_bar_pres; try exact equ; clear equ; introv ext equ; eauto 3 with slow.
+Qed.
+Hint Resolve equality_of_nat_bar_implies_equality_of_qnat_bar : slow.
+
 Lemma equality_mkc_qnat_implies_tequality_mkc_natk {o} :
   forall lib (a b : @CTerm o),
     equality lib a b mkc_qnat
@@ -875,10 +903,8 @@ Proof.
   autorewrite with slow.
   apply tequality_mkc_qlt.
 
-  apply equality_int_nat_implies_cequivc in equa.
-  apply ccequivc_ext_bar_iff_ccequivc_bar in equa.
-  apply equality_in_qnat_implies_ccequivc_ext_bar in equ.
-  dands;tcsp; eauto 3 with slow.
+  apply equality_in_tnat in equa.
+  apply equality_in_qnat in equ; dands; eauto 3 with slow.
 Qed.
 Hint Resolve equality_mkc_qnat_implies_tequality_mkc_natk : slow.
 
@@ -1382,6 +1408,110 @@ Proof.
   apply tequality_ls3c_aux1; eauto 3 with slow.
 Qed.
 
+Lemma computes_to_valc_lib_depth {o} :
+  forall (lib : @plibrary o),
+    computes_to_valc lib mkc_lib_depth (mkc_nat (lib_depth lib)).
+Proof.
+  introv; unfold computes_to_valc; simpl.
+  unfold computes_to_value; dands; eauto 3 with slow.
+Qed.
+Hint Resolve computes_to_valc_lib_depth : slow.
+
+Lemma equality_lib_depth_in_qnat {o} :
+  forall (lib : @library o), equality lib mkc_lib_depth mkc_lib_depth mkc_qnat.
+Proof.
+  introv.
+  apply equality_in_qnat.
+  apply in_ext_implies_in_open_bar; introv ext.
+  unfold equality_of_qnat; introv xt.
+  exists (lib_depth lib'0); dands; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve equality_lib_depth_in_qnat : slow.
+
+Lemma lib_extends_preserves_equality_of_qlt {o} :
+  forall (lib' lib : @library o) a b,
+    lib_extends lib' lib
+    -> equality_of_qlt lib a b
+    -> equality_of_qlt lib' a b.
+Proof.
+  introv ext equ xt; apply equ; eauto 3 with slow.
+Qed.
+Hint Resolve lib_extends_preserves_equality_of_qlt : slow.
+
+Lemma equality_of_qlt_implies_equality_of_qlt_bar {o} :
+  forall (lib : @library o) a b t u,
+    equality_of_qlt lib a b
+    -> equality_of_qlt_bar lib a b t u.
+Proof.
+  introv equ.
+  apply in_ext_implies_in_open_bar.
+  introv ext; eauto 3 with slow.
+Qed.
+Hint Resolve equality_of_qlt_implies_equality_of_qlt_bar : slow.
+
+Lemma equality_of_qlt_implies_equality_of_qnat_left {o} :
+  forall lib (a b : @CTerm o),
+    equality_of_qlt lib a b
+    -> equality_of_qnat lib a a.
+Proof.
+  introv equ ext; apply equ in ext; exrepnd.
+  exists n; auto.
+Qed.
+Hint Resolve equality_of_qlt_implies_equality_of_qnat_left : slow.
+
+Lemma equality_of_qlt_implies_equality_of_qnat_right {o} :
+  forall lib (a b : @CTerm o),
+    equality_of_qlt lib a b
+    -> equality_of_qnat lib b b.
+Proof.
+  introv equ ext; apply equ in ext; exrepnd.
+  exists m; auto.
+Qed.
+Hint Resolve equality_of_qlt_implies_equality_of_qnat_right : slow.
+
+Lemma equality_in_mkc_qlt_implies {o} :
+  forall (lib : @library o) t u a b,
+    equality lib t u (mkc_qlt a b)
+    <-> in_open_bar lib (fun lib => equality_of_qlt lib a b).
+Proof.
+  introv; split; intro equ.
+  { unfold equality in equ; exrepnd.
+    apply dest_nuprl_qlt2 in equ1; repnd.
+    apply equ2 in equ0; clear equ2.
+    apply per_bar_eq_equality_of_qlt_bar_lib_per in equ0; dands; tcsp. }
+  { apply all_in_ex_bar_equality_implies_equality.
+    eapply in_open_bar_pres; eauto; clear equ.
+    introv ext equ.
+    clear dependent lib; rename lib' into lib.
+    exists (equality_of_qlt_bar lib a b).
+    dands; tcsp; eauto 3 with slow.
+    apply CL_qlt.
+    exists a b a b; dands; eauto 3 with slow. }
+Qed.
+
+Lemma inhabited_type_bar_implies {o} :
+  forall (lib : @library o) a n,
+    inhabited_type_bar lib (mkc_qlt a n)
+    -> in_open_bar lib (fun lib : library => equality_of_qlt lib a n).
+Proof.
+  introv h.
+  apply collapse_all_in_ex_bar.
+  eapply in_open_bar_pres; try exact h; clear h; introv ext h.
+  unfold inhabited_type in *; exrepnd.
+  apply equality_in_mkc_qlt_implies in h0; auto.
+Qed.
+
+Lemma equality_in_mkc_qnatk_implies {o} :
+  forall lib (a b : @CTerm o) n,
+    equality lib a b (mkc_qnatk n)
+    -> in_open_bar lib (fun lib : library => equality_of_qlt lib a n).
+Proof.
+  introv equ.
+  rewrite mkc_qnatk_eq in equ.
+  apply equality_in_set in equ; repnd; autorewrite with slow in *.
+  apply inhabited_type_bar_implies in equ; auto.
+Qed.
+
 
 
 (* *************************************************************** *)
@@ -1602,6 +1732,20 @@ Proof.
   rewrite mkcv_product_substc; auto;[].
   autorewrite with slow.
 
+  apply equality_in_product; dands; eauto 3 with slow.
+
+  { introv xt eqq.
+    repeat rewrite substc2_substc3_eq.
+    repeat rewrite substc3_2_substc_eq.
+    repeat (rewrite substc4_mkcv_function; tcsp; auto).
+    autorewrite with slow.
+    apply equality_refl in eqz; apply equality_refl in eqA; apply equality_refl in eqf;
+      eapply tequality_ls3c_aux5; eauto 3 with slow.
+    apply equality_refl in eqa; eauto 3 with slow. }
+
+
+(*
+XXXXXXXXXX
   apply equality_in_csname in eqa.
   unfold equality_of_csname_bar in eqa.
   apply all_in_ex_bar_inhabited_type_bar_implies_inhabited_type_bar.
@@ -1670,8 +1814,28 @@ Proof.
             (mkc_nat (S (lib_depth lib)))
             (mkc_lam b (mkcv_lam _ x (mkcv_ax _)))).
 
+*)
+
+
+
   apply in_ext_implies_all_in_ex_bar.
   introv ext.
+  eexists; eexists; eexists; eexists; dands;
+    try (apply ccomputes_to_valc_ext_refl; eauto 3 with slow); eauto 3 with slow.
+
+  rewrite substc2_substc3_eq.
+  rewrite substc3_2_substc_eq.
+  rewrite substc4_mkcv_function; tcsp.
+  autorewrite with slow.
+
+  eapply alphaeqc_preserving_equality;
+    [|apply implies_alphaeqc_mk_function;
+      apply alphaeqcv_sym;
+      apply substc5_mkcv_fun];[].
+
+(*
+XXXXXXXXXX
+
   exists (@mkc_nat o (S (lib_depth lib))) (@mkc_lam o b (mkcv_lam _ x (mkcv_ax _))).
   dands; spcast; eauto 3 with slow;[].
 
@@ -1704,10 +1868,22 @@ Proof.
     [apply implies_alphaeqc_mk_function;
      apply alphaeqcv_sym;
      apply substc5_mkcv_fun|].
+*)
+
   autorewrite with slow.
   rewrite substc5_var2; tcsp;[].
   rewrite substc5_var0; tcsp;[].
 
+  eapply alphaeqc_preserving_equality;
+    [|apply implies_alphaeqc_mk_function;
+      apply implies_alphaeqcv_mkcv_fun;
+      [|apply alphaeqcv_refl];
+      apply implies_alphaeqcv_mkcv_equality;
+      [apply alphaeqcv_refl|apply alphaeqcv_refl|];
+      apply alphaeqcv_sym;apply substc5_mkcv_qnatk2nat
+    ];[].
+
+(*
   eapply member_respects_alphaeqc_r;
     [apply implies_alphaeqc_mk_function;
      apply implies_alphaeqcv_mkcv_fun;
@@ -1716,12 +1892,36 @@ Proof.
      [apply alphaeqcv_refl|apply alphaeqcv_refl|];
      apply alphaeqcv_sym;apply substc5_mkcv_natk2nat
     |];[].
+*)
   autorewrite with slow.
   rewrite substc5_var1; tcsp;[].
 
+  eapply equality_monotone in eqA;[|eauto];[].
+  eapply equality_monotone in eqa;[|eauto];[].
+  eapply equality_monotone in eqx;[|eauto];[].
+  eapply equality_monotone in eqf;[|eauto];[].
+  eapply equality_monotone in eqw;[|eauto];[].
+  eapply equality_monotone in eqz;[|eauto];[].
+  move2ext ext.
+
+  apply equality_in_csname in eqa.
+  unfold equality_of_csname_bar in eqa.
+  apply all_in_ex_bar_equality_implies_equality.
+  eapply all_in_ex_bar_modus_ponens1;[|exact eqa]; clear eqa; introv ext eqa.
+  unfold equality_of_csname in eqa; exrepnd; GC; spcast.
+
+  eapply equality_monotone in eqA;[|eauto];[].
+  eapply equality_monotone in eqx;[|eauto];[].
+  eapply equality_monotone in eqf;[|eauto];[].
+  eapply equality_monotone in eqw;[|eauto];[].
+  eapply equality_monotone in eqz;[|eauto];[].
+  eapply lib_extends_preserves_ccomputes_to_valc in eqa2;[|eauto].
+  eapply lib_extends_preserves_ccomputes_to_valc in eqa0;[|eauto].
+  move2ext ext.
+
   rev_assert (member
                 lib
-                (mkc_lam b (mkcv_lam [b] x (mkcv_ax _)))
+                (mkc_lam b (mkcv_lam [b] z (mkcv_ax _)))
                 (mkc_function
                    (mkc_csname 0)
                    b
@@ -1731,11 +1931,11 @@ Proof.
                          [b]
                          (mk_cv [b] (mkc_choice_seq name))
                          (mkc_var b)
-                         (mkcv_natk2nat [b] (mk_cv [b] (mkc_nat (S (lib_depth lib1))))))
+                         (mkcv_qnatk2nat [b] (mk_cv [b] mkc_lib_depth)))
                       (mkcv_squash _ (mkcv_apply [b] (mk_cv [b] u) (mkc_var b)))))) mem.
   {
     apply equality_in_function3 in mem; repnd.
-    apply equality_in_function3; dands; auto.
+    apply equality_in_function3; dands; auto; eauto 3 with slow.
     introv xt ea.
     pose proof (mem _ xt _ _ ea) as mem; repnd.
     dands.
@@ -1749,43 +1949,73 @@ Proof.
 
       apply tequality_fun in mem1; repnd.
       apply tequality_fun; dands; auto.
+      { eapply tequality_respects_cequivc_left;
+          [apply ccequivc_ext_sym;apply implies_ccequivc_ext_equality;
+           [apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto 3 with slow
+           |apply ccequivc_ext_refl
+           |apply ccequivc_ext_refl]
+          |].
+        eapply tequality_respects_cequivc_right;
+          [apply ccequivc_ext_sym;apply implies_ccequivc_ext_equality;
+           [apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto 3 with slow
+           |apply ccequivc_ext_refl
+           |apply ccequivc_ext_refl]
+          |].
+        auto. }
       introv xt1 inh.
-      apply mem1 in inh; auto; eauto 3 with slow;[].
+      eapply lib_extends_preserves_ccomputes_to_valc in eqa2;[|eauto].
+      eapply lib_extends_preserves_ccomputes_to_valc in eqa2;[|eauto].
+      pose proof (mem1 _ xt1) as mem1; autodimp mem1 hyp.
+      { eapply inhabited_type_respects_cequivc in inh;
+          [|apply implies_ccequivc_ext_equality;
+            [apply ccomputes_to_valc_ext_implies_ccequivc_ext;try exact eqa2
+            |apply ccequivc_ext_refl
+            |apply ccequivc_ext_refl]
+          ]; tcsp. }
       allrw @tequality_mkc_squash.
       eapply equality_in_mkc_csprop_preserves_tequality;
         [apply equality_sym| |]; eauto 3 with slow.
     }
 
     {
-      eapply alphaeqc_preserving_equality;[|apply alphaeqc_sym;apply substc_mkcv_fun].
-      eapply alphaeqc_preserving_equality in mem;[|apply substc_mkcv_fun].
+      eapply tequality_preserving_equality;[exact mem|].
+      eapply tequality_respects_alphaeqc_left; [apply alphaeqc_sym;apply substc_mkcv_fun|].
+      eapply tequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply substc_mkcv_fun|].
+      eapply tequality_respects_alphaeqc_left  in mem1;[|apply substc_mkcv_fun].
+      eapply tequality_respects_alphaeqc_right in mem1;[|apply substc_mkcv_fun].
       autorewrite with slow in *.
 
-      apply equality_in_fun in mem; repnd.
-      apply equality_in_fun; dands; auto.
+      apply tequality_fun in mem1; repnd.
+      apply tequality_fun; dands; auto.
+      { eapply tequality_respects_cequivc_left;
+          [apply ccequivc_ext_sym;apply implies_ccequivc_ext_equality;
+           [apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto 3 with slow
+           |apply ccequivc_ext_refl
+           |apply ccequivc_ext_refl]
+          |].
+        eapply tequality_respects_cequivc_right;
+          [apply ccequivc_ext_sym;apply implies_ccequivc_ext_equality;
+           [apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto 3 with slow
+           |apply ccequivc_ext_refl
+           |apply ccequivc_ext_refl]
+          |].
+        apply tequality_refl in mem2; auto. }
+      introv xt1 inh.
+      eapply lib_extends_preserves_ccomputes_to_valc in eqa2;[|eauto].
+      eapply lib_extends_preserves_ccomputes_to_valc in eqa2;[|eauto].
+      pose proof (mem1 _ xt1) as mem1; autodimp mem1 hyp;[].
+      allrw @tequality_mkc_squash.
 
-      {
-        introv xt1 inh.
-        apply implies_type_mkc_squash.
-        apply equality_refl in eqA; apply equality_refl in ea.
-        eapply equality_in_mkc_csprop_implies_tequality; eauto 3 with slow.
-      }
-
-      introv xt1 eb.
-      eapply equality_respects_cequivc_left;[apply ccequivc_ext_sym;apply ccequivc_app_app_ax|].
-      eapply equality_respects_cequivc_right;[apply ccequivc_ext_sym;apply ccequivc_app_app_ax|].
-      apply equality_in_mkc_squash_ax.
-      apply mem in eb; eauto 3 with slow;[].
-      eapply equality_in_mkc_squash in eb; repnd; auto.
-      eapply in_open_bar_pres; try exact eb;[]; introv xtt inh.
-      eapply inhabited_type_tequality;
-        [apply tequality_sym;eapply equality_in_mkc_csprop_implies_tequality|];
-        try exact inh; eapply equality_monotone; try exact xtt; eauto 3 with slow.
-      eapply equality_refl; eauto 3 with slow.
+      eapply equality_monotone in eqw;[|eauto];[].
+      eapply equality_monotone in eqw;[|eauto];[].
+      eapply equality_monotone in ea;[|eauto];[].
+      apply equality_refl in ea.
+      apply tequality_sym.
+      eapply equality_in_mkc_csprop_implies_tequality; eauto.
     }
   }
 
-  apply equality_sym in eqA; apply equality_refl in eqA.
+  apply equality_sym in eqw; apply equality_refl in eqw.
   clear dependent A1.
 
   apply equality_in_function3; dands; eauto 3 with slow;[].
@@ -1803,11 +2033,11 @@ Proof.
   eapply tequality_respects_alphaeqc_left;
     [apply alphaeqc_mkc_fun;apply alphaeqc_sym;[|apply alphaeqc_refl];
      apply implies_alphaeqc_mkc_equality;[apply alphaeqc_refl|apply alphaeqc_refl|];
-     apply substc_mkcv_natk2nat;auto|].
+     apply substc_mkcv_qnatk2nat;auto|].
   eapply tequality_respects_alphaeqc_right;
     [apply alphaeqc_mkc_fun;apply alphaeqc_sym;[|apply alphaeqc_refl];
      apply implies_alphaeqc_mkc_equality;[apply alphaeqc_refl|apply alphaeqc_refl|];
-     apply substc_mkcv_natk2nat;auto|].
+     apply substc_mkcv_qnatk2nat;auto|].
   autorewrite with slow.
   eapply tequality_ls3c_aux6; eauto 3 with slow. }
 
@@ -1818,7 +2048,7 @@ Proof.
       [|apply alphaeqc_refl];
       apply implies_alphaeqc_mkc_equality;
       [apply alphaeqc_refl|apply alphaeqc_refl|];
-      apply substc_mkcv_natk2nat].
+      apply substc_mkcv_qnatk2nat].
   autorewrite with slow.
 
   apply equality_in_fun.
@@ -1845,12 +2075,157 @@ Proof.
   assert (lib_extends lib'0 lib) as xt by eauto 3 with slow.
   eapply member_monotone in ecs;[|exact ext2];[].
 (*  eapply member_monotone in eqz;[|exact xt];[].*)
-  eapply member_monotone in eqA;[|exact xt];[].
-  assert (lib_extends lib'0 lib1) as ext' by eauto 3 with slow.
+  eapply member_monotone in eqw;[|exact xt];[].
+  assert (lib_extends lib'0 lib) as ext' by eauto 3 with slow.
   move2ext xt.
 
   apply equality_in_csname_iff in ecs.
   unfold equality_of_csname_bar in ecs.
+
+
+(*XXXXXXXXXXXXXXXXXXXX*)
+
+Locate equality_natk2nat_implies.
+
+Set Nested Proofs Allowed.
+
+Lemma zero_in_nat {o} :
+  forall (lib : @library o), equality lib mkc_zero mkc_zero mkc_tnat.
+Proof.
+  introv.
+  allrw @mkc_zero_eq; eauto 3 with slow.
+Qed.
+Hint Resolve zero_in_nat : slow.
+
+Definition is_qnat {o} lib (t : @CTerm o) :=
+  in_ext lib (fun lib => {n : nat , ccomputes_to_valc lib t (mkc_nat n)}).
+
+Definition is_qnat_bar {o} lib (t : @CTerm o) :=
+  in_open_bar lib (fun lib => is_qnat lib t).
+
+Lemma equality_of_qnat_bar_implies_is_qnat_bar_left {o} :
+  forall (lib : @library o) a b,
+    equality_of_qnat_bar lib a b
+    -> is_qnat_bar lib a.
+Proof.
+  introv equ.
+  eapply in_open_bar_pres; eauto; clear equ.
+  introv ext equ xt; apply equ in xt; exrepnd; eauto.
+Qed.
+Hint Resolve equality_of_qnat_bar_implies_is_qnat_bar_left : slow.
+
+Lemma equality_of_qnat_bar_implies_is_qnat_bar_right {o} :
+  forall (lib : @library o) a b,
+    equality_of_qnat_bar lib a b
+    -> is_qnat_bar lib b.
+Proof.
+  introv equ.
+  eapply in_open_bar_pres; eauto; clear equ.
+  introv ext equ xt; apply equ in xt; exrepnd; eauto.
+Qed.
+Hint Resolve equality_of_qnat_bar_implies_is_qnat_bar_right : slow.
+
+Lemma tequality_mkc_qnatk {o} :
+  forall (lib : @library o) (a b : CTerm),
+    tequality lib (mkc_qnatk a) (mkc_qnatk b)
+    <=> equality_of_qnat_bar lib a b.
+Proof.
+  introv; repeat rewrite mkc_qnatk_eq.
+  rw @tequality_set.
+  dands; split; intro h; repnd.
+
+  { pose proof (h _ (lib_extends_refl lib) mkc_zero mkc_zero) as h; cbv beta in h.
+    autorewrite with slow in h.
+    autodimp h hyp; eauto 3 with slow.
+    allrw @tequality_mkc_qlt; repnd; auto. }
+
+  { dands; eauto 3 with slow.
+    introv ext equ.
+    autorewrite with slow.
+    apply equality_in_tnat in equ.
+    apply tequality_mkc_qlt; dands; eauto 3 with slow. }
+Qed.
+
+Lemma equality_of_qnat_bar_same {o} :
+  forall lib (a : @CTerm o),
+    equality_of_qnat_bar lib a a <=> is_qnat_bar lib a.
+Proof.
+  introv; split; intro h; eapply in_open_bar_pres; eauto; clear h;
+    introv ext h xt; apply h in xt; clear h; exrepnd; eauto.
+Qed.
+
+Lemma type_mkc_qnatk {o} :
+  forall (lib : @library o) (a : CTerm),
+    type lib (mkc_qnatk a)
+    <=> is_qnat_bar lib a.
+Proof.
+  introv.
+  unfold type.
+  rw @tequality_mkc_qnatk.
+  rw @equality_of_qnat_bar_same; tcsp.
+Qed.
+
+Lemma equality_qnatk2nat_implies {o} :
+  forall lib (f g : @CTerm o) n,
+    equality lib f g (mkc_qnatk2nat n)
+    -> in_open_bar lib (fun lib => {m : nat , {k : nat
+        , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)
+        # ccomputes_to_valc_ext lib (mkc_apply g (mkc_nat m)) (mkc_nat k)}}).
+Proof.
+  introv mem.
+  apply equality_in_fun in mem; repnd.
+  rw @type_mkc_qnatk in mem0.
+  apply collapse_all_in_ex_bar.
+  eapply in_open_bar_pres; try exact mem0; clear mem0.
+  introv ext mem0.
+  unfold is_qnat in mem0.
+
+
+SearchAbout tequality mkc_qnatk.
+  clear mem0 mem1.
+  pose proof (mem _ (lib_extends_refl lib) (mkc_nat m) (mkc_nat m)) as h; clear mem.
+  autodimp h hyp.
+
+  { eapply equality_in_natk_aux;
+    allrw @mkc_nat_eq; eauto 3 with slow.
+    apply in_ext_implies_all_in_ex_bar; introv x.
+    exists m; dands; try omega; rw @mkc_nat_eq; eauto 3 with slow. }
+
+  eapply equality_in_tnat in h.
+  eapply all_in_ex_bar_modus_ponens1;try exact h; clear h; introv x h; exrepnd; spcast.
+  unfold equality_of_nat in h; exrepnd.
+  exists n0; auto; dands; spcast; auto.
+Qed.
+
+Lemma equality_qnatk2nat_implies2 {o} :
+  forall lib (f g : @CTerm o) n,
+    equality lib f g (mkc_qnatk2nat n)
+    -> in_open_bar
+         lib
+         (fun lib =>
+            forall m,
+              m < n ->
+              {k : nat
+              , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)
+              # ccomputes_to_valc_ext lib (mkc_apply g (mkc_nat m)) (mkc_nat k)}).
+Proof.
+  introv mem.
+
+  assert (forall m,
+             m < n
+             -> in_open_bar lib (fun lib => {k : nat
+                , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)
+                # ccomputes_to_valc_ext lib (mkc_apply g (mkc_nat m)) (mkc_nat k)})) as h.
+  { introv ltn; eapply equality_natk2nat_implies; eauto. }
+  clear mem.
+
+  apply nat2in_open_bar2open in h; auto.
+Qed.
+
+Locate equality_natk2nat_implies2.
+Check equality_natk2nat_implies2.
+
+XXXXXXXX
 
   apply equality_natk2nat_implies2 in eb0.
   apply all_in_ex_bar_member_implies_member.

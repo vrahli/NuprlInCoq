@@ -515,8 +515,8 @@ Definition per_qlt {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] 
   {a, b, c, d : CTerm
   , T1 ===>(lib) (mkc_qlt a b)
   # T2 ===>(lib) (mkc_qlt c d)
-  # ccequivc_ext lib a c
-  # ccequivc_ext lib b d
+  # equality_of_qnat lib a c
+  # equality_of_qnat lib b d
   # eq <=2=> (equality_of_qlt_bar lib a b)}.
 
 
@@ -2877,8 +2877,8 @@ Definition close_ind' {pp}
                 (c d   : @CTerm pp)
                 (c1    : T ===>(lib) (mkc_qlt a b))
                 (c2    : T' ===>(lib) (mkc_qlt c d))
-                (ceqa  : ccequivc_ext lib a c)
-                (ceqb  : ccequivc_ext lib b d)
+                (ceqa  : equality_of_qnat lib a c)
+                (ceqb  : equality_of_qnat lib b d)
                 (eqiff : eq <=2=> (equality_of_qlt_bar lib a b))
                 (per   : per_qlt (close ts) lib T T' eq),
       P ts lib T T' eq)
