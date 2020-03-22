@@ -32,35 +32,23 @@
 *)
 
 
+Require Export per_props_tacs.
 Require Export per_props_util.
 
 
 Lemma dest_nuprl_qnat {o} :
-  forall (lib : @library o) eq,
-    nuprl lib mkc_qnat mkc_qnat eq
-    -> per_bar (per_qnat nuprl) lib mkc_qnat mkc_qnat eq.
+  forall (lib : @library o) eq c,
+    nuprl lib (mkc_qnat c) (mkc_qnat c) eq
+    -> per_bar (per_qnat nuprl) lib (mkc_qnat c) (mkc_qnat c) eq.
 Proof.
   introv cl.
   eapply dest_close_per_qnat_l in cl; eauto 3 with slow.
-  unfold per_qnat_bar in *; exrepnd.
-  exists (equality_of_qnat_bar_lib_per lib).
-  dands; auto; simpl.
-
-  {
-    apply in_ext_ext_implies_in_open_bar_ext; introv ext.
-    unfold per_qnat; dands; spcast; eauto 3 with slow.
-  }
-
-  {
-    eapply eq_term_equals_trans;[eauto|].
-    apply eq_term_equals_sym;apply per_bar_eq_equality_of_qnat_bar_lib_per.
-  }
 Qed.
 
 Lemma dest_nuprl_qnat2 {o} :
-  forall lib (eq : per(o)),
-    nuprl lib mkc_qnat mkc_qnat eq
-    -> eq <=2=> (equality_of_qnat_bar lib).
+  forall lib (eq : per(o)) c,
+    nuprl lib (mkc_qnat c) (mkc_qnat c) eq
+    -> eq <=2=> (equality_of_qnat_bar lib c).
 Proof.
   introv u.
   apply dest_nuprl_qnat in u.
@@ -70,21 +58,22 @@ Proof.
   eapply eq_term_equals_trans;[|apply per_bar_eq_equality_of_qnat_bar_lib_per].
   apply implies_eq_term_equals_per_bar_eq.
   eapply in_open_bar_ext_pres; eauto; clear u1; introv u1.
-  unfold per_qnat in *; exrepnd; spcast; auto.
+  unfold per_qnat in *; exrepnd; spcast; auto; GC.
+  ccomputes_to_valc_ext_val; tcsp.
 Qed.
 
 Lemma nuprl_qnat {p} :
-  forall lib, @nuprl p lib mkc_qnat mkc_qnat (equality_of_qnat_bar lib).
+  forall lib c, @nuprl p lib (mkc_qnat c) (mkc_qnat c) (equality_of_qnat_bar lib c).
 Proof.
   sp.
   apply CL_qnat.
-  unfold per_qnat; sp; spcast; eauto 3 with slow.
+  eexists; dands; eauto 3 with slow.
 Qed.
 Hint Resolve nuprl_qnat : slow.
 
 Lemma equality_in_qnat {p} :
-  forall lib (t1 t2 : @CTerm p),
-    equality lib t1 t2 mkc_qnat <=> equality_of_qnat_bar lib t1 t2.
+  forall lib (t1 t2 : @CTerm p) c,
+    equality lib t1 t2 (mkc_qnat c) <=> equality_of_qnat_bar lib c t1 t2.
 Proof.
   intros; split; intro e.
 
@@ -92,14 +81,14 @@ Proof.
     apply dest_nuprl_qnat2 in e1.
     apply e1 in e0; auto.
 
-  - exists (equality_of_qnat_bar lib); dands; auto; eauto 3 with slow.
+  - exists (equality_of_qnat_bar lib c); dands; auto; eauto 3 with slow.
 Qed.
 
-Lemma tequality_qnat {p} : forall lib, @tequality p lib mkc_qnat mkc_qnat.
+Lemma tequality_qnat {p} : forall lib c, @tequality p lib (mkc_qnat c) (mkc_qnat c).
 Proof.
   introv.
-  exists (@equality_of_qnat_bar p lib).
-  apply CL_qnat; split; dands; spcast; eauto 3 with slow.
+  exists (@equality_of_qnat_bar p lib c).
+  apply CL_qnat; eexists; dands; spcast; eauto 3 with slow.
 Qed.
 Hint Resolve tequality_qnat : slow.
 
@@ -289,8 +278,27 @@ Proof.
 Qed.
 Hint Resolve in_ext_exists_ccomputes_to_valc_nat : slow.
 
+Lemma are_same_qnats_nats {o} :
+  forall (lib : @library o) c k,
+    are_same_qnats lib c (mkc_nat k) (mkc_nat k).
+Proof.
+  introv ext; exists k; dands; spcast; eauto 3 with slow.
+Qed.
+Hint Resolve are_same_qnats_nats : slow.
+
+Lemma sat_qnat_cond_nat {o} :
+  forall (lib : @library o) c k,
+    sat_qnat_cond lib c (mkc_nat k).
+Proof.
+  introv h exta extb compa compb; subst.
+  apply computes_to_valc_isvalue_eq in compa; eauto 3 with slow.
+  apply computes_to_valc_isvalue_eq in compb; eauto 3 with slow.
+  eqconstr compa; eqconstr compb; auto.
+Qed.
+Hint Resolve sat_qnat_cond_nat : slow.
+
 Lemma equality_nat_in_qnat {o} :
-  forall (lib : @library o) k, equality lib (mkc_nat k) (mkc_nat k) mkc_qnat.
+  forall (lib : @library o) k c, equality lib (mkc_nat k) (mkc_nat k) (mkc_qnat c).
 Proof.
   introv.
   apply equality_in_qnat; eauto 2 with slow.

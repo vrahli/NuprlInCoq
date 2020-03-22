@@ -170,12 +170,12 @@ Proof.
 Qed.*)
 
 Lemma in_open_bar_close_qnat {o} :
-  forall (lib : @library o) ts T T' eqa,
+  forall (lib : @library o) ts T T' eqa c,
     type_system ts
     -> defines_only_universes ts
     -> in_open_bar_ext lib (fun lib' x => close ts lib' T T' (eqa lib' x))
-    -> in_open_bar lib (fun lib => (T) ===>(lib) (mkc_qnat))
-    -> in_open_bar_ext lib (fun lib' x => per_qnat_bar (close ts) lib' T T' (eqa lib' x)).
+    -> in_open_bar lib (fun lib => (T) ===>(lib) (mkc_qnat c))
+    -> in_open_bar_ext lib (fun lib' x => per_bar (per_qnat (close ts)) lib' T T' (eqa lib' x)).
 Proof.
   introv tsts dou alla allb.
   eapply in_open_bar_ext_comb; try exact alla; clear alla.
@@ -412,14 +412,14 @@ Lemma per_qnat_implies_per_bar {o} :
 Proof.
   introv per.
   unfold per_qnat in *; exrepnd.
-  exists (equality_of_qnat_bar_lib_per lib).
+  exists (equality_of_qnat_bar_lib_per lib c).
   dands.
 
   - apply in_ext_ext_implies_in_open_bar_ext; introv.
     apply CL_qnat.
-    unfold per_qnat; dands; auto; eauto 3 with slow.
+    eexists; dands; eauto 3 with slow.
 
-  - eapply eq_term_equals_trans;[eauto|]; clear per.
+  - eapply eq_term_equals_trans;[eauto|]; clear per0.
     apply eq_term_equals_sym; apply per_bar_eq_equality_of_qnat_bar_lib_per.
 Qed.
 Hint Resolve per_qnat_implies_per_bar : slow.
@@ -936,14 +936,14 @@ Lemma per_qnat_implies_per_bar_above {o} :
 Proof.
   introv per.
   unfold per_qnat in *; exrepnd.
-  exists (equality_of_qnat_bar_lib_per lib).
+  exists (equality_of_qnat_bar_lib_per lib c).
   dands.
 
   - apply in_ext_ext_implies_in_open_bar_ext; introv.
     apply CL_qnat.
-    unfold per_qnat; dands; auto; eauto 3 with slow.
+    eexists; dands; eauto 3 with slow.
 
-  - eapply eq_term_equals_trans;[eauto|]; clear per.
+  - eapply eq_term_equals_trans;[eauto|]; clear per0.
     apply eq_term_equals_sym; apply per_bar_eq_equality_of_qnat_bar_lib_per.
 Qed.
 Hint Resolve per_qnat_implies_per_bar_above : slow.

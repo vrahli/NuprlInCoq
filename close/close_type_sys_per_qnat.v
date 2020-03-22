@@ -55,73 +55,94 @@ Proof.
     dclose_lr.
 
     * SSCase "CL_int".
-      assert (uniquely_valued (per_qnat_bar (close ts))) as uv
-        by (apply per_qnat_bar_uniquely_valued).
+      assert (uniquely_valued (per_bar (per_qnat (close ts)))) as uv
+        by (apply per_bar_per_qnat_uniquely_valued).
       eapply uv;eauto.
       eapply uniquely_valued_trans5;eauto 3 with slow.
 
   + SCase "type_symmetric"; repdors; subst; dclose_lr;
-      apply per_qnat_bar_implies_close;
-      apply per_qnat_implies_per_qnat_bar in per.
+      apply per_bar_per_qnat_implies_close;
+      apply per_qnat_implies_per_bar_per_qnat in per.
 
-    assert (type_symmetric (per_qnat_bar (close ts))) as tys
-        by (apply per_qnat_bar_type_symmetric).
-    assert (type_extensionality (per_qnat_bar (close ts))) as tye
-        by (apply per_qnat_bar_type_extensionality).
+    assert (type_symmetric (per_bar (per_qnat (close ts)))) as tys
+        by (apply per_bar_per_qnat_type_symmetric).
+    assert (type_extensionality (per_bar (per_qnat (close ts)))) as tye
+        by (apply per_bar_per_qnat_type_extensionality).
     eapply tye; eauto.
 
   + SCase "type_value_respecting"; sp; subst;
-      apply per_qnat_bar_implies_close;
-      apply per_qnat_implies_per_qnat_bar in per;
-      assert (type_value_respecting (per_qnat_bar (close ts)))
+      apply per_bar_per_qnat_implies_close;
+      apply per_qnat_implies_per_bar_per_qnat in per;
+      assert (type_value_respecting (per_bar (per_qnat (close ts))))
         as tvr
-          by (apply per_qnat_bar_type_value_respecting).
+          by (apply per_bar_per_qnat_type_value_respecting).
 
     * apply tvr; auto;
         apply @type_system_type_mem with (T' := T'); auto;
-          try (apply per_qnat_bar_type_symmetric);
-          try (apply per_qnat_bar_type_transitive).
+          try (apply per_bar_per_qnat_type_symmetric);
+          try (apply per_bar_per_qnat_type_transitive).
 
     * apply tvr; auto.
       apply @type_system_type_mem1 with (T := T); auto;
-        try (apply per_qnat_bar_type_transitive);
-        try (apply per_qnat_bar_type_symmetric).
+        try (apply per_bar_per_qnat_type_transitive);
+        try (apply per_bar_per_qnat_type_symmetric).
 
   + SCase "type_value_respecting_trans1".
     eapply type_equality_respecting_trans1_per_qnat_bar_implies; eauto.
     apply type_system_implies_type_equality_respecting_trans1.
-    apply per_qnat_type_system.
+    apply per_bar_per_qnat_type_system.
 
   + SCase "type_value_respecting_trans2".
     eapply type_equality_respecting_trans2_per_qnat_bar_implies; eauto.
     apply type_system_implies_type_equality_respecting_trans2.
-    apply per_qnat_type_system.
+    apply per_bar_per_qnat_type_system.
 
   + SCase "term_symmetric".
-    assert (term_symmetric (per_qnat_bar (close ts))) as tes
-        by (apply per_qnat_bar_term_symmetric).
+    assert (term_symmetric (per_bar (per_qnat (close ts)))) as tes
+        by (apply per_bar_per_qnat_term_symmetric).
     eapply tes; eauto 3 with slow.
 
   + SCase "term_transitive".
-    assert (term_transitive (per_qnat_bar (close ts))) as tet
-        by (apply per_qnat_bar_term_transitive).
+    assert (term_transitive (per_bar (per_qnat (close ts)))) as tet
+        by (apply per_bar_per_qnat_term_transitive).
     eapply tet; eauto 3 with slow.
 
   + SCase "term_value_respecting".
-    assert (term_value_respecting (per_qnat_bar (close ts))) as tvr
-        by (apply per_qnat_bar_term_value_respecting).
+    assert (term_value_respecting (per_bar (per_qnat (close ts)))) as tvr
+        by (apply per_bar_per_qnat_term_value_respecting).
     apply tvr with (T := T); auto.
     apply @type_system_type_mem with (T' := T'); eauto 3 with slow.
 
   + SCase "type_gsymmetric"; repdors; subst; split; sp; dclose_lr.
 
-    * apply per_qnat_bar_implies_close; allunfold @per_qnat_bar; sp.
+    * apply per_bar_per_qnat_implies_close.
+      apply per_bar_per_qnat_type_symmetric; auto.
 
-    * apply per_qnat_bar_implies_close; allunfold @per_qnat_bar; sp.
+    * apply per_bar_per_qnat_implies_close.
+      apply per_bar_per_qnat_type_symmetric; auto.
 
   + SCase "type_gtransitive"; sp.
 
   + SCase "type_mtransitive"; repdors; subst; dclose_lr;
-      dands; apply per_qnat_bar_implies_close; allunfold @per_qnat_bar; sp;
-        exists (intersect_bars bar0 bar); dands; eauto 2 with slow.
+      dands; apply per_bar_per_qnat_implies_close.
+
+    { apply per_bar_per_qnat_type_transitive with (T2 := T); auto.
+      eapply per_bar_per_qnat_type_extensionality;[eauto|].
+      apply per_bar_per_qnat_type_symmetric in h0.
+      eapply per_bar_per_qnat_uniquely_valued2; eauto. }
+
+    { apply per_bar_per_qnat_type_transitive with (T2 := T); auto.
+      eapply per_bar_per_qnat_type_extensionality;[eauto|].
+      apply per_bar_per_qnat_type_symmetric in h0.
+      eapply per_bar_per_qnat_uniquely_valued2; eauto. }
+
+    { apply per_bar_per_qnat_type_transitive with (T2 := T'); auto.
+      eapply per_bar_per_qnat_type_extensionality;[eauto|].
+      apply per_bar_per_qnat_type_symmetric in h0.
+      eapply per_bar_per_qnat_uniquely_valued2; eauto. }
+
+    { apply per_bar_per_qnat_type_transitive with (T2 := T'); auto.
+      eapply per_bar_per_qnat_type_extensionality;[eauto|].
+      apply per_bar_per_qnat_type_symmetric in h0.
+      eapply per_bar_per_qnat_uniquely_valued2; eauto. }
 Qed.

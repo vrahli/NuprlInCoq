@@ -69,7 +69,7 @@ Proof.
 
   - Case "CL_qnat".
     apply CL_qnat.
-    unfold per_qnat in *; repnd; dands; auto.
+    unfold per_qnat in *; exrepnd; eexists; dands; eauto.
     eapply eq_term_equals_trans;[|eauto].
     apply eq_term_equals_sym; auto.
 

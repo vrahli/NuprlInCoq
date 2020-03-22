@@ -131,8 +131,8 @@ Proof.
 Qed.
 
 Lemma equality_of_qnat_implies_ccequivc_ext {o} :
-  forall (lib : @library o) a b,
-    equality_of_qnat lib a b
+  forall (lib : @library o) c a b,
+    equality_of_qnat lib c a b
     -> ccequivc_ext lib a b.
 Proof.
   introv equ ext.
@@ -156,11 +156,11 @@ Proof.
   apply implies_eq_term_equals_per_qlt_bar2; eauto 3 with slow.
 Qed.
 
-Lemma equality_of_qnat_ccequivc_ext_trans {o} :
-  forall (lib : @library o) a b c,
-    equality_of_qnat lib a b
+Lemma are_same_qnats_ccequivc_ext_trans {o} :
+  forall (lib : @library o) q a b c,
+    are_same_qnats lib q a b
     -> ccequivc_ext lib b c
-    -> equality_of_qnat lib a c.
+    -> are_same_qnats lib q a c.
 Proof.
   introv equ ceq ext.
   applydup equ in ext.
@@ -173,13 +173,24 @@ Proof.
   apply @cequivc_nat_implies_computes_to_valc in ext2.
   exists n; dands; spcast; auto.
 Qed.
+Hint Resolve are_same_qnats_ccequivc_ext_trans : slow.
+
+Lemma equality_of_qnat_ccequivc_ext_trans {o} :
+  forall (lib : @library o) q a b c,
+    equality_of_qnat lib q a b
+    -> ccequivc_ext lib b c
+    -> equality_of_qnat lib q a c.
+Proof.
+  introv equ ceq.
+  unfold equality_of_qnat in *; repnd; dands; eauto 3 with slow.
+Qed.
 Hint Resolve equality_of_qnat_ccequivc_ext_trans : slow.
 
-Lemma ccequivc_ext_equality_of_qnat_trans {o} :
-  forall (lib : @library o) a b c,
+Lemma ccequivc_ext_are_same_qnats_trans {o} :
+  forall (lib : @library o) q a b c,
     ccequivc_ext lib a b
-    -> equality_of_qnat lib b c
-    -> equality_of_qnat lib a c.
+    -> are_same_qnats lib q b c
+    -> are_same_qnats lib q a c.
 Proof.
   introv ceq equ ext.
   applydup equ in ext.
@@ -191,21 +202,38 @@ Proof.
   apply @cequivc_nat_implies_computes_to_valc in ext0.
   exists n; dands; spcast; auto.
 Qed.
-Hint Resolve ccequivc_ext_equality_of_qnat_trans : slow.
+Hint Resolve ccequivc_ext_are_same_qnats_trans : slow.
 
-Lemma equality_of_qnat_trans {o} :
-  forall lib (a b c : @CTerm o),
-    equality_of_qnat lib a b
-    -> equality_of_qnat lib b c
-    -> equality_of_qnat lib a c.
+Lemma ccequivc_ext_preserves_sat_qnat_cond {o} :
+  forall (lib : @library o) q a b,
+    ccequivc_ext lib a b
+    -> sat_qnat_cond lib q b
+    -> sat_qnat_cond lib q a.
 Proof.
-  introv h q ext; applydup h in ext; applydup q in ext; exrepnd.
-  spcast.
-  eapply computes_to_valc_eq in ext3; try exact ext1.
-  apply mkc_nat_eq_implies in ext3; subst.
-  eexists; dands; spcast; eauto.
+  introv ceq sat h exta extb compa compb; subst.
+  pose proof (ceq _ exta) as ceqa; simpl in *; spcast.
+  pose proof (ceq _ (lib_extends_trans extb exta)) as ceqb; simpl in *; spcast.
+
+  apply computes_to_valc_implies_cequivc in compa.
+  eapply cequivc_trans in compa;[|apply cequivc_sym;eauto].
+  apply cequivc_sym in compa; apply cequivc_nat_implies_computes_to_valc in compa; auto.
+
+  apply computes_to_valc_implies_cequivc in compb.
+  eapply cequivc_trans in compb;[|apply cequivc_sym;eauto].
+  apply cequivc_sym in compb; apply cequivc_nat_implies_computes_to_valc in compb; auto.
+  eapply sat; eauto.
 Qed.
-Hint Resolve equality_of_qnat_trans : slow.
+Hint Resolve ccequivc_ext_preserves_sat_qnat_cond : slow.
+
+Lemma ccequivc_ext_equality_of_qnat_trans {o} :
+  forall (lib : @library o) q a b c,
+    ccequivc_ext lib a b
+    -> equality_of_qnat lib q b c
+    -> equality_of_qnat lib q a c.
+Proof.
+  introv ceq equ; unfold equality_of_qnat in *; repnd; dands; eauto 3 with slow.
+Qed.
+Hint Resolve ccequivc_ext_equality_of_qnat_trans : slow.
 
 Lemma per_qlt_trans1 {o} :
   forall ts lib (T T1 T2 : @CTerm o) eq1 eq2,

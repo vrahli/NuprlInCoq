@@ -67,8 +67,9 @@ Lemma per_qnat_monotone_func {o} :
 Proof.
   introv per.
   unfold per_qnat in *; exrepnd.
-  exists (equality_of_qnat_bar_lib_per lib); introv; simpl.
+  exists (equality_of_qnat_bar_lib_per lib c); introv; simpl.
   dands; spcast; eauto 3 with slow.
+  eexists; dands; eauto 3 with slow.
 Qed.
 
 Lemma per_csname_monotone_func {o} :

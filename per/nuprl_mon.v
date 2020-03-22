@@ -109,8 +109,8 @@ Proof.
 Qed.
 
 Lemma sub_per_equality_of_qnat_bar {o} :
-  forall (lib lib' : @library o) (ext : lib_extends lib' lib),
-    sub_per (equality_of_qnat_bar lib) (equality_of_qnat_bar lib').
+  forall c (lib lib' : @library o) (ext : lib_extends lib' lib),
+    sub_per (equality_of_qnat_bar lib c) (equality_of_qnat_bar lib' c).
 Proof.
   introv ext h.
   unfold equality_of_qnat_bar, equality_of_qnat in *; exrepnd; eauto 3 with slow.
@@ -134,7 +134,8 @@ Lemma per_qnat_monotone {o} :
 Proof.
   introv per ext.
   unfold per_qnat in *; exrepnd.
-  exists (equality_of_qnat_bar lib'); dands; spcast; eauto 3 with slow.
+  exists (equality_of_qnat_bar lib' c); dands; spcast; eauto 3 with slow.
+  eexists; dands; eauto 3 with slow.
 Qed.
 
 Lemma sub_per_equality_of_csname_bar {o} :
@@ -492,13 +493,34 @@ Proof.
 Qed.
 Hint Resolve lib_extends_preserves_ccequivc_ext : slow.
 
-Lemma lib_extends_preserves_equality_of_qnat {o} :
-  forall lib lib' (a b : @CTerm o),
+Lemma lib_extends_preserves_sat_qnat_cond {o} :
+  forall (lib lib' : @library o) c a,
     lib_extends lib' lib
-    -> equality_of_qnat lib a b
-    -> equality_of_qnat lib' a b.
+    -> sat_qnat_cond lib c a
+    -> sat_qnat_cond lib' c a.
 Proof.
-  introv ext ceq x; eapply ceq; eauto 3 with slow.
+  introv ext sat h exta extb compa compb.
+  eapply (sat lib1 lib2 n1 n2); eauto 3 with slow.
+Qed.
+Hint Resolve lib_extends_preserves_sat_qnat_cond : slow.
+
+Lemma lib_extends_preserves_are_same_qnats {o} :
+  forall (lib lib' : @library o) c a b,
+    lib_extends lib' lib
+    -> are_same_qnats lib c a b
+    -> are_same_qnats lib' c a b.
+Proof.
+  introv ext h xt; apply h; eauto 3 with slow.
+Qed.
+Hint Resolve lib_extends_preserves_are_same_qnats : slow.
+
+Lemma lib_extends_preserves_equality_of_qnat {o} :
+  forall lib lib' c (a b : @CTerm o),
+    lib_extends lib' lib
+    -> equality_of_qnat lib c a b
+    -> equality_of_qnat lib' c a b.
+Proof.
+  introv ext ceq; unfold equality_of_qnat in *; repnd; dands; eauto 3 with slow.
 Qed.
 Hint Resolve lib_extends_preserves_equality_of_qnat : slow.
 

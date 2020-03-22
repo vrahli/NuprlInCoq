@@ -711,5 +711,25 @@ Proof.
   apply h1; eauto 3 with slow.
 Qed.
 
+Lemma in_open_bar_ext_const {o} :
+  forall (lib : @library o) (P : Prop),
+    in_open_bar_ext lib (fun lib' x => P)
+    -> P.
+Proof.
+  introv h.
+  pose proof (h _ (lib_extends_refl _)) as h; exrepnd.
+  pose proof (h1 _ (lib_extends_refl _)) as h1; simpl in *; apply h1; eauto 3 with slow.
+Qed.
+
+Lemma in_open_bar_const {o} :
+  forall (lib : @library o) (P : Prop),
+    in_open_bar lib (fun lib' => P)
+    -> P.
+Proof.
+  introv h.
+  pose proof (h _ (lib_extends_refl _)) as h; exrepnd.
+  pose proof (h1 _ (lib_extends_refl _)) as h1; simpl in *; apply h1; eauto 3 with slow.
+Qed.
+
 (* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx *)
 

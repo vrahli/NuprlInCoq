@@ -474,8 +474,16 @@ Definition per_nat_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : 
 
 
 
+Definition sat_qnat_cond {o} (lib : @library o) (c : qnat_cond) t :=
+  forall lib1 lib2 n1 n2,
+    c = qnat_mon_cond
+    -> lib_extends lib1 lib
+    -> lib_extends lib2 lib1
+    -> computes_to_valc lib1 t (mkc_nat n1)
+    -> computes_to_valc lib2 t (mkc_nat n2)
+    -> n1 <= n2.
 
-Definition equality_of_qnat {o} lib (t t' : @CTerm o) :=
+Definition are_same_qnats {o} lib (c : qnat_cond) (t t' : @CTerm o) :=
   in_ext
     lib
     (fun lib =>
@@ -483,18 +491,24 @@ Definition equality_of_qnat {o} lib (t t' : @CTerm o) :=
        , ccomputes_to_valc lib t (mkc_nat n)
        # ccomputes_to_valc lib t' (mkc_nat n)}).
 
-Definition equality_of_qnat_bar {o} lib (t t' : @CTerm o) :=
-  in_open_bar lib (fun lib => equality_of_qnat lib t t').
+Definition equality_of_qnat {o} lib (c : qnat_cond) (t t' : @CTerm o) :=
+  are_same_qnats lib c t t'
+  # sat_qnat_cond lib c t.
+
+Definition equality_of_qnat_bar {o} lib c (t t' : @CTerm o) :=
+  in_open_bar lib (fun lib => equality_of_qnat lib c t t').
 
 Definition per_qnat {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
-  T1 ===>(lib) mkc_qnat
-  # T2 ===>(lib) mkc_qnat
-  # eq <=2=> (equality_of_qnat_bar lib).
+  {c : qnat_cond
+  , T1 ===>(lib) (mkc_qnat c)
+  # T2 ===>(lib) (mkc_qnat c)
+  # eq <=2=> (equality_of_qnat_bar lib c)}.
 
 Definition per_qnat_bar {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
-  in_open_bar lib (fun lib => T1 ===>(lib) mkc_qnat)
-  # in_open_bar lib (fun lib => T2 ===>(lib) mkc_qnat)
-  # eq <=2=> (equality_of_qnat_bar lib).
+  {c : qnat_cond
+  , in_open_bar lib (fun lib => T1 ===>(lib) (mkc_qnat c))
+  # in_open_bar lib (fun lib => T2 ===>(lib) (mkc_qnat c))
+  # eq <=2=> (equality_of_qnat_bar lib c)}.
 
 
 
@@ -515,8 +529,8 @@ Definition per_qlt {p} (ts : cts(p)) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] 
   {a, b, c, d : CTerm
   , T1 ===>(lib) (mkc_qlt a b)
   # T2 ===>(lib) (mkc_qlt c d)
-  # equality_of_qnat lib a c
-  # equality_of_qnat lib b d
+  # equality_of_qnat lib qnat_mon_cond a c
+  # equality_of_qnat lib qnat_mon_cond  b d
   # eq <=2=> (equality_of_qlt_bar lib a b)}.
 
 
@@ -2877,8 +2891,8 @@ Definition close_ind' {pp}
                 (c d   : @CTerm pp)
                 (c1    : T ===>(lib) (mkc_qlt a b))
                 (c2    : T' ===>(lib) (mkc_qlt c d))
-                (ceqa  : equality_of_qnat lib a c)
-                (ceqb  : equality_of_qnat lib b d)
+                (ceqa  : equality_of_qnat lib qnat_mon_cond a c)
+                (ceqb  : equality_of_qnat lib qnat_mon_cond b d)
                 (eqiff : eq <=2=> (equality_of_qlt_bar lib a b))
                 (per   : per_qlt (close ts) lib T T' eq),
       P ts lib T T' eq)
@@ -4623,9 +4637,9 @@ Proof.
 Defined.
 
 Definition equality_of_qnat_bar_lib_per {o}
-           (lib : @library o) : lib-per(lib,o).
+           (lib : @library o) (c : qnat_cond) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) => equality_of_qnat_bar lib').
+  exists (fun lib' (x : lib_extends lib' lib) => equality_of_qnat_bar lib' c).
   introv x y; tcsp.
 Defined.
 

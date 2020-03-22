@@ -175,17 +175,17 @@ Proof.
 Qed.
 
 
-Definition mk_qnat {o} : @NTerm o := oterm (Can NQNat) [].
+Definition mk_qnat {o} c : @NTerm o := oterm (Can (NQNat c)) [].
 
-Theorem isprog_qnat {o} : @isprog o mk_qnat.
+Theorem isprog_qnat {o} : forall c, @isprog o (mk_qnat c).
 Proof.
   repeat constructor.
 Qed.
 
-Definition mkc_qnat {o} : @CTerm o := exist isprog mk_qnat isprog_qnat.
+Definition mkc_qnat {o} c : @CTerm o := exist isprog (mk_qnat c) (isprog_qnat c).
 
 Lemma lsubstc_mk_qnat {o} :
-  forall w (s : @CSub o) c, lsubstc mk_qnat w s c = mkc_qnat.
+  forall q w (s : @CSub o) c, lsubstc (mk_qnat q) w s c = mkc_qnat q.
 Proof.
   introv.
   apply cterm_eq; simpl.

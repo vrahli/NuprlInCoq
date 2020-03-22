@@ -69,14 +69,18 @@ Definition mkcv_qtnat {o} vs : @CVTerm o vs :=
   mkcv_qtime _ (mkcv_tnat _).
 
 Lemma isprog_vars_qnat_implies {o} :
-  forall vs, @isprog_vars o vs mk_qnat.
+  forall vs c, @isprog_vars o vs (mk_qnat c).
 Proof.
   introv; repeat constructor; simpl.
   apply assert_sub_vars; simpl; tcsp.
 Qed.
 
-Definition mkcv_qnat {o} vs : @CVTerm o vs :=
-  exist (isprog_vars vs) mk_qnat (isprog_vars_qnat_implies vs).
+Definition mkcv_qnat {o} vs c : @CVTerm o vs :=
+  exist (isprog_vars vs) (mk_qnat c) (isprog_vars_qnat_implies vs c).
+
+Definition mkcv_mqnat {o} vs : @CVTerm o vs := mkcv_qnat vs qnat_mon_cond.
+Definition mkc_mqnat {o} : @CTerm o := mkc_qnat qnat_mon_cond.
+Definition mk_mqnat {o} : @NTerm o := mk_qnat qnat_mon_cond.
 
 Lemma nt_wf_mk_lib_depth {o} : @nt_wf o mk_lib_depth.
 Proof.
@@ -183,7 +187,7 @@ Definition ls3 {o} (A a b n : NVar) (i : nat) : @NTerm o :=
           (mk_fun
              (mk_apply (mk_var A) (mk_var a))
              (mk_exists
-                mk_qnat
+                mk_mqnat
                 n
                 (mk_function
                    (mk_csname 0)
@@ -211,7 +215,7 @@ Definition ls3c {o} (A a b n : NVar) (i : nat) : @CTerm o :=
              (mkcv_apply _ (mk_cv_app_l [a] _ (mkc_var A)) (mk_cv_app_r [A] _ (mkc_var a)))
              (mkcv_exists
                 _
-                (mkcv_qnat _)
+                (mkcv_mqnat _)
                 n
                 (mkcv_function
                    _
@@ -904,7 +908,8 @@ Proof.
   apply tequality_mkc_qlt.
 
   apply equality_in_tnat in equa.
-  apply equality_in_qnat in equ; dands; eauto 3 with slow.
+  apply equality_in_qnat in equ.
+  dands; eauto 3 with slow.
 Qed.
 Hint Resolve equality_mkc_qnat_implies_tequality_mkc_natk : slow.
 
@@ -2165,22 +2170,90 @@ Proof.
   rw @equality_of_qnat_bar_same; tcsp.
 Qed.
 
+Lemma equality_of_qlt_bar_implies_equality_of_qnat_bar_left {o} :
+  forall u v (lib : @library o) a b,
+    equality_of_qlt_bar lib a b u v
+    -> equality_of_qnat_bar lib a a.
+Proof.
+  introv equ.
+  eapply in_open_bar_pres; eauto; clear equ; introv ext equ.
+  eauto 3 with slow.
+Qed.
+
+Lemma equality_of_qlt_bar_implies_equality_of_qnat_bar_right {o} :
+  forall u v (lib : @library o) a b,
+    equality_of_qlt_bar lib a b u v
+    -> equality_of_qnat_bar lib b b.
+Proof.
+  introv equ.
+  eapply in_open_bar_pres; eauto; clear equ; introv ext equ.
+  eauto 3 with slow.
+Qed.
+
+Lemma equality_in_mkc_qnatk {o} :
+  forall lib (a b : @CTerm o) n,
+    equality lib a b (mkc_qnatk n)
+    <=> (in_open_bar lib (fun lib : library => equality_of_qlt lib a n)
+         # equality lib a b mkc_tnat).
+Proof.
+  introv; split; intro equ; repnd; dands; try (eapply equality_in_mkc_qnatk_implies; eauto).
+
+  { rewrite mkc_qnatk_eq in equ.
+    apply equality_in_set in equ; tcsp. }
+
+  rewrite mkc_qnatk_eq.
+  apply equality_in_set; autorewrite with slow; dands; eauto 3 with slow.
+
+  { introv ext eqn; autorewrite with slow.
+    apply equality_in_tnat in eqn.
+    apply tequality_mkc_qlt; dands; eauto 3 with slow.
+    apply equality_of_qlt_bar_implies_equality_of_qnat_bar_right in equ0; eauto 3 with slow. }
+
+  { eapply in_ext_implies_in_open_bar; introv ext.
+    exists (@mkc_axiom o).
+    apply equality_in_mkc_qlt_implies; eauto 3 with slow. }
+Qed.
+
 Lemma equality_qnatk2nat_implies {o} :
   forall lib (f g : @CTerm o) n,
     equality lib f g (mkc_qnatk2nat n)
-    -> in_open_bar lib (fun lib => {m : nat , {k : nat
+    -> in_open_bar lib (fun lib => {z : nat ,
+       in_open_bar lib (fun lib => forall m, m < z -> {k : nat
         , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)
-        # ccomputes_to_valc_ext lib (mkc_apply g (mkc_nat m)) (mkc_nat k)}}).
+        # ccomputes_to_valc_ext lib (mkc_apply g (mkc_nat m)) (mkc_nat k)})}).
 Proof.
   introv mem.
   apply equality_in_fun in mem; repnd.
   rw @type_mkc_qnatk in mem0.
-  apply collapse_all_in_ex_bar.
   eapply in_open_bar_pres; try exact mem0; clear mem0.
   introv ext mem0.
   unfold is_qnat in mem0.
+  pose proof (mem0 _ (lib_extends_refl _)) as mem0; simpl in *; exrepnd.
+
+  exists n0.
+  apply nat2in_open_bar2open.
+  introv ltn.
+
+  pose proof (mem _ ext (mkc_nat m) (mkc_nat m)) as mem.
+  autodimp mem hyp.
+
+  { apply equality_in_mkc_qnatk; dands; eauto 3 with slow.
+
+(* We need that those [qnat]'s are monotonic *)
 
 
+  }
+
+  2:{ eapply equality_in_tnat in mem.
+      eapply in_open_bar_pres; try exact mem; clear mem; introv xt mem.
+      unfold equality_of_nat in mem; exrepnd; eauto. }
+
+
+XXXXXXXXXXX
+
+SearchAbout equality mkc_qnatk.
+Locate equality_natk2nat_implies.
+Check equality_natk2nat_implies.
 SearchAbout tequality mkc_qnatk.
   clear mem0 mem1.
   pose proof (mem _ (lib_extends_refl lib) (mkc_nat m) (mkc_nat m)) as h; clear mem.
@@ -2191,10 +2264,6 @@ SearchAbout tequality mkc_qnatk.
     apply in_ext_implies_all_in_ex_bar; introv x.
     exists m; dands; try omega; rw @mkc_nat_eq; eauto 3 with slow. }
 
-  eapply equality_in_tnat in h.
-  eapply all_in_ex_bar_modus_ponens1;try exact h; clear h; introv x h; exrepnd; spcast.
-  unfold equality_of_nat in h; exrepnd.
-  exists n0; auto; dands; spcast; auto.
 Qed.
 
 Lemma equality_qnatk2nat_implies2 {o} :

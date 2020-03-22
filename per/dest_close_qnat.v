@@ -50,9 +50,9 @@ Qed.
 Hint Resolve local_equality_of_qnat_bar : slow.*)
 
 Lemma per_bar_eq_equality_of_qnat_bar_implies {o} :
-  forall (lib : @library o) t1 t2,
-    per_bar_eq lib (equality_of_qnat_bar_lib_per lib) t1 t2
-    -> equality_of_qnat_bar lib t1 t2.
+  forall (lib : @library o) c t1 t2,
+    per_bar_eq lib (equality_of_qnat_bar_lib_per lib c) t1 t2
+    -> equality_of_qnat_bar lib c t1 t2.
 Proof.
   introv alla.
   unfold per_bar_eq in alla.
@@ -64,14 +64,14 @@ Qed.
 Hint Resolve per_bar_eq_equality_of_qnat_bar_implies : slow.
 
 Lemma all_in_bar_ext_equal_equality_of_qnat_bar_implies_per_bar_eq_implies_equality_of_qnat_bar {o} :
-  forall (lib : @library o) (eqa : lib-per(lib,o)),
-    in_open_bar_ext lib (fun lib' x => (eqa lib' x) <=2=> (equality_of_qnat_bar lib'))
-    -> (per_bar_eq lib eqa) <=2=> (equality_of_qnat_bar lib).
+  forall (lib : @library o) c (eqa : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => (eqa lib' x) <=2=> (equality_of_qnat_bar lib' c))
+    -> (per_bar_eq lib eqa) <=2=> (equality_of_qnat_bar lib c).
 Proof.
   introv alla; introv; split; introv h.
 
   - pose proof (in_open_bar_ext_eq_term_equals_preserves_per_bar_eq
-                  _ eqa (equality_of_qnat_bar_lib_per lib) t1 t2 alla h) as q.
+                  _ eqa (equality_of_qnat_bar_lib_per lib c) t1 t2 alla h) as q.
     eauto 3 with slow.
 
   - eapply in_open_bar_ext_pres;[|exact alla]; clear alla; introv alla; apply alla; clear alla.
@@ -79,38 +79,107 @@ Proof.
 Qed.
 Hint Resolve all_in_bar_ext_equal_equality_of_qnat_bar_implies_per_bar_eq_implies_equality_of_qnat_bar : slow.
 
+Definition equality_of_qnat_bar_to_lib_per {o}
+           (lib : library)
+           (T : @CTerm o) : lib-per(lib,o).
+Proof.
+  exists (fun lib' (x : lib_extends lib' lib) t t' =>
+            {c : qnat_cond , T ===>(lib') (mkc_qnat c) # equality_of_qnat_bar lib' c t t' }).
+  introv x y; introv; simpl; tcsp.
+Defined.
+
 Lemma local_per_qnat_bar {o} :
-  forall (ts : cts(o)), local_ts (per_qnat_bar ts).
+  forall (ts : cts(o)), local_ts (per_bar (per_qnat ts)).
 Proof.
   introv eqiff alla.
-  unfold per_qnat_bar in *.
-  apply in_open_bar_ext_prod in alla; repnd.
-  apply in_open_bar_ext_prod in alla; repnd.
-  dands; try (complete (apply in_open_bar_ext_in_open_bar; auto)).
-  eapply eq_term_equals_trans;[eauto|]; clear eqiff; eauto 3 with slow.
+  unfold per_bar in *.
+  exists (equality_of_qnat_bar_to_lib_per lib T).
+  dands.
+
+  { apply in_open_bar_ext_dup.
+    eapply in_open_bar_ext_pres; eauto; clear alla; introv alla; exrepnd.
+    eapply in_open_bar_ext_pres; eauto; clear alla1; introv alla; exrepnd.
+    introv.
+    unfold per_qnat in *; exrepnd.
+    exists c; dands; simpl; auto.
+    introv; split; intro h; exrepnd; dands; auto.
+    - spcast; computes_to_eqval; apply_cequivc_val; auto.
+    - exists c; dands; auto. }
+
+  eapply eq_term_equals_trans;[exact eqiff|]; clear eqiff.
+  unfold per_bar_eq; introv; split; intro h.
+
+  { apply in_open_bar_ext_dup.
+    eapply in_open_bar_ext_comb;[|exact h]; clear h.
+    eapply in_open_bar_ext_comb;[|exact alla]; clear alla.
+    apply in_ext_ext_implies_in_open_bar_ext.
+    introv alla h; exrepnd.
+    apply alla0 in h; clear alla0.
+    unfold per_bar_eq in *; simpl in *.
+
+    eapply in_open_bar_ext_comb;[|exact h]; clear h.
+    eapply in_open_bar_ext_comb;[|exact alla1]; clear alla1.
+    apply in_ext_ext_implies_in_open_bar_ext.
+    introv alla h ext; exrepnd.
+
+    unfold per_qnat in *; exrepnd.
+    apply alla0 in h.
+    exists c; dands; auto. }
+
+  { eapply in_open_bar_ext_comb;[|exact h]; clear h.
+    eapply in_open_bar_ext_comb;[|exact alla]; clear alla.
+    apply in_ext_ext_implies_in_open_bar_ext.
+    introv alla h; exrepnd.
+    apply alla0; clear alla0.
+    unfold per_bar_eq in *; simpl in *; exrepnd.
+    unfold equality_of_qnat_bar in *.
+
+    apply in_open_bar_ext_in_open_bar in h0.
+
+    eapply in_open_bar_ext_comb2;[|exact h0]; clear h0.
+    eapply in_open_bar_ext_comb;[|exact alla1]; clear alla1.
+    apply in_ext_ext_implies_in_open_bar_ext.
+    introv alla h; exrepnd.
+
+    unfold per_qnat in *; exrepnd.
+    eapply lib_extends_preserves_ccomputes_to_valc in h1; eauto.
+    computes_to_eqval; apply_cequivc_val; auto.
+    apply alla0; auto.
+    repeat (autodimp h hyp). }
 Qed.
 
-Lemma per_qnat_implies_per_qnat_bar {o} :
+Lemma per_qnat_implies_per_bar_per_qnat {o} :
   forall ts lib (T T' : @CTerm o) eq,
     per_qnat ts lib T T' eq
-    -> per_qnat_bar ts lib T T' eq.
+    -> per_bar (per_qnat ts) lib T T' eq.
 Proof.
   introv per.
-  unfold per_qnat, per_qnat_bar in *; repnd.
-  dands; auto; apply in_ext_implies_in_open_bar; introv ext; eauto 3 with slow.
+  unfold per_qnat in per; exrepnd.
+  exists (equality_of_qnat_bar_lib_per lib c).
+  dands; auto; simpl.
+
+  - apply in_ext_ext_implies_in_open_bar_ext; introv ext.
+    exists c; dands; eauto 3 with slow.
+
+  - eapply eq_term_equals_trans;[exact per0|]; clear per0.
+    eapply eq_term_equals_trans;
+      [|apply eq_term_equals_sym;
+        apply all_in_bar_ext_equal_equality_of_qnat_bar_implies_per_bar_eq_implies_equality_of_qnat_bar];
+      [apply eq_term_equals_refl|]; simpl.
+    apply in_ext_ext_implies_in_open_bar_ext; introv; tcsp.
 Qed.
-Hint Resolve per_qnat_implies_per_qnat_bar : slow.
+Hint Resolve per_qnat_implies_per_bar_per_qnat : slow.
 
 
 (* ====== dest lemmas ====== *)
 
 Lemma dest_close_per_qnat_l {p} :
-  forall (ts : cts(p)) lib T T' eq,
+  forall (ts : cts(p)) lib T T' eq c,
     type_system ts
     -> defines_only_universes ts
-    -> ccomputes_to_valc_ext lib T mkc_qnat
+    -> ccomputes_to_valc_ext lib T (mkc_qnat c)
     -> close ts lib T T' eq
-    -> per_qnat_bar (close ts) lib T T' eq.
+    -> per_bar (per_qnat (close ts)) lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
@@ -120,12 +189,12 @@ Proof.
 Qed.
 
 Lemma dest_close_per_qnat_r {p} :
-  forall (ts : cts(p)) lib T T' eq,
+  forall (ts : cts(p)) lib T T' eq c,
     type_system ts
     -> defines_only_universes ts
-    -> ccomputes_to_valc_ext lib T' mkc_qnat
+    -> ccomputes_to_valc_ext lib T' (mkc_qnat c)
     -> close ts lib T T' eq
-    -> per_qnat_bar (close ts) lib T T' eq.
+    -> per_bar (per_qnat (close ts)) lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.

@@ -1882,6 +1882,14 @@ Proof.
   inversion e; auto.
 Qed.
 
+Lemma mkc_qnat_eq {o} :
+  forall (c1 c2 : qnat_cond),
+    @mkc_qnat o c1 = mkc_qnat c2 -> c1 = c2.
+Proof.
+  introv e.
+  inversion e; auto.
+Qed.
+
 Lemma mkc_qtime_eq {p} :
   forall A B : @CTerm p,
     mkc_qtime A = mkc_qtime B
@@ -1913,6 +1921,7 @@ Ltac eqconstr0 name :=
     | mkc_integer _       = mkc_integer _       => apply mkc_integer_eq        in name
     | mkc_choice_seq _    = mkc_choice_seq _    => apply mkc_choice_seq_eq     in name
     | mkc_csname _        = mkc_csname _        => apply mkc_csname_eq         in name
+    | mkc_qnat _          = mkc_qnat _          => apply mkc_qnat_eq           in name
     | mkc_nat _           = mkc_nat     _       => apply mkc_nat_eq_implies    in name
     | mkc_token _         = mkc_token _         => apply mkc_token_eq          in name
     | mkc_utoken _        = mkc_utoken _        => apply mkc_utoken_eq         in name
@@ -2363,10 +2372,10 @@ Qed.
 Hint Resolve iscvalue_mkc_Nat : slow.
 
 Lemma cequivc_qnat {o} :
-  forall lib (T T' : @CTerm o),
-    computes_to_valc lib T mkc_qnat
+  forall lib c (T T' : @CTerm o),
+    computes_to_valc lib T (mkc_qnat c)
     -> cequivc lib T T'
-    -> computes_to_valc lib T' mkc_qnat.
+    -> computes_to_valc lib T' (mkc_qnat c).
 Proof.
   sp.
   allapply @computes_to_valc_to_valuec; allsimpl.
@@ -2374,7 +2383,7 @@ Proof.
   apply lblift_cequiv0 in p; subst; auto.
 Qed.
 
-Lemma iscvalue_mkc_qnat {o} : @iscvalue o mkc_qnat.
+Lemma iscvalue_mkc_qnat {o} : forall c, @iscvalue o (mkc_qnat c).
 Proof.
   repeat constructor; simpl; tcsp.
 Qed.
@@ -2474,11 +2483,11 @@ Proof.
 Qed.
 
 Lemma cequivc_qnat_left_iscvalue {o} :
-  forall lib (t : @CTerm o),
-    cequivc lib mkc_qnat t -> iscvalue t -> t = mkc_qnat.
+  forall lib c (t : @CTerm o),
+    cequivc lib (mkc_qnat c) t -> iscvalue t -> t = mkc_qnat c.
 Proof.
   introv ceq isc.
-  apply cequivc_qnat in ceq; eauto 3 with slow.
+  apply (cequivc_qnat lib c) in ceq; eauto 3 with slow.
   apply computes_to_valc_isvalue_eq in ceq; auto.
 Qed.
 
@@ -3250,18 +3259,18 @@ Ltac apply_cequivc_val :=
 
   (* mkc_qnat *)
 
-  | [ H : cequivc _ mkc_qnat _ |- _ ] =>
+  | [ H : cequivc _ (mkc_qnat _) _ |- _ ] =>
     eapply cequivc_qnat in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
     apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
     try (eqconstr H)
 
-  | [ H : cequivc _ _ mkc_qnat |- _ ] =>
+  | [ H : cequivc _ _ (mkc_qnat _) |- _ ] =>
     apply cequivc_sym in H;
     eapply cequivc_qnat in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
     apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
     try (eqconstr H)
 
-  | [ H : ccequivc_ext ?lib mkc_qnat _ |- _ ] =>
+  | [ H : ccequivc_ext ?lib (mkc_qnat _) _ |- _ ] =>
     let c  := fresh "c"  in
     let xx := fresh "xx" in
     pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
@@ -3270,7 +3279,7 @@ Ltac apply_cequivc_val :=
     apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
     try (eqconstr H)
 
-  | [ H : ccequivc_ext ?lib _ mkc_qnat |- _ ] =>
+  | [ H : ccequivc_ext ?lib _ (mkc_qnat _) |- _ ] =>
     let c  := fresh "c"  in
     let xx := fresh "xx" in
     pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;

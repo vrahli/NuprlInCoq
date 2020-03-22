@@ -200,6 +200,10 @@ Proof.
       right; intro xx; inversion xx; subst; tcsp.
 Defined.
 
+Inductive qnat_cond :=
+| qnat_mon_cond
+| qnat_no_cond.
+
 (* ------ operators ------ *)
 (** Here are the Canonical [Opid]s of Nuprl:
 
@@ -254,7 +258,7 @@ Inductive CanonicalOp {p : POpid} : tuniv :=
  | NTEquality     : CanonicalOp
  | NInt           : CanonicalOp
  | NNatNum        : CanonicalOp (* type of natural numbers *)
- | NQNat          : CanonicalOp (* Nat\\True *)
+ | NQNat          : qnat_cond -> CanonicalOp (* Nat\\True *)
  | NQLt           : CanonicalOp
  | NQTime         : CanonicalOp (* Nat\\True *)
  | NCSName        : nat -> CanonicalOp (* type of choice sequence names *)
@@ -329,7 +333,7 @@ Definition OpBindingsCan {p} (c : @CanonicalOp p) : opsign :=
   | NTEquality     => [0,0]
   | NInt           => []
   | NNatNum        => []
-  | NQNat          => []
+  | NQNat _        => []
   | NQLt           => [0,0]
   | NQTime         => [0]
   | NCSName _      => []
@@ -673,6 +677,12 @@ Proof.
   destruct x, y; tcsp; right; intro h; ginv.
 Defined.
 
+Definition qnat_cond_deq : Deq qnat_cond.
+Proof.
+  introv.
+  destruct x, y; tcsp; right; intro h; ginv.
+Defined.
+
 Lemma canonical_dec {o} :
   dec_consts o
   -> forall x y : @CanonicalOp o,
@@ -701,6 +711,9 @@ Proof.
     right; intro k; inversion k; sp.
 
   - destruct (deq_nat n n0) as [d|d]; subst; tcsp.
+    right; intro k; ginv; tcsp.
+
+  - destruct (qnat_cond_deq q q0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
 
   - destruct (deq_nat n n0) as [d|d]; subst; tcsp.
@@ -867,6 +880,9 @@ Proof.
     right; intro k; inversion k; sp.
 
   - destruct (deq_nat n n0) as [d|d]; subst; tcsp.
+    right; intro k; ginv; tcsp.
+
+  - destruct (qnat_cond_deq q q0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
 
   - destruct (deq_nat n n0) as [d|d]; subst; tcsp.

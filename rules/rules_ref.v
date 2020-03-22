@@ -48,6 +48,15 @@ Require Export terms_pi.
 
 
 
+(* MOVE *)
+Lemma sat_qnat_no_cond {o} :
+  forall (lib : @library o) a,
+    sat_qnat_cond lib qnat_no_cond a.
+Proof.
+  introv h; ginv.
+Qed.
+Hint Resolve sat_qnat_no_cond : slow.
+
 
 (**
 
@@ -69,7 +78,7 @@ Definition rule_ref_wf {o}
            (e1 e2 : NTerm)
            (H     : @bhyps o) :=
   mk_rule
-    (mk_baresequent H (mk_conclax (mk_member (mk_last_cs f d) mk_qnat)))
+    (mk_baresequent H (mk_conclax (mk_member (mk_last_cs f d) (mk_qnat qnat_no_cond))))
     [mk_baresequent H (mk_concl (mk_member f (mk_csname 0)) e1),
      mk_baresequent H (mk_concl (mk_member d mk_tnat) e2)]
     [].
@@ -96,12 +105,12 @@ Proof.
   (* pick a fresh choice sequence name, and define a constraint based on [hyp1] and [hyp2] *)
 
   vr_seq_true.
-  lsubst_tac.
+  lsubst_tac; autorewrite with slow.
 
   rw <- @member_member_iff.
   pose proof (teq_and_member_if_member
-                lib' mk_qnat (mk_last_cs f d) s1 s2 H wT wt ct1 ct2 cT cT0) as q.
-  lsubst_tac.
+                lib' (mk_qnat qnat_no_cond) (mk_last_cs f d) s1 s2 H wT wt ct1 ct2 cT cT0) as q.
+  lsubst_tac; autorewrite with slow in q.
   repeat (autodimp q hyp); eauto 2 with slow.
 
   clear dependent s1.
@@ -139,6 +148,7 @@ Proof.
   apply equality_in_qnat.
   apply in_ext_implies_all_in_ex_bar; introv xt.
 
+  split; eauto 3 with slow;[].
   introv xt'.
   assert (safe_library lib'1) as safea by eauto 4 with slow.
   assert (safe_library lib'2) as safeb by eauto 2 with slow.
@@ -167,7 +177,7 @@ Definition rule_qnat_subtype_nat {o}
            (e   : NTerm)
            (H   : @bhyps o) :=
   mk_rule
-    (mk_baresequent H (mk_conclax (mk_member n mk_qnat)))
+    (mk_baresequent H (mk_conclax (mk_member n (mk_qnat qnat_no_cond))))
     [mk_baresequent H (mk_concl (mk_member n mk_tnat) e)]
     [].
 
@@ -196,9 +206,9 @@ Proof.
 
   rw <- @member_member_iff.
   pose proof (teq_and_member_if_member
-                lib' mk_qnat n s1 s2 H wT wt ct0 ct1 cT cT0) as q.
-  lsubst_tac.
-  repeat (autodimp q hyp); eauto 2 with slow.
+                lib' (mk_qnat qnat_no_cond) n s1 s2 H wT wt ct0 ct1 cT cT0) as q.
+  lsubst_tac; autorewrite with slow in *.
+  repeat (autodimp q hyp); eauto 2 with slow;[].
 
   clear dependent s1.
   clear dependent s2.

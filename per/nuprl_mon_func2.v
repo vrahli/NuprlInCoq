@@ -85,8 +85,8 @@ Proof.
 Qed.
 
 Lemma sub_lib_per_equality_of_qnat_bar_lib_per {o} :
-  forall {lib lib'} (x : @lib_extends o lib' lib),
-    sub_lib_per (equality_of_qnat_bar_lib_per lib) x.
+  forall {lib lib'} c (x : @lib_extends o lib' lib),
+    sub_lib_per (equality_of_qnat_bar_lib_per lib c) x.
 Proof.
   introv h z; simpl in *.
   eapply sub_per_equality_of_qnat_bar;[|eauto]; eauto.
@@ -98,8 +98,9 @@ Lemma per_qnat_monotone_func2 {o} :
 Proof.
   introv per.
   unfold per_qnat in *; exrepnd.
-  exists (equality_of_qnat_bar_lib_per lib); introv; simpl.
+  exists (equality_of_qnat_bar_lib_per lib c); introv; simpl.
   dands; spcast; eauto 3 with slow.
+  eexists; dands; eauto 3 with slow.
 Qed.
 
 Lemma sub_lib_per_equality_of_csname_bar_lib_per {o} :
