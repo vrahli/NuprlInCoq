@@ -305,6 +305,27 @@ Definition compute_step_swap_cs1 {o} btsr (t : @NTerm o) arg1c arg1bts cstep arg
       on_success cstep (fun f => oterm (NCan ncr) (bterm [] arg1::bterm [] f::btsr3))
   end.
 
+(*Definition compute_step_swap_cs_aux {p}
+           (arg1c arg2c : @CanonicalOp p)
+           (arg1bts arg2bts btsr : list (@BTerm p))
+           (t : NTerm) :=
+  match arg1c, arg2c, arg1bts, arg2bts, btsr with
+  | Ncseq n1, Ncseq n2, [], [], [bterm [] t] => csuccess (swap_cs_term (n1,n2) t)
+  | _, _, _, _, _ => cfailure bad_args t
+  end.
+
+Definition compute_step_swap_cs {o} btsr (t : @NTerm o) arg1c arg1bts cstep arg1 ncr :=
+  match btsr with
+    | [] => cfailure bad_args t
+    | bterm (_ :: _) _ :: _ => cfailure bad_args t
+    | bterm [] (vterm v) :: btsr3 => cfailure bad_args t
+    | bterm [] (oterm (Can arg2c) arg2bts) :: btsr3 =>
+      compute_step_swap_cs_aux arg1c arg2c arg1bts arg2bts btsr3 t
+    | bterm [] (oterm Exc _ as arg2nt) :: _ => csuccess arg2nt
+    | bterm [] (oterm _ _) :: btsr3 => (* ncan/abs *)
+      on_success cstep (fun f => oterm (NCan ncr) (bterm [] arg1::bterm [] f::btsr3))
+  end.*)
+
 Definition compute_step_can {o}
            (lib : plibrary)
            (t : @NTerm o)
@@ -334,6 +355,7 @@ Definition compute_step_can {o}
     | NCompSeq2  nfo => compute_step_comp_seq2 lib nfo arg1c t arg1bts btsr
     | NSwapCs1       => compute_step_swap_cs1 btsr t arg1c arg1bts comp arg1 ncr
     | NSwapCs2   nfo => compute_step_swap_cs2 nfo arg1c arg1bts btsr t
+(*    | NSwapCs        => compute_step_swap_cs btsr t arg1c arg1bts comp arg1 ncr*)
     | NLDepth        => cfailure "LDepth has no arguments" t
     | NCompOp    op  => co btsr t arg1bts arg1c op comp arg1 ncr
     | NArithOp   op  => ca btsr t arg1bts arg1c op comp arg1 ncr

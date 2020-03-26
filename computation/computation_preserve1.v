@@ -367,6 +367,59 @@ Proof.
     exists (@Abs o o0) l btsr n; dands; tcsp. }
 Qed.
 
+(*Lemma compute_step_swap_cs_success {o} :
+  forall btsr (t : @NTerm o) arg1c arg1bts cstep arg1 ncr b,
+    compute_step_swap_cs btsr t arg1c arg1bts cstep arg1 ncr = csuccess b
+    -> {n1 : choice_sequence_name
+       & {n2 : choice_sequence_name
+       & {u : NTerm
+       & arg1c = Ncseq n1
+       # btsr = [bterm [] (oterm (Can (Ncseq n2)) []), bterm [] u]
+       # arg1bts = []
+       # b = swap_cs_term (n1,n2) u }}}
+       [+]
+       {l : list BTerm
+       & {k : list BTerm
+       & btsr = bterm [] (oterm Exc l) :: k
+       # b = oterm Exc l }}
+       [+]
+       {op : Opid
+       & {bs : list BTerm
+       & {l : list BTerm
+       & {u : NTerm
+       & btsr = bterm [] (oterm op bs) :: l
+       # cstep = csuccess u
+       # isnoncan_like (oterm op bs)
+       # b = oterm (NCan ncr) (bterm [] arg1 :: bterm [] u :: l) }}}}.
+Proof.
+  introv comp.
+  destruct btsr; simpl in *; ginv.
+  destruct b0; simpl in *; tcsp.
+  destruct l; simpl in *; tcsp; ginv.
+  destruct n; simpl in *; tcsp; ginv.
+  destruct o0; simpl in *; tcsp.
+  { unfold compute_step_swap_cs2 in *.
+    destruct arg1c; simpl in *; tcsp; ginv.
+    destruct c; simpl in *; tcsp; ginv.
+    destruct arg1bts; simpl in *; tcsp; ginv.
+    destruct l; simpl in *; tcsp; ginv.
+    destruct btsr; simpl in *; tcsp; ginv.
+    destruct b0; simpl in *; tcsp; ginv.
+    destruct l; simpl in *; tcsp; ginv.
+    destruct btsr; simpl in *; tcsp; ginv.
+    left.
+    exists c0 c n; dands; auto. }
+  { destruct cstep; simpl in *; ginv.
+    right; right.
+    exists (@NCan o n) l btsr n0; dands; tcsp. }
+  { ginv.
+    right; left.
+    exists l btsr; dands; auto. }
+  { destruct cstep; simpl in *; ginv.
+    right; right.
+    exists (@Abs o o0) l btsr n; dands; tcsp. }
+Qed.*)
+
 Lemma compute_step_swap_cs2_success {o} :
   forall nfo arg1c arg1bts btsr (t : @NTerm o) b,
     compute_step_swap_cs2 nfo arg1c arg1bts btsr t = csuccess b
@@ -422,6 +475,26 @@ Proof.
   allrw @bt_wf_iff; eauto 4 with slow.
 Qed.
 Hint Resolve implies_nt_wf_push_swap_cs_oterm : slow.
+
+(*Lemma nt_wf_swap_cs_iff {o} :
+  forall (l : list (@BTerm o)),
+    nt_wf (oterm (NCan NSwapCs) l)
+    <=> {a : NTerm & {b : NTerm & {c : NTerm
+         & l = [nobnd a, nobnd b, nobnd c]
+         # nt_wf a
+         # nt_wf b
+         # nt_wf c}}}.
+Proof.
+  introv; split; intro h.
+  { inversion h as [|? ? imp eqm]; subst; clear h; simpl in *.
+    repeat (destruct l; simpl in *; ginv).
+    destruct b, b0, b1; unfold num_bvars in *; simpl in *.
+    destruct l, l0, l1; simpl in *; ginv.
+    dLin_hyp; allrw @bt_wf_iff.
+    exists n n0 n1; dands; tcsp. }
+  { exrepnd; subst.
+    repeat constructor; simpl; introv i; repndors; subst; tcsp; constructor; auto. }
+Qed.*)
 
 Lemma nt_wf_swap_cs1_iff {o} :
   forall (l : list (@BTerm o)),
@@ -854,6 +927,16 @@ Proof.
           apply compute_step_swap_cs2_success in comp; repndors; exrepnd; subst; simpl in *; tcsp;
             autorewrite with slow; allrw @nt_wf_swap_cs2_iff; exrepnd; ginv;
               inversion wf1; subst; clear wf1; simpl; autorewrite with slow; dands; eauto 3 with slow. }
+
+(*        { SSSCase "NSwapCs".
+          allsimpl.
+          apply compute_step_swap_cs_success in comp; repndors; exrepnd; subst; simpl in *; tcsp;
+            autorewrite with slow; allrw @nt_wf_swap_cs_iff; exrepnd; ginv;
+              inversion wf1; subst; clear wf1; simpl; autorewrite with slow; dands; eauto 3 with slow.
+          { eapply ind in comp2; try (right; left); eauto; eauto 3 with slow; repnd.
+            dands; eauto 3 with slow. }
+          { eapply ind in comp2; try (right; left); eauto; eauto 3 with slow; repnd.
+            fold_terms; eexists; eexists; eexists; dands; eauto. } }*)
 
         { SSSCase "NLDepth".
           simpl in *; ginv. }

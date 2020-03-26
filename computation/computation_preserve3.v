@@ -933,6 +933,23 @@ Proof.
 Qed.
 Hint Resolve implies_subset_get_utokens_lib_mk_swap_cs1 : slow.
 
+(*Lemma implies_subset_get_utokens_lib_mk_swap_cs {o} :
+  forall lib (a b c d e f : @NTerm o),
+    subset (get_utokens_lib lib a) (get_utokens_lib lib d)
+    -> subset (get_utokens_lib lib b) (get_utokens_lib lib e)
+    -> subset (get_utokens_lib lib c) (get_utokens_lib lib f)
+    -> subset
+         (get_utokens_lib lib (mk_swap_cs a b c))
+         (get_utokens_lib lib (mk_swap_cs d e f)).
+Proof.
+  introv sa sb sc i; unfold get_utokens_lib in *; simpl in *; autorewrite with slow in *.
+  allrw in_app_iff; repndors; tcsp.
+  { pose proof (sa x) as sa; autodimp sa hyp; allrw in_app_iff; tcsp. }
+  { pose proof (sb x) as sb; autodimp sb hyp; allrw in_app_iff; tcsp. }
+  { pose proof (sc x) as sc; autodimp sc hyp; allrw in_app_iff; tcsp. }
+Qed.
+Hint Resolve implies_subset_get_utokens_lib_mk_swap_cs : slow.*)
+
 Lemma implies_subset_get_utokens_lib_mk_swap_cs2 {o} :
   forall lib a b (c d : @NTerm o),
     subset (get_utokens_lib lib c) (get_utokens_lib lib d)
@@ -1012,6 +1029,37 @@ Proof.
   introv; apply lsubst_trivial4; simpl; auto.
 Qed.
 Hint Rewrite @lsubst_nat : slow.
+
+Lemma swap_cs_sub_if_nr_ut_sub {o} :
+  forall lib sw (sub : @Sub o) t,
+    nr_ut_sub lib t sub
+    -> swap_cs_sub sw sub = sub.
+Proof.
+  induction sub; introv h; simpl; auto.
+  inversion h as [|? ? ? ? i q]; subst; clear h; simpl.
+  erewrite IHsub; eauto.
+Qed.
+
+Lemma get_utokens_swap_cs_term {o} :
+  forall sw (t : @NTerm o),
+    get_utokens (swap_cs_term sw t)
+    = get_utokens t.
+Proof.
+  nterm_ind t as [v|op bs ind] Case; simpl; auto.
+  autorewrite with slow; f_equal.
+  rewrite flat_map_map; unfold compose.
+  apply eq_flat_maps; introv i; destruct x; simpl; eapply ind; eauto.
+Qed.
+Hint Rewrite @get_utokens_swap_cs_term : slow.
+
+Lemma get_utokens_lib_swap_cs_term {o} :
+  forall lib sw (t : @NTerm o),
+    get_utokens_lib lib (swap_cs_term sw t)
+    = get_utokens_lib lib t.
+Proof.
+  introv; unfold get_utokens_lib; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @get_utokens_lib_swap_cs_term : slow.
 
 Lemma compute_step_subst_utoken {o} :
   forall lib (t u : @NTerm o) sub,
@@ -1514,6 +1562,65 @@ Proof.
             csunf; simpl; eexists; dands; eauto.
             unfold push_swap_cs_can; simpl.
             unflsubst; simpl; autorewrite with slow; allrw; auto.
+
+(*          - destruct bs; simpl in *; ginv.
+            destruct b as [l1 u1]; simpl in *.
+            inversion comp0; subst; simpl in *; clear comp0.
+            repndors; exrepnd; subst; simpl in *; autorewrite with slow in *.
+
+            { rewrite <- cl_lsubst_lsubst_aux in comp1; eauto 3 with slow;[].
+              apply nt_wf_swap_cs_iff in wf; exrepnd.
+              inversion wf1; subst; clear wf1; simpl in *.
+              eapply ind in comp1; try (right; left); eauto; eauto 3 with slow;
+                try (complete (eapply nr_ut_sub_change_term; try exact nrut; simpl; autorewrite with slow; eauto 3 with slow));
+                try (complete (eapply subset_disjoint_r; try exact disj;
+                               apply subset_get_utokens_implies_subset_get_utokens_lib;
+                               simpl; autorewrite with slow; eauto 3 with slow)).
+              exrepnd; autorewrite with slow in *.
+              exists (oterm (NCan NSwapCs) [nobnd (mk_var x), nobnd w, nobnd c]).
+              simpl; autorewrite with slow.
+              dands; fold_terms; eauto 4 with slow.
+              { rewrite cl_lsubst_lsubst_aux; eauto 3 with slow; simpl; autorewrite with slow;[].
+                apply alpha_eq_oterm_combine; simpl; dands; auto.
+                introv xx; repndors; ginv; tcsp; eauto 3 with slow;
+                  apply alphaeqbt_nilv2; allrw; eauto 3 with slow.
+                rewrite <- cl_lsubst_lsubst_aux; eauto 3 with slow. }
+              introv nrut' eqdoms disj'.
+              pose proof (sub_find_some_eq_doms_nr_ut_sub
+                            lib sub sub' x
+                            (oterm (NCan NSwapCs)
+                                   [nobnd (mk_var x), nobnd b, nobnd c])) as h;
+                repeat (autodimp h hyp).
+              rw Heqsf in h; exrepnd; allrw.
+              unflsubst; simpl; allrw @sub_filter_nil_r; allrw.
+              unfold mk_utoken; rewrite compute_step_swap_cs_if_isnoncan_like; eauto 3 with slow;
+                try (eapply isnoncan_like_lsubst_aux_nr_ut_implies in comp2; eauto; eauto 3 with slow).
+              pose proof (comp0 sub') as comp0; repeat (autodimp comp0 hyp); eauto 3 with slow.
+              { eapply nr_ut_sub_change_term; try exact nrut'; simpl; autorewrite with slow; eauto 3 with slow. }
+              { eapply subset_disjoint_r; eauto; simpl.
+                apply subset_get_utokens_implies_subset_get_utokens_lib.
+                simpl; autorewrite with slow; eauto 3 with slow. }
+              exrepnd; unflsubst in comp0; allrw.
+              eexists; dands; eauto.
+              unflsubst; simpl; autorewrite with slow; allrw.
+              apply alpha_eq_oterm_combine; simpl; dands; auto.
+              introv xx; repndors; ginv; tcsp; eauto 3 with slow;
+                apply alphaeqbt_nilv2; allrw; eauto 3 with slow.
+              rewrite <- cl_lsubst_lsubst_aux; eauto 3 with slow. }
+
+            { exists u1; dands; try unflsubst; eauto 3 with slow.
+              { eapply subset_disjoint_r; eauto; simpl.
+                apply subset_get_utokens_implies_subset_get_utokens_lib.
+                simpl; autorewrite with slow; eauto 3 with slow. }
+              { apply subset_get_utokens_implies_subset_get_utokens_lib.
+                simpl; autorewrite with slow; eauto 3 with slow. }
+              introv nrut' eqdoms disj'.
+              eapply isexc_lsubst_aux_nr_ut_sub in comp0; eauto.
+              applydup @isexc_implies2 in comp0; exrepnd; subst; simpl in *; GC.
+              unflsubst; csunf; simpl; autorewrite with slow.
+              eapply sub_find_some_eq_doms_nr_ut_sub in eqdoms; try rewrite Heqsf in eqdoms; eauto.
+              exrepnd; allrw; simpl; eexists; dands; eauto.
+              unflsubst. }*)
 
           - repeat (destruct bs; allsimpl; ginv).
             destruct b as [l1 u1].
@@ -2448,6 +2555,86 @@ Proof.
             rewrite <- map_combine in i1; apply in_map_iff in i1; exrepnd; ginv.
             apply in_combine_same in i1; repnd; subst.
             destruct a1; simpl; apply alpha_eq_bterm_congr; fold_terms; autorewrite with slow; tcsp. }
+
+(*          { SSSCase "NSwapCs".
+            unflsubst in comp; allsimpl.
+            csunf comp; simpl in *.
+            apply compute_step_swap_cs_success in comp; repndors; exrepnd; subst; ginv; simpl in *.
+
+            { repeat (destruct bs; simpl in *; tcsp).
+              destruct b, b0; simpl in *.
+              inversion comp2; subst; simpl in *; autorewrite with slow in *; clear comp2.
+              destruct bts; simpl in *; tcsp; GC; fold_terms.
+              match goal with [ H : lsubst_aux _ _ = oterm (Can (Ncseq _)) _ |- _ ] => rename H into eql end.
+              eapply nr_ut_lsubst_aux_choice_seq_implies in eql; eauto; subst; simpl in *.
+
+              exists (swap_cs_term (n1, n2) n0).
+              unflsubst; simpl; autorewrite with slow.
+              dands; eauto 3 with slow;
+                try (complete (unfold get_utokens_lib in *; simpl in *; autorewrite with slow in *; auto)).
+              { rewrite <- lsubst_aux_swap_cs_term.
+                erewrite swap_cs_sub_if_nr_ut_sub; eauto. }
+              introv nrut' eqdoms disj'.
+              unflsubst; csunf; simpl; eexists; dands; eauto; autorewrite with slow; eauto 3 with slow.
+              rewrite <- lsubst_aux_swap_cs_term.
+              erewrite swap_cs_sub_if_nr_ut_sub; eauto.
+              try unflsubst. }
+
+            { destruct bs; simpl in *; tcsp; ginv.
+              destruct b; simpl in *.
+              inversion comp0; subst; simpl in *; autorewrite with slow in *; clear comp0.
+              match goal with [ H : lsubst_aux _ _ = _ |- _ ] => rename H into eql end.
+              eapply nr_ut_lsubst_aux_exc_implies in eql; eauto; subst; simpl in *.
+              exrepnd; subst; simpl in *.
+              exists (oterm Exc k).
+              unflsubst; simpl; dands; eauto 3 with slow.
+              { eapply subset_disjoint_r; eauto.
+                apply subset_get_utokens_implies_subset_get_utokens_lib; simpl; autorewrite with slow; auto; eauto 3 with slow. }
+              { apply subset_get_utokens_implies_subset_get_utokens_lib; simpl; autorewrite with slow; auto; eauto 3 with slow. }
+              introv nrut' eqdoms disj'.
+              unflsubst; csunf; simpl; eexists; dands; eauto; autorewrite with slow.
+              unflsubst; rewrite <- lsubst_aux_swap_cs_term. }
+
+            { destruct bs; simpl in *; tcsp; ginv.
+              destruct b; simpl in *.
+              inversion comp0; subst; simpl in *; autorewrite with slow in *; clear comp0.
+              match goal with [ H : lsubst_aux _ _ = _ |- _ ] => rename H into eql end.
+              rewrite <- cl_lsubst_lsubst_aux in comp2; eauto 3 with slow;[].
+              apply nt_wf_swap_cs_iff in wf; exrepnd.
+              inversion wf1; subst; simpl in *; clear wf1; autorewrite with slow in *.
+              eapply ind in comp2; try (right; left); eauto; eauto 3 with slow;
+                try (complete (eapply nr_ut_sub_change_term; try exact nrut; simpl; autorewrite with slow; eauto 3 with slow));
+                try (complete (eapply subset_disjoint_r; try exact disj;
+                               apply subset_get_utokens_implies_subset_get_utokens_lib;
+                               simpl; autorewrite with slow; eauto 3 with slow));[].
+              exrepnd; autorewrite with slow in *.
+              exists (oterm (NCan NSwapCs) [nobnd (oterm (Can can2) bts), nobnd w, nobnd c]).
+              simpl; autorewrite with slow.
+              dands; fold_terms; eauto 4 with slow.
+              { rewrite cl_lsubst_lsubst_aux; eauto 3 with slow; simpl; autorewrite with slow;[].
+                apply alpha_eq_oterm_combine; simpl; dands; auto.
+                introv xx; repndors; ginv; tcsp; eauto 3 with slow;
+                  apply alphaeqbt_nilv2; allrw; eauto 3 with slow.
+                rewrite <- cl_lsubst_lsubst_aux; eauto 3 with slow. }
+              introv nrut' eqdoms disj'.
+              unflsubst; simpl; autorewrite with slow in *.
+              dup comp3 as isn; rewrite <- eql in isn.
+              eapply isnoncan_like_lsubst_aux_nr_ut_implies in isn; eauto.
+              rewrite compute_step_swap_cs_if_isnoncan_like; eauto 3 with slow.
+              pose proof (comp0 sub') as comp0.
+              repeat (autodimp comp0 hyp); eauto 3 with slow.
+              { eapply nr_ut_sub_change_term; try exact nrut'; simpl; autorewrite with slow; eauto 3 with slow. }
+              { eapply subset_disjoint_r; eauto; simpl.
+                apply subset_get_utokens_implies_subset_get_utokens_lib.
+                simpl; autorewrite with slow; eauto 3 with slow. }
+              exrepnd; unflsubst in comp0; allrw.
+              eexists; dands; eauto.
+              unflsubst; simpl; autorewrite with slow; allrw.
+              apply alpha_eq_oterm_combine; simpl; dands; auto.
+              introv xx; repndors; ginv; tcsp; eauto 3 with slow;
+                apply alphaeqbt_nilv2; allrw; eauto 3 with slow.
+              rewrite <- cl_lsubst_lsubst_aux; eauto 3 with slow. }
+          }*)
 
           { SSSCase "NLDepth".
             unflsubst in comp; csunf comp; simpl in *; ginv. }

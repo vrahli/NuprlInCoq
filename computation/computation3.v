@@ -2790,6 +2790,22 @@ Proof.
   destruct op; simpl in *; tcsp.
 Qed.
 
+(*Lemma compute_step_swap_cs_if_isnoncan_like {o} :
+  forall lib c bs (t : @NTerm o) l,
+    isnoncan_like t
+    -> compute_step lib (oterm (NCan NSwapCs) (bterm [] (oterm (Can c) bs) :: bterm [] t :: l))
+       = match compute_step lib t with
+         | csuccess u => csuccess (oterm (NCan NSwapCs) (bterm [] (oterm (Can c) bs) :: bterm [] u :: l))
+         | x => x
+         end.
+Proof.
+  introv isn.
+  csunf; simpl.
+  unfold isnoncan_like in *.
+  destruct t as [|op bs']; simpl in *; tcsp.
+  destruct op; simpl in *; tcsp.
+Qed.*)
+
 Lemma all_vars_mk_choice_seq {o} :
   forall n, @all_vars o (mk_choice_seq n) = [].
 Proof.
@@ -3242,6 +3258,40 @@ Proof.
                 allrw @nt_wf_swap_cs2_iff; exrepnd; try inversion wf1; subst; simpl in *; ginv.
               repeat (destruct lbt2 in *; ginv; try omega).
               csunf; simpl; eexists; dands; eauto; eauto 3 with slow.
+
+(*            - SSSSSCase "NSwapCs".
+              csunf Hcomp; simpl in *.
+              apply compute_step_swap_cs_success in Hcomp; simpl; repndors; exrepnd; subst; simpl in *;
+                allrw @nt_wf_swap_cs_iff; exrepnd; try inversion wf1; subst; simpl in *; ginv.
+              { repeat (destruct lbt2 in *; ginv; try omega).
+                repeat (destruct t2arg1bts in *; ginv; try omega).
+                pose proof (Hal 1) as ha; autodimp ha hyp.
+                pose proof (Hal 2) as hb; autodimp hb hyp.
+                clear Hal; unfold selectbt in *; simpl in *.
+                apply alphaeqbt_nilv in ha; exrepnd; subst.
+                apply alphaeqbt_nilv in hb; exrepnd; subst.
+                apply alpha_eq_choice_seq_implies in ha0; subst; simpl in *; GC.
+                csunf; simpl; eexists; dands; eauto; eauto 3 with slow. }
+              { repeat (destruct lbt2 in *; ginv; try omega).
+                pose proof (Hal 1) as ha; autodimp ha hyp.
+                pose proof (Hal 2) as hb; autodimp hb hyp.
+                clear Hal; unfold selectbt in *; simpl in *.
+                apply alphaeqbt_nilv in ha; exrepnd; subst.
+                apply alphaeqbt_nilv in hb; exrepnd; subst.
+                applydup @alpha_eq_exc_implies in ha0; exrepnd; subst.
+                csunf; simpl; eexists; dands; eauto; eauto 3 with slow. }
+              { repeat (destruct lbt2 in *; ginv; try omega).
+                pose proof (Hal 1) as ha; autodimp ha hyp.
+                pose proof (Hal 2) as hb; autodimp hb hyp.
+                clear Hal; unfold selectbt in *; simpl in *.
+                apply alphaeqbt_nilv in ha; exrepnd; subst.
+                apply alphaeqbt_nilv in hb; exrepnd; subst.
+                applydup @alphaeq_preserves_isnoncan_like in ha0; auto.
+                rewrite compute_step_swap_cs_if_isnoncan_like; auto.
+                eapply IHind in Hcomp2; try (right; left; eauto); eauto; eauto 3 with slow; exrepnd.
+                allrw; eexists; dands; eauto.
+                apply alpha_eq_oterm_combine; simpl; dands; auto.
+                introv comb; repndors; ginv; tcsp; apply alphaeqbt_nilv2; auto. }*)
 
             - SSSSSCase "NLDepth".
               csunf Hcomp; simpl in *; ginv.
@@ -4910,6 +4960,19 @@ Lemma compute_step_ncan_vterm_success {o} :
           & ncan = NSwapCs2 nfo
           # bs = []
           # u = mk_utoken a}
+(*         [+]
+         {t1 : NTerm
+          & {bs1 : list BTerm
+          & bs = nobnd t1 :: bs1
+          # ncan = NSwapCs
+          # (
+              {x : NTerm
+               & compute_step lib t1 = csuccess x
+               # isnoncan_like t1
+               # u = oterm (NCan ncan) (nobnd (mk_utoken a) :: nobnd x :: bs1) }
+              [+]
+              (isexc t1 # u = t1)
+            )}}*)
          [+]
          {t1 : NTerm
           & {t2 : NTerm
@@ -4953,6 +5016,11 @@ Proof.
     apply compute_step_swap_cs2_success in comp; repnd; subst;
       right; right; right; right; right; right; left;
         eexists; dands; eauto.
+
+(*  - Case "NSwapCs".
+    apply compute_step_swap_cs_success in comp; repndors; exrepnd; subst; GC; tcsp; ginv;
+      right; right; right; right; right; right; right; left;
+        eexists; eexists; dands; try reflexivity; tcsp; eauto.*)
 
   - Case "NCompSeq1".
     apply compute_step_comp_seq1_success in comp; exrepnd; subst; GC.
@@ -5004,7 +5072,7 @@ Proof.
       exists n; dands; auto.
 
   - Case "NCanTest".
-    right; right; right; right; right; right; right.
+    right; right; right; right; right; right; right(*; right*).
     apply compute_step_can_test_success in comp; exrepnd; subst.
     exists arg2nt arg3nt c; dands; auto.
     destruct c; allsimpl; tcsp;

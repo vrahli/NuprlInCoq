@@ -82,9 +82,3 @@ Proof.
     { apply reduces_to_prinarg; auto. }
     { apply reduces_to_if_step; reflexivity. }
 Qed.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)
