@@ -656,6 +656,137 @@ Proof.
   exists k1; auto.
 Qed.
 
+Lemma implies_isprogram_lsust_mk_swap_cs2 {o} :
+  forall a b (t : @NTerm o) sub,
+    isprogram (lsubst t sub)
+    -> isprogram (lsubst (mk_swap_cs2 a b t) sub).
+Proof.
+  introv isp.
+  unfold lsubst in *; simpl in *; autorewrite with slow in *.
+  boolvar; apply approx_star_swap.implies_isprogram_mk_swap_cs2; auto.
+Qed.
+Hint Resolve implies_isprogram_lsust_mk_swap_cs2 : sow.
+
+Lemma lsust_mk_swap_cs2_eq {o} :
+  forall a b (t : @NTerm o) sub,
+    lsubst (mk_swap_cs2 a b t) sub = mk_swap_cs2 a b (lsubst t sub).
+Proof.
+  introv.
+  unfold lsubst in *; simpl in *; autorewrite with slow in *.
+  boolvar; auto.
+Qed.
+
+Lemma approx_swap_cs2_implies {o} :
+  forall a b lib (t1 t2 : @NTerm o),
+    approx lib (mk_swap_cs2 a b t1) (mk_swap_cs2 a b t2)
+    -> approx lib t1 t2.
+Proof.
+  cofix ind; introv ap.
+  apply approx_relates_only_progs in ap as isp; repnd.
+  allrw @isprogram_mk_swap_cs2_iff.
+
+  constructor; unfold close_comput; dands; auto; introv comp.
+
+  { (* CAN case*)
+
+    rename tl_subterms into bterms.
+    unfold computes_to_value in comp; repnd.
+
+    assert (reduces_to lib (mk_swap_cs2 a b t1) (push_swap_cs_can a b c bterms)) as r.
+    { eapply reduces_to_trans;[eapply reduces_to_prinarg; eauto|].
+      apply reduces_to_if_step; csunf; simpl; auto. }
+    applydup @reduces_to_preserves_program in comp0; auto;[].
+    eapply approx_canonical_form in ap;
+      [|unfold computes_to_value; dands; eauto;
+        apply implies_isvalue_push_swap_cs_can; auto].
+    exrepnd.
+
+    applydup @swap_cs2_computes_to_value_implies in ap1; eauto 3 with slow; exrepnd.
+    apply computes_to_value_if_iscan in ap2; eauto 3 with slow.
+    unfold push_swap_cs_can in ap2; inversion ap2 as [ec]; subst; clear ap2.
+    apply swap_cs_can_inj in ec; subst.
+    exists bs; dands; auto.
+
+    unfold lblift in *; autorewrite with slow in *; repnd; dands; auto.
+    introv i; applydup ap0 in i; clear ap0.
+
+    unfold push_swap_cs_bterms in i0.
+    repeat (rewrite selectbt_map in i0; autorewrite with slow in i0; auto; try omega).
+    unfold blift in *; exrepnd.
+
+    remember (bterms {[n]}) as b1.
+    remember (bs {[n]}) as b2.
+    destruct b1 as [l1 u1], b2 as [l2 u2]; simpl in *.
+    inversion i2 as [? ? ? ? ? disj1 lena1 lenb1 norep1 aeq1]; subst; clear i2.
+    inversion i1 as [? ? ? ? ? disj2 lena2 lenb2 norep2 aeq2]; subst; clear i1.
+    autorewrite with slow in disj1, disj2.
+    apply disjoint_app_r in disj1; repnd.
+    apply disjoint_app_r in disj2; repnd.
+    rewrite lsubst_mk_swap_cs2_choice_seq_var_ren in aeq1;
+      [|rewrite computation_mark.sub_free_vars_var_ren; auto].
+    rewrite lsubst_mk_swap_cs2_choice_seq_var_ren in aeq2;
+      [|rewrite computation_mark.sub_free_vars_var_ren; auto].
+
+    apply swap_cs2_alpha_eq_implies in aeq1; exrepnd.
+    apply swap_cs2_alpha_eq_implies in aeq2; exrepnd.
+    apply lsubst_eq_swap2_implies in aeq1; auto; exrepnd; subst; try congruence;[].
+    apply lsubst_eq_swap2_implies in aeq2; auto; exrepnd; subst; try congruence;[].
+    autorewrite with slow in disj1, disj2.
+    exists lv z1 z; dands; auto;
+      try (complete (econstructor; try exact norep1; auto; apply disjoint_app_r; auto));
+      try (complete (econstructor; try exact norep2; auto; apply disjoint_app_r; auto)).
+
+    unfold approx_open, olift in *; repnd.
+    apply approx_star_swap.nt_wf_mk_swap_cs2_implies in i1.
+    apply approx_star_swap.nt_wf_mk_swap_cs2_implies in i2.
+    dands; auto.
+    introv wf cova covb.
+    pose proof (i0 sub) as i0; repeat (autodimp i0 hyp);
+      try (apply implies_isprogram_lsust_mk_swap_cs2); auto;[].
+    repeat rewrite lsust_mk_swap_cs2_eq in i0.
+    left; apply ind in i0; auto. }
+
+  { (* EXC case *)
+
+    eapply exception_approx in ap;
+      [|eapply reduces_in_atmost_k_steps_implies_swap_cs2_computes_to_exc; eauto].
+    exrepnd.
+    repndors; try (complete (inversion ap1)); try (complete (inversion ap2)).
+    apply swap_cs2_computes_to_exc_implies in ap0; eauto 3 with slow.
+    exists a' e'; dands; auto. }
+Qed.
+
+Lemma cequiv_swap_cs2_implies {o} :
+  forall a b lib (t1 t2 : @NTerm o),
+    cequiv lib (mk_swap_cs2 a b t1) (mk_swap_cs2 a b t2)
+    -> cequiv lib t1 t2.
+Proof.
+  introv ceq; destruct ceq as [ap1 ap2].
+  apply approx_swap_cs2_implies in ap1.
+  apply approx_swap_cs2_implies in ap2.
+  split; auto.
+Qed.
+
+Lemma cequivc_swap_cs2_implies {o} :
+  forall a b lib (t1 t2 : @CTerm o),
+    cequivc lib (mkc_swap_cs2 a b t1) (mkc_swap_cs2 a b t2)
+    -> cequivc lib t1 t2.
+Proof.
+  introv; destruct_cterms; unfold cequivc; simpl; apply cequiv_swap_cs2_implies.
+Qed.
+
+Lemma mkc_swap_per_base_eq {o} :
+  forall sw lib (eq : per(o)),
+    (eq <=2=> (per_base_eq lib))
+    -> (mkc_swap_per sw eq) <=2=> (per_base_eq lib).
+Proof.
+  introv h; introv.
+  unfold mkc_swap_per; rw h; clear h; split; intro h;
+    eapply in_open_bar_pres; eauto; clear h; introv ext h;
+      spcast; eauto 3 with slow;[].
+  apply cequivc_swap_cs2_implies in h; auto.
+Qed.
+
 Lemma implies_close_mk_swap {o} :
   forall sw (lib : library) (u : cts(o)) (t1 t2 : @CTerm o) e,
     sane_swapping sw
@@ -762,127 +893,9 @@ admit.
     apply (mkc_swap_ccomputes_to_valc_ext sw) in per0.
     apply (mkc_swap_ccomputes_to_valc_ext sw) in per1.
     autorewrite with slow in *; dands; auto.
+    apply mkc_swap_per_base_eq; auto. }
 
-Set Nested Proofs Allowed.
-
-Lemma approx_swap_cs2_implies {o} :
-  forall a b lib (t1 t2 : @NTerm o),
-    approx lib (mk_swap_cs2 a b t1) (mk_swap_cs2 a b t2)
-    -> approx lib t1 t2.
-Proof.
-  cofix ind; introv ap.
-  apply approx_relates_only_progs in ap as isp; repnd.
-  allrw @isprogram_mk_swap_cs2_iff.
-  apply approx_assume_hasvalue; auto;[].
-  intro hv.
-  allrw @computes_to_val_like_iff_hasvalue_like; exrepnd.
-  unfold computes_to_val_like, computes_to_val_like_in_max_k_steps in *; exrepnd.
-  destruct hv1 as [isv|ise].
-
-  { (* CAN case*)
-
-    apply iscan_implies in isv; exrepnd; subst.
-    apply reduces_in_atmost_k_steps_implies_reduces_to in hv0.
-    assert (reduces_to lib (mk_swap_cs2 a b t1) (push_swap_cs_can a b c bterms)) as r.
-    { eapply reduces_to_trans;[eapply reduces_to_prinarg; eauto|].
-      apply reduces_to_if_step; csunf; simpl; auto. }
-    applydup @reduces_to_preserves_program in hv0; auto;[].
-    eapply approx_canonical_form in ap;
-      [|unfold computes_to_value; dands; eauto;
-        apply implies_isvalue_push_swap_cs_can; auto].
-    exrepnd.
-    eapply approx_trans;[apply reduces_to_implies_approx2;eauto|].
-
-    applydup @swap_cs2_computes_to_value_implies in ap1; eauto 3 with slow; exrepnd.
-    apply computes_to_value_if_iscan in ap2; eauto 3 with slow.
-    unfold push_swap_cs_can in ap2; inversion ap2 as [ec]; subst; clear ap2.
-    apply swap_cs_can_inj in ec; subst.
-    eapply approx_trans;[|apply computes_to_value_implies_approx1;eauto].
-
-    apply approx_canonical_form3; eauto 3 with slow;[].
-    unfold lblift in *; autorewrite with slow in *; repnd; dands; auto.
-    introv i; applydup ap0 in i; clear ap0.
-
-    unfold push_swap_cs_bterms in i0.
-    repeat (rewrite selectbt_map in i0; autorewrite with slow in i0; auto; try omega).
-    unfold blift in *; exrepnd.
-
-    remember (bterms {[n]}) as b1.
-    remember (bs {[n]}) as b2.
-    destruct b1 as [l1 u1], b2 as [l2 u2]; simpl in *.
-    inversion i2 as [? ? ? ? ? disj1 lena1 lenb1 norep1 aeq1]; subst; clear i2.
-    inversion i1 as [? ? ? ? ? disj2 lena2 lenb2 norep2 aeq2]; subst; clear i1.
-    autorewrite with slow in disj1, disj2.
-    apply disjoint_app_r in disj1; repnd.
-    apply disjoint_app_r in disj2; repnd.
-    rewrite lsubst_mk_swap_cs2_choice_seq_var_ren in aeq1;
-      [|rewrite computation_mark.sub_free_vars_var_ren; auto].
-    rewrite lsubst_mk_swap_cs2_choice_seq_var_ren in aeq2;
-      [|rewrite computation_mark.sub_free_vars_var_ren; auto].
-
-    apply swap_cs2_alpha_eq_implies in aeq1; exrepnd.
-    apply swap_cs2_alpha_eq_implies in aeq2; exrepnd.
-    apply lsubst_eq_swap2_implies in aeq1; auto; try omega; exrepnd; subst.
-    apply lsubst_eq_swap2_implies in aeq2; auto; try omega; exrepnd; subst.
-    autorewrite with slow in disj1, disj2.
-    exists lv z1 z; dands; auto;
-      try (complete (econstructor; try exact norep1; auto; apply disjoint_app_r; auto));
-      try (complete (econstructor; try exact norep2; auto; apply disjoint_app_r; auto)).
-
-    apply olift_iff_oliftp; eauto 3 with slow;[].
-    apply olift_iff_oliftp in i0; eauto 3 with slow;[].
-    unfold oliftp in *; repnd.
-    apply approx_star_swap.nt_wf_mk_swap_cs2_implies in i1.
-    apply approx_star_swap.nt_wf_mk_swap_cs2_implies in i2.
-    dands; auto.
-    introv cova covb.
-    pose proof (i0 sub) as i0; repeat (autodimp i0 hyp); eauto 2 with slow.
-    autorewrite with slow in i0.
-    apply ind in i0; auto. }
-
-  { (* EXC case *)
-
-    applydup @reduces_atmost_preserves_program in hv0; auto.
-    apply isexc_implies in ise; auto; exrepnd; subst.
-    apply reduces_in_atmost_k_steps_implies_reduces_to in hv0.
-    eapply exception_approx in ap;
-      [|eapply reduces_in_atmost_k_steps_implies_swap_cs2_computes_to_exc; eauto].
-    exrepnd.
-    repndors; try (complete (inversion ap1)); try (complete (inversion ap2)).
-    eapply approx_trans;[apply reduces_to_implies_approx2;eauto|].
-    apply swap_cs2_computes_to_exc_implies in ap0; eauto 3 with slow.
-    eapply approx_trans;[|apply reduces_to_implies_approx_eauto; eauto].
-    apply approx_canonical_form_exc; try exact ap2; try exact ap1. }
-Qed.
-
-(* Is that true?? *)
-Lemma cequiv_swap_cs2_implies {o} :
-  forall a b lib (t1 t2 : @NTerm o),
-    cequiv lib (mk_swap_cs2 a b t1) (mk_swap_cs2 a b t2)
-    -> cequiv lib t1 t2.
-Proof.
-  introv ceq; destruct ceq as [ap1 ap2].
-  apply approx_relates_only_progs in ap1 as isp; repnd.
-  allrw @isprogram_mk_swap_cs2_iff.
-  split.
-
-  {
-
-Qed.
-
-Lemma mkc_swap_per_base_eq {o} :
-  forall sw lib (eq : per(o)),
-    (eq <=2=> (per_base_eq lib))
-    -> (mkc_swap_per sw eq) <=2=> (per_base_eq lib).
-Proof.
-  introv h; introv.
-  unfold mkc_swap_per; rw h; clear h; split; intro h;
-    eapply in_open_bar_pres; eauto; clear h; introv ext h;
-      spcast; eauto 3 with slow;[].
-
-Qed.
-
-    apply swap_per_base_eq; auto. }
+(* Prove the function case now! *)
 
   { Case "CL_approx".
     apply CL_approx.
