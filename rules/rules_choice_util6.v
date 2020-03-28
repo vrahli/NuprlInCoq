@@ -1236,8 +1236,8 @@ admit.
       pose proof (recb _ e _ _ e0) as recb; simpl in recb.
       repeat (autodimp recb hyp); eauto 3 with slow.
 
-(* Will this only works if the domain [A] is such that [mkc_swap_cs] doesn't affect its members
-   such as nat? Can I find a counterexample otherwise?
+(* ====> Will this only works if the domain [A] is such that [mkc_swap_cs] doesn't affect
+   its members such as nat? Can I find a counterexample otherwise?
  *)
 
 (*
@@ -1280,6 +1280,9 @@ Proof.
       unfold per_union_eq, per_union_eq_L, per_union_eq_R in *; repndors; exrepnd.
   { left.
 
+(* ====> Could we use something like [mkc_swap_cs sw x] and prove that
+   [mkc_swap_cs sw (mkc_swap_cs sw x)] is computationally equivalent to [x]?
+ *)
 
     apply ccomputes_to_valc_ext_implies_ccequivc_ext in h0.
 
