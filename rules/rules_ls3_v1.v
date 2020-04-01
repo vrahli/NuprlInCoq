@@ -35,15 +35,15 @@
 Require Export rules_choice_util5.
 
 
-Definition ls3 {o} (A a b n : NVar) (i : nat) : @NTerm o :=
+Definition ls3 {o} (A a b n : NVar) (u i : nat) : @NTerm o :=
   mk_function
-    (mk_csprop i)
+    (mk_csprop u i)
     A
     (mk_function
        (mk_csname 0)
        a
        (mk_fun
-          (mk_free_from_defs (mk_fun (mk_csname 0) (mk_uni i)) (mk_var A))
+          (mk_free_from_defs (mk_fun (mk_csname 0) (mk_uni u i)) (mk_var A))
           (mk_fun
              (mk_apply (mk_var A) (mk_var a))
              (mk_exists
@@ -56,9 +56,9 @@ Definition ls3 {o} (A a b n : NVar) (i : nat) : @NTerm o :=
                       (mk_equality (mk_var a) (mk_var b) (mk_qnatk2nat (mk_var n)))
                       (mk_squash (mk_apply (mk_var A) (mk_var b))))))))).
 
-Definition ls3c {o} (A a b n : NVar) (i : nat) : @CTerm o :=
+Definition ls3c {o} (A a b n : NVar) (u i : nat) : @CTerm o :=
   mkc_function
-    (mkc_csprop i)
+    (mkc_csprop u i)
     A
     (mkcv_function
        _
@@ -68,7 +68,7 @@ Definition ls3c {o} (A a b n : NVar) (i : nat) : @CTerm o :=
           _
           (mkcv_free_from_defs
              _
-             (mkcv_csprop _ i)
+             (mkcv_csprop _ u i)
              (mk_cv_app_l [a] _ (mkc_var A)))
           (mkcv_fun
              _
@@ -157,8 +157,8 @@ Qed.
 Hint Resolve apply3_ls3c_extract_ccequivc_ext : slow.
 
 Lemma lsubstc_ls3_eq {o} :
-  forall A a b n i (w : @wf_term o (ls3 A a b n i)) s c,
-    lsubstc (ls3 A a b n i) w s c = ls3c A a b n i.
+  forall A a b n u i (w : @wf_term o (ls3 A a b n u i)) s c,
+    lsubstc (ls3 A a b n u i) w s c = ls3c A a b n u i.
 Proof.
   introv.
   apply cterm_eq; simpl.
@@ -168,14 +168,14 @@ Qed.
 Hint Rewrite @lsubstc_ls3_eq : slow.
 
 Lemma tequality_ls3c_aux7 {o} :
-  forall (lib : @library o) a1 a'0 a'1 a2 a'2 a3,
+  forall uk (lib : @library o) a1 a'0 a'1 a2 a'2 a3,
     no_repeats_library lib
     -> safe_library lib
     -> lib_cond_sat_def lib
-    -> equality lib a1 a'0 (mkc_csname 0)
-    -> equality lib a2 a'1 mkc_mqnat
-    -> equality lib a3 a'2 (mkc_csname 0)
-    -> tequality lib (mkc_equality a1 a3 (mkc_qnatk2nat a2)) (mkc_equality a'0 a'2 (mkc_qnatk2nat a'1)).
+    -> equality uk lib a1 a'0 (mkc_csname 0)
+    -> equality uk lib a2 a'1 mkc_mqnat
+    -> equality uk lib a3 a'2 (mkc_csname 0)
+    -> tequality uk lib (mkc_equality a1 a3 (mkc_qnatk2nat a2)) (mkc_equality a'0 a'2 (mkc_qnatk2nat a'1)).
 Proof.
   introv norep safe sat; introv equb eque equf.
 
@@ -191,16 +191,16 @@ Proof.
 Qed.
 
 Lemma tequality_ls3c_aux6 {o} :
-  forall (lib : @library o) i a0 a' a1 a'0 a'1 a2 a'2 a3,
+  forall uk (lib : @library o) i a0 a' a1 a'0 a'1 a2 a'2 a3,
     no_repeats_library lib
     -> safe_library lib
     -> lib_cond_sat_def lib
-    -> equality lib a0 a' (mkc_csprop i)
-    -> equality lib a1 a'0 (mkc_csname 0)
-    -> equality lib a2 a'1 mkc_mqnat
-    -> equality lib a3 a'2 (mkc_csname 0)
+    -> equality uk lib a0 a' (mkc_csprop uk i)
+    -> equality uk lib a1 a'0 (mkc_csname 0)
+    -> equality uk lib a2 a'1 mkc_mqnat
+    -> equality uk lib a3 a'2 (mkc_csname 0)
     -> tequality
-         lib
+         uk lib
          (mkc_fun (mkc_equality a1 a3 (mkc_qnatk2nat a2)) (mkc_squash (mkc_apply a0 a3)))
          (mkc_fun (mkc_equality a'0 a'2 (mkc_qnatk2nat a'1)) (mkc_squash (mkc_apply a' a'2))).
 Proof.
@@ -213,7 +213,7 @@ Proof.
   introv extg equg.
   apply tequality_mkc_squash.
   apply inhabited_mkc_equality in equg.
-  apply (equality_in_mkc_csprop_implies_tequality _ _ _ _ _ i); eauto 3 with slow.
+  apply (equality_in_mkc_csprop_implies_tequality _ _ _ _ _ _ i); eauto 3 with slow.
 Qed.
 
 Lemma tequality_ls3c_aux5 {o} :
@@ -227,10 +227,10 @@ Lemma tequality_ls3c_aux5 {o} :
     -> no_repeats_library lib
     -> safe_library lib
     -> lib_cond_sat_def lib
-    -> equality lib a0 a' (mkc_csprop i)
-    -> equality lib a1 a'0 (mkc_csname 0)
-    -> equality lib a2 a'1 mkc_mqnat
-    -> tequality lib
+    -> equality uk0 lib a0 a' (mkc_csprop uk0 i)
+    -> equality uk0 lib a1 a'0 (mkc_csname 0)
+    -> equality uk0 lib a2 a'1 mkc_mqnat
+    -> tequality uk0 lib
     (mkc_function (mkc_csname 0) b
        (substc5 b a2 n a1 a a0 A
           (mkcv_fun (([b, n] ++ [a]) ++ [A])
@@ -311,9 +311,9 @@ Lemma tequality_ls3c_aux4 {o} :
     -> no_repeats_library lib
     -> safe_library lib
     -> lib_cond_sat_def lib
-    -> equality lib a0 a' (mkc_csprop i)
-    -> equality lib a1 a'0 (mkc_csname 0)
-    -> tequality lib
+    -> equality uk0 lib a0 a' (mkc_csprop uk0 i)
+    -> equality uk0 lib a1 a'0 (mkc_csname 0)
+    -> tequality uk0 lib
     (mkc_product mkc_mqnat n
        (substc2 n a1 a
           (substc3 n a a0 A
@@ -370,9 +370,9 @@ Lemma tequality_ls3c_aux3 {o} :
     -> no_repeats_library lib
     -> safe_library lib
     -> lib_cond_sat_def lib
-    -> equality lib a0 a' (mkc_csprop i)
-    -> equality lib a1 a'0 (mkc_csname 0)
-    -> tequality lib
+    -> equality uk0 lib a0 a' (mkc_csprop uk0 i)
+    -> equality uk0 lib a1 a'0 (mkc_csname 0)
+    -> tequality uk0 lib
     (mkc_fun (mkc_apply a0 a1)
           (substc2 a a0 A
              (mkcv_exists [a, A] (mkcv_mqnat [a, A]) n
@@ -410,7 +410,7 @@ Proof.
 
   apply tequality_fun; dands.
 
-  { apply (equality_in_mkc_csprop_implies_tequality _ _ _ _ _ i); eauto; eauto 3 with slow. }
+  { apply (equality_in_mkc_csprop_implies_tequality _ _ _ _ _ _ i); eauto; eauto 3 with slow. }
 
   introv extd equd.
   eapply tequality_respects_alphaeqc_left;
@@ -434,12 +434,12 @@ Lemma tequality_ls3c_aux2 {o} :
     -> no_repeats_library lib
     -> safe_library lib
     -> lib_cond_sat_def lib
-    -> equality lib a0 a' (mkc_csprop i)
-    -> equality lib a1 a'0 (mkc_csname 0)
-    -> tequality lib
+    -> equality uk0 lib a0 a' (mkc_csprop uk0 i)
+    -> equality uk0 lib a1 a'0 (mkc_csname 0)
+    -> tequality uk0 lib
     (mkc_fun
        (substc2 a a0 A
-          (mkcv_free_from_defs ([a] ++ [A]) (mkcv_csprop ([a] ++ [A]) i)
+          (mkcv_free_from_defs ([a] ++ [A]) (mkcv_csprop ([a] ++ [A]) uk0 i)
              (mk_cv_app_l [a] [A] (mkc_var A)))) [[a \\ a1]]
        (substc2 a a0 A
           (mkcv_fun ([a] ++ [A])
@@ -462,7 +462,7 @@ Lemma tequality_ls3c_aux2 {o} :
        a1]])
     (mkc_fun
        (substc2 a a' A
-          (mkcv_free_from_defs ([a] ++ [A]) (mkcv_csprop ([a] ++ [A]) i)
+          (mkcv_free_from_defs ([a] ++ [A]) (mkcv_csprop ([a] ++ [A]) uk0 i)
              (mk_cv_app_l [a] [A] (mkc_var A)))) [[a \\ a'0]]
        (substc2 a a' A
           (mkcv_fun ([a] ++ [A])
@@ -525,12 +525,12 @@ Lemma tequality_ls3c_aux1 {o} :
     -> no_repeats_library lib
     -> safe_library lib
     -> lib_cond_sat_def lib
-    -> equality lib a0 a' (mkc_csprop i)
-    -> tequality lib
+    -> equality uk0 lib a0 a' (mkc_csprop uk0 i)
+    -> tequality uk0 lib
                  (mkc_function (mkc_csname 0) a
        (substcv [a] a0 A
           (mkcv_fun ([a] ++ [A])
-             (mkcv_free_from_defs ([a] ++ [A]) (mkcv_csprop ([a] ++ [A]) i)
+             (mkcv_free_from_defs ([a] ++ [A]) (mkcv_csprop ([a] ++ [A]) uk0 i)
                 (mk_cv_app_l [a] [A] (mkc_var A)))
              (mkcv_fun ([a] ++ [A])
                 (mkcv_apply ([a] ++ [A]) (mk_cv_app_l [a] [A] (mkc_var A))
@@ -552,7 +552,7 @@ Lemma tequality_ls3c_aux1 {o} :
     (mkc_function (mkc_csname 0) a
        (substcv [a] a' A
           (mkcv_fun ([a] ++ [A])
-             (mkcv_free_from_defs ([a] ++ [A]) (mkcv_csprop ([a] ++ [A]) i)
+             (mkcv_free_from_defs ([a] ++ [A]) (mkcv_csprop ([a] ++ [A]) uk0 i)
                 (mk_cv_app_l [a] [A] (mkc_var A)))
              (mkcv_fun ([a] ++ [A])
                 (mkcv_apply ([a] ++ [A]) (mk_cv_app_l [a] [A] (mkc_var A))
@@ -600,7 +600,7 @@ Lemma tequality_ls3c {o} :
     -> no_repeats_library lib
     -> safe_library lib
     -> lib_cond_sat_def lib
-    -> tequality lib (ls3c A a b n i) (ls3c A a b n i).
+    -> tequality uk0 lib (ls3c A a b n uk0 i) (ls3c A a b n uk0 i).
 Proof.
   introv da db dc dd de df norep safe sat.
   unfold ls3c.
@@ -620,10 +620,10 @@ Qed.
 Definition rule_ls3 {o}
            (lib : @library o)
            (A a b n x y z : NVar)
-           (i : nat)
+           (u i : nat)
            (H : @bhyps o) :=
   mk_rule
-    (mk_baresequent H (mk_concl (ls3 A a b n i) (ls3_extract A a x y b z)))
+    (mk_baresequent H (mk_concl (ls3 A a b n u i) (ls3_extract A a x y b z)))
     []
     [].
 
@@ -642,7 +642,7 @@ Lemma rule_ls3_true {o} :
          (sat   : sat_lib_cond lib)
          (satd  : lib_cond_sat_def lib)
          (nocs  : has_lib_cond_no_cs lib),
-    rule_true lib (rule_ls3 lib A a b n x y z i H).
+    rule_true uk0 lib (rule_ls3 lib A a b n x y z uk0 i H).
 Proof.
   unfold rule_ls3, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -665,7 +665,7 @@ Proof.
   { apply tequality_ls3c; eauto 3 with slow. }
 
   apply equality_in_function3.
-  dands; eauto 3 with slow;[].
+  dands; eauto 3 with slow; try apply type_mkc_csprop;[].
 
   intros lib' ext A1 A2 eqA.
   move2ext ext.
@@ -720,7 +720,7 @@ Proof.
     eapply tequality_respects_alphaeqc_right;
       [apply alphaeqc_sym; apply substc_alphaeqcv; apply substc2_ffdefs|].
     autorewrite with slow.
-    apply tequality_mkc_ffdefs; dands; eauto 3 with slow.
+    apply tequality_mkc_ffdefs; dands; eauto 3 with slow; try apply type_mkc_csprop.
     apply equality_refl in eqA; eauto 3 with slow. }
 
   { introv extc equc.
@@ -1027,7 +1027,7 @@ XXXXXXXXXX
   move2ext ext.
 
   rev_assert (member
-                lib
+                uk0 lib
                 (mkc_lam b (mkcv_lam [b] z (mkcv_ax _)))
                 (mkc_function
                    (mkc_csname 0)
@@ -1050,11 +1050,11 @@ XXXXXXXXXX
     {
       eapply tequality_respects_alphaeqc_left; [apply alphaeqc_sym;apply substc_mkcv_fun|].
       eapply tequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply substc_mkcv_fun|].
-      eapply tequality_respects_alphaeqc_left  in mem1;[|apply substc_mkcv_fun].
-      eapply tequality_respects_alphaeqc_right in mem1;[|apply substc_mkcv_fun].
+      eapply tequality_respects_alphaeqc_left  in mem2;[|apply substc_mkcv_fun].
+      eapply tequality_respects_alphaeqc_right in mem2;[|apply substc_mkcv_fun].
       autorewrite with slow in *.
 
-      apply tequality_fun in mem1; repnd.
+      apply tequality_fun in mem2; repnd.
       apply tequality_fun; dands; auto.
       { eapply tequality_respects_cequivc_left;
           [apply ccequivc_ext_sym;apply implies_ccequivc_ext_equality;
@@ -1072,7 +1072,7 @@ XXXXXXXXXX
       introv xt1 inh.
       eapply lib_extends_preserves_ccomputes_to_valc in eqa2;[|eauto].
       eapply lib_extends_preserves_ccomputes_to_valc in eqa2;[|eauto].
-      pose proof (mem1 _ xt1) as mem1; autodimp mem1 hyp.
+      pose proof (mem2 _ xt1) as mem2; autodimp mem2 hyp.
       { eapply inhabited_type_respects_cequivc in inh;
           [|apply implies_ccequivc_ext_equality;
             [apply ccomputes_to_valc_ext_implies_ccequivc_ext;try exact eqa2
@@ -1088,11 +1088,11 @@ XXXXXXXXXX
       eapply tequality_preserving_equality;[exact mem|].
       eapply tequality_respects_alphaeqc_left; [apply alphaeqc_sym;apply substc_mkcv_fun|].
       eapply tequality_respects_alphaeqc_right;[apply alphaeqc_sym;apply substc_mkcv_fun|].
-      eapply tequality_respects_alphaeqc_left  in mem1;[|apply substc_mkcv_fun].
-      eapply tequality_respects_alphaeqc_right in mem1;[|apply substc_mkcv_fun].
+      eapply tequality_respects_alphaeqc_left  in mem2;[|apply substc_mkcv_fun].
+      eapply tequality_respects_alphaeqc_right in mem2;[|apply substc_mkcv_fun].
       autorewrite with slow in *.
 
-      apply tequality_fun in mem1; repnd.
+      apply tequality_fun in mem2; repnd.
       apply tequality_fun; dands; auto.
       { eapply tequality_respects_cequivc_left;
           [apply ccequivc_ext_sym;apply implies_ccequivc_ext_equality;
@@ -1106,11 +1106,11 @@ XXXXXXXXXX
            |apply ccequivc_ext_refl
            |apply ccequivc_ext_refl]
           |].
-        apply tequality_refl in mem2; auto. }
+        apply tequality_refl in mem3; auto. }
       introv xt1 inh.
       eapply lib_extends_preserves_ccomputes_to_valc in eqa2;[|eauto].
       eapply lib_extends_preserves_ccomputes_to_valc in eqa2;[|eauto].
-      pose proof (mem1 _ xt1) as mem1; autodimp mem1 hyp;[].
+      pose proof (mem2 _ xt1) as mem2; autodimp mem2 hyp;[].
       allrw @tequality_mkc_squash.
 
       eapply equality_monotone in eqA;[|eauto];[].
@@ -1122,7 +1122,7 @@ XXXXXXXXXX
     }
   }
 
-  pose proof (equality_in_mkc_csprop_implies_tequality lib A1 u (mkc_choice_seq name) (mkc_choice_seq name) i) as teq.
+  pose proof (equality_in_mkc_csprop_implies_tequality uk0 lib A1 u (mkc_choice_seq name) (mkc_choice_seq name) i) as teq.
   repeat (autodimp teq hyp); eauto 3 with slow.
   eapply cequivc_preserving_equality in eqz;
     [|apply implies_ccequivc_ext_apply;[apply ccequivc_ext_refl|apply ccomputes_to_valc_ext_implies_ccequivc_ext; eauto] ].
@@ -1176,7 +1176,7 @@ XXXXXXXXXX
   { apply equality_refl in ecs; introv extg equg.
     apply inhabited_mkc_equality in equg.
     apply implies_type_mkc_squash.
-    apply (equality_in_mkc_csprop_implies_tequality _ _ _ _ _ i); eauto 3 with slow. }
+    apply (equality_in_mkc_csprop_implies_tequality _ _ _ _ _ _ i); eauto 3 with slow. }
 
   introv ext2 eb.
 
@@ -1317,7 +1317,7 @@ XXXXXXXXXX
   { split; simpl; auto; eauto 3 with slow. }
 
   pose proof (member_swapped_css_libs
-                name name' (swap_cs_lib (name,name') lib0) lib0
+                name name' uk0 (swap_cs_lib (name,name') lib0) lib0
                 (swap_cs_cterm (name, name') z1)
                 (mkc_apply u (mkc_choice_seq name'))) as m.
   repeat (autodimp m hyp); simpl; eauto 3 with slow.

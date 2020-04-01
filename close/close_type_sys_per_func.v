@@ -33,7 +33,7 @@ Require Export close_util_func2.
 
 
 Lemma close_type_system_func {o} :
-  forall lib (ts : cts(o))
+  forall uk lib (ts : cts(o))
          T T'
          (eq : per)
          A A' v v' B B'
@@ -43,23 +43,24 @@ Lemma close_type_system_func {o} :
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T (mkc_function A v B)
     -> ccomputes_to_valc_ext lib T' (mkc_function A' v' B')
-    -> in_ext_ext lib (fun lib' x => close ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A A' (eqa lib' x))
+    -> is_swap_invariant_cond uk eqa v B v' B'
+    -> in_ext_ext lib (fun lib' x => close ts uk lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) uk lib' A A' (eqa lib' x))
     -> in_ext_ext
          lib
          (fun lib' x =>
             forall (a a' : CTerm) (e : eqa lib' x a a'),
-              close ts lib' (substc a v B) (substc a' v' B') (eqb lib' x a a' e))
+              close ts uk lib' (substc a v B) (substc a' v' B') (eqb lib' x a a' e))
     -> in_ext_ext
          lib
          (fun lib' x =>
             forall (a a' : CTerm) (e : eqa lib' x a a'),
-              type_sys_props4 (close ts) lib' (substc a v B) (substc a' v' B')
+              type_sys_props4 (close ts) uk lib' (substc a v B) (substc a' v' B')
                               (eqb lib' x a a' e))
     -> (eq <=2=> (per_func_ext_eq lib eqa eqb))
-    -> type_sys_props4 (close ts) lib T T' eq.
+    -> type_sys_props4 (close ts) uk lib T T' eq.
 Proof.
-  introv tysys dou mon comp1 comp2 cla tsa clb tsb eqiff.
+  introv tysys dou mon comp1 comp2 isw; introv cla tsa clb tsb eqiff.
 
   prove_type_sys_props4 SCase; introv.
 

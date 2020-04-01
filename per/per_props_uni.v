@@ -39,17 +39,17 @@ Require Export cvterm.
 
 
 Lemma per_bar_eq_univi_eq_lib_per_implies {o} :
-  forall (lib : @library o) i a b,
-    per_bar_eq lib (univi_eq_lib_per lib i) a b
-    -> in_open_bar_ext lib (fun (lib' : library) x => univi_eq (univi_bar i) lib' a b).
+  forall uk (lib : @library o) i a b,
+    per_bar_eq lib (univi_eq_lib_per uk lib i) a b
+    -> in_open_bar_ext lib (fun (lib' : library) x => univi_eq (univi_bar i) uk lib' a b).
 Proof.
   introv per; tcsp.
 Qed.
 
 Lemma equality_in_uni {o} :
-  forall lib (a b : @CTerm o) i,
-    equality lib a b (mkc_uni i)
-    -> tequality lib a b.
+  forall uk lib (a b : @CTerm o) i,
+    equality uk lib a b (mkc_uni uk i)
+    -> tequality uk lib a b.
 Proof.
   unfold tequality, equality, nuprl; introv e; exrepnd.
 
@@ -80,7 +80,7 @@ Proof.
 
   exrepnd.
   pose proof (e0 _ ext1 _ ext2 extz) as w.
-  eapply (nuprli_monotone _ lib2 lib'0) in w; auto; exrepnd.
+  eapply (nuprli_monotone _ _ lib2 lib'0) in w; auto; exrepnd.
   apply nuprli_refl in w1.
   apply nuprli_refl in q.
   eapply nuprli_uniquely_valued in w1; try exact q; apply w1; clear w1; apply w0; auto.
@@ -88,7 +88,7 @@ Qed.
 Hint Resolve equality_in_uni : slow.
 
 Lemma member_in_uni {p} :
-  forall lib a i, @member p lib a (mkc_uni i) -> type lib a.
+  forall uk lib a i, @member p uk lib a (mkc_uni uk i) -> type uk lib a.
 Proof.
   unfold member, type; introv e.
   apply equality_in_uni in e; sp.
@@ -96,12 +96,12 @@ Qed.
 Hint Resolve member_in_uni : slow.
 
 Lemma mkc_uni_in_nuprl {o} :
-  forall (lib : @library o) (i : nat),
-    nuprl lib (mkc_uni i) (mkc_uni i) (per_bar_eq lib (univi_eq_lib_per lib i)).
+  forall uk (lib : @library o) (i : nat),
+    nuprl uk lib (mkc_uni uk i) (mkc_uni uk i) (per_bar_eq lib (univi_eq_lib_per uk lib i)).
 Proof.
   introv.
   apply CL_init.
-  exists (univi_eq_lib_per lib i); dands; tcsp.
+  exists (univi_eq_lib_per uk lib i); dands; tcsp.
   apply in_ext_ext_implies_in_open_bar_ext; introv.
   exists (S i); simpl.
   left; sp; eauto 3 with slow.
@@ -109,26 +109,26 @@ Qed.
 Hint Resolve mkc_uni_in_nuprl : slow.
 
 Lemma uni_in_uni {o} :
-  forall lib i j, i < j -> @member o lib (mkc_uni i) (mkc_uni j).
+  forall uk lib i j, i < j -> @member o uk lib (mkc_uni uk i) (mkc_uni uk j).
 Proof.
   introv h.
   unfold member, equality.
-  exists (per_bar_eq lib (univi_eq_lib_per lib j)); dands; eauto 2 with slow.
+  exists (per_bar_eq lib (univi_eq_lib_per uk lib j)); dands; eauto 2 with slow.
 
   apply in_ext_ext_implies_in_open_bar_ext; introv; simpl.
-  exists (per_bar_eq lib' (univi_eq_lib_per lib' i)); dands; eauto 2 with slow.
+  exists (per_bar_eq lib' (univi_eq_lib_per uk lib' i)); dands; eauto 2 with slow.
   apply CL_init.
-  exists (univi_eq_lib_per lib' i); dands; tcsp.
+  exists (univi_eq_lib_per uk lib' i); dands; tcsp.
   apply in_ext_ext_implies_in_open_bar_ext; introv.
   apply univi_exists_iff.
   exists i; dands; spcast; eauto 3 with slow.
 Qed.
 
 Lemma cumulativity {o} :
-  forall lib i j (A B : @CTerm o),
+  forall uk lib i j (A B : @CTerm o),
     i <= j
-    -> equality lib A B (mkc_uni i)
-    -> equality lib A B (mkc_uni j).
+    -> equality uk lib A B (mkc_uni uk i)
+    -> equality uk lib A B (mkc_uni uk j).
 Proof.
   introv h e.
   unfold member, equality in *; exrepnd.
@@ -136,43 +136,43 @@ Proof.
   apply univ_implies_univi_bar3 in e1; exrepnd.
   apply e1 in e0; clear e1.
 
-  exists (per_bar_eq lib (univi_eq_lib_per lib j)); dands; eauto 2 with slow.
+  exists (per_bar_eq lib (univi_eq_lib_per uk lib j)); dands; eauto 2 with slow.
   eapply in_open_bar_ext_pres; try exact e0; clear e0; introv e0; simpl in *.
 
   unfold univi_eq in *; exrepnd.
   exists eqa.
   fold (@nuprli o i) in *.
   fold (@nuprli o j) in *.
-  pose proof (typable_in_higher_univ i lib' A B eqa e1 (j - i)) as q.
+  pose proof (typable_in_higher_univ i uk lib' A B eqa e1 (j - i)) as q.
   rewrite minus_plus_n in q; auto; try omega.
 Qed.
 
 Lemma nuprl_mkc_uni {p} :
-  forall lib (i : nat),
-    {eq : per(p) , nuprl lib (mkc_uni i) (mkc_uni i) eq}.
+  forall uk lib (i : nat),
+    {eq : per(p) , nuprl uk lib (mkc_uni uk i) (mkc_uni uk i) eq}.
 Proof.
   introv.
-  exists (per_bar_eq lib (univi_eq_lib_per lib i)); eauto 2 with slow.
+  exists (per_bar_eq lib (univi_eq_lib_per uk lib i)); eauto 2 with slow.
 Qed.
 
 Lemma tequality_mkc_uni {p} :
-  forall lib (i : nat), @tequality p lib (mkc_uni i) (mkc_uni i).
+  forall uk lib (i : nat), @tequality p uk lib (mkc_uni uk i) (mkc_uni uk i).
 Proof.
   generalize (@nuprl_mkc_uni p); sp.
 Qed.
 Hint Resolve tequality_mkc_uni : slow.
 
 Lemma type_mkc_uni {o} :
-  forall lib (i : nat), @type o lib (mkc_uni i).
+  forall uk lib (i : nat), @type o uk lib (mkc_uni uk i).
 Proof.
   unfold type; eauto 3 with slow.
 Qed.
 Hint Resolve type_mkc_uni : slow.
 
 Lemma per_bar_eq_univi_eq_lib_per_implies_eq_nuprli {o} :
-  forall lib i (A B : @CTerm o),
-    per_bar_eq lib (univi_eq_lib_per lib i) A B
-    -> exists eq', nuprli i lib A B eq'.
+  forall uk lib i (A B : @CTerm o),
+    per_bar_eq lib (univi_eq_lib_per uk lib i) A B
+    -> exists eq', nuprli i uk lib A B eq'.
 Proof.
   introv e0.
   unfold per_bar_eq in e0; simpl in *.
@@ -198,17 +198,17 @@ Proof.
 
   exrepnd.
   pose proof (e0 _ ext1 _ ext2 extz) as w.
-  eapply (nuprli_monotone _ lib2 lib'0) in w; auto; exrepnd.
+  eapply (nuprli_monotone _ _ lib2 lib'0) in w; auto; exrepnd.
   apply nuprli_refl in w1.
   apply nuprli_refl in q.
   eapply nuprli_uniquely_valued in w1; try exact q; apply w1; clear w1; apply w0; auto.
 Qed.
 
 Lemma equality_nuprli {o} :
-  forall lib (A B C : @CTerm o) i eq,
-    equality lib A B (mkc_uni i)
-    -> nuprli i lib A C eq
-    -> nuprli i lib A B eq.
+  forall uk lib (A B C : @CTerm o) i eq,
+    equality uk lib A B (mkc_uni uk i)
+    -> nuprli i uk lib A C eq
+    -> nuprli i uk lib A B eq.
 Proof.
   introv e n.
   unfold equality in e; exrepnd.

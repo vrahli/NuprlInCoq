@@ -880,10 +880,10 @@ Proof.
 Qed.
 
 Lemma cequiv_uni {o} :
-  forall lib (t t' : @NTerm o) n,
-    computes_to_value lib t (mk_uni n)
+  forall lib (t t' : @NTerm o) u n,
+    computes_to_value lib t (mk_uni u n)
     -> cequiv lib t t'
-    -> computes_to_value lib t' (mk_uni n).
+    -> computes_to_value lib t' (mk_uni u n).
 Proof.
   sp.
   apply @cequiv_canonical_form with (t' := t') in X; sp.
@@ -908,10 +908,10 @@ Qed.
 *)
 
 Lemma cequivc_uni {o} :
-  forall lib (t t' : @CTerm o) n,
-    computes_to_valc lib t (mkc_uni n)
+  forall lib (t t' : @CTerm o) u n,
+    computes_to_valc lib t (mkc_uni u n)
     -> cequivc lib t t'
-    -> computes_to_valc lib t' (mkc_uni n).
+    -> computes_to_valc lib t' (mkc_uni u n).
 Proof.
   sp.
   allapply @computes_to_valc_to_valuec; allsimpl.

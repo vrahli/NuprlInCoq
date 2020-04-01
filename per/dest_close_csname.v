@@ -150,9 +150,9 @@ Proof.
 Qed.
 
 Lemma per_csname_implies_per_bar_per_csname {o} :
-  forall ts lib (T T' : @CTerm o) eq,
-    per_csname ts lib T T' eq
-    -> per_bar (per_csname ts) lib T T' eq.
+  forall ts uk lib (T T' : @CTerm o) eq,
+    per_csname ts uk lib T T' eq
+    -> per_bar (per_csname ts) uk lib T T' eq.
 Proof.
   introv per.
   unfold per_csname in per; exrepnd.
@@ -175,12 +175,12 @@ Hint Resolve per_csname_implies_per_bar_per_csname : slow.
 (* ====== dest lemmas ====== *)
 
 Lemma dest_close_per_csname_l {p} :
-  forall (ts : cts(p)) lib T T' eq n,
+  forall (ts : cts(p)) uk lib T T' eq n,
     type_system ts
     -> defines_only_universes ts
     -> ccomputes_to_valc_ext lib T (mkc_csname n)
-    -> close ts lib T T' eq
-    -> per_bar (per_csname (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_csname (close ts)) uk lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
@@ -190,12 +190,12 @@ Proof.
 Qed.
 
 Lemma dest_close_per_csname_r {p} :
-  forall (ts : cts(p)) lib T T' eq n,
+  forall (ts : cts(p)) uk lib T T' eq n,
     type_system ts
     -> defines_only_universes ts
     -> ccomputes_to_valc_ext lib T' (mkc_csname n)
-    -> close ts lib T T' eq
-    -> per_bar (per_csname (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_csname (close ts)) uk lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
@@ -210,7 +210,7 @@ Qed.
     -> defines_only_universes ts
     -> type_monotone ts
     -> all_in_bar bar (fun lib => T ===>(lib) mkc_csname)
-    -> close ts lib T T' eq
+    -> close ts uk lib T T' eq
     -> per_csname_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.
@@ -225,7 +225,7 @@ Lemma dest_close_per_csname_bar_r {p} :
     -> defines_only_universes ts
     -> type_monotone ts
     -> all_in_bar bar (fun lib => T' ===>(lib) mkc_csname)
-    -> close ts lib T T' eq
+    -> close ts uk lib T T' eq
     -> per_csname_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.
@@ -240,7 +240,7 @@ Lemma dest_close_per_csname_ceq_bar_l {p} :
     -> defines_only_universes ts
     -> type_monotone ts
     -> T ==b==>(bar) mkc_csname
-    -> close ts lib T T' eq
+    -> close ts uk lib T T' eq
     -> per_csname_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.
@@ -255,7 +255,7 @@ Lemma dest_close_per_csname_ceq_bar_r {p} :
     -> defines_only_universes ts
     -> type_monotone ts
     -> T' ==b==>(bar) mkc_csname
-    -> close ts lib T T' eq
+    -> close ts uk lib T T' eq
     -> per_csname_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.

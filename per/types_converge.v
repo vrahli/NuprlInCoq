@@ -78,7 +78,7 @@ Hint Resolve ccomputes_to_valc_ext_implies_comp_val_bar : slow.
 
 
 Lemma types_converge {o} :
-  forall lib (t : @CTerm o), type lib t -> chaltsc_bar lib t.
+  forall uk lib (t : @CTerm o), type uk lib t -> chaltsc_bar lib t.
 Proof.
   introv n.
   unfold type, tequality, nuprl in n; exrepnd.
@@ -104,7 +104,7 @@ Proof.
 Qed.
 
 Lemma types_converge2 {o} :
-  forall lib (t : @CTerm o), type lib t -> comp_val_bar lib t.
+  forall uk lib (t : @CTerm o), type uk lib t -> comp_val_bar lib t.
 Proof.
   introv n.
   unfold type, tequality, nuprl in n; exrepnd.

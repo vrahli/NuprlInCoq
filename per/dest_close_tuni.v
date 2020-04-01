@@ -36,11 +36,11 @@ Require Export local.
 
 
 Lemma dest_close_per_tuni_l {p} :
-  forall (ts : cts(p)) lib T i T' eq,
+  forall (ts : cts(p)) uk lib T i T' eq,
     local_ts ts
     -> ccomputes_to_valc_ext lib T (mkc_tuni i)
-    -> close ts lib T T' eq
-    -> ts lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> ts uk lib T T' eq.
 Proof.
   introv locts comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try complete close_diff_all; auto.
@@ -50,11 +50,11 @@ Proof.
 Qed.
 
 Lemma dest_close_per_tuni_r {p} :
-  forall (ts : cts(p)) lib T i T' eq,
+  forall (ts : cts(p)) uk lib T i T' eq,
     local_ts ts
     -> ccomputes_to_valc_ext lib T' (mkc_tuni i)
-    -> close ts lib T T' eq
-    -> ts lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> ts uk lib T T' eq.
 Proof.
   introv locts comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.

@@ -114,9 +114,9 @@ Proof.
 Qed.
 
 Lemma per_cequiv_implies_per_bar {o} :
-  forall ts lib (T T' : @CTerm o) eq,
-    per_cequiv ts lib T T' eq
-    -> per_bar (per_cequiv ts) lib T T' eq.
+  forall ts uk lib (T T' : @CTerm o) eq,
+    per_cequiv ts uk lib T T' eq
+    -> per_bar (per_cequiv ts) uk lib T T' eq.
 Proof.
   introv per.
   unfold per_cequiv in *; exrepnd.
@@ -256,12 +256,12 @@ Qed.
 (* ====== dest lemmas ====== *)
 
 Lemma dest_close_per_cequiv_l {p} :
-  forall (ts : cts(p)) lib T A B T' eq,
+  forall (ts : cts(p)) uk lib T A B T' eq,
     type_system ts
     -> defines_only_universes ts
     -> ccomputes_to_valc_ext lib T (mkc_cequiv A B)
-    -> close ts lib T T' eq
-    -> per_bar (per_cequiv (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_cequiv (close ts)) uk lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
@@ -272,12 +272,12 @@ Proof.
 Qed.
 
 Lemma dest_close_per_cequiv_r {p} :
-  forall (ts : cts(p)) lib T A B T' eq,
+  forall (ts : cts(p)) uk lib T A B T' eq,
     type_system ts
     -> defines_only_universes ts
     -> ccomputes_to_valc_ext lib T' (mkc_cequiv A B)
-    -> close ts lib T T' eq
-    -> per_bar (per_cequiv (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_cequiv (close ts)) uk lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
@@ -293,7 +293,7 @@ Lemma dest_close_per_cequiv_l_ceq {p} :
     type_system ts
     -> defines_only_universes ts
     -> computes_to_valc_ceq_bar bar T (mkc_cequiv A B)
-    -> close ts lib T T' eq
+    -> close ts uk lib T T' eq
     -> per_bar (per_cequiv (close ts)) lib T T' eq.
 Proof.
   introv tysys dou comp cl.
@@ -307,7 +307,7 @@ Lemma dest_close_per_cequiv_r_ceq {p} :
     type_system ts
     -> defines_only_universes ts
     -> computes_to_valc_ceq_bar bar T' (mkc_cequiv A B)
-    -> close ts lib T T' eq
+    -> close ts uk lib T T' eq
     -> per_bar (per_cequiv (close ts)) lib T T' eq.
 Proof.
   introv tysys dou comp cl.

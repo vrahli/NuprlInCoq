@@ -287,9 +287,9 @@ Qed.
 
 
 Lemma per_bar_per_csname_implies_close {o} :
-  forall (ts : cts(o)) lib T T' eq,
-    per_bar (per_csname (close ts)) lib T T' eq
-    -> close ts lib T T' eq.
+  forall (ts : cts(o)) uk lib T T' eq,
+    per_bar (per_csname (close ts)) uk lib T T' eq
+    -> close ts uk lib T T' eq.
 Proof.
   introv per.
   apply CL_bar.
@@ -312,14 +312,14 @@ Proof.
 Qed.
 
 Lemma type_equality_respecting_trans1_per_csname_bar_implies {o} :
-  forall (ts : cts(o)) lib T T' n n',
+  forall (ts : cts(o)) uk lib T T' n n',
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T (mkc_csname n)
     -> ccomputes_to_valc_ext lib T' (mkc_csname n')
-    -> type_equality_respecting_trans1 (per_bar (per_csname (close ts))) lib T T'
-    -> type_equality_respecting_trans1 (close ts) lib T T'.
+    -> type_equality_respecting_trans1 (per_bar (per_csname (close ts))) uk lib T T'
+    -> type_equality_respecting_trans1 (close ts) uk lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
   apply per_bar_per_csname_implies_close.
@@ -340,14 +340,14 @@ Proof.
 Qed.
 
 Lemma type_equality_respecting_trans2_per_csname_bar_implies {o} :
-  forall (ts : cts(o)) lib T T' n n',
+  forall (ts : cts(o)) uk lib T T' n n',
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T (mkc_csname n)
     -> ccomputes_to_valc_ext lib T' (mkc_csname n')
-    -> type_equality_respecting_trans2 (per_bar (per_csname (close ts))) lib T T'
-    -> type_equality_respecting_trans2 (close ts) lib T T'.
+    -> type_equality_respecting_trans2 (per_bar (per_csname (close ts))) uk lib T T'
+    -> type_equality_respecting_trans2 (close ts) uk lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
   apply per_bar_per_csname_implies_close.
@@ -464,14 +464,14 @@ Qed.
 Hint Resolve per_csname_type_value_respecting : slow.
 
 Lemma type_equality_respecting_trans1_per_bar_per_csname_implies {o} :
-  forall (ts : cts(o)) lib T T' n n',
+  forall (ts : cts(o)) uk lib T T' n n',
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T  (mkc_csname n)
     -> ccomputes_to_valc_ext lib T' (mkc_csname n')
-    -> type_equality_respecting_trans1 (per_bar (per_csname (close ts))) lib T T'
-    -> type_equality_respecting_trans1 (close ts) lib T T'.
+    -> type_equality_respecting_trans1 (per_bar (per_csname (close ts))) uk lib T T'
+    -> type_equality_respecting_trans1 (close ts) uk lib T T'.
 Proof.
   introv tsts dou mon comp1 comp2 trans h ceq cl.
   apply per_bar_per_csname_implies_close.
@@ -492,14 +492,14 @@ Proof.
 Qed.
 
 Lemma type_equality_respecting_trans2_per_bar_per_csname_implies {o} :
-  forall (ts : cts(o)) lib T T' n n',
+  forall (ts : cts(o)) uk lib T T' n n',
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T  (mkc_csname n)
     -> ccomputes_to_valc_ext lib T' (mkc_csname n')
-    -> type_equality_respecting_trans2 (per_bar (per_csname (close ts))) lib T T'
-    -> type_equality_respecting_trans2 (close ts) lib T T'.
+    -> type_equality_respecting_trans2 (per_bar (per_csname (close ts))) uk lib T T'
+    -> type_equality_respecting_trans2 (close ts) uk lib T T'.
 Proof.
   introv tsts dou mon comp1 comp2 trans h ceq cl.
   apply per_bar_per_csname_implies_close.

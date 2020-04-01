@@ -35,12 +35,12 @@ Require Export close_util_int.
 
 
 Lemma close_type_system_int {p} :
-  forall (ts : cts(p)) lib T T' eq,
+  forall (ts : cts(p)) uk lib T T' eq,
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> per_int (close ts) lib T T' eq
-    -> type_sys_props4 (close ts) lib T T' eq.
+    -> per_int (close ts) uk lib T T' eq
+    -> type_sys_props4 (close ts) uk lib T T' eq.
 Proof.
   introv tsp dou mon per.
 
@@ -112,7 +112,7 @@ Proof.
   + SCase "term_value_respecting".
     assert (term_value_respecting (per_int_bar (close ts))) as tvr
         by (apply per_int_bar_term_value_respecting).
-    apply tvr with (T := T); auto.
+    eapply tvr; eauto.
     apply @type_system_type_mem with (T' := T'); auto; eauto 3 with slow.
 
   + SCase "type_gsymmetric"; repdors; subst; split; sp; dclose_lr.

@@ -56,11 +56,11 @@ Lemma mk_nlhyp_true {o} :
 Proof. sp. Qed.
 
 Lemma if_in_open_bar_tequality_and_equality {o} :
-  forall (lib : @library o) A B a b C,
+  forall uk (lib : @library o) A B a b C,
     in_open_bar
       lib
-      (fun lib' => tequality lib' A B # equality lib' a b C)
-    -> tequality lib A B # equality lib a b C.
+      (fun lib' => tequality uk lib' A B # equality uk lib' a b C)
+    -> tequality uk lib A B # equality uk lib a b C.
 Proof.
   introv h; dands.
   { apply all_in_ex_bar_tequality_implies_tequality; auto.
@@ -101,7 +101,7 @@ Definition rule_set_elimination {p}
     [].
 
 Lemma rule_set_elimination_true {p} :
-  forall lib
+  forall uk lib
          (A B C e : NTerm)
          (v x y z : NVar)
          (H J : @barehypotheses p)
@@ -110,7 +110,7 @@ Lemma rule_set_elimination_true {p} :
          (bc3 : !LIn v (vars_hyps H))
          (bc4 : !LIn v (vars_hyps J))
          (bc5 : x <> v),
-    rule_true lib (rule_set_elimination
+    rule_true uk lib (rule_set_elimination
                  A B C e
                  v x y z
                  H J).
@@ -239,7 +239,7 @@ Proof.
   (*unfold inhabited_type in sim2; destruct sim2 as [t mem].*)
 
   (* ==== moving z ==== *)
-  pose proof (rule_move_up_true2 lib
+  pose proof (rule_move_up_true2 uk lib
                 true
                 (subst B v (mk_var y))
                 C e z
@@ -274,7 +274,7 @@ Proof.
   destruct hyp1 as [wc hyp1].
   destruct wc as [ws cl]; simpl in cl.
   destruct cl as [cty cex].
-  pose proof (rule_move_up_true2 lib
+  pose proof (rule_move_up_true2 uk lib
                 false
                 A
                 C e y
@@ -315,9 +315,9 @@ Proof.
 
 
   apply if_in_open_bar_tequality_and_equality.
-  eapply in_open_bar_pres; try exact sim2; clear sim2; introv xta sim2.
+  eapply in_open_bar_pres; try exact sim7; clear sim7; introv xta sim7.
   assert (lib_extends lib'0 lib) as xtb by eauto 3 with slow.
-  unfold inhabited_type in sim2; destruct sim2 as [t mem].
+  unfold inhabited_type in sim7; destruct sim7 as [t mem].
 
 
   vr_seq_true in hyp1.
@@ -550,17 +550,17 @@ Proof.
 Qed.
 
 Lemma rule_set_elimination_true_nobc {p} :
-  forall lib (A B C e : NTerm)
+  forall uk lib (A B C e : NTerm)
          (v x y z : NVar)
          (H J : @barehypotheses p),
-    rule_true lib (rule_set_elimination
+    rule_true uk lib (rule_set_elimination
                  A B C e
                  v x y z
                  H J).
 Proof.
   introv.
   unfold rule_set_elimination.
-  pose proof (rule_set_elimination_true lib A B C e v x y z H J) as h.
+  pose proof (rule_set_elimination_true uk lib A B C e v x y z H J) as h.
 
 Abort.
 
@@ -585,7 +585,7 @@ Abort.
 Definition rule_set_equality {p}
            (a1 a2 b1 b2 : NTerm)
            (x1 x2 y : NVar)
-           (i   : nat)
+           (u i : nat)
            (H   : @barehypotheses p) :=
   mk_rule
     (mk_baresequent
@@ -593,16 +593,16 @@ Definition rule_set_equality {p}
        (mk_conclax (mk_equality
                       (mk_set a1 x1 b1)
                       (mk_set a2 x2 b2)
-                      (mk_uni i))))
+                      (mk_uni u i))))
     [ mk_baresequent
         H
-        (mk_conclax (mk_equality a1 a2 (mk_uni i))),
+        (mk_conclax (mk_equality a1 a2 (mk_uni u i))),
       mk_baresequent
         (snoc H (mk_hyp y a1))
         (mk_conclax (mk_equality
                        (subst b1 x1 (mk_var y))
                        (subst b2 x2 (mk_var y))
-                       (mk_uni i)))
+                       (mk_uni u i)))
     ]
     [ sarg_var y ].
 
@@ -611,27 +611,27 @@ Lemma rule_set_equality_true {pp} :
   forall x1 x2 y : NVar,
   forall i   : nat,
   forall H   : @barehypotheses pp,
-    rule_true lib (rule_set_equality
+    rule_true uk0 lib (rule_set_equality
                      a1 a2 b1 b2
                      x1 x2 y
-                     i
+                     uk0 i
                      H).
 Proof.
   intros.
-  apply (rule_tyfam_equality_true _ _ mkc_set); auto.
+  apply (rule_tyfam_equality_true _ _ _ mkc_set); auto.
 
   - introv; simpl; allrw remove_nvars_nil_l; allrw app_nil_r; auto.
 
   - introv; apply lsubstc_mk_set_ex.
 
-  - introv xta; apply equality_set.
+  - introv xta; apply equality_set_uk0.
 Qed.
 
 (* begin hide *)
 
 Lemma rule_set_equality_true_ex {o} :
   forall lib y i a1 a2 b1 b2 x1 x2 H,
-    @rule_true_if o lib (rule_set_equality a1 a2 b1 b2 x1 x2 y i H).
+    @rule_true_if o uk0 lib (rule_set_equality a1 a2 b1 b2 x1 x2 y uk0 i H).
 Proof.
   intros.
   generalize (rule_set_equality_true lib a1 a2 b1 b2 x1 x2 y i H); intro rt.
@@ -641,13 +641,13 @@ Qed.
 
 
 Lemma sim_cons2 {o} :
-  forall (lib : library) (t1 t2 : @CTerm o)
+  forall uk (lib : library) (t1 t2 : @CTerm o)
          (s1 s2 : CSubstitution) (h : hypothesis) (hs : barehypotheses)
          (w : wf_term (htyp h)) (p : cover_vars (htyp h) s1) v,
-    equality lib t1 t2 (lsubstc (htyp h) w s1 p)
-    -> similarity lib s1 s2 hs
+    equality uk lib t1 t2 (lsubstc (htyp h) w s1 p)
+    -> similarity uk lib s1 s2 hs
     -> v = hvar h
-    -> similarity lib (snoc s1 (v, t1)) (snoc s2 (v, t2)) (snoc hs h).
+    -> similarity uk lib (snoc s1 (v, t1)) (snoc s2 (v, t2)) (snoc hs h).
 Proof.
   intros; subst.
   eapply sim_cons; eauto.
@@ -673,14 +673,14 @@ Qed.
 Definition rule_dependent_set_member_formation {p}
            (A B a e : NTerm)
            (x z  : NVar)
-           (i    : nat)
+           (u i  : nat)
            (H    : @barehypotheses p) :=
   mk_rule
     (mk_baresequent H (mk_concl (mk_set A x B) a))
     [ mk_baresequent H (mk_concl A a),
       mk_baresequent H (mk_concl (subst B x a) e),
       mk_baresequent (snoc H (mk_hyp z A))
-                     (mk_conclax (mk_member (subst B x (mk_var z)) (mk_uni i)))
+                     (mk_conclax (mk_member (subst B x (mk_var z)) (mk_uni u i)))
     ]
     [sarg_var z].
 
@@ -691,7 +691,7 @@ Lemma rule_dependent_set_member_formation_true {p} :
          (H   : @barehypotheses p)
          (bc1 : !LIn z (bound_vars B))
          (bc2 : disjoint (nh_vars_hyps H) (bound_vars B)),
-    rule_true lib (rule_dependent_set_member_formation A B a e x z i H).
+    rule_true uk0 lib (rule_dependent_set_member_formation A B a e x z uk0 i H).
 Proof.
   intros.
   unfold rule_dependent_set_member_formation, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -734,13 +734,14 @@ Proof.
   - lsubst_tac.
     apply tequality_set.
 
-    prove_and teqa.
+    prove_and teqa; eauto 2 with slow.
 
     + vr_seq_true in hyp1.
       pose proof (hyp1 _ ext s1 s2 eqh sim) as h; clear hyp1.
       exrepnd; proof_irr; auto.
 
-    + introv xta eqa.
+    + dands; eauto 2 with slow.
+      introv xta eqa.
       repeat substc_lsubstc_vars3.
 
       assert (lib_extends lib'0 lib) as xtb by eauto 3 with slow.

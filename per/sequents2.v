@@ -42,11 +42,11 @@ Definition wf_bseq {o} (s : @baresequent o) :=
 (* This is a variant of [rule_true2] (which is equivalent to [rule_true])
    that only needs [wf_bseq] and not [pwf_sequent].
  *)
-Definition rule_true3 {o} lib (R : @rule o) : Type :=
+Definition rule_true3 {o} uk lib (R : @rule o) : Type :=
   forall wf    : wf_bseq (goal R),
   forall cargs : args_constraints (sargs R) (hyps (goal R)),
-  forall hyps  : (forall s, LIn s (subgoals R) -> sequent_true2 lib s),
-    sequent_true2 lib (goal R).
+  forall hyps  : (forall s, LIn s (subgoals R) -> sequent_true2 uk lib s),
+    sequent_true2 uk lib (goal R).
 
 Lemma pwf_sequent_implies_wf_bseq {o} :
   forall (seq : @baresequent o),
@@ -60,7 +60,7 @@ Hint Resolve pwf_sequent_implies_wf_bseq : slow.
 (* The other direction is not true because [rule_true] and [rule_true2] assume
    that the extract is well-formed. *)
 Lemma rule_true3_implies_rule_true2 {o} :
-  forall lib (R : @rule o), rule_true3 lib R -> rule_true2 lib R.
+  forall uk lib (R : @rule o), rule_true3 uk lib R -> rule_true2 uk lib R.
 Proof.
   introv rt wf args imp.
   unfold rule_true3 in rt.
@@ -69,7 +69,7 @@ Qed.
 Hint Resolve rule_true3_implies_rule_true2 : slow.
 
 Lemma rule_true3_implies_rule_true {o} :
-  forall lib (R : @rule o), rule_true3 lib R -> rule_true lib R.
+  forall uk lib (R : @rule o), rule_true3 uk lib R -> rule_true uk lib R.
 Proof.
   introv rt.
   rw @rule_true_iff_rule_true2; eauto 3 with slow.

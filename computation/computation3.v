@@ -1030,7 +1030,7 @@ Qed.
 Hint Resolve isvalue_like_integer : slow.
 
 Lemma isvalue_like_uni {o} :
-  forall n, @isvalue_like o (mk_uni n).
+  forall u n, @isvalue_like o (mk_uni u n).
 Proof.
   introv; unfold isvalue_like; simpl; sp.
 Qed.
@@ -3180,7 +3180,7 @@ Proof.
               allsimpl.
               apply compute_step_tuni_success in Hcomp; exrepnd; subst; allsimpl; cpx.
               destruct lbt2; allsimpl; cpx; GC.
-              exists (@mk_uni p n); dands; auto.
+              exists (@mk_uni p 0 n); dands; auto.
               unfold compute_step_tuni; simpl.
               destruct (Z_le_gt_dec 0 (Z.of_nat n)); sp; try omega.
               rw Znat.Nat2Z.id; sp.

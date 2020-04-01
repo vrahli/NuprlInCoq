@@ -175,11 +175,11 @@ Qed.
 Hint Resolve local_per_bar_per_union_nuprli : slow.
 
 Lemma dest_nuprl_per_union_l {o} :
-  forall (ts : cts(o)) lib T A B T' eq,
+  forall (ts : cts(o)) uk lib T A B T' eq,
     ts = univ
     -> ccomputes_to_valc_ext lib T (mkc_union A B)
-    -> close ts lib T T' eq
-    -> per_bar (per_union (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_union (close ts)) uk lib T T' eq.
 Proof.
   introv equ comp cl.
   assert (type_system ts) as sys by (subst; eauto 3 with slow).
@@ -191,11 +191,11 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_per_union_l {o} :
-  forall i (ts : cts(o)) lib T A B T' eq,
+  forall i (ts : cts(o)) uk lib T A B T' eq,
     ts = univi_bar i
     -> ccomputes_to_valc_ext lib T (mkc_union A B)
-    -> close ts lib T T' eq
-    -> per_bar (per_union (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_union (close ts)) uk lib T T' eq.
 Proof.
   introv equ comp cl.
   assert (type_system ts) as sys by (subst; eauto 3 with slow).
@@ -207,9 +207,9 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_union {o} :
-  forall (lib : @library o) A1 A2 B1 B2 eq,
-    nuprl lib (mkc_union A1 B1) (mkc_union A2 B2) eq
-    -> per_bar (per_union nuprl) lib (mkc_union A1 B1) (mkc_union A2 B2) eq.
+  forall uk (lib : @library o) A1 A2 B1 B2 eq,
+    nuprl uk lib (mkc_union A1 B1) (mkc_union A2 B2) eq
+    -> per_bar (per_union nuprl) uk lib (mkc_union A1 B1) (mkc_union A2 B2) eq.
 Proof.
   introv cl.
   unfold nuprl in cl.
@@ -218,9 +218,9 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_union {o} :
-  forall i (lib : @library o) A1 A2 B1 B2 eq,
-    nuprli i lib (mkc_union A1 B1) (mkc_union A2 B2) eq
-    -> per_bar (per_union (nuprli i)) lib (mkc_union A1 B1) (mkc_union A2 B2) eq.
+  forall i uk (lib : @library o) A1 A2 B1 B2 eq,
+    nuprli i uk lib (mkc_union A1 B1) (mkc_union A2 B2) eq
+    -> per_bar (per_union (nuprli i)) uk lib (mkc_union A1 B1) (mkc_union A2 B2) eq.
 Proof.
   introv cl.
   unfold nuprli in cl.
@@ -311,13 +311,13 @@ Proof.
 Defined.*)
 
 Lemma dest_nuprl_union2 {o} :
-  forall lib (eq : per(o)) A1 A2 B1 B2,
-    nuprl lib (mkc_union A1 B1) (mkc_union A2 B2) eq
+  forall uk lib (eq : per(o)) A1 A2 B1 B2,
+    nuprl uk lib (mkc_union A1 B1) (mkc_union A2 B2) eq
     ->
     exists (eqa eqb : lib-per(lib,o)),
       (eq <=2=> (per_bar_eq lib (per_union_eq_bar_lib_per lib eqa eqb)))
-        # in_open_bar_ext lib (fun lib' x => nuprl lib' A1 A2 (eqa lib' x))
-        # in_open_bar_ext lib (fun lib' x => nuprl lib' B1 B2 (eqb lib' x)).
+        # in_open_bar_ext lib (fun lib' x => nuprl uk lib' A1 A2 (eqa lib' x))
+        # in_open_bar_ext lib (fun lib' x => nuprl uk lib' B1 B2 (eqb lib' x)).
 Proof.
   introv u.
   apply dest_nuprl_union in u.
@@ -327,8 +327,8 @@ Proof.
             lib
             (fun lib' x =>
                {eqa0 , eqb : lib-per(lib',o)
-               , in_ext_ext lib' (fun lib'' y => nuprl lib'' A1 A2 (eqa0 lib'' y))
-               # in_ext_ext lib' (fun lib'' y => nuprl lib'' B1 B2 (eqb lib'' y))
+               , in_ext_ext lib' (fun lib'' y => nuprl uk lib'' A1 A2 (eqa0 lib'' y))
+               # in_ext_ext lib' (fun lib'' y => nuprl uk lib'' B1 B2 (eqb lib'' y))
                # (eqa lib' x) <=2=> (per_union_eq_bar lib' eqa0 eqb) })) as e.
   {
     eapply in_open_bar_ext_pres; eauto; clear u1; introv u1.
@@ -426,13 +426,13 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_union2 {o} :
-  forall i lib (eq : per(o)) A1 A2 B1 B2,
-    nuprli i lib (mkc_union A1 B1) (mkc_union A2 B2) eq
+  forall i uk lib (eq : per(o)) A1 A2 B1 B2,
+    nuprli i uk lib (mkc_union A1 B1) (mkc_union A2 B2) eq
     ->
     exists (eqa eqb : lib-per(lib,o)),
       (eq <=2=> (per_bar_eq lib (per_union_eq_bar_lib_per lib eqa eqb)))
-        # in_open_bar_ext lib (fun lib' x => nuprli i lib' A1 A2 (eqa lib' x))
-        # in_open_bar_ext lib (fun lib' x => nuprli i lib' B1 B2 (eqb lib' x)).
+        # in_open_bar_ext lib (fun lib' x => nuprli i uk lib' A1 A2 (eqa lib' x))
+        # in_open_bar_ext lib (fun lib' x => nuprli i uk lib' B1 B2 (eqb lib' x)).
 Proof.
   introv u.
   apply dest_nuprli_union in u.
@@ -442,8 +442,8 @@ Proof.
             lib
             (fun lib' x =>
                {eqa0 , eqb : lib-per(lib',o)
-               , in_ext_ext lib' (fun lib'' y => nuprli i lib'' A1 A2 (eqa0 lib'' y))
-               # in_ext_ext lib' (fun lib'' y => nuprli i lib'' B1 B2 (eqb lib'' y))
+               , in_ext_ext lib' (fun lib'' y => nuprli i uk lib'' A1 A2 (eqa0 lib'' y))
+               # in_ext_ext lib' (fun lib'' y => nuprli i uk lib'' B1 B2 (eqb lib'' y))
                # (eqa lib' x) <=2=> (per_union_eq_bar lib' eqa0 eqb) })) as e.
   {
     eapply in_open_bar_ext_pres; eauto; clear u1; introv u1.
@@ -544,9 +544,9 @@ Qed.
 
 
 Lemma tequality_mkc_union {p} :
-  forall lib (A1 B1 A2 B2 : @CTerm p),
-    tequality lib (mkc_union A1 B1) (mkc_union A2 B2)
-    <=> (tequality lib A1 A2 # tequality lib B1 B2).
+  forall uk lib (A1 B1 A2 B2 : @CTerm p),
+    tequality uk lib (mkc_union A1 B1) (mkc_union A2 B2)
+    <=> (tequality uk lib A1 A2 # tequality uk lib B1 B2).
 Proof.
   introv; split; intro teq; repnd.
 
@@ -559,9 +559,9 @@ Proof.
     unfold tequality in teq; exrepnd.
     rename eq into eqb.
 
-    pose proof (nuprl_monotone_func lib A1 A2 eqa teq1) as tya; exrepnd.
+    pose proof (nuprl_monotone_func uk lib A1 A2 eqa teq1) as tya; exrepnd.
     rename eq' into eqa'.
-    pose proof (nuprl_monotone_func lib B1 B2 eqb teq0) as tyb; exrepnd.
+    pose proof (nuprl_monotone_func uk lib B1 B2 eqb teq0) as tyb; exrepnd.
     rename eq' into eqb'.
 
     exists (per_union_eq_bar lib eqa' eqb'); apply CL_union; unfold per_union.
@@ -572,9 +572,9 @@ Proof.
 Qed.
 
 Lemma tequality_mkc_or {p} :
-  forall lib (A1 B1 A2 B2 : @CTerm p),
-    tequality lib (mkc_or A1 B1) (mkc_or A2 B2)
-    <=> (tequality lib A1 A2 # tequality lib B1 B2).
+  forall uk lib (A1 B1 A2 B2 : @CTerm p),
+    tequality uk lib (mkc_or A1 B1) (mkc_or A2 B2)
+    <=> (tequality uk lib A1 A2 # tequality uk lib B1 B2).
 Proof.
   introv; rw @tequality_mkc_union; sp.
 Qed.
@@ -606,19 +606,19 @@ Proof.
 Qed.
 
 Lemma equality_mkc_union {p} :
-  forall lib (t1 t2 A B : @CTerm p),
-    equality lib t1 t2 (mkc_union A B)
-    <=> (type lib A
-         # type lib B
+  forall uk lib (t1 t2 A B : @CTerm p),
+    equality uk lib t1 t2 (mkc_union A B)
+    <=> (type uk lib A
+         # type uk lib B
          # in_open_bar lib (fun lib => {a1, a2 : CTerm
              , t1 ===>(lib) (mkc_inl a1)
              # t2 ===>(lib) (mkc_inl a2)
-             # equality lib a1 a2 A}
+             # equality uk lib a1 a2 A}
             {+}
             {b1, b2 : CTerm
              , t1 ===>(lib) (mkc_inr b1)
              # t2 ===>(lib) (mkc_inr b2)
-             # equality lib b1 b2 B})).
+             # equality uk lib b1 b2 B})).
 Proof.
   intros; split; intro e.
 
@@ -637,10 +637,10 @@ Proof.
     repndors; [left|right].
 
     + unfold per_union_eq_L in *; exrepnd; eexists; eexists; dands; eauto.
-      apply (equality_eq1 lib' A A x y (eqa lib' e)); auto.
+      apply (equality_eq1 uk lib' A A x y (eqa lib' e)); auto.
 
     + unfold per_union_eq_R in *; exrepnd; eexists; eexists; dands; eauto.
-      apply (equality_eq1 lib' B B x y (eqb lib' e)); auto.
+      apply (equality_eq1 uk lib' B B x y (eqb lib' e)); auto.
 
   - exrepnd.
     apply all_in_ex_bar_equality_implies_equality.
@@ -653,9 +653,9 @@ Proof.
     unfold type, tequality in e1; exrepnd.
     rename eq into eqb.
 
-    pose proof (nuprl_monotone_func lib' A A eqa e2) as tya; exrepnd.
+    pose proof (nuprl_monotone_func uk lib' A A eqa e2) as tya; exrepnd.
     rename eq' into eqa'.
-    pose proof (nuprl_monotone_func lib' B B eqb e0) as tyb; exrepnd.
+    pose proof (nuprl_monotone_func uk lib' B B eqb e0) as tyb; exrepnd.
     rename eq' into eqb'.
 
     exists (per_union_eq_bar lib' eqa' eqb'); dands.
@@ -672,34 +672,34 @@ Proof.
     repndors;[left|right]; exrepnd; spcast.
 
     + eexists; eexists; dands; spcast; eauto 3 with slow.
-      apply (equality_eq1 lib'0 A A a1 a2 (eqa' lib'0 e1)); eauto 3 with slow.
+      apply (equality_eq1 uk lib'0 A A a1 a2 (eqa' lib'0 e1)); eauto 3 with slow.
       eapply tya0.
 
     + eexists; eexists; dands; spcast; eauto 3 with slow.
-      apply (equality_eq1 lib'0 B B b1 b2 (eqb' lib'0 e1)); eauto 3 with slow.
+      apply (equality_eq1 uk lib'0 B B b1 b2 (eqb' lib'0 e1)); eauto 3 with slow.
       eapply tyb0.
 Qed.
 
 Lemma equality_mkc_or {p} :
-  forall lib (t1 t2 A B : @CTerm p),
-    equality lib t1 t2 (mkc_or A B)
-    <=> (type lib A
-         # type lib B
+  forall uk lib (t1 t2 A B : @CTerm p),
+    equality uk lib t1 t2 (mkc_or A B)
+    <=> (type uk lib A
+         # type uk lib B
          # in_open_bar lib (fun lib => {a1, a2 : CTerm
              , t1 ===>(lib) (mkc_inl a1)
              # t2 ===>(lib) (mkc_inl a2)
-             # equality lib a1 a2 A}
+             # equality uk lib a1 a2 A}
             {+}
             {b1, b2 : CTerm
              , t1 ===>(lib) (mkc_inr b1)
              # t2 ===>(lib) (mkc_inr b2)
-             # equality lib b1 b2 B})).
+             # equality uk lib b1 b2 B})).
 Proof.
   introv; rw @equality_mkc_union; sp.
 Qed.
 
 Lemma tequality_bool {o} :
-  forall lib, @tequality o lib mkc_bool mkc_bool.
+  forall uk lib, @tequality o uk lib mkc_bool mkc_bool.
 Proof.
   introv.
   allrw <- @fold_mkc_bool.
@@ -707,10 +707,10 @@ Proof.
 Qed.
 
 Lemma implies_equality_in_unit {o} :
-  forall lib (a b : @CTerm o),
+  forall uk lib (a b : @CTerm o),
     a ===>(lib) mkc_axiom
     -> b ===>(lib) mkc_axiom
-    -> equality lib a b mkc_unit.
+    -> equality uk lib a b mkc_unit.
 Proof.
   introv ca cb.
   apply equality_in_unit.
@@ -772,8 +772,8 @@ Proof.
 Qed.
 
 Lemma equality_in_bool {o} :
-  forall lib (a b : @CTerm o),
-    equality lib a b mkc_bool
+  forall uk lib (a b : @CTerm o),
+    equality uk lib a b mkc_bool
     <=>
     in_open_bar lib (fun lib =>
       (ccequivc_ext lib a tt # ccequivc_ext lib b tt)
@@ -1050,8 +1050,8 @@ Proof.
 Qed.
 
 Lemma member_in_bool {o} :
-  forall lib (a : @CTerm o),
-    member lib a mkc_bool
+  forall uk lib (a : @CTerm o),
+    member uk lib a mkc_bool
     <=>
     in_open_bar lib (fun lib => ccequivc_ext lib a tt {+} ccequivc_ext lib a ff).
 Proof.
@@ -1061,13 +1061,13 @@ Proof.
 Qed.
 
 Lemma equality_union_in_uni {o} :
-  forall lib (A1 A2 B1 B2 : @CTerm o) i,
-    equality lib (mkc_union A1 B1)
+  forall uk lib (A1 A2 B1 B2 : @CTerm o) i,
+    equality uk lib (mkc_union A1 B1)
              (mkc_union A2 B2)
-             (mkc_uni i)
+             (mkc_uni uk i)
     <=>
-    (equality lib A1 A2 (mkc_uni i)
-     # equality lib B1 B2 (mkc_uni i)).
+    (equality uk lib A1 A2 (mkc_uni uk i)
+     # equality uk lib B1 B2 (mkc_uni uk i)).
 Proof.
   introv.
   sp_iff Case.
@@ -1112,9 +1112,9 @@ Proof.
     exists eq; dands; auto; apply eqas2; clear dependent eq.
     apply in_ext_ext_implies_in_open_bar_ext; introv; simpl.
 
-    pose proof (nuprli_monotone_func i lib A1 A2 eq' eqas3) as tya; exrepnd.
+    pose proof (nuprli_monotone_func i uk lib A1 A2 eq' eqas3) as tya; exrepnd.
     rename eq'1 into eqa.
-    pose proof (nuprli_monotone_func i lib B1 B2 eq'0 eqbs1) as tyb; exrepnd.
+    pose proof (nuprli_monotone_func i uk lib B1 B2 eq'0 eqbs1) as tyb; exrepnd.
     rename eq'1 into eqb.
 
     exists (per_union_eq_bar lib' (raise_lib_per eqa e) (raise_lib_per eqb e)).

@@ -32,12 +32,12 @@ Require Export close_util_csname.
 
 
 Lemma close_type_system_csname {p} :
-  forall lib (ts : cts(p)) T T' eq,
+  forall uk lib (ts : cts(p)) T T' eq,
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> per_csname (close ts) lib T T' eq
-    -> type_sys_props4 (close ts) lib T T' eq.
+    -> per_csname (close ts) uk lib T T' eq
+    -> type_sys_props4 (close ts) uk lib T T' eq.
 Proof.
   introv tysys dou mon per.
 
@@ -103,7 +103,7 @@ Proof.
   + SCase "term_value_respecting".
     assert (term_value_respecting (per_bar (per_csname (close ts)))) as tvr
       by (apply per_bar_per_csname_term_value_respecting).
-    apply tvr with (T := T); auto.
+    eapply tvr; eauto.
     apply @type_system_type_mem with (T' := T'); auto; eauto 3 with slow.
 
   + SCase "type_gsymmetric"; repdors; subst; split; sp; dclose_lr.

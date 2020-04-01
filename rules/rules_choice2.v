@@ -414,7 +414,7 @@ Definition rule_ls2 {o}
 
 Lemma rule_ls2_true {o} :
   forall (lib : library) (a b : NVar) (H : @bhyps o) (d1 : a <> b) (safe : safe_library lib),
-    rule_true lib (rule_ls2 lib a b H).
+    rule_true uk0 lib (rule_ls2 lib a b H).
 Proof.
   unfold rule_ls2, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -435,7 +435,7 @@ Proof.
   clear lib safe ext.
   rename lib' into lib; rename safe' into safe.
 
-  assert (tequality lib (ls2c a b) (ls2c a b)) as teq.
+  assert (tequality uk0 lib (ls2c a b) (ls2c a b)) as teq.
   {
     apply tequality_function; dands; eauto 3 with slow.
     intros lib' xt a1 a2 ea.

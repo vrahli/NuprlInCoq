@@ -60,8 +60,8 @@ Definition rule_ref_wf2 {o}
     [].
 
 Lemma rule_ref_wf2_true {o} :
-  forall (lib : library) (f d e1 e2 : NTerm) (H : @bhyps o) (safe : safe_library lib),
-    rule_true lib (rule_ref_wf2 lib f d e1 e2 H).
+  forall uk (lib : library) (f d e1 e2 : NTerm) (H : @bhyps o) (safe : safe_library lib),
+    rule_true uk lib (rule_ref_wf2 lib f d e1 e2 H).
 Proof.
   unfold rule_ref_wf2, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -85,7 +85,7 @@ Proof.
 
   rw <- @member_member_iff.
   pose proof (teq_and_member_if_member
-                lib' mk_qtnat (mk_last_cs f d) s1 s2 H wT wt ct1 ct2 cT cT0) as q.
+                uk lib' mk_qtnat (mk_last_cs f d) s1 s2 H wT wt ct1 ct2 cT cT0) as q.
   lsubst_tac; autorewrite with slow in *.
   repeat (autodimp q hyp); eauto 2 with slow.
 
@@ -160,8 +160,8 @@ Definition rule_qtnat_subtype_nat {o}
     [].
 
 Lemma rule_qtnat_subtype_nat_true {o} :
-  forall (lib : library) (n e : NTerm) (H : @bhyps o) (safe : safe_library lib),
-    rule_true lib (rule_qtnat_subtype_nat lib n e H).
+  forall uk (lib : library) (n e : NTerm) (H : @bhyps o) (safe : safe_library lib),
+    rule_true uk lib (rule_qtnat_subtype_nat lib n e H).
 Proof.
   unfold rule_qtnat_subtype_nat, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -184,7 +184,7 @@ Proof.
 
   rw <- @member_member_iff.
   pose proof (teq_and_member_if_member
-                lib' mk_qtnat n s1 s2 H wT wt ct0 ct1 cT cT0) as q.
+                uk lib' mk_qtnat n s1 s2 H wT wt ct0 ct1 cT cT0) as q.
   lsubst_tac; autorewrite with slow in *.
   repeat (autodimp q hyp); eauto 2 with slow.
 

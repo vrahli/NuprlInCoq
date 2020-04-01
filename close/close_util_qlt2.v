@@ -41,9 +41,9 @@ Require Export close_util2.
 
 
 Lemma equality_of_qlt_bar_implies_eq_term_equals_equality_of_qlt_bar {o} :
-  forall (ts : cts(o)) lib T T' eq (a b : @CTerm o),
+  forall (ts : cts(o)) uk lib T T' eq (a b : @CTerm o),
     ccomputes_to_valc_ext lib T (mkc_qlt a b)
-    -> per_bar (per_qlt ts) lib T T' eq
+    -> per_bar (per_qlt ts) uk lib T T' eq
     -> eq <=2=> (equality_of_qlt_bar lib a b).
 Proof.
   introv comp per.
@@ -79,9 +79,9 @@ Proof.
 Qed.
 
 Lemma per_bar_per_qlt_implies_close {o} :
-  forall (ts : cts(o)) lib T T' eq,
-    per_bar (per_qlt (close ts)) lib T T' eq
-    -> close ts lib T T' eq.
+  forall (ts : cts(o)) uk lib T T' eq,
+    per_bar (per_qlt (close ts)) uk lib T T' eq
+    -> close ts uk lib T T' eq.
 Proof.
   introv per.
   apply CL_bar.
@@ -145,9 +145,9 @@ Qed.
 Hint Resolve equality_of_qnat_implies_ccequivc_ext : slow.
 
 Lemma per_qlt_sym {o} :
-  forall ts lib (T1 T2 : @CTerm o) equ,
-    per_qlt ts lib T1 T2 equ
-    -> per_qlt ts lib T2 T1 equ.
+  forall ts uk lib (T1 T2 : @CTerm o) equ,
+    per_qlt ts uk lib T1 T2 equ
+    -> per_qlt ts uk lib T2 T1 equ.
 Proof.
   introv per.
   unfold per_qlt in *; exrepnd.
@@ -236,10 +236,10 @@ Qed.
 Hint Resolve ccequivc_ext_equality_of_qnat_trans : slow.
 
 Lemma per_qlt_trans1 {o} :
-  forall ts lib (T T1 T2 : @CTerm o) eq1 eq2,
-    per_qlt ts lib T T2 eq2
-    -> per_qlt ts lib T1 T eq1
-    -> per_qlt ts lib T1 T2 eq1.
+  forall ts uk lib (T T1 T2 : @CTerm o) eq1 eq2,
+    per_qlt ts uk lib T T2 eq2
+    -> per_qlt ts uk lib T1 T eq1
+    -> per_qlt ts uk lib T1 T2 eq1.
 Proof.
   introv pera perb.
   unfold per_qlt in *; exrepnd.
@@ -251,10 +251,10 @@ Proof.
 Qed.
 
 Lemma per_qlt_trans2 {o} :
-  forall ts lib (T T1 T2 : @CTerm o) eq1 eq2,
-    per_qlt ts lib T T2 eq2
-    -> per_qlt ts lib T1 T eq1
-    -> per_qlt ts lib T1 T2 eq2.
+  forall ts uk lib (T T1 T2 : @CTerm o) eq1 eq2,
+    per_qlt ts uk lib T T2 eq2
+    -> per_qlt ts uk lib T1 T eq1
+    -> per_qlt ts uk lib T1 T2 eq2.
 Proof.
   introv pera perb.
   unfold per_qlt in *; exrepnd.
@@ -293,13 +293,13 @@ Proof.
 Qed.
 
 Lemma type_value_respecting_trans_per_bar_per_qlt1 {o} :
-  forall lib (ts : cts(o)) T T1 T2 a b a' b' eq,
+  forall uk lib (ts : cts(o)) T T1 T2 a b a' b' eq,
     ccomputes_to_valc_ext lib T1 (mkc_qlt a' b')
     -> ccomputes_to_valc_ext lib T (mkc_qlt a b)
     -> ccequivc_ext lib a a'
     -> ccequivc_ext lib b b'
-    -> per_bar (per_qlt ts) lib T1 T2 eq
-    -> per_bar (per_qlt ts) lib T T2 eq.
+    -> per_bar (per_qlt ts) uk lib T1 T2 eq
+    -> per_bar (per_qlt ts) uk lib T T2 eq.
 Proof.
   introv comp1 comp2 ceqa ceqb per.
   unfold per_bar in *; exrepnd.
@@ -321,13 +321,13 @@ Proof.
 Qed.
 
 Lemma type_value_respecting_trans_per_bar_per_qlt2 {o} :
-  forall lib (ts : cts(o)) T T1 T2 a b a' b' eq,
+  forall uk lib (ts : cts(o)) T T1 T2 a b a' b' eq,
     ccomputes_to_valc_ext lib T1 (mkc_qlt a' b')
     -> ccomputes_to_valc_ext lib T (mkc_qlt a b)
     -> ccequivc_ext lib a a'
     -> ccequivc_ext lib b b'
-    -> per_bar (per_qlt ts) lib T2 T1 eq
-    -> per_bar (per_qlt ts) lib T T2 eq.
+    -> per_bar (per_qlt ts) uk lib T2 T1 eq
+    -> per_bar (per_qlt ts) uk lib T T2 eq.
 Proof.
   introv comp1 comp2 ceqa ceqb per.
   unfold per_bar in *; exrepnd.
@@ -351,7 +351,7 @@ Proof.
 Qed.
 
 Lemma implies_type_value_respecting_trans1_per_qlt {o} :
-  forall ts lib T T' eq (a b a' b' : @CTerm o),
+  forall ts uk lib T T' eq (a b a' b' : @CTerm o),
     type_system ts
     -> defines_only_universes ts
     -> T ===>(lib) (mkc_qlt a b)
@@ -359,7 +359,7 @@ Lemma implies_type_value_respecting_trans1_per_qlt {o} :
     -> ccequivc_ext lib a a'
     -> ccequivc_ext lib b b'
     -> (eq <=2=> (equality_of_qlt_bar lib a b))
-    -> type_equality_respecting_trans1 (close ts) lib T T'.
+    -> type_equality_respecting_trans1 (close ts) uk lib T T'.
 Proof.
   introv tysys dou c1 c2 ceqa ceqb eqiff.
   introv h ceq cl.
@@ -403,11 +403,11 @@ Proof.
 Qed.
 
 Lemma type_value_respecting_trans_per_bar_per_qlt3 {o} :
-  forall lib (ts : cts(o)) T T1 T2 a u eq,
+  forall uk lib (ts : cts(o)) T T1 T2 a u eq,
     ccomputes_to_valc_ext lib T (mkc_qlt a u)
     -> ccequivc_ext lib T1 T2
-    -> per_bar (per_qlt ts) lib T T1 eq
-    -> per_bar (per_qlt ts) lib T T2 eq.
+    -> per_bar (per_qlt ts) uk lib T T1 eq
+    -> per_bar (per_qlt ts) uk lib T T2 eq.
 Proof.
   introv comp1 ceqa per.
   unfold per_bar in *; exrepnd.
@@ -427,9 +427,9 @@ Proof.
 Qed.
 
 Lemma per_bar_per_qlt_sym_rev {o} :
-  forall (ts : cts(o)) lib T T' eq,
-    per_bar (per_qlt ts) lib T' T eq
-    -> per_bar (per_qlt ts) lib T T' eq.
+  forall (ts : cts(o)) uk lib T T' eq,
+    per_bar (per_qlt ts) uk lib T' T eq
+    -> per_bar (per_qlt ts) uk lib T T' eq.
 Proof.
   introv per.
   unfold per_bar in *; exrepnd.
@@ -439,7 +439,7 @@ Proof.
 Qed.
 
 Lemma implies_type_value_respecting_trans2_per_qlt {o} :
-  forall ts lib T T' eq (a b u v : @CTerm o),
+  forall ts uk lib T T' eq (a b u v : @CTerm o),
     type_system ts
     -> defines_only_universes ts
     -> T ===>(lib) (mkc_qlt a u)
@@ -447,7 +447,7 @@ Lemma implies_type_value_respecting_trans2_per_qlt {o} :
     -> ccequivc_ext lib a b
     -> ccequivc_ext lib u v
     -> (eq <=2=> (equality_of_qlt_bar lib a u))
-    -> type_equality_respecting_trans2 (close ts) lib T T'.
+    -> type_equality_respecting_trans2 (close ts) uk lib T T'.
 Proof.
   introv tysys dou c1 c2 ceqa ceqb eqiff.
   introv h cl ceq.
@@ -485,10 +485,10 @@ Proof.
 Qed.
 
 Lemma per_bar_per_qlt_trans1 {o} :
-  forall (ts : cts(o)) lib T T1 T2 eq1 eq2,
-    per_bar (per_qlt ts) lib T1 T eq1
-    -> per_bar (per_qlt ts) lib T T2 eq2
-    -> per_bar (per_qlt ts) lib T1 T2 eq1.
+  forall (ts : cts(o)) uk lib T T1 T2 eq1 eq2,
+    per_bar (per_qlt ts) uk lib T1 T eq1
+    -> per_bar (per_qlt ts) uk lib T T2 eq2
+    -> per_bar (per_qlt ts) uk lib T1 T2 eq1.
 Proof.
   introv pera perb.
   unfold per_bar in *; exrepnd.
@@ -500,10 +500,10 @@ Proof.
 Qed.
 
 Lemma per_bar_per_qlt_trans2 {o} :
-  forall (ts : cts(o)) lib T T1 T2 eq1 eq2,
-    per_bar (per_qlt ts) lib T1 T eq1
-    -> per_bar (per_qlt ts) lib T T2 eq2
-    -> per_bar (per_qlt ts) lib T1 T2 eq2.
+  forall (ts : cts(o)) uk lib T T1 T2 eq1 eq2,
+    per_bar (per_qlt ts) uk lib T1 T eq1
+    -> per_bar (per_qlt ts) uk lib T T2 eq2
+    -> per_bar (per_qlt ts) uk lib T1 T2 eq2.
 Proof.
   introv pera perb.
   unfold per_bar in *; exrepnd.

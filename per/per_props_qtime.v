@@ -133,11 +133,11 @@ Qed.
 Hint Resolve local_per_bar_per_qtime_nuprli : slow.
 
 Lemma dest_nuprl_per_qtime_l {o} :
-  forall (ts : cts(o)) lib T A T' eq,
+  forall (ts : cts(o)) uk lib T A T' eq,
     ts = univ
     -> ccomputes_to_valc_ext lib T (mkc_qtime A)
-    -> close ts lib T T' eq
-    -> per_bar (per_qtime (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_qtime (close ts)) uk lib T T' eq.
 Proof.
   introv equ comp cl.
   assert (type_system ts) as sys by (subst; eauto 3 with slow).
@@ -149,11 +149,11 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_per_qtime_l {o} :
-  forall i (ts : cts(o)) lib T A T' eq,
+  forall i (ts : cts(o)) uk lib T A T' eq,
     ts = univi_bar i
     -> ccomputes_to_valc_ext lib T (mkc_qtime A)
-    -> close ts lib T T' eq
-    -> per_bar (per_qtime (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_qtime (close ts)) uk lib T T' eq.
 Proof.
   introv equ comp cl.
   assert (type_system ts) as sys by (subst; eauto 3 with slow).
@@ -165,9 +165,9 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_qtime {o} :
-  forall (lib : @library o) A B eq,
-    nuprl lib (mkc_qtime A) (mkc_qtime B) eq
-    -> per_bar (per_qtime nuprl) lib (mkc_qtime A) (mkc_qtime B) eq.
+  forall uk (lib : @library o) A B eq,
+    nuprl uk lib (mkc_qtime A) (mkc_qtime B) eq
+    -> per_bar (per_qtime nuprl) uk lib (mkc_qtime A) (mkc_qtime B) eq.
 Proof.
   introv cl.
   unfold nuprl in cl.
@@ -176,9 +176,9 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_qtime {o} :
-  forall i (lib : @library o) A B eq,
-    nuprli i lib (mkc_qtime A) (mkc_qtime B) eq
-    -> per_bar (per_qtime (nuprli i)) lib (mkc_qtime A) (mkc_qtime B) eq.
+  forall i uk (lib : @library o) A B eq,
+    nuprli i uk lib (mkc_qtime A) (mkc_qtime B) eq
+    -> per_bar (per_qtime (nuprli i)) uk lib (mkc_qtime A) (mkc_qtime B) eq.
 Proof.
   introv cl.
   unfold nuprli in cl.
@@ -187,12 +187,12 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_qtime2 {o} :
-  forall lib (eq : per(o)) A B,
-    nuprl lib (mkc_qtime A) (mkc_qtime B) eq
+  forall uk lib (eq : per(o)) A B,
+    nuprl uk lib (mkc_qtime A) (mkc_qtime B) eq
     ->
     exists (eqa : lib-per(lib,o)),
       (eq <=2=> (per_bar_eq lib (per_qtime_eq_bar_lib_per lib eqa)))
-        # in_open_bar_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x)).
+        # in_open_bar_ext lib (fun lib' x => nuprl uk lib' A B (eqa lib' x)).
 Proof.
   introv u.
   apply dest_nuprl_qtime in u.
@@ -202,7 +202,7 @@ Proof.
             lib
             (fun lib' x =>
                {eqa0 : lib-per(lib',o)
-               , in_ext_ext lib' (fun lib'' y => nuprl lib'' A B (eqa0 lib'' y))
+               , in_ext_ext lib' (fun lib'' y => nuprl uk lib'' A B (eqa0 lib'' y))
                # (eqa lib' x) <=2=> (per_qtime_eq_bar lib' eqa0) })) as e.
   {
     eapply in_open_bar_ext_pres; eauto; clear u1; introv u1.
@@ -262,12 +262,12 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_qtime2 {o} :
-  forall i lib (eq : per(o)) A B,
-    nuprli i lib (mkc_qtime A) (mkc_qtime B) eq
+  forall i uk lib (eq : per(o)) A B,
+    nuprli i uk lib (mkc_qtime A) (mkc_qtime B) eq
     ->
     exists (eqa : lib-per(lib,o)),
       (eq <=2=> (per_bar_eq lib (per_qtime_eq_bar_lib_per lib eqa)))
-        # in_open_bar_ext lib (fun lib' x => nuprli i lib' A B (eqa lib' x)).
+        # in_open_bar_ext lib (fun lib' x => nuprli i uk lib' A B (eqa lib' x)).
 Proof.
   introv u.
   apply dest_nuprli_qtime in u.
@@ -277,7 +277,7 @@ Proof.
             lib
             (fun lib' x =>
                {eqa0 : lib-per(lib',o)
-               , in_ext_ext lib' (fun lib'' y => nuprli i lib'' A B (eqa0 lib'' y))
+               , in_ext_ext lib' (fun lib'' y => nuprli i uk lib'' A B (eqa0 lib'' y))
                # (eqa lib' x) <=2=> (per_qtime_eq_bar lib' eqa0) })) as e.
   {
     eapply in_open_bar_ext_pres; eauto; clear u1; introv u1.
@@ -340,9 +340,9 @@ Qed.
 
 
 Lemma tequality_mkc_qtime {p} :
-  forall lib (A B : @CTerm p),
-    tequality lib (mkc_qtime A) (mkc_qtime B)
-    <=> tequality lib A B.
+  forall uk lib (A B : @CTerm p),
+    tequality uk lib (mkc_qtime A) (mkc_qtime B)
+    <=> tequality uk lib A B.
 Proof.
   introv; split; intro teq; repnd.
 
@@ -353,7 +353,7 @@ Proof.
   - unfold tequality in teq; exrepnd.
     rename eq into eqa.
 
-    pose proof (nuprl_monotone_func lib A B eqa teq0) as tya; exrepnd.
+    pose proof (nuprl_monotone_func uk lib A B eqa teq0) as tya; exrepnd.
     rename eq' into eqa'.
 
     exists (per_qtime_eq_bar lib eqa'); apply CL_qtime; unfold per_qtime.
@@ -388,14 +388,14 @@ Proof.
 Qed.
 
 Lemma equality_mkc_qtime {p} :
-  forall lib (t1 t2 A : @CTerm p),
-    equality lib t1 t2 (mkc_qtime A)
-    <=> (type lib A
+  forall uk lib (t1 t2 A : @CTerm p),
+    equality uk lib t1 t2 (mkc_qtime A)
+    <=> (type uk lib A
          # in_open_bar lib (fun lib => {a1, a2 : CTerm
              , ccequivc lib t1 a1
              # ccequivc lib t2 a2
              # ccequivc_ext lib t1 t2
-             # equality lib a1 a2 A})).
+             # equality uk lib a1 a2 A})).
 Proof.
   intros; split; intro e.
 
@@ -411,12 +411,12 @@ Proof.
 
     unfold per_qtime_eq in *; exrepnd.
     eexists; eexists; dands; eauto.
-    apply (equality_eq1 lib' A A x y (eqa lib' e)); auto.
+    apply (equality_eq1 uk lib' A A x y (eqa lib' e)); auto.
 
   - exrepnd.
     unfold type, tequality in e0; exrepnd.
     rename eq into eqa.
-    pose proof (nuprl_monotone_func lib A A eqa e1) as tya; exrepnd.
+    pose proof (nuprl_monotone_func uk lib A A eqa e1) as tya; exrepnd.
     rename eq' into eqa'.
 
     exists (per_qtime_eq_bar lib eqa'); dands.
@@ -432,6 +432,6 @@ Proof.
     eapply in_ext_ext_implies_in_open_bar_ext; introv h; exrepnd.
     unfold per_qtime_eq.
     exists a1 a2; dands; auto.
-    apply (equality_eq1 lib' A A a1 a2 (eqa' lib' e)); eauto 3 with slow.
+    apply (equality_eq1 uk lib' A A a1 a2 (eqa' lib' e)); eauto 3 with slow.
     apply tya0.
 Qed.

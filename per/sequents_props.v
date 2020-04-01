@@ -29,19 +29,19 @@ Require Export subst_props.
 
 
 Lemma similarity_move_to_last {o} :
-  forall lib b H J s1a s1b s2a s2b x (t1 t2 : @CTerm o) T,
+  forall uk lib b H J s1a s1b s2a s2b x (t1 t2 : @CTerm o) T,
     covered T (vars_hyps H)
     -> length s1a = length H
     -> length s2a = length H
     -> !LIn x (free_vars_hyps J)
     -> !LIn x (hyps_free_vars J)
     -> !LIn x (vars_hyps J)
-    -> (similarity lib
+    -> (similarity uk lib
           (snoc s1a (x, t1) ++ s1b)
           (snoc s2a (x, t2) ++ s2b)
           (snoc H (mk_nlhyp b x T) ++ J)
           <=>
-          similarity lib
+          similarity uk lib
              (snoc (s1a ++ s1b) (x, t1))
              (snoc (s2a ++ s2b) (x, t2))
              (snoc (H ++ J) (mk_nlhyp b x T))).
@@ -94,8 +94,8 @@ Proof.
 Qed.
 
 Lemma sub_eq_hyps_nil_iff {o} :
-  forall lib hs (s1 s2 : @CSub o),
-    sub_eq_hyps lib [] [] s1 s2 hs <=> eq_hyps lib s1 s2 hs.
+  forall uk lib hs (s1 s2 : @CSub o),
+    sub_eq_hyps uk lib [] [] s1 s2 hs <=> eq_hyps uk lib s1 s2 hs.
 Proof.
   induction hs using rev_list_indT; introv; split; intro k; auto.
   - inversion k; subst; cpx.
@@ -109,8 +109,8 @@ Proof.
 Qed.
 
 Lemma sub_eq_hyps_length {o} :
-  forall lib (hs : @bhyps o) s1 s2 s3 s4,
-    sub_eq_hyps lib s1 s2 s3 s4 hs
+  forall uk lib (hs : @bhyps o) s1 s2 s3 s4,
+    sub_eq_hyps uk lib s1 s2 s3 s4 hs
     -> (length s3 = length hs # length s4 = length hs).
 Proof.
   induction hs using rev_list_indT; simpl; introv eh;
@@ -121,16 +121,16 @@ Proof.
 Qed.
 
 Lemma sub_eq_hyps_app {o} :
-  forall lib (hs1 hs2 : @bhyps o) s1 s2 s3 s4,
-    sub_eq_hyps lib s1 s2 s3 s4 (hs1 ++ hs2)
+  forall uk lib (hs1 hs2 : @bhyps o) s1 s2 s3 s4,
+    sub_eq_hyps uk lib s1 s2 s3 s4 (hs1 ++ hs2)
     <=>
     {s1a, s1b, s2a, s2b : CSub
       , s3 = s1a ++ s1b
       # s4 = s2a ++ s2b
       # length s1a = length hs1
       # length s2a = length hs1
-      # sub_eq_hyps lib s1 s2 s1a s2a hs1
-      # sub_eq_hyps lib (s1 ++ s1a) (s2 ++ s2a) s1b s2b hs2}.
+      # sub_eq_hyps uk lib s1 s2 s1a s2a hs1
+      # sub_eq_hyps uk lib (s1 ++ s1a) (s2 ++ s2a) s1b s2b hs2}.
 Proof.
   induction hs2 using rev_list_indT; simpl; sp.
 
@@ -167,8 +167,8 @@ Proof.
 Qed.
 
 Lemma sub_eq_hyps_snoc {o} :
-  forall lib (hs : @bhyps o) h s1 s2 s3 s4,
-    sub_eq_hyps lib s1 s2 s3 s4 (snoc hs h)
+  forall uk lib (hs : @bhyps o) h s1 s2 s3 s4,
+    sub_eq_hyps uk lib s1 s2 s3 s4 (snoc hs h)
     <=>
     {s1a, s2a : CSub
      , {t1, t2 : CTerm
@@ -177,9 +177,9 @@ Lemma sub_eq_hyps_snoc {o} :
      , {p2 : cover_vars (htyp h) (s2 ++ s2a)
         , s3 = snoc s1a (hvar h, t1)
         # s4 = snoc s2a (hvar h, t2)
-        # sub_eq_hyps lib s1 s2 s1a s2a hs
+        # sub_eq_hyps uk lib s1 s2 s1a s2a hs
         # eqtypes
-            lib
+            uk lib
             (lvl h)
             (lsubstc (htyp h) w (s1 ++ s1a) p1)
             (lsubstc (htyp h) w (s2 ++ s2a) p2)}}}}}.
@@ -191,18 +191,18 @@ Proof.
 Qed.
 
 Lemma sub_eq_hyps_move_to_last {o} :
-  forall lib b H J s1 s2 s1a s1b s2a s2b x (t1 t2 : @CTerm o) T,
+  forall uk lib b H J s1 s2 s1a s1b s2a s2b x (t1 t2 : @CTerm o) T,
     covered T (vars_hyps H)
     -> length s1a = length H
     -> length s2a = length H
     -> !LIn x (hyps_free_vars J)
-    -> (sub_eq_hyps lib
+    -> (sub_eq_hyps uk lib
           s1 s2
           (snoc s1a (x, t1) ++ s1b)
           (snoc s2a (x, t2) ++ s2b)
           (snoc H (mk_nlhyp b x T) ++ J)
           <=>
-          sub_eq_hyps lib
+          sub_eq_hyps uk lib
              s1 s2
              (snoc (s1a ++ s1b) (x, t1))
              (snoc (s2a ++ s2b) (x, t2))
@@ -286,37 +286,37 @@ Proof.
 Qed.
 
 Lemma eq_hyps_move_to_last {o} :
-  forall lib b H J s1a s1b s2a s2b x (t1 t2 : @CTerm o) T,
+  forall uk lib b H J s1a s1b s2a s2b x (t1 t2 : @CTerm o) T,
     covered T (vars_hyps H)
     -> length s1a = length H
     -> length s2a = length H
     -> !LIn x (hyps_free_vars J)
-    -> (eq_hyps lib
+    -> (eq_hyps uk lib
           (snoc s1a (x, t1) ++ s1b)
           (snoc s2a (x, t2) ++ s2b)
           (snoc H (mk_nlhyp b x T) ++ J)
           <=>
-          eq_hyps lib
+          eq_hyps uk lib
              (snoc (s1a ++ s1b) (x, t1))
              (snoc (s2a ++ s2b) (x, t2))
              (snoc (H ++ J) (mk_nlhyp b x T))).
 Proof.
   introv cov len1 len2 ni1.
 
-  pose proof (sub_eq_hyps_move_to_last lib b H J [] [] s1a s1b s2a s2b x t1 t2 T) as h;
+  pose proof (sub_eq_hyps_move_to_last uk lib b H J [] [] s1a s1b s2a s2b x t1 t2 T) as h;
     repeat (autodimp h hyp).
   repeat (rw @sub_eq_hyps_nil_iff in h); auto.
 Qed.
 
 Lemma hyps_functionality_move_to_last {o} :
-  forall lib b H J s1 s2 x (t : @CTerm o) T,
+  forall uk lib b H J s1 s2 x (t : @CTerm o) T,
     covered T (vars_hyps H)
     -> length s1 = length H
     -> !LIn x (free_vars_hyps J)
     -> !LIn x (hyps_free_vars J)
     -> !LIn x (vars_hyps J)
-    -> hyps_functionality lib (snoc s1 (x, t) ++ s2) (snoc H (mk_nlhyp b x T) ++ J)
-    -> hyps_functionality lib (snoc (s1 ++ s2) (x, t)) (snoc (H ++ J) (mk_nlhyp b x T)).
+    -> hyps_functionality uk lib (snoc s1 (x, t) ++ s2) (snoc H (mk_nlhyp b x T) ++ J)
+    -> hyps_functionality uk lib (snoc (s1 ++ s2) (x, t)) (snoc (H ++ J) (mk_nlhyp b x T)).
 Proof.
   introv cov len ni1 ni2 ni3 hf sim.
 
@@ -347,7 +347,7 @@ Proof.
 Qed.
 
 Lemma similarity_move_down {o} :
-  forall lib b H J K s1a s1b s1c s2a s2b s2c x (t1 t2 : @CTerm o) T,
+  forall uk lib b H J K s1a s1b s1c s2a s2b s2c x (t1 t2 : @CTerm o) T,
     covered T (vars_hyps H)
     -> length s1a = length H
     -> length s2a = length H
@@ -356,12 +356,12 @@ Lemma similarity_move_down {o} :
     -> !LIn x (free_vars_hyps J)
     -> !LIn x (hyps_free_vars J)
     -> !LIn x (vars_hyps J)
-    -> (similarity lib
+    -> (similarity uk lib
           ((snoc s1a (x, t1) ++ s1b) ++ s1c)
           ((snoc s2a (x, t2) ++ s2b) ++ s2c)
           ((snoc H (mk_nlhyp b x T) ++ J) ++ K)
           <=>
-          similarity lib
+          similarity uk lib
              (snoc (s1a ++ s1b) (x, t1) ++ s1c)
              (snoc (s2a ++ s2b) (x, t2) ++ s2c)
              (snoc (H ++ J) (mk_nlhyp b x T) ++ K)).
@@ -410,15 +410,15 @@ Proof.
 Qed.
 
 Lemma sub_eq_hyps_move_to_last_in_sub {o} :
-  forall lib H s1a s1b s2a s2b s3 s4 x (t1 t2 : @CTerm o),
+  forall uk lib H s1a s1b s2a s2b s3 s4 x (t1 t2 : @CTerm o),
     !LIn x (dom_csub s1b)
     -> !LIn x (dom_csub s2b)
-    -> (sub_eq_hyps lib
+    -> (sub_eq_hyps uk lib
           (snoc s1a (x,t1) ++ s1b)
           (snoc s2a (x,t2) ++ s2b)
           s3 s4 H
           <=>
-          sub_eq_hyps lib
+          sub_eq_hyps uk lib
              (snoc (s1a ++ s1b) (x, t1))
              (snoc (s2a ++ s2b) (x, t2))
              s3 s4 H).
@@ -450,7 +450,7 @@ Proof.
 Qed.
 
 Lemma sub_eq_hyps_move_down {o} :
-  forall lib b H J K s1 s2 s1a s1b s1c s2a s2b s2c x (t1 t2 : @CTerm o) T,
+  forall uk lib b H J K s1 s2 s1a s1b s1c s2a s2b s2c x (t1 t2 : @CTerm o) T,
     covered T (vars_hyps H)
     -> length s1a = length H
     -> length s2a = length H
@@ -458,13 +458,13 @@ Lemma sub_eq_hyps_move_down {o} :
     -> length s2b = length J
     -> !LIn x (hyps_free_vars J)
     -> !LIn x (vars_hyps J)
-    -> (sub_eq_hyps lib
+    -> (sub_eq_hyps uk lib
           s1 s2
           ((snoc s1a (x, t1) ++ s1b) ++ s1c)
           ((snoc s2a (x, t2) ++ s2b) ++ s2c)
           ((snoc H (mk_nlhyp b x T) ++ J) ++ K)
           <=>
-          sub_eq_hyps lib
+          sub_eq_hyps uk lib
              s1 s2
              ((snoc (s1a ++ s1b) (x, t1)) ++ s1c)
              ((snoc (s2a ++ s2b) (x, t2)) ++ s2c)
@@ -546,7 +546,7 @@ Proof.
 Qed.
 
 Lemma eq_hyps_move_down {o} :
-  forall lib b H J K s1a s1b s1c s2a s2b s2c x (t1 t2 : @CTerm o) T,
+  forall uk lib b H J K s1a s1b s1c s2a s2b s2c x (t1 t2 : @CTerm o) T,
     covered T (vars_hyps H)
     -> length s1a = length H
     -> length s2a = length H
@@ -554,35 +554,35 @@ Lemma eq_hyps_move_down {o} :
     -> length s2b = length J
     -> !LIn x (hyps_free_vars J)
     -> !LIn x (vars_hyps J)
-    -> (eq_hyps lib
+    -> (eq_hyps uk lib
           ((snoc s1a (x, t1) ++ s1b) ++ s1c)
           ((snoc s2a (x, t2) ++ s2b) ++ s2c)
           ((snoc H (mk_nlhyp b x T) ++ J) ++ K)
           <=>
-          eq_hyps lib
+          eq_hyps uk lib
              ((snoc (s1a ++ s1b) (x, t1)) ++ s1c)
              ((snoc (s2a ++ s2b) (x, t2)) ++ s2c)
              ((snoc (H ++ J) (mk_nlhyp b x T)) ++ K)).
 Proof.
   introv cov len1 len2 len3 len4 ni1 ni2.
 
-  pose proof (sub_eq_hyps_move_down lib b H J K [] [] s1a s1b s1c s2a s2b s2c x t1 t2 T) as h;
+  pose proof (sub_eq_hyps_move_down uk lib b H J K [] [] s1a s1b s1c s2a s2b s2c x t1 t2 T) as h;
     repeat (autodimp h hyp).
   repeat (rw @sub_eq_hyps_nil_iff in h); auto.
 Qed.
 
 Lemma hyps_functionality_move_down {o} :
-  forall lib b H J K s1 s2 s3 x (t : @CTerm o) T,
+  forall uk lib b H J K s1 s2 s3 x (t : @CTerm o) T,
     covered T (vars_hyps H)
     -> length s1 = length H
     -> length s2 = length J
     -> !LIn x (free_vars_hyps J)
     -> !LIn x (hyps_free_vars J)
     -> !LIn x (vars_hyps J)
-    -> (hyps_functionality lib
+    -> (hyps_functionality uk lib
           ((snoc s1 (x, t) ++ s2) ++ s3)
           ((snoc H (mk_nlhyp b x T) ++ J) ++ K)
-        <=> hyps_functionality lib
+        <=> hyps_functionality uk lib
               (snoc (s1 ++ s2) (x, t) ++ s3)
               (snoc (H ++ J) (mk_nlhyp b x T) ++ K)).
 Proof.

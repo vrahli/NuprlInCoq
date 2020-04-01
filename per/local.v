@@ -75,10 +75,10 @@ Proof.
 Qed.*)
 
 Definition local_ts {o} (ts : cts(o)) :=
-  forall (lib : @library o) T T' eq eqa,
+  forall uk (lib : @library o) T T' eq eqa,
     (eq <=2=> (per_bar_eq lib eqa))
-    -> in_open_bar_ext lib (fun lib' x => ts lib' T T' (eqa lib' x))
-    -> ts lib T T' eq.
+    -> in_open_bar_ext lib (fun lib' x => ts uk lib' T T' (eqa lib' x))
+    -> ts uk lib T T' eq.
 
 (*Definition lib_per_per_bar {o}
            {lib  : @library o}
@@ -158,9 +158,9 @@ Qed.
 Hint Resolve uniquely_valued_per_bar : slow.
 
 Definition local_unique {o} (ts : cts(o)) :=
-  forall (lib : @library o) T T' eq (eqa : lib-per(lib,o)),
-    ts lib T T' eq
-    -> in_open_bar_ext lib (fun lib' x => ts lib' T T' (eqa lib' x))
+  forall uk (lib : @library o) T T' eq (eqa : lib-per(lib,o)),
+    ts uk lib T T' eq
+    -> in_open_bar_ext lib (fun lib' x => ts uk lib' T T' (eqa lib' x))
     -> sub_per (per_bar_eq lib eqa) eq.
 
 Lemma close_local_unique {o} :
@@ -538,7 +538,7 @@ Qed.
 Hint Resolve lib_extends_Flib2 : slow.
 
 Lemma eq_per_bar_eq_lib_fun_dep_eqa_part1 {o} :
-  forall (ts : cts(o)) T T' lib (eqa : lib-per(lib, o))
+  forall (ts : cts(o)) uk T T' lib (eqa : lib-per(lib, o))
          (Flib  : FunLibExt lib)
          (Feqa  : FunDepEqa Flib)
          (Flib2 : FunLibExt2 Flib)
@@ -557,7 +557,7 @@ Lemma eq_per_bar_eq_lib_fun_dep_eqa_part1 {o} :
                        (Flib2 lib1 ext1 lib2 ext2 z lib' x)
                        (fun lib0 (_ : lib_extends lib0 (Flib2 lib1 ext1 lib2 ext2 z lib' x)) =>
                           forall w : lib_extends lib0 lib2,
-                            ts lib0 T T' ((Feqa lib1 ext1 lib2 ext2 z) lib0 w)))
+                            ts uk lib0 T T' ((Feqa lib1 ext1 lib2 ext2 z) lib0 w)))
                   # (eqa lib2 z) <=2=> (per_bar_eq lib2 (Feqa lib1 ext1 lib2 ext2 z))))
     -> per_bar_eq lib eqa t1 t2
     -> per_bar_eq lib (lib_fun_dep_eqa Feqa Flib2) t1 t2.
@@ -620,7 +620,7 @@ Proof.
 Qed.
 
 Lemma eq_per_bar_eq_lib_fun_dep_eqa {o} :
-  forall (ts : cts(o)) T T' lib (eqa : lib-per(lib, o))
+  forall (ts : cts(o)) uk T T' lib (eqa : lib-per(lib, o))
          (Flib  : FunLibExt lib)
          (Feqa  : FunDepEqa Flib)
          (Flib2 : FunLibExt2 Flib),
@@ -639,7 +639,7 @@ Lemma eq_per_bar_eq_lib_fun_dep_eqa {o} :
                           (Flib2 lib1 ext1 lib2 ext2 z lib' x)
                           (fun lib0 (_ : lib_extends lib0 (Flib2 lib1 ext1 lib2 ext2 z lib' x)) =>
                              forall w : lib_extends lib0 lib2,
-                               ts lib0 T T' ((Feqa lib1 ext1 lib2 ext2 z) lib0 w)))
+                               ts uk lib0 T T' ((Feqa lib1 ext1 lib2 ext2 z) lib0 w)))
                      # (eqa lib2 z) <=2=> (per_bar_eq lib2 (Feqa lib1 ext1 lib2 ext2 z))))
     -> (per_bar_eq lib eqa) <=2=> (per_bar_eq lib (lib_fun_dep_eqa Feqa Flib2)).
 Proof.
@@ -781,8 +781,8 @@ Proof.
 Qed.*)
 
 Lemma ccequivc_ext_uni_uni_implies {o} :
-  forall (lib : @library o) i j,
-    ccequivc_ext lib (mkc_uni i) (mkc_uni j) -> i = j.
+  forall (lib : @library o) u v i j,
+    ccequivc_ext lib (mkc_uni u i) (mkc_uni v j) -> u = v # i = j.
 Proof.
   introv ceq; pose proof (ceq _ (lib_extends_refl _)) as ceq; simpl in ceq; spcast.
   apply cequivc_uni_right_iscvalue in ceq; eauto 3 with slow.
@@ -795,7 +795,7 @@ Proof.
   introv u v.
   allrw @univi_exists_iff; exrepnd.
   spcast; computes_to_eqval_ext.
-  apply ccequivc_ext_uni_uni_implies in ceq; subst; GC.
+  apply ccequivc_ext_uni_uni_implies in ceq; repnd; subst; GC.
   eapply eq_term_equals_trans;[eauto|].
   apply eq_term_equals_sym;auto.
 Qed.

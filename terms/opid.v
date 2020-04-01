@@ -248,7 +248,7 @@ Inductive CanonicalOp {p : POpid} : tuniv :=
 
 
   *)
- | NUni           : nat -> CanonicalOp
+ | NUni           : nat -> nat -> CanonicalOp
  | NFreeFromAtom  : CanonicalOp
  | NEFreeFromAtom : CanonicalOp
  | NFreeFromAtoms : CanonicalOp
@@ -321,7 +321,7 @@ Definition OpBindingsCan {p} (c : @CanonicalOp p) : opsign :=
   | Nint _         => []
 (*  | Nseq _         => []*)
   | Ncseq _        => []
-  | NUni _         => []
+  | NUni _ _       => []
   | NTok _         => []
   | NUTok _        => []
   | NFreeFromAtom  => [0,0,0]
@@ -713,8 +713,10 @@ Proof.
     pose proof (d g g0) as h; dorn h; subst; sp.
     right; intro k; inversion k; sp.
 
-  - destruct (deq_nat n n0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
+  - destruct (deq_nat n n1) as [d|d]; subst; tcsp;
+      try (complete (right; intro k; ginv; tcsp)).
+    destruct (deq_nat n0 n2) as [d|d]; subst; tcsp;
+      try (complete (right; intro k; ginv; tcsp)).
 
   - destruct (qnat_cond_deq q q0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
@@ -882,8 +884,8 @@ Proof.
     pose proof (d g g0) as h; dorn h; subst; sp.
     right; intro k; inversion k; sp.
 
-  - destruct (deq_nat n n0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
+  - destruct (deq_nat n n1) as [d|d]; subst; tcsp; try (complete (right; intro k; ginv; tcsp)).
+    destruct (deq_nat n0 n2) as [d|d]; subst; tcsp; try (complete (right; intro k; ginv; tcsp)).
 
   - destruct (qnat_cond_deq q q0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.

@@ -66,8 +66,8 @@ Proof.
   apply ccequivc_ext_mkc_product_implies in ceq0.
   repnd.
 
-  eapply in_ext_ext_nuprl_value_respecting_left  in pera4;[|apply ccequivc_ext_sym;eauto].
-  eapply in_ext_ext_nuprl_value_respecting_right in pera4;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprl_value_respecting_left  in pera5;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprl_value_respecting_right in pera5;[|apply ccequivc_ext_sym;eauto].
   eapply in_ext_ext_fam_nuprl_value_respecting_left  in pera0;[|apply bcequivc_ext_sym;eauto].
   eapply in_ext_ext_fam_nuprl_value_respecting_right in pera0;[|apply bcequivc_ext_sym;eauto].
 
@@ -75,11 +75,11 @@ Proof.
 
   {
     introv.
-    pose proof (pera4 _ e) as pera4.
-    pose proof (perb4 _ e) as perb4.
+    pose proof (pera5 _ e) as pera5.
+    pose proof (perb5 _ e) as perb5.
     simpl in *.
-    apply nuprl_refl in pera4.
-    apply nuprl_refl in perb4.
+    apply nuprl_refl in pera5.
+    apply nuprl_refl in perb5.
     eapply nuprl_uniquely_valued; eauto.
   }
 
@@ -103,11 +103,11 @@ Qed.
 Hint Resolve local_per_bar_per_product_bar_nuprl : slow.
 
 Lemma dest_nuprl_per_product_l {o} :
-  forall (ts : cts(o)) lib T A v B T' eq,
+  forall (ts : cts(o)) uk lib T A v B T' eq,
     ts = univ
     -> ccomputes_to_valc_ext lib T (mkc_product A v B)
-    -> close ts lib T T' eq
-    -> per_bar (per_product_bar (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_product_bar (close ts)) uk lib T T' eq.
 Proof.
   introv equ comp cl.
   assert (type_system ts) as sys by (subst; eauto 3 with slow).
@@ -120,9 +120,9 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_product {o} :
-  forall (lib : @library o) (A : @CTerm o) v B C w D eq,
-    nuprl lib (mkc_product A v B) (mkc_product C w D) eq
-    -> per_bar (per_product_bar nuprl) lib (mkc_product A v B) (mkc_product C w D) eq.
+  forall uk (lib : @library o) (A : @CTerm o) v B C w D eq,
+    nuprl uk lib (mkc_product A v B) (mkc_product C w D) eq
+    -> per_bar (per_product_bar nuprl) uk lib (mkc_product A v B) (mkc_product C w D) eq.
 Proof.
   introv cl.
   unfold nuprl in cl.
@@ -131,41 +131,42 @@ Proof.
 Qed.
 
 Lemma type_family_ext_nuprl_product_uniquely_valued_eqas {o} :
-  forall lib A v B C w D (eqa1 eqa2 : lib-per(lib,o)) (eqb1 : lib-per-fam(lib,eqa1,o)) (eqb2 : lib-per-fam(lib,eqa2,o)),
-    type_family_ext mkc_product nuprl lib (mkc_product A v B) (mkc_product C w D) eqa1 eqb1
-    -> type_family_ext mkc_product nuprl lib (mkc_product A v B) (mkc_product C w D) eqa2 eqb2
+  forall uk lib A v B C w D (eqa1 eqa2 : lib-per(lib,o)) (eqb1 : lib-per-fam(lib,eqa1,o)) (eqb2 : lib-per-fam(lib,eqa2,o)),
+    type_family_ext mkc_product nuprl uk lib (mkc_product A v B) (mkc_product C w D) eqa1 eqb1
+    -> type_family_ext mkc_product nuprl uk lib (mkc_product A v B) (mkc_product C w D) eqa2 eqb2
     -> in_ext_ext lib (fun lib' x => (eqa1 lib' x) <=2=> (eqa2 lib' x)).
 Proof.
   introv tfa tfb.
   unfold type_family_ext in *; exrepnd; spcast.
   repeat ccomputes_to_valc_ext_val.
 
-  eapply in_ext_ext_nuprl_value_respecting_left  in tfa3;[|apply ccequivc_ext_sym;eauto].
-  eapply in_ext_ext_nuprl_value_respecting_right in tfa3;[|apply ccequivc_ext_sym;eauto].
-  eapply in_ext_ext_nuprl_value_respecting_left  in tfb3;[|apply ccequivc_ext_sym;eauto].
-  eapply in_ext_ext_nuprl_value_respecting_right in tfb3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprl_value_respecting_left  in tfa4;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprl_value_respecting_right in tfa4;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprl_value_respecting_left  in tfb4;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprl_value_respecting_right in tfb4;[|apply ccequivc_ext_sym;eauto].
   eapply in_ext_ext_fam_nuprl_value_respecting_left  in tfa1;[|apply bcequivc_ext_sym;eauto].
   eapply in_ext_ext_fam_nuprl_value_respecting_right in tfa1;[|apply bcequivc_ext_sym;eauto].
   eapply in_ext_ext_fam_nuprl_value_respecting_left  in tfb1;[|apply bcequivc_ext_sym;eauto].
   eapply in_ext_ext_fam_nuprl_value_respecting_right in tfb1;[|apply bcequivc_ext_sym;eauto].
 
   introv.
-  pose proof (tfa3 _ e) as tfa3.
-  pose proof (tfb3 _ e) as tfb3.
+  pose proof (tfa4 _ e) as tfa4.
+  pose proof (tfb4 _ e) as tfb4.
   simpl in *.
-  apply nuprl_refl in tfa3.
-  apply nuprl_refl in tfb3.
+  apply nuprl_refl in tfa4.
+  apply nuprl_refl in tfb4.
   eapply nuprl_uniquely_valued; eauto.
 Qed.
 
 Lemma dest_nuprl_product2 {o} :
-  forall lib (eq : per(o)) A v B C w D,
-    nuprl lib (mkc_product A v B) (mkc_product C w D) eq
+  forall uk lib (eq : per(o)) A v B C w D,
+    nuprl uk lib (mkc_product A v B) (mkc_product C w D) eq
     ->
     exists (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)),
       eq <=2=> (per_bar_eq lib (per_product_eq_bar_lib_per lib eqa eqb))
-      # in_open_bar_ext lib (fun lib' x => nuprl lib' A C (eqa lib' x))
-      # in_open_bar_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), nuprl lib' (substc a v B) (substc a' w D) (eqb lib' x a a' e)).
+      # in_open_bar_ext lib (fun lib' x => nuprl uk lib' A C (eqa lib' x))
+      # in_open_bar_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), nuprl uk lib' (substc a v B) (substc a' w D) (eqb lib' x a a' e))
+      # is_swap_invariant_cond uk eqa v B w D.
 Proof.
   introv u.
   apply dest_nuprl_product in u.
@@ -205,8 +206,8 @@ Proof.
 
       - exrepnd.
         pose proof (u2 _ ext1 _ ext2 extz) as u; exrepnd.
-        apply (implies_type_family_ext_raise_lib_per _ _ _ _ e) in q0.
-        apply (implies_type_family_ext_raise_lib_per _ _ _ _ z0) in u0.
+        apply (implies_type_family_ext_raise_lib_per _ _ _ _ _ e) in q0.
+        apply (implies_type_family_ext_raise_lib_per _ _ _ _ _ z0) in u0.
         eapply @type_family_ext_nuprl_uniquely_valued_eqas in u0; try exact q0; auto; simpl in *; eauto 3 with slow;[].
         pose proof (u0 _ (lib_extends_refl _)) as u0; simpl in *.
         unfold raise_ext_per in u0; simpl in *.
@@ -222,8 +223,8 @@ Proof.
 
       - exrepnd.
         pose proof (u2 _ ext1 _ ext2 extz) as xx; exrepnd.
-        apply (implies_type_family_ext_raise_lib_per _ _ _ _ e) in q0.
-        apply (implies_type_family_ext_raise_lib_per _ _ _ _ z0) in xx0.
+        apply (implies_type_family_ext_raise_lib_per _ _ _ _ _ e) in q0.
+        apply (implies_type_family_ext_raise_lib_per _ _ _ _ _ z0) in xx0.
         dup xx0 as eqas.
         dup xx0 as eqbs.
         eapply @type_family_ext_nuprl_uniquely_valued_eqas in eqas; try exact q0; auto; simpl in *; eauto 3 with slow;[].
@@ -255,9 +256,9 @@ Proof.
     unfold type_family_ext in q0; exrepnd.
     repeat ccomputes_to_valc_ext_val.
 
-    pose proof (q3 _ (lib_extends_refl lib'0)) as q3; simpl in *.
-    eapply nuprl_value_respecting_left in q3;[|apply ccequivc_ext_sym;eauto].
-    eapply nuprl_value_respecting_right in q3;[|apply ccequivc_ext_sym;eauto].
+    pose proof (q4 _ (lib_extends_refl lib'0)) as q4; simpl in *.
+    eapply nuprl_value_respecting_left in q4;[|apply ccequivc_ext_sym;eauto].
+    eapply nuprl_value_respecting_right in q4;[|apply ccequivc_ext_sym;eauto].
     eapply type_extensionality_nuprl;[eauto|].
 
     split; intro h.
@@ -269,13 +270,13 @@ Proof.
       unfold type_family_ext in u1; exrepnd.
       repeat ccomputes_to_valc_ext_val.
 
-      pose proof (u5 _ z0) as u5; simpl in *.
-      apply nuprl_refl in u5.
-      apply nuprl_refl in q3.
-      eapply nuprl_value_respecting_left in u5;[|eapply lib_extends_preserves_ccequivc_ext;[|apply ccequivc_ext_sym;eauto];auto].
-      eapply nuprl_value_respecting_right in u5;[|eapply lib_extends_preserves_ccequivc_ext;[|apply ccequivc_ext_sym;eauto];auto].
-      eapply nuprl_uniquely_valued in u5; try exact q3.
-      apply u5; auto.
+      pose proof (u6 _ z0) as u6; simpl in *.
+      apply nuprl_refl in u6.
+      apply nuprl_refl in q4.
+      eapply nuprl_value_respecting_left in u6;[|eapply lib_extends_preserves_ccequivc_ext;[|apply ccequivc_ext_sym;eauto];auto].
+      eapply nuprl_value_respecting_right in u6;[|eapply lib_extends_preserves_ccequivc_ext;[|apply ccequivc_ext_sym;eauto];auto].
+      eapply nuprl_uniquely_valued in u6; try exact q4.
+      apply u6; auto.
   }
 
   {
@@ -317,6 +318,14 @@ Proof.
       eapply nuprl_uniquely_valued in u1; try exact q0.
       apply u1; auto; eapply lib_per_fam_cond; eauto.
   }
+
+  {
+    destruct uk; simpl; auto;[].
+    dands; introv ext; simpl in *; exrepnd;
+      pose proof (u2 _ ext1 _ ext2 extz) as u2; simpl in u2; repnd;
+        unfold type_family_ext in *; simpl in *; exrepnd;
+          repeat ccomputes_to_valc_ext_val; eauto 3 with slow.
+  }
 Qed.
 
 Lemma type_extensionality_per_product_bar_nuprli {o} :
@@ -347,8 +356,8 @@ Proof.
   apply ccequivc_ext_mkc_product_implies in ceq.
   apply ccequivc_ext_mkc_product_implies in ceq0.
   repnd.
-  eapply in_ext_ext_nuprli_value_respecting_left  in pera4;[|apply ccequivc_ext_sym;eauto].
-  eapply in_ext_ext_nuprli_value_respecting_right in pera4;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprli_value_respecting_left  in pera5;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprli_value_respecting_right in pera5;[|apply ccequivc_ext_sym;eauto].
   eapply in_ext_ext_fam_nuprli_value_respecting_left  in pera0;[|apply bcequivc_ext_sym;eauto].
   eapply in_ext_ext_fam_nuprli_value_respecting_right in pera0;[|apply bcequivc_ext_sym;eauto].
 
@@ -356,11 +365,11 @@ Proof.
 
   {
     introv.
-    pose proof (pera4 _ e) as pera4.
-    pose proof (perb4 _ e) as perb4.
+    pose proof (pera5 _ e) as pera5.
+    pose proof (perb5 _ e) as perb5.
     simpl in *.
-    apply nuprli_refl in pera4.
-    apply nuprli_refl in perb4.
+    apply nuprli_refl in pera5.
+    apply nuprli_refl in perb5.
     eapply nuprli_uniquely_valued; eauto.
   }
 
@@ -384,11 +393,11 @@ Qed.
 Hint Resolve local_per_bar_per_product_bar_nuprli : slow.
 
 Lemma dest_nuprli_per_product_l {o} :
-  forall i (ts : cts(o)) lib T A v B T' eq,
+  forall i uk (ts : cts(o)) lib T A v B T' eq,
     ts = univi_bar i
     -> ccomputes_to_valc_ext lib T (mkc_product A v B)
-    -> close ts lib T T' eq
-    -> per_bar (per_product_bar (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_product_bar (close ts)) uk lib T T' eq.
 Proof.
   introv equ comp cl.
   assert (type_system ts) as sys by (subst; eauto 3 with slow).
@@ -401,9 +410,9 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_product {o} :
-  forall i (lib : @library o) (A : @CTerm o) v B C w D eq,
-    nuprli i lib (mkc_product A v B) (mkc_product C w D) eq
-    -> per_bar (per_product_bar (nuprli i)) lib (mkc_product A v B) (mkc_product C w D) eq.
+  forall i uk (lib : @library o) (A : @CTerm o) v B C w D eq,
+    nuprli i uk lib (mkc_product A v B) (mkc_product C w D) eq
+    -> per_bar (per_product_bar (nuprli i)) uk lib (mkc_product A v B) (mkc_product C w D) eq.
 Proof.
   introv cl.
   unfold nuprli in cl.
@@ -412,30 +421,30 @@ Proof.
 Qed.
 
 Lemma type_family_ext_nuprli_product_uniquely_valued_eqas {o} :
-  forall i lib A v B C w D (eqa1 eqa2 : lib-per(lib,o)) (eqb1 : lib-per-fam(lib,eqa1,o)) (eqb2 : lib-per-fam(lib,eqa2,o)),
-    type_family_ext mkc_product (nuprli i) lib (mkc_product A v B) (mkc_product C w D) eqa1 eqb1
-    -> type_family_ext mkc_product (nuprli i) lib (mkc_product A v B) (mkc_product C w D) eqa2 eqb2
+  forall i uk lib A v B C w D (eqa1 eqa2 : lib-per(lib,o)) (eqb1 : lib-per-fam(lib,eqa1,o)) (eqb2 : lib-per-fam(lib,eqa2,o)),
+    type_family_ext mkc_product (nuprli i) uk lib (mkc_product A v B) (mkc_product C w D) eqa1 eqb1
+    -> type_family_ext mkc_product (nuprli i) uk lib (mkc_product A v B) (mkc_product C w D) eqa2 eqb2
     -> in_ext_ext lib (fun lib' x => (eqa1 lib' x) <=2=> (eqa2 lib' x)).
 Proof.
   introv tfa tfb.
   unfold type_family_ext in *; exrepnd; spcast.
 
   repeat ccomputes_to_valc_ext_val.
-  eapply in_ext_ext_nuprli_value_respecting_left  in tfa3;[|apply ccequivc_ext_sym;eauto].
-  eapply in_ext_ext_nuprli_value_respecting_right in tfa3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprli_value_respecting_left  in tfa4;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprli_value_respecting_right in tfa4;[|apply ccequivc_ext_sym;eauto].
   eapply in_ext_ext_fam_nuprli_value_respecting_left  in tfa1;[|apply bcequivc_ext_sym;eauto].
   eapply in_ext_ext_fam_nuprli_value_respecting_right in tfa1;[|apply bcequivc_ext_sym;eauto].
-  eapply in_ext_ext_nuprli_value_respecting_left  in tfb3;[|apply ccequivc_ext_sym;eauto].
-  eapply in_ext_ext_nuprli_value_respecting_right in tfb3;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprli_value_respecting_left  in tfb4;[|apply ccequivc_ext_sym;eauto].
+  eapply in_ext_ext_nuprli_value_respecting_right in tfb4;[|apply ccequivc_ext_sym;eauto].
   eapply in_ext_ext_fam_nuprli_value_respecting_left  in tfb1;[|apply bcequivc_ext_sym;eauto].
   eapply in_ext_ext_fam_nuprli_value_respecting_right in tfb1;[|apply bcequivc_ext_sym;eauto].
 
   introv.
-  pose proof (tfa3 _ e) as tfa3.
-  pose proof (tfb3 _ e) as tfb3.
+  pose proof (tfa4 _ e) as tfa4.
+  pose proof (tfb4 _ e) as tfb4.
   simpl in *.
-  apply nuprli_refl in tfa3.
-  apply nuprli_refl in tfb3.
+  apply nuprli_refl in tfa4.
+  apply nuprli_refl in tfb4.
   eapply nuprli_uniquely_valued; eauto.
 Qed.
 
@@ -491,13 +500,14 @@ Proof.
 Defined.*)
 
 Lemma dest_nuprli_product2 {o} :
-  forall i lib (eq : per(o)) A v B C w D,
-    nuprli i lib (mkc_product A v B) (mkc_product C w D) eq
+  forall i uk lib (eq : per(o)) A v B C w D,
+    nuprli i uk lib (mkc_product A v B) (mkc_product C w D) eq
     ->
     exists (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)),
       eq <=2=> (per_bar_eq lib (per_product_eq_bar_lib_per lib eqa eqb))
-      # in_open_bar_ext lib (fun lib' x => nuprli i lib' A C (eqa lib' x))
-      # in_open_bar_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), nuprli i lib' (substc a v B) (substc a' w D) (eqb lib' x a a' e)).
+      # in_open_bar_ext lib (fun lib' x => nuprli i uk lib' A C (eqa lib' x))
+      # in_open_bar_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), nuprli i uk lib' (substc a v B) (substc a' w D) (eqb lib' x a a' e))
+      # is_swap_invariant_cond uk eqa v B w D.
 Proof.
   introv u.
   apply dest_nuprli_product in u.
@@ -537,8 +547,8 @@ Proof.
 
       - exrepnd.
         pose proof (u2 _ ext1 _ ext2 extz) as u; exrepnd.
-        apply (implies_type_family_ext_raise_lib_per _ _ _ _ e) in q0.
-        apply (implies_type_family_ext_raise_lib_per _ _ _ _ z0) in u0.
+        apply (implies_type_family_ext_raise_lib_per _ _ _ _ _ e) in q0.
+        apply (implies_type_family_ext_raise_lib_per _ _ _ _ _ z0) in u0.
         eapply @type_family_ext_nuprli_uniquely_valued_eqas in u0; try exact q0; auto; simpl in *; eauto 3 with slow;[].
         pose proof (u0 _ (lib_extends_refl _)) as u0; simpl in *.
         unfold raise_ext_per in u0; simpl in *.
@@ -554,8 +564,8 @@ Proof.
 
       - exrepnd.
         pose proof (u2 _ ext1 _ ext2 extz) as xx; exrepnd.
-        apply (implies_type_family_ext_raise_lib_per _ _ _ _ e) in q0.
-        apply (implies_type_family_ext_raise_lib_per _ _ _ _ z0) in xx0.
+        apply (implies_type_family_ext_raise_lib_per _ _ _ _ _ e) in q0.
+        apply (implies_type_family_ext_raise_lib_per _ _ _ _ _ z0) in xx0.
         dup xx0 as eqas.
         dup xx0 as eqbs.
         eapply @type_family_ext_nuprli_uniquely_valued_eqas in eqas; try exact q0; auto; simpl in *; eauto 3 with slow;[].
@@ -587,9 +597,9 @@ Proof.
     unfold type_family_ext in q0; exrepnd.
     repeat ccomputes_to_valc_ext_val.
 
-    pose proof (q3 _ (lib_extends_refl lib'0)) as q3; simpl in *.
-    eapply nuprli_value_respecting_left in q3;[|apply ccequivc_ext_sym;eauto].
-    eapply nuprli_value_respecting_right in q3;[|apply ccequivc_ext_sym;eauto].
+    pose proof (q4 _ (lib_extends_refl lib'0)) as q4; simpl in *.
+    eapply nuprli_value_respecting_left in q4;[|apply ccequivc_ext_sym;eauto].
+    eapply nuprli_value_respecting_right in q4;[|apply ccequivc_ext_sym;eauto].
     eapply nuprli_type_extensionality;[eauto|].
 
     split; intro h.
@@ -601,13 +611,13 @@ Proof.
       unfold type_family_ext in u1; exrepnd.
       repeat ccomputes_to_valc_ext_val.
 
-      pose proof (u5 _ z0) as u5; simpl in *.
-      apply nuprli_refl in u5.
-      apply nuprli_refl in q3.
-      eapply nuprli_value_respecting_left in u5;[|eapply lib_extends_preserves_ccequivc_ext;[|apply ccequivc_ext_sym;eauto];auto].
-      eapply nuprli_value_respecting_right in u5;[|eapply lib_extends_preserves_ccequivc_ext;[|apply ccequivc_ext_sym;eauto];auto].
-      eapply nuprli_uniquely_valued in u5; try exact q3.
-      apply u5; auto.
+      pose proof (u6 _ z0) as u6; simpl in *.
+      apply nuprli_refl in u6.
+      apply nuprli_refl in q4.
+      eapply nuprli_value_respecting_left in u6;[|eapply lib_extends_preserves_ccequivc_ext;[|apply ccequivc_ext_sym;eauto];auto].
+      eapply nuprli_value_respecting_right in u6;[|eapply lib_extends_preserves_ccequivc_ext;[|apply ccequivc_ext_sym;eauto];auto].
+      eapply nuprli_uniquely_valued in u6; try exact q4.
+      apply u6; auto.
   }
 
   {
@@ -649,6 +659,14 @@ Proof.
       eapply nuprli_uniquely_valued in u1; try exact q0.
       apply u1; auto; eapply lib_per_fam_cond; eauto.
   }
+
+  {
+    destruct uk; simpl; auto;[].
+    dands; introv ext; simpl in *; exrepnd;
+      pose proof (u2 _ ext1 _ ext2 extz) as u2; simpl in u2; repnd;
+        unfold type_family_ext in *; simpl in *; exrepnd;
+          repeat ccomputes_to_valc_ext_val; eauto 3 with slow.
+  }
 Qed.
 
 
@@ -683,23 +701,24 @@ Proof.
 Qed.
 
 Lemma equality_in_product {o} :
-  forall lib (p1 p2 : @CTerm o) A v B,
-    equality lib p1 p2 (mkc_product A v B)
+  forall uk lib (p1 p2 : @CTerm o) A v B,
+    equality uk lib p1 p2 (mkc_product A v B)
     <=>
-    (type lib A
+    (type uk lib A
+     # equality_swap_invariant_cond uk lib A v B v B
      # in_ext
          lib
          (fun lib' => forall a a',
-              equality lib' a a' A
-              -> tequality lib' (substc a v B) (substc a' v B))
+              equality uk lib' a a' A
+              -> tequality uk lib' (substc a v B) (substc a' v B))
      # in_open_bar
          lib
          (fun lib =>
             {a1, a2, b1, b2 : CTerm
             , p1 ===>(lib) (mkc_pair a1 b1)
             # p2 ===>(lib) (mkc_pair a2 b2)
-            # equality lib a1 a2 A
-            # equality lib b1 b2 (substc a1 v B)})).
+            # equality uk lib a1 a2 A
+            # equality uk lib b1 b2 (substc a1 v B)})).
 Proof.
   introv; split; intro e; exrepnd.
 
@@ -717,27 +736,27 @@ Proof.
       exists (lib_per_fam2lib_per a a' (raise_lib_per_fam eqb x)); dands; tcsp;[].
 
       apply (lib_extends_preserves_in_open_bar_ext _ _ _ x) in e0.
-      apply (lib_extends_preserves_in_open_bar_ext _ _ _ x) in e1.
+      apply (lib_extends_preserves_in_open_bar_ext _ _ _ x) in e4.
       apply (lib_extends_preserves_in_open_bar_ext _ _ _ x) in e3.
 
       apply in_open_bar_ext_twice in e3.
-      apply in_open_bar_ext_twice in e1.
+      apply in_open_bar_ext_twice in e4.
       apply in_open_bar_ext_dup.
       eapply in_open_bar_ext_comb; try exact e0; clear e0.
       eapply in_open_bar_ext_comb; try exact e3; clear e3.
-      eapply in_open_bar_ext_pres; try exact e1; clear e1; introv m1 m3 m0; simpl in *.
+      eapply in_open_bar_ext_pres; try exact e4; clear e4; introv m4 m3 m0; simpl in *.
       unfold raise_ext_per_fam.
       unfold per_product_eq_bar in m0; simpl in m0.
 
       eapply in_open_bar_ext_comb; try exact m0; clear m0.
       eapply in_open_bar_ext_comb; try exact m3; clear m3.
-      eapply in_open_bar_ext_pres; try exact m1; clear m1; introv m1 m3 m0; simpl in *.
+      eapply in_open_bar_ext_pres; try exact m4; clear m4; introv m4 m3 m0; simpl in *.
       unfold per_product_eq, raise_ext_per, raise_ext_per_fam in *; exrepnd.
       introv.
 
       assert (eqa lib'1 (lib_extends_trans (lib_extends_trans e0 e) x) a a') as eea.
       {
-        pose proof (equality_eq1 lib'1 A A a a' (eqa lib'1 (lib_extends_trans (lib_extends_trans e0 e) x))) as w.
+        pose proof (equality_eq1 uk lib'1 A A a a' (eqa lib'1 (lib_extends_trans (lib_extends_trans e0 e) x))) as w.
         apply w; auto; eauto 4 with slow.
       }
 
@@ -747,7 +766,7 @@ Proof.
       assert (eqa lib'1 (lib_extends_trans z x) a a') as eec.
       { eapply lib_per_cond; eauto. }
 
-      pose proof (m1 _ _ eea) as m1.
+      pose proof (m4 _ _ eea) as m4.
       fold (@nuprl o).
 
       eapply type_extensionality_nuprl;[eauto|].
@@ -759,24 +778,24 @@ Proof.
       apply per_bar_eq_per_product_eq_bar_lib_per_iff in e0; exrepnd.
       unfold per_product_eq in e0.
       eapply in_open_bar_comb2; try exact e3; clear e3.
-      eapply in_open_bar_ext_comb; try exact e1; clear e1.
-      eapply in_open_bar_ext_pres; try exact e0; clear e0; introv e0 e1 e3.
+      eapply in_open_bar_ext_comb; try exact e4; clear e4.
+      eapply in_open_bar_ext_pres; try exact e0; clear e0; introv e0 e4 e3.
       exrepnd.
       exists a a' b b'; dands; auto.
 
-      - eapply (equality_eq1 lib' A A a a' (eqa lib' e)); auto.
+      - eapply (equality_eq1 uk lib' A A a a' (eqa lib' e)); auto.
 
-      - pose proof (e1 _ _ e2) as e1; simpl in *.
-        apply (equality_eq1 lib' (substc a v B) (substc a' v B) b b' (eqb lib' e a a' e2)); auto.
+      - pose proof (e4 _ _ e2) as e4; simpl in *.
+        apply (equality_eq1 uk lib' (substc a v B) (substc a' v B) b b' (eqb lib' e a a' e2)); auto.
     }
 
   - unfold type, tequality in e0; exrepnd.
     rename eq into eqa.
 
-    pose proof (nuprl_monotone_func lib A A eqa e2) as tya; exrepnd.
+    pose proof (nuprl_monotone_func uk lib A A eqa e3) as tya; exrepnd.
     rename eq' into eqa'.
 
-    eapply choice_ext_lib_teq_fam in e1;[|apply tya0].
+    eapply choice_ext_lib_teq_fam in e2;[|apply tya0].
     exrepnd.
 
     exists (per_product_eq_bar lib eqa' eqb).
@@ -786,10 +805,9 @@ Proof.
       apply CL_product.
       exists eqa' eqb.
       dands; auto;[].
-      exists A A v v B B; dands; spcast; eauto 3 with slow;[].
-
-      fold (@nuprl o) in *.
-      introv; apply tya0.
+      exists A A v v B B; dands; spcast; eauto 3 with slow;
+        try (complete (fold (@nuprl o) in *; introv; apply tya0));
+        try (complete (eapply equality_swap_invariant_cond_nuprl_imp; eauto; introv; apply tya0)).
     }
 
     unfold per_product_eq_bar.
@@ -798,36 +816,36 @@ Proof.
 
     pose proof (tya0 _ e) as tya0; repnd.
     dup h3 as ea.
-    apply (equality_eq1 lib' A A a1 a2 (eqa' lib' e)) in ea; auto.
+    apply (equality_eq1 uk lib' A A a1 a2 (eqa' lib' e)) in ea; auto.
     pose proof (e0 _ e _ _ ea) as e0.
     exists a1 a2 b1 b2 ea; dands; auto.
     eapply equality_eq1; eauto.
 Qed.
 
 Lemma equality_in_prod {p} :
-  forall lib (p1 p2 A B : @CTerm p),
-    equality lib p1 p2 (mkc_prod A B)
+  forall uk lib (p1 p2 A B : @CTerm p),
+    equality uk lib p1 p2 (mkc_prod A B)
     <=>
-    (type lib A
-     # in_ext lib (fun lib => inhabited_type lib A -> type lib B)
+    (type uk lib A
+     # in_ext lib (fun lib => inhabited_type uk lib A -> type uk lib B)
      # in_open_bar
          lib
          (fun lib =>
             {a1, a2, b1, b2 : CTerm
             , p1 ===>(lib) (mkc_pair a1 b1)
             # p2 ===>(lib) (mkc_pair a2 b2)
-            # equality lib a1 a2 A
-            # equality lib b1 b2 B})).
+            # equality uk lib a1 a2 A
+            # equality uk lib b1 b2 B})).
 Proof.
   introv.
   rw <- @fold_mkc_prod.
   rw @equality_in_product.
-  split; intro k; exrepnd; dands; auto;[| | |].
+  split; intro k; exrepnd; dands; auto; eauto 3 with slow;[| | |].
 
   {
     introv e i.
     unfold inhabited_type in i; exrepnd.
-    pose proof (k1 _ e _ _ i0) as q.
+    pose proof (k2 _ e _ _ i0) as q.
     repeat (rw @csubst_mk_cv in q); sp.
   }
 
@@ -853,11 +871,12 @@ Proof.
 Qed.
 
 Lemma tequality_product {o} :
-  forall lib (A1 A2 : @CTerm o) v1 v2 B1 B2,
-    tequality lib (mkc_product A1 v1 B1) (mkc_product A2 v2 B2)
+  forall uk lib (A1 A2 : @CTerm o) v1 v2 B1 B2,
+    tequality uk lib (mkc_product A1 v1 B1) (mkc_product A2 v2 B2)
     <=>
-    (tequality lib A1 A2
-     # in_ext lib (fun lib => forall a a', equality lib a a' A1 -> tequality lib (substc a v1 B1) (substc a' v2 B2))).
+    (tequality uk lib A1 A2
+     # equality_swap_invariant_cond uk lib A1 v1 B1 v2 B2
+     # in_ext lib (fun lib => forall a a', equality uk lib a a' A1 -> tequality uk lib (substc a v1 B1) (substc a' v2 B2))).
 Proof.
   intros.
   sp_iff Case.
@@ -875,18 +894,18 @@ Proof.
     exists (lib_per_fam2lib_per a a' (raise_lib_per_fam eqb x)); dands; tcsp;[].
 
     apply (lib_extends_preserves_in_open_bar_ext _ _ _ x) in teq2.
-    apply (lib_extends_preserves_in_open_bar_ext _ _ _ x) in teq0.
+    apply (lib_extends_preserves_in_open_bar_ext _ _ _ x) in teq3.
     eapply in_open_bar_ext_comb; try exact teq2; clear teq2.
-    eapply in_open_bar_ext_pres; try exact teq0; clear teq0; introv teq0 teq2; simpl in *.
+    eapply in_open_bar_ext_pres; try exact teq3; clear teq3; introv teq3 teq2; simpl in *.
     fold (@nuprl o).
 
     assert (eqa lib'0 (lib_extends_trans e x) a a') as xx.
     {
-      pose proof (equality_eq1 lib'0 A1 A2 a a' (eqa lib'0 (lib_extends_trans e x))) as w.
+      pose proof (equality_eq1 uk lib'0 A1 A2 a a' (eqa lib'0 (lib_extends_trans e x))) as w.
       apply w; auto; eauto 3 with slow.
     }
 
-    pose proof (teq0 _ _ xx) as teq0; simpl in *.
+    pose proof (teq3 _ _ xx) as teq3; simpl in *.
 
     eapply type_extensionality_nuprl;[eauto|].
     introv; split; intro w; eauto;[].
@@ -897,7 +916,7 @@ Proof.
   - Case "<-".
     introv e; exrepnd.
 
-    assert (forall lib', lib_extends lib' lib -> tequality lib' A1 A2) as teqa by eauto 3 with slow.
+    assert (forall lib', lib_extends lib' lib -> tequality uk lib' A1 A2) as teqa by eauto 3 with slow.
     clear e0.
 
     rename e into teqb.
@@ -912,24 +931,27 @@ Proof.
     exists eqa eqb.
     dands; eauto 3 with slow.
     exists A1 A2 v1 v2 B1 B2.
-    dands; spcast; eauto 3 with slow.
+    dands; spcast; eauto 3 with slow;
+      try (complete (eapply equality_swap_invariant_cond_nuprl_imp; eauto;
+                     introv; apply teqa0)).
 Qed.
 
 Lemma equality_product {o} :
-  forall lib (A1 A2 : @CTerm o) v1 v2 B1 B2 i,
-    equality lib (mkc_product A1 v1 B1)
+  forall uk lib (A1 A2 : @CTerm o) v1 v2 B1 B2 i,
+    equality uk lib (mkc_product A1 v1 B1)
              (mkc_product A2 v2 B2)
-             (mkc_uni i)
+             (mkc_uni uk i)
     <=>
-    (equality lib A1 A2 (mkc_uni i)
-     # in_ext lib (fun lib => forall a a', equality lib a a' A1 -> equality lib (substc a v1 B1) (substc a' v2 B2) (mkc_uni i))).
+    (equality uk lib A1 A2 (mkc_uni uk i)
+     # equality_swap_invariant_cond uk lib A1 v1 B1 v2 B2
+     # in_ext lib (fun lib => forall a a', equality uk lib a a' A1 -> equality uk lib (substc a v1 B1) (substc a' v2 B2) (mkc_uni uk i))).
 Proof.
   introv.
   sp_iff Case.
 
   - Case "->".
     intros teq.
-    dands.
+    dands; eauto 3 with slow.
 
     {
       unfold equality, nuprl in teq; exrepnd.
@@ -955,13 +977,28 @@ Proof.
     }
 
     {
+      unfold equality, nuprl in teq; exrepnd.
+      fold (@nuprl o) in *.
+
+      applydup @dest_nuprl_uni in teq1.
+      apply univ_implies_univi_bar3 in teq2; exrepnd.
+      apply teq2 in teq0.
+      unfold per_bar_eq in teq0; simpl in teq0.
+      apply if_in_open_bar_equality_swap_invariant_cond.
+      eapply in_open_bar_comb2; try exact teq0; clear teq0.
+      apply in_ext_ext_implies_in_open_bar_ext; introv ext h.
+      unfold univi_eq in *; exrepnd.
+      apply dest_nuprli_product2 in h0; exrepnd; eauto 3 with slow.
+    }
+
+    {
       introv x ea.
       unfold equality in teq; exrepnd.
       applydup @dest_nuprl_uni in teq1.
       apply univ_implies_univi_bar3 in teq2; exrepnd.
       apply teq2 in teq0.
 
-      exists (per_bar_eq lib' (univi_eq_lib_per lib' i)).
+      exists (per_bar_eq lib' (univi_eq_lib_per uk lib' i)).
       dands; auto; eauto 2 with slow.
 
       apply (lib_extends_preserves_in_open_bar_ext _ _ _ x) in teq0.
@@ -974,11 +1011,11 @@ Proof.
       fold (@nuprli o i) in *.
 
       eapply in_open_bar_ext_comb; try exact teq4; clear teq4.
-      eapply in_open_bar_ext_pres; try exact teq3; clear teq3; introv teq4 teq3.
+      eapply in_open_bar_ext_pres; try exact teq5; clear teq5; introv teq4 teq5.
 
       assert (eqa0 lib'1 e0 a a') as xx.
       {
-        pose proof (equality_eq1 lib'1 A1 A2 a a' (eqa0 lib'1 e0)) as w.
+        pose proof (equality_eq1 uk lib'1 A1 A2 a a' (eqa0 lib'1 e0)) as w.
         apply w; auto; eauto 4 with slow.
       }
 
@@ -1008,14 +1045,14 @@ Proof.
     unfold univi_eq in *; exrepnd.
     fold (@nuprli o i) in *.
 
-    pose proof (nuprli_monotone_func i lib' A1 A2 eqa eqa1) as tya; exrepnd.
+    pose proof (nuprli_monotone_func i uk lib' A1 A2 eqa eqa1) as tya; exrepnd.
     rename eq' into eqa'.
 
     assert (forall lib'',
                lib_extends lib'' lib' ->
                forall a a',
-                 equality lib'' a a' A1 ->
-                 equality lib'' (B1) [[v1 \\ a]] (B2) [[v2 \\ a']] (mkc_uni i)) as teq.
+                 equality uk lib'' a a' A1 ->
+                 equality uk lib'' (B1) [[v1 \\ a]] (B2) [[v2 \\ a']] (mkc_uni uk i)) as teq.
     { introv xt ea; eapply eqb; eauto 3 with slow. }
     clear eqb.
 
@@ -1027,20 +1064,37 @@ Proof.
     apply CL_product; fold (@nuprli o i).
     exists eqa' eqb'.
     dands; auto;[].
-    exists A1 A2 v1 v2 B1 B2; dands; spcast; eauto 3 with slow;[].
+    exists A1 A2 v1 v2 B1 B2; dands; spcast; eauto 3 with slow;
+      try (complete (introv; apply tya0));
+      try (complete (eapply lib_extends_preserves_equality_swap_invariant_cond in eqb0; eauto;
+                     eapply equality_swap_invariant_cond_nuprli_imp; eauto;
+                     introv; apply tya0)).
+Qed.
 
-    introv; apply tya0.
+Lemma equality_product_uk0 {o} :
+  forall lib (A1 A2 : @CTerm o) v1 v2 B1 B2 i,
+    equality uk0 lib (mkc_product A1 v1 B1)
+             (mkc_product A2 v2 B2)
+             (mkc_uni uk0 i)
+    <=>
+    (equality uk0 lib A1 A2 (mkc_uni uk0 i)
+     # in_ext lib (fun lib => forall a a', equality uk0 lib a a' A1 -> equality uk0 lib (substc a v1 B1) (substc a' v2 B2) (mkc_uni uk0 i))).
+Proof.
+  introv.
+  rw (@equality_product o uk0).
+  split; intro h; repnd; dands; eauto 2 with slow.
 Qed.
 
 Lemma tequality_mkc_prod {p} :
-  forall lib (A1 A2 B1 B2 : @CTerm p),
-    tequality lib (mkc_prod A1 B1) (mkc_prod A2 B2)
-    <=> (tequality lib A1 A2 # in_ext lib (fun lib => inhabited_type lib A1 -> tequality lib B1 B2)).
+  forall uk lib (A1 A2 B1 B2 : @CTerm p),
+    tequality uk lib (mkc_prod A1 B1) (mkc_prod A2 B2)
+    <=> (tequality uk lib A1 A2
+         # in_ext lib (fun lib => inhabited_type uk lib A1 -> tequality uk lib B1 B2)).
 Proof.
   introv.
   allrw <- @fold_mkc_prod.
-  rw @tequality_product.
-  split; intro k; repnd; dands; auto.
+  rw (@tequality_product p uk).
+  split; intro k; repnd; dands; auto; eauto 3 with slow.
 
   {
     introv x i.
@@ -1058,27 +1112,30 @@ Proof.
 Qed.
 
 Lemma type_mkc_prod {p} :
-  forall lib (A B : @CTerm p),
-    type lib (mkc_prod A B) <=> (type lib A # in_ext lib (fun lib => inhabited_type lib A -> type lib B)).
+  forall uk lib (A B : @CTerm p),
+    type uk lib (mkc_prod A B)
+    <=> (type uk lib A
+         # in_ext lib (fun lib => inhabited_type uk lib A -> type uk lib B)).
 Proof.
   introv.
   rw @tequality_mkc_prod; sp.
 Qed.
 
 Lemma inhabited_product {p} :
-  forall lib (A : @CTerm p) v B,
-    inhabited_type lib (mkc_product A v B)
+  forall uk lib (A : @CTerm p) v B,
+    inhabited_type uk lib (mkc_product A v B)
     <=>
-    (type lib A
-     # in_ext lib (fun lib => forall a a', equality lib a a' A -> tequality lib (substc a v B) (substc a' v B))
+    (type uk lib A
+     # equality_swap_invariant_cond uk lib A v B v B
+     # in_ext lib (fun lib => forall a a', equality uk lib a a' A -> tequality uk lib (substc a v B) (substc a' v B))
      # {t : CTerm
        , in_open_bar
            lib
            (fun lib =>
               {a , b : CTerm
               , t ===>(lib) (mkc_pair a b)
-              # member lib a A
-              # member lib b (substc a v B)})}).
+              # member uk lib a A
+              # member uk lib b (substc a v B)})}).
 Proof.
   introv; split; intro k.
 
@@ -1093,25 +1150,26 @@ Proof.
     allunfold @inhabited_type; exrepnd.
     exists t.
     rw @equality_in_product; dands; tcsp.
-    eapply all_in_ex_bar_modus_ponens1;[|exact k2]; clear k2.
+    eapply all_in_ex_bar_modus_ponens1;[|exact k3]; clear k3.
     introv e k; exrepnd.
     exists a a b b; dands; auto; eauto 3 with slow.
 Qed.
 
 Lemma inhabited_exists {p} :
-  forall lib (A : @CTerm p) v B,
-    inhabited_type lib (mkc_exists A v B)
+  forall uk lib (A : @CTerm p) v B,
+    inhabited_type uk lib (mkc_exists A v B)
     <=>
-    (type lib A
-     # in_ext lib (fun lib => forall a a', equality lib a a' A -> tequality lib (substc a v B) (substc a' v B))
+    (type uk lib A
+     # equality_swap_invariant_cond uk lib A v B v B
+     # in_ext lib (fun lib => forall a a', equality uk lib a a' A -> tequality uk lib (substc a v B) (substc a' v B))
      # {t : CTerm
        , in_open_bar
            lib
            (fun lib =>
               {a , b : CTerm
               , t ===>(lib) (mkc_pair a b)
-              # member lib a A
-              # member lib b (substc a v B)})}).
+              # member uk lib a A
+              # member uk lib b (substc a v B)})}).
 Proof.
   introv.
   unfold mkc_exists.
@@ -1131,17 +1189,18 @@ Proof.
 Qed.
 
 Lemma member_product2 {o} :
-  forall lib (p : @CTerm o) A v B,
-    member lib p (mkc_product A v B)
+  forall uk lib (p : @CTerm o) A v B,
+    member uk lib p (mkc_product A v B)
     <=>
-    (type lib (mkc_product A v B)
+    (type uk lib (mkc_product A v B)
+     # equality_swap_invariant_cond uk lib A v B v B
      # in_open_bar
          lib
          (fun lib =>
             {a , b : CTerm
             , p ===>(lib) (mkc_pair a b)
-            # member lib a A
-            # member lib b (substc a v B)})).
+            # member uk lib a A
+            # member uk lib b (substc a v B)})).
 Proof.
   introv.
   rw @equality_in_product; split; intro k; exrepnd.
@@ -1162,13 +1221,13 @@ Proof.
 Qed.
 
 Lemma inhabited_prod {p} :
-  forall lib (A B : @CTerm p),
-    inhabited_type_bar lib (mkc_prod A B)
+  forall uk lib (A B : @CTerm p),
+    inhabited_type_bar uk lib (mkc_prod A B)
     <=>
-    (type lib A
-     # type lib B
-     # inhabited_type_bar lib A
-     # inhabited_type_bar lib B).
+    (type uk lib A
+     # type uk lib B
+     # inhabited_type_bar uk lib A
+     # inhabited_type_bar uk lib B).
 Proof.
   introv.
   split; intro k; exrepnd.
@@ -1229,13 +1288,13 @@ Proof.
 Qed.
 
 Lemma inhabited_prod2 {p} :
-  forall lib (A B : @CTerm p),
-    inhabited_type_bar lib (mkc_prod A B)
+  forall uk lib (A B : @CTerm p),
+    inhabited_type_bar uk lib (mkc_prod A B)
     <=>
-    (type lib A
-     # inhabited_type_bar lib A
-     # type lib B
-     # inhabited_type_bar lib B).
+    (type uk lib A
+     # inhabited_type_bar uk lib A
+     # type uk lib B
+     # inhabited_type_bar uk lib B).
 Proof.
   introv.
   rw @inhabited_prod; split; sp.

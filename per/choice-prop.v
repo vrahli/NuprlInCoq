@@ -32,22 +32,22 @@ Require Export axiom_func_choice_on.
 
 
 Lemma choice_teq {p} :
-  forall lib (A : @CTerm p) v1 B1 v2 B2,
+  forall uk lib (A : @CTerm p) v1 B1 v2 B2,
     (forall a1 a2 : CTerm,
-       equality lib a1 a2 A
-       -> tequality lib (substc a1 v1 B1) (substc a2 v2 B2))
+       equality uk lib a1 a2 A
+       -> tequality uk lib (substc a1 v1 B1) (substc a2 v2 B2))
     -> {f : forall a1 a2 : CTerm,
-            forall e : equality lib a1 a2 A,
+            forall e : equality uk lib a1 a2 A,
               per
         , forall a1 a2 : CTerm,
-          forall e : equality lib a1 a2 A,
-            nuprl lib (substc a1 v1 B1) (substc a2 v2 B2) (f a1 a2 e)}.
+          forall e : equality uk lib a1 a2 A,
+            nuprl uk lib (substc a1 v1 B1) (substc a2 v2 B2) (f a1 a2 e)}.
 Proof.
   introv F.
   generalize (FunctionalChoice_on
-                {a1 : CTerm & {a2 : CTerm & equality lib a1 a2 A}}
+                {a1 : CTerm & {a2 : CTerm & equality uk lib a1 a2 A}}
                 per
-                (fun a b => nuprl lib (substc (projT1 a) v1 B1) (substc (projT1 (projT2 a)) v2 B2) b));
+                (fun a b => nuprl uk lib (substc (projT1 a) v1 B1) (substc (projT1 (projT2 a)) v2 B2) b));
     intro C.
   dest_imp C hyp.
 
@@ -58,29 +58,29 @@ Proof.
 
   exrepnd.
 
-  exists (fun a1 a2 e => f (existT (fun a1 => {a2 : CTerm & equality lib a1 a2 A})
+  exists (fun a1 a2 e => f (existT (fun a1 => {a2 : CTerm & equality uk lib a1 a2 A})
                                    a1
-                                   (existT (fun a2 => equality lib a1 a2 A)
+                                   (existT (fun a2 => equality uk lib a1 a2 A)
                                            a2
                                            e))); introv.
-  generalize (C0 (existT (fun a1 => {a2 : CTerm & equality lib a1 a2 A})
+  generalize (C0 (existT (fun a1 => {a2 : CTerm & equality uk lib a1 a2 A})
                          a1
-                         (existT (fun a2 => equality lib a1 a2 A)
+                         (existT (fun a2 => equality uk lib a1 a2 A)
                                  a2
                                  e))); simpl; sp.
 Qed.
 
 Lemma choice_spteq {p} :
-  forall lib F1 F2,
-    (forall x y : CTerm, tequality lib (F1 x y) (F2 x y))
+  forall uk lib F1 F2,
+    (forall x y : CTerm, tequality uk lib (F1 x y) (F2 x y))
     -> {f : forall x y : @CTerm p, per(p)
-        , forall x y : CTerm, nuprl lib (F1 x y) (F2 x y) (f x y)}.
+        , forall x y : CTerm, nuprl uk lib (F1 x y) (F2 x y) (f x y)}.
 Proof.
   introv F.
   generalize (FunctionalChoice_on
                 (CTerm # CTerm)
                 per
-                (fun p e => nuprl lib
+                (fun p e => nuprl uk lib
                                   (F1 (fst p) (snd p))
                                   (F2 (fst p) (snd p))
                                   e));
@@ -138,7 +138,7 @@ Proof.
 Qed.
 *)
 
-Lemma all_in_bar_ext_exists_lib_per_implies_exists {o} :
+(*Lemma all_in_bar_ext_exists_lib_per_implies_exists {o} :
   forall {lib} (bar : @BarLib o lib)
          (F : forall lib' (x : lib_extends lib' lib) (eqa : lib-per(lib',o)), Prop),
     all_in_bar_ext bar (fun lib' x => {eqa : lib-per(lib',o) , F lib' x eqa})
@@ -164,14 +164,14 @@ Proof.
             (f (MkPackLibBar lib1 br lib2 ext x))).
   introv.
   pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
-Qed.
+Qed.*)
 
-Notation "bar-per( lib , bar , o )" :=
+(*Notation "bar-per( lib , bar , o )" :=
   (forall (lib1 : library) (br : bar_lib_bar bar lib1)
           (lib2 : library) (ext : lib_extends lib2 lib1)
-          (x : lib_extends lib2 lib), per(o)).
+          (x : lib_extends lib2 lib), per(o)).*)
 
-Lemma all_in_bar_ext_exists_per_implies_exists {o} :
+(*Lemma all_in_bar_ext_exists_per_implies_exists {o} :
   forall {lib} (bar : @BarLib o lib)
          (F : forall lib' (x : lib_extends lib' lib) (eqa : per(o)), Prop),
     all_in_bar_ext bar (fun lib' x => {eqa : per(o) , F lib' x eqa})
@@ -197,7 +197,7 @@ Proof.
             (f (MkPackLibBar lib1 br lib2 ext x))).
   introv.
   pose proof (C0 (MkPackLibBar lib1 br lib2 ext x)) as w; auto.
-Qed.
+Qed.*)
 
 Lemma nuprli_type_extensionality {o} :
   forall i, @type_extensionality o (nuprli i).
@@ -206,7 +206,7 @@ Proof.
 Qed.
 Hint Resolve nuprli_type_extensionality : slow.
 
-Definition bar_per2lib_per {o}
+(*Definition bar_per2lib_per {o}
            {lib  : @library o}
            {bar  : BarLib lib}
            (feqa : bar-per(lib,bar,o)) : lib-per(lib,o).
@@ -222,7 +222,7 @@ Proof.
   split; introv h; exrepnd.
   - exists lib1 br ext x0; auto.
   - exists lib1 br ext x0; auto.
-Defined.
+Defined.*)
 
 Definition FunNonDepEqa {o} {lib} (F : @FunLibExt o lib) :=
   forall lib1 (ext1 : lib_extends lib1 lib)
@@ -290,24 +290,24 @@ Defined.
 
 (* CRAZY *)
 Lemma choice_teqi {o} :
-  forall lib i (A : @CTerm o) v1 B1 v2 B2,
+  forall uk lib i (A : @CTerm o) v1 B1 v2 B2,
     (forall a1 a2 : CTerm,
-       equality lib a1 a2 A
-       -> equality lib (substc a1 v1 B1) (substc a2 v2 B2) (mkc_uni i))
+       equality uk lib a1 a2 A
+       -> equality uk lib (substc a1 v1 B1) (substc a2 v2 B2) (mkc_uni uk i))
     -> {f : forall a1 a2 : CTerm,
-            forall e : equality lib a1 a2 A,
+            forall e : equality uk lib a1 a2 A,
               per
         , forall a1 a2 : CTerm,
-          forall e : equality lib a1 a2 A,
-            nuprli i lib (substc a1 v1 B1) (substc a2 v2 B2) (f a1 a2 e)}.
+          forall e : equality uk lib a1 a2 A,
+            nuprli i uk lib (substc a1 v1 B1) (substc a2 v2 B2) (f a1 a2 e)}.
 Proof.
   introv F.
   generalize (FunctionalChoice_on
-                {a1 : CTerm & {a2 : CTerm & equality lib a1 a2 A}}
+                {a1 : CTerm & {a2 : CTerm & equality uk lib a1 a2 A}}
                 per
                 (fun a b => nuprli
                               i
-                              lib
+                              uk lib
                               (substc (projT1 a) v1 B1)
                               (substc (projT1 (projT2 a)) v2 B2)
                               b));
@@ -350,36 +350,36 @@ Proof.
     apply xx; auto.
 
     pose proof (teq0 _ ext1 _ ext2 extz) as teq0.
-    eapply nuprli_monotone in teq0; autodimp teq0 hyp; try exact z; exrepnd.
+    eapply (nuprli_monotone _ _ _ lib'0) in teq0; try exact z; exrepnd.
     apply teq3 in h1.
     eapply nuprli_uniquely_valued in teq0; try exact teq2; apply teq0; auto.
   }
 
   exrepnd.
 
-  exists (fun a1 a2 e => f (existT (fun a1 => {a2 : CTerm & equality lib a1 a2 A})
+  exists (fun a1 a2 e => f (existT (fun a1 => {a2 : CTerm & equality uk lib a1 a2 A})
                                    a1
-                                   (existT (fun a2 => equality lib a1 a2 A)
+                                   (existT (fun a2 => equality uk lib a1 a2 A)
                                            a2
                                            e))); introv.
-  generalize (C0 (existT (fun a1 => {a2 : CTerm & equality lib a1 a2 A})
+  generalize (C0 (existT (fun a1 => {a2 : CTerm & equality uk lib a1 a2 A})
                          a1
-                         (existT (fun a2 => equality lib a1 a2 A)
+                         (existT (fun a2 => equality uk lib a1 a2 A)
                                  a2
                                  e))); simpl; sp.
 Qed.
 
 Lemma choice_spteqi {o} :
-  forall lib i F1 F2,
-    (forall x y : CTerm, equality lib (F1 x y) (F2 x y) (mkc_uni i))
+  forall uk lib i F1 F2,
+    (forall x y : CTerm, equality uk lib (F1 x y) (F2 x y) (mkc_uni uk i))
     -> {f : forall x y : @CTerm o, per(o)
-        , forall x y : CTerm, nuprli i lib (F1 x y) (F2 x y) (f x y)}.
+        , forall x y : CTerm, nuprli i uk lib (F1 x y) (F2 x y) (f x y)}.
 Proof.
   introv F.
   generalize (FunctionalChoice_on
                 (CTerm # CTerm)
                 per
-                (fun p e => nuprli i lib
+                (fun p e => nuprli i uk lib
                                    (F1 (fst p) (snd p))
                                    (F2 (fst p) (snd p))
                                    e));
@@ -422,7 +422,7 @@ Proof.
     apply xx; auto.
 
     pose proof (teq0 _ ext1 _ ext2 extz) as teq0.
-    eapply nuprli_monotone in teq0; autodimp teq0 hyp; try exact z; exrepnd.
+    eapply (nuprli_monotone _ _ _ lib'0) in teq0; try exact z; exrepnd.
     apply teq3 in h1.
     eapply nuprli_uniquely_valued in teq0; try exact teq2; apply teq0; auto.
   }
@@ -434,23 +434,23 @@ Proof.
 Qed.
 
 Lemma choice_eq {p} :
-  forall lib (A : @CTerm p) v B F1 F2,
+  forall uk lib (A : @CTerm p) v B F1 F2,
     (forall a1 a2 : CTerm,
-       equality lib a1 a2 A
-       -> equality lib (F1 a1) (F2 a2) (substc a1 v B))
+       equality uk lib a1 a2 A
+       -> equality uk lib (F1 a1) (F2 a2) (substc a1 v B))
     -> {f : forall a1 a2 : CTerm,
-            forall e : equality lib a1 a2 A,
+            forall e : equality uk lib a1 a2 A,
               per
         , forall a1 a2 : CTerm,
-          forall e : equality lib a1 a2 A,
-            nuprl lib (substc a1 v B) (substc a1 v B) (f a1 a2 e)
+          forall e : equality uk lib a1 a2 A,
+            nuprl uk lib (substc a1 v B) (substc a1 v B) (f a1 a2 e)
             # f a1 a2 e (F1 a1) (F2 a2)}.
 Proof.
   introv F.
   generalize (FunctionalChoice_on
-                {a1 : CTerm & {a2 : CTerm & equality lib a1 a2 A}}
+                {a1 : CTerm & {a2 : CTerm & equality uk lib a1 a2 A}}
                 per
-                (fun a b => nuprl lib
+                (fun a b => nuprl uk lib
                                   (substc (projT1 a) v B)
                                   (substc (projT1 a) v B)
                                   b
@@ -468,33 +468,33 @@ Proof.
 
   exrepnd.
 
-  exists (fun a1 a2 e => f (existT (fun a1 => {a2 : CTerm & equality lib a1 a2 A})
+  exists (fun a1 a2 e => f (existT (fun a1 => {a2 : CTerm & equality uk lib a1 a2 A})
                                    a1
-                                   (existT (fun a2 => equality lib a1 a2 A)
+                                   (existT (fun a2 => equality uk lib a1 a2 A)
                                            a2
                                            e))); introv.
-  generalize (C0 (existT (fun a1 => {a2 : CTerm & equality lib a1 a2 A})
+  generalize (C0 (existT (fun a1 => {a2 : CTerm & equality uk lib a1 a2 A})
                          a1
-                         (existT (fun a2 => equality lib a1 a2 A)
+                         (existT (fun a2 => equality uk lib a1 a2 A)
                                  a2
                                  e))); simpl; sp.
 Qed.
 
 Lemma choice_teq1 {p} :
-  forall lib (A : @CTerm p) eqa v1 B1 v2 B2,
-    nuprl lib A A eqa
+  forall uk lib (A : @CTerm p) eqa v1 B1 v2 B2,
+    nuprl uk lib A A eqa
     -> (forall a1 a2 : CTerm,
-          equality lib a1 a2 A
-          -> tequality lib (substc a1 v1 B1) (substc a2 v2 B2))
+          equality uk lib a1 a2 A
+          -> tequality uk lib (substc a1 v1 B1) (substc a2 v2 B2))
     -> {f : (forall a1 a2 (e : eqa a1 a2), per)
         , forall a1 a2 (e : eqa a1 a2),
-            nuprl lib (substc a1 v1 B1) (substc a2 v2 B2) (f a1 a2 e)}.
+            nuprl uk lib (substc a1 v1 B1) (substc a2 v2 B2) (f a1 a2 e)}.
 Proof.
   introv na F.
   generalize (FunctionalChoice_on
-                {a1 : CTerm & {a2 : CTerm & equality lib a1 a2 A}}
+                {a1 : CTerm & {a2 : CTerm & equality uk lib a1 a2 A}}
                 per
-                (fun a b => nuprl lib (substc (projT1 a) v1 B1) (substc (projT1 (projT2 a)) v2 B2) b));
+                (fun a b => nuprl uk lib (substc (projT1 a) v1 B1) (substc (projT1 (projT2 a)) v2 B2) b));
     intro C.
   dest_imp C hyp.
 
@@ -507,32 +507,32 @@ Proof.
 
   exrepnd.
 
-  exists (fun a1 a2 e => f (existT (fun a1 => {a2 : CTerm & equality lib a1 a2 A})
+  exists (fun a1 a2 e => f (existT (fun a1 => {a2 : CTerm & equality uk lib a1 a2 A})
                                    a1
-                                   (existT (fun a2 => equality lib a1 a2 A)
+                                   (existT (fun a2 => equality uk lib a1 a2 A)
                                            a2
-                                           (eq_equality1 lib a1 a2 A eqa e na)))); introv.
-  generalize (C0 (existT (fun a1 => {a2 : CTerm & equality lib a1 a2 A})
+                                           (eq_equality1 uk lib a1 a2 A eqa e na)))); introv.
+  generalize (C0 (existT (fun a1 => {a2 : CTerm & equality uk lib a1 a2 A})
                          a1
-                         (existT (fun a2 => equality lib a1 a2 A)
+                         (existT (fun a2 => equality uk lib a1 a2 A)
                                  a2
-                                 (eq_equality1 lib a1 a2 A eqa e na)))); simpl; sp.
+                                 (eq_equality1 uk lib a1 a2 A eqa e na)))); simpl; sp.
 Qed.
 
 
 Lemma choice_teq2 {p} :
-  forall lib (eqp : per(p)) eqa P ap A bp1 ba1 B1 bp2 ba2 B2,
-    nuprl lib P P eqp
+  forall uk lib (eqp : per(p)) eqa P ap A bp1 ba1 B1 bp2 ba2 B2,
+    nuprl uk lib P P eqp
     -> (forall p1 p2 (ep : eqp p1 p2),
-          nuprl lib (substc p1 ap A) (substc p2 ap A) (eqa p1 p2 ep))
+          nuprl uk lib (substc p1 ap A) (substc p2 ap A) (eqa p1 p2 ep))
     -> (forall p1 p2 : CTerm,
-          equality lib p1 p2 P
+          equality uk lib p1 p2 P
           -> forall a1 a2 : CTerm,
-               equality lib a1 a2 (substc p1 ap A)
-               -> tequality lib (lsubstc2 bp1 p1 ba1 a1 B1) (lsubstc2 bp2 p2 ba2 a2 B2))
+               equality uk lib a1 a2 (substc p1 ap A)
+               -> tequality uk lib (lsubstc2 bp1 p1 ba1 a1 B1) (lsubstc2 bp2 p2 ba2 a2 B2))
     -> {f : (forall p1 p2 (ep : eqp p1 p2) a1 a2 (ea : eqa p1 p2 ep a1 a2), per)
         , forall p1 p2 (ep : eqp p1 p2) a1 a2 (ea : eqa p1 p2 ep a1 a2),
-            nuprl lib
+            nuprl uk lib
                   (lsubstc2 bp1 p1 ba1 a1 B1)
                   (lsubstc2 bp2 p2 ba2 a2 B2)
                   (f p1 p2 ep a1 a2 ea)}.
@@ -553,7 +553,7 @@ Proof.
                    let (ep,a) := a in
                    let (a1,a) := a in
                    let (a2,p) := a in
-                     nuprl lib
+                     nuprl uk lib
                            (lsubstc2 bp1 p1 ba1 a1 B1)
                            (lsubstc2 bp2 p2 ba2 a2 B2)
                            b)).
@@ -561,8 +561,8 @@ Proof.
 
   {
     introv; exrepnd.
-    generalize (F p1 p2 (eq_equality1 lib p1 p2 P eqp ep np)
-                  a1 a0 (eq_equality2 lib a1 a0 (substc p1 ap A) (substc p2 ap A) (eqa p1 p2 ep)
+    generalize (F p1 p2 (eq_equality1 uk lib p1 p2 P eqp ep np)
+                  a1 a0 (eq_equality2 uk lib a1 a0 (substc p1 ap A) (substc p2 ap A) (eqa p1 p2 ep)
                                       a3 (na p1 p2 ep))); intro teq.
     unfold tequality in teq; auto.
   }

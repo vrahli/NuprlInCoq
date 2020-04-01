@@ -84,8 +84,8 @@ Definition rule_ref_wf {o}
     [].
 
 Lemma rule_ref_wf_true {o} :
-  forall (lib : library) (f d e1 e2 : NTerm) (H : @bhyps o) (safe : safe_library lib),
-    rule_true lib (rule_ref_wf lib f d e1 e2 H).
+  forall uk (lib : library) (f d e1 e2 : NTerm) (H : @bhyps o) (safe : safe_library lib),
+    rule_true uk lib (rule_ref_wf lib f d e1 e2 H).
 Proof.
   unfold rule_ref_wf, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -109,7 +109,7 @@ Proof.
 
   rw <- @member_member_iff.
   pose proof (teq_and_member_if_member
-                lib' (mk_qnat qnat_no_cond) (mk_last_cs f d) s1 s2 H wT wt ct1 ct2 cT cT0) as q.
+                uk lib' (mk_qnat qnat_no_cond) (mk_last_cs f d) s1 s2 H wT wt ct1 ct2 cT cT0) as q.
   lsubst_tac; autorewrite with slow in q.
   repeat (autodimp q hyp); eauto 2 with slow.
 
@@ -173,17 +173,18 @@ Qed.
 
 Definition rule_qnat_subtype_nat {o}
            (lib : @library o)
+           (c   : qnat_cond)
            (n   : NTerm)
            (e   : NTerm)
            (H   : @bhyps o) :=
   mk_rule
-    (mk_baresequent H (mk_conclax (mk_member n (mk_qnat qnat_no_cond))))
+    (mk_baresequent H (mk_conclax (mk_member n (mk_qnat c))))
     [mk_baresequent H (mk_concl (mk_member n mk_tnat) e)]
     [].
 
 Lemma rule_qnat_subtype_nat_true {o} :
-  forall (lib : library) (n e : NTerm) (H : @bhyps o) (safe : safe_library lib),
-    rule_true lib (rule_qnat_subtype_nat lib n e H).
+  forall uk (lib : library) c (n e : NTerm) (H : @bhyps o) (safe : safe_library lib),
+    rule_true uk lib (rule_qnat_subtype_nat lib c n e H).
 Proof.
   unfold rule_qnat_subtype_nat, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -206,9 +207,9 @@ Proof.
 
   rw <- @member_member_iff.
   pose proof (teq_and_member_if_member
-                lib' (mk_qnat qnat_no_cond) n s1 s2 H wT wt ct0 ct1 cT cT0) as q.
+                uk lib' (mk_qnat c) n s1 s2 H wT wt ct0 ct1 cT cT0) as q.
   lsubst_tac; autorewrite with slow in *.
-  repeat (autodimp q hyp); eauto 2 with slow;[].
+  repeat (autodimp q hyp); eauto 2 with slow.
 
   clear dependent s1.
   clear dependent s2.

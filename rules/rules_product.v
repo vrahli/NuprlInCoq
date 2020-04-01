@@ -75,7 +75,7 @@ Require Export terms_pi.
 Definition rule_product_equality {p}
            (a1 a2 b1 b2 : NTerm)
            (x1 x2 y : NVar)
-           (i   : nat)
+           (u i : nat)
            (H   : @barehypotheses p) :=
   mk_rule
     (mk_baresequent
@@ -83,16 +83,16 @@ Definition rule_product_equality {p}
        (mk_conclax (mk_equality
                       (mk_product a1 x1 b1)
                       (mk_product a2 x2 b2)
-                      (mk_uni i))))
+                      (mk_uni u i))))
     [ mk_baresequent
         H
-        (mk_conclax (mk_equality a1 a2 (mk_uni i))),
+        (mk_conclax (mk_equality a1 a2 (mk_uni u i))),
       mk_baresequent
         (snoc H (mk_hyp y a1))
         (mk_conclax (mk_equality
                        (subst b1 x1 (mk_var y))
                        (subst b2 x2 (mk_var y))
-                       (mk_uni i)))
+                       (mk_uni u i)))
     ]
     [ sarg_var y ].
 
@@ -101,27 +101,27 @@ Lemma rule_product_equality_true {pp} :
   forall x1 x2 y : NVar,
   forall i   : nat,
   forall H   : @barehypotheses pp,
-    rule_true lib (rule_product_equality
+    rule_true uk0 lib (rule_product_equality
                      a1 a2 b1 b2
                      x1 x2 y
-                     i
+                     uk0 i
                      H).
 Proof.
   intros.
-  apply (rule_tyfam_equality_true _ _ mkc_product); auto.
+  apply (rule_tyfam_equality_true uk0 _ _ mkc_product); auto.
 
   - introv; simpl; allrw remove_nvars_nil_l; allrw app_nil_r; auto.
 
   - introv; apply lsubstc_mk_product_ex.
 
-  - introv x; apply equality_product.
+  - introv x; apply equality_product_uk0.
 Qed.
 
 (* begin hide *)
 
 Lemma rule_product_equality_true_ex {o} :
   forall lib y i a1 a2 b1 b2 x1 x2 H,
-    @rule_true_if o lib (rule_product_equality a1 a2 b1 b2 x1 x2 y i H).
+    @rule_true_if o uk0 lib (rule_product_equality a1 a2 b1 b2 x1 x2 y uk0 i H).
 Proof.
   intros.
   generalize (rule_product_equality_true lib a1 a2 b1 b2 x1 x2 y i H); intro rt.
@@ -237,10 +237,10 @@ Definition rule_product_elimination {o}
     [].
 
 Lemma rule_product_elimination_true {o} :
-  forall lib (A B C e : NTerm),
+  forall uk lib (A B C e : NTerm),
   forall p x a b : NVar,
   forall H J : @barehypotheses o,
-    rule_true lib (rule_product_elimination
+    rule_true uk lib (rule_product_elimination
                      A B C e
                      p x a b
                      H J).
@@ -588,7 +588,7 @@ Proof.
         repeat (rw @dom_csub_snoc; simpl).
         introv i; allsimpl; repeat (rw in_snoc); tcsp. }
 
-      apply (sub_eq_hyps_snoc_subst _ _ _ _ _ _ _ ws cc1 cc2).
+      apply (sub_eq_hyps_snoc_subst _ _ _ _ _ _ _ _ ws cc1 cc2).
       simpl.
       lsubst_tac.
 
@@ -659,10 +659,10 @@ Proof.
 
     - assert (!LIn a (dom_csub s1a0)) as nia.
       { allapply @similarity_dom; repnd.
-        rw sim10; auto. }
+        rw sim11; auto. }
       assert (!LIn b (dom_csub s1a0)) as nib.
       { allapply @similarity_dom; repnd.
-        rw sim10; auto. }
+        rw sim11; auto. }
 
       assert (alpha_eq_hyps
                 (substitute_hyps
@@ -696,7 +696,7 @@ Proof.
 
         - destruct niph.
           allapply @similarity_dom; repnd.
-          rw <- sim10; auto.
+          rw <- sim11; auto.
 
         - destruct_cterms; simpl; eauto 3 with slow. }
 
@@ -953,16 +953,16 @@ Qed.
 
 
 Lemma rule_product_elimination_true_ex {o} :
-  forall lib (A B C e : NTerm),
+  forall uk lib (A B C e : NTerm),
   forall p x a b : NVar,
   forall H J : @barehypotheses o,
-    rule_true_if lib (rule_product_elimination
+    rule_true_if uk lib (rule_product_elimination
                         A B C e
                         p x a b
                         H J).
 Proof.
   intros.
-  pose proof (rule_product_elimination_true lib A B C e p x a b H J) as rt.
+  pose proof (rule_product_elimination_true uk lib A B C e p x a b H J) as rt.
   rw <- @rule_true_eq_ex in rt.
   unfold rule_true_ex in rt; sp.
 Qed.
@@ -991,14 +991,14 @@ Qed.
 Definition rule_pair_formation {p}
            (A B a b : NTerm)
            (x z  : NVar)
-           (i    : nat)
+           (u i  : nat)
            (H    : @barehypotheses p) :=
   mk_rule
     (mk_baresequent H (mk_concl (mk_product A x B) (mk_pair a b)))
     [ mk_baresequent H (mk_conclax (mk_member a A)),
       mk_baresequent H (mk_concl (subst B x a) b),
       mk_baresequent (snoc H (mk_hyp z A))
-                     (mk_conclax (mk_member (subst B x (mk_var z)) (mk_uni i))) ]
+                     (mk_conclax (mk_member (subst B x (mk_var z)) (mk_uni u i))) ]
     [sarg_var z, sarg_term a].
 
 
@@ -1007,7 +1007,7 @@ Lemma rule_pair_formation_true3 {p} :
          (x z : NVar)
          (i   : nat)
          (H   : @barehypotheses p),
-    rule_true3 lib (rule_pair_formation A B a b x z i H).
+    rule_true3 uk0 lib (rule_pair_formation A B a b x z uk0 i H).
 Proof.
   intros.
   unfold rule_pair_formation, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -1064,11 +1064,11 @@ Proof.
   lsubst_tac.
 
   assert (in_ext lib' (fun lib => forall s3,
-            similarity lib s1 s3 H
+            similarity uk0 lib s1 s3 H
             -> {ca3 : cover_vars A s3
                 & {cb3 : cover_vars_upto B (csub_filter s3 [x]) [x]
                 & tequality
-                    lib
+                    uk0 lib
                     (mkc_product (lsubstc A w1 s1 c1) x
                                  (lsubstc_vars B w2 (csub_filter s1 [x]) [x] c2))
                     (mkc_product (lsubstc A w1 s3 ca3) x
@@ -1082,13 +1082,13 @@ Proof.
 
     exists ca3 cb3.
 
-    apply tequality_product; dands.
+    apply tequality_product; dands; eauto 2 with slow.
 
     + vr_seq_true in hyp1.
       pose proof (hyp1
                     _ (lib_extends_trans xt ext)
                     s1 s3
-                    (lib_extends_preserves_hyps_functionality_ext xt _ _ eqh)
+                    (lib_extends_preserves_hyps_functionality_ext uk0 xt _ _ eqh)
                     sim') as h; clear hyp1; exrepnd.
       lsubst_tac; proof_irr.
       clear h1.
@@ -1110,7 +1110,7 @@ Proof.
         pose proof (hyp1
                       _ (lib_extends_trans xt'' (lib_extends_trans xt' (lib_extends_trans xt ext)))
                       s1 s'
-                      (lib_extends_preserves_hyps_functionality_ext (lib_extends_trans xt'' (lib_extends_trans xt' xt)) _ _ eqh)
+                      (lib_extends_preserves_hyps_functionality_ext uk0 (lib_extends_trans xt'' (lib_extends_trans xt' xt)) _ _ eqh)
                       sim'') as h; clear hyp1; exrepnd.
         lsubst_tac; proof_irr.
         clear h1.
@@ -1121,7 +1121,7 @@ Proof.
       * exrepnd.
         lsubst_tac; proof_irr.
         apply member_if_inhabited in h1.
-        apply member_in_uni in h1.
+        apply (member_in_uni uk0) in h1.
         apply tequality_in_uni_implies_tequality in h0; auto;[].
 
         clear h1.
@@ -1141,7 +1141,7 @@ Proof.
 
   { apply teq in sim; clear teq; exrepnd; proof_irr; auto; eauto 3 with slow. }
 
-  apply equality_in_product; dands.
+  apply equality_in_product; dands; eauto 2 with slow.
 
   { apply teq in sim; clear teq; exrepnd; proof_irr; auto; eauto 3 with slow.
     apply tequality_product in sim1; repnd.
@@ -1163,8 +1163,8 @@ Proof.
     pose proof (hyp1
                   _ (lib_extends_trans xt ext)
                   s1 s2
-                  (lib_extends_preserves_hyps_functionality_ext xt _ _ eqh)
-                  (lib_extends_preserves_similarity xt _ _ _ sim)) as h; clear hyp1; exrepnd.
+                  (lib_extends_preserves_hyps_functionality_ext uk0 xt _ _ eqh)
+                  (lib_extends_preserves_similarity uk0 xt _ _ _ sim)) as h; clear hyp1; exrepnd.
     lsubst_tac; proof_irr.
     apply tequality_mkc_member_sp in h0; repnd.
     apply member_if_inhabited in h1.
@@ -1178,8 +1178,8 @@ Proof.
     pose proof (hyp2
                   _ (lib_extends_trans xt ext)
                   s1 s2
-                  (lib_extends_preserves_hyps_functionality_ext xt _ _ eqh)
-                  (lib_extends_preserves_similarity xt _ _ _ sim)) as h; clear hyp2; exrepnd.
+                  (lib_extends_preserves_hyps_functionality_ext uk0 xt _ _ eqh)
+                  (lib_extends_preserves_similarity uk0 xt _ _ _ sim)) as h; clear hyp2; exrepnd.
 
     repeat lsubstc_subst_aeq.
     repeat (substc_lsubstc_vars3;[]).
@@ -1191,7 +1191,7 @@ Lemma rule_pair_formation_true {p} :
          (x z : NVar)
          (i   : nat)
          (H   : @barehypotheses p),
-    rule_true lib (rule_pair_formation A B a b x z i H).
+    rule_true uk0 lib (rule_pair_formation A B a b x z 0 i H).
 Proof.
   introv.
   apply rule_true3_implies_rule_true.
@@ -1202,7 +1202,7 @@ Qed.
 
 Lemma rule_pair_formation_true_ex {p} :
   forall lib i z A B a b x H,
-    @rule_true_if p lib (rule_pair_formation A B a b x z i H).
+    @rule_true_if p uk0 lib (rule_pair_formation A B a b x z 0 i H).
 Proof.
   intros.
   generalize (rule_pair_formation_true lib A B a b x z i H); intro rt.
@@ -1234,7 +1234,7 @@ Qed.
 Definition rule_pair_equality {o}
            (A B a1 a2 b1 b2 : NTerm)
            (x z : NVar)
-           (i : nat)
+           (u i : nat)
            (H : @barehypotheses o) :=
   mk_rule
     (mk_baresequent
@@ -1249,7 +1249,7 @@ Definition rule_pair_equality {o}
         (snoc H (mk_hyp z A))
         (mk_conclax (mk_member
                        (subst B x (mk_var z))
-                       (mk_uni i))) ]
+                       (mk_uni u i))) ]
     [sarg_var z].
 
 Lemma rule_pair_equality_true {o} :
@@ -1257,7 +1257,7 @@ Lemma rule_pair_equality_true {o} :
          (x z : NVar)
          (i   : nat)
          (H   : @barehypotheses o),
-    rule_true lib (rule_pair_equality A B a1 a2 b1 b2 x z i H).
+    rule_true uk0 lib (rule_pair_equality A B a1 a2 b1 b2 x z 0 i H).
 Proof.
   intros.
   unfold rule_pair_equality, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -1297,14 +1297,14 @@ Proof.
   rw <- @member_equality_iff.
 
   assert (in_ext lib' (fun lib => forall s1 s2,
-            hyps_functionality_ext lib s1 H ->
-            similarity lib s1 s2 H
+            hyps_functionality_ext uk0 lib s1 H ->
+            similarity uk0 lib s1 s2 H
             -> {ca1 : cover_vars A s1
                 & {cb1 : cover_vars_upto B (csub_filter s1 [x]) [x]
                 & {ca2 : cover_vars A s2
                 & {cb2 : cover_vars_upto B (csub_filter s2 [x]) [x]
                 & tequality
-                    lib
+                    uk0 lib
                     (mkc_product (lsubstc A w0 s1 ca1) x
                                  (lsubstc_vars B w3 (csub_filter s1 [x]) [x] cb1))
                     (mkc_product (lsubstc A w0 s2 ca2) x
@@ -1319,7 +1319,7 @@ Proof.
 
     exists ca1 cb1 ca cb.
 
-    apply tequality_product; dands.
+    apply tequality_product; dands; eauto 2 with slow.
 
     + vr_seq_true in hyp1.
       pose proof (hyp1 _ (lib_extends_trans xt ext) s0 s3 eqh' sim') as h; clear hyp1; exrepnd.
@@ -1341,7 +1341,7 @@ Proof.
         pose proof (hyp1
                       _ (lib_extends_trans xt'' (lib_extends_trans xt' (lib_extends_trans xt ext)))
                       s0 s'
-                      (lib_extends_preserves_hyps_functionality_ext (lib_extends_trans xt'' xt') _ _ eqh')
+                      (lib_extends_preserves_hyps_functionality_ext uk0 (lib_extends_trans xt'' xt') _ _ eqh')
                       sim'') as h; clear hyp1; exrepnd.
         lsubst_tac; proof_irr.
         clear h1.
@@ -1369,7 +1369,7 @@ Proof.
         proof_irr; auto. }
 
   pose proof (teq_and_eq_if_equality
-                lib' (mk_product A x B) (mk_pair a1 b1) (mk_pair a2 b2)
+                uk0 lib' (mk_product A x B) (mk_pair a1 b1) (mk_pair a2 b2)
                 s1 s2 H wT w1 w2 c1 c0 c2 c3 cT cT0
                 eqh sim) as eqp.
   repeat (autodimp eqp hyp); auto;
@@ -1382,7 +1382,7 @@ Proof.
   clear dependent s2.
   introv hf sim.
   lsubst_tac.
-  apply equality_in_product; dands.
+  apply equality_in_product; dands; eauto 2 with slow.
 
   { apply teq in sim; clear teq; exrepnd; proof_irr; eauto 3 with slow.
     apply tequality_product in sim1; repnd.
@@ -1404,8 +1404,8 @@ Proof.
     pose proof (hyp1
                   _ (lib_extends_trans xt ext)
                   s1 s2
-                  (lib_extends_preserves_hyps_functionality_ext xt _ _ hf)
-                  (lib_extends_preserves_similarity xt _ _ _ sim)) as h; clear hyp1; exrepnd.
+                  (lib_extends_preserves_hyps_functionality_ext uk0 xt _ _ hf)
+                  (lib_extends_preserves_similarity uk0 xt _ _ _ sim)) as h; clear hyp1; exrepnd.
     lsubst_tac; proof_irr.
     apply tequality_mkc_equality_sp in h0; repnd.
     rw <- @member_equality_iff in h1.
@@ -1419,8 +1419,8 @@ Proof.
     pose proof (hyp2
                   _ (lib_extends_trans xt ext)
                   s1 s2
-                  (lib_extends_preserves_hyps_functionality_ext xt _ _ hf)
-                  (lib_extends_preserves_similarity xt _ _ _ sim)) as h; clear hyp2; exrepnd.
+                  (lib_extends_preserves_hyps_functionality_ext uk0 xt _ _ hf)
+                  (lib_extends_preserves_similarity uk0 xt _ _ _ sim)) as h; clear hyp2; exrepnd.
     lsubst_tac; proof_irr.
     apply tequality_mkc_equality_sp in h0; repnd.
     rw <- @member_equality_iff in h1.
@@ -1482,7 +1482,7 @@ Lemma rule_spread_equality_true {o} :
          (A B e1 e2 t1 t2 C : NTerm)
          (x x1 x2 y1 y2 z a b y : NVar)
          (H   : @barehypotheses o),
-    rule_true lib (rule_spread_equality A B e1 e2 t1 t2 C x x1 x2 y1 y2 z a b y H).
+    rule_true uk0 lib (rule_spread_equality A B e1 e2 t1 t2 C x x1 x2 y1 y2 z a b y H).
 Proof.
   intros.
   unfold rule_spread_equality, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -1660,7 +1660,7 @@ Proof.
   rw <- @member_equality_iff.
 
   pose proof (teq_and_eq_if_equality
-                lib' (subst C z e1)
+                uk0 lib' (subst C z e1)
                 (mk_spread e1 x1 y1 t1)
                 (mk_spread e2 x2 y2 t2)
                 s1 s2 H wT w1 w2 c1 c0 c2 c3 cT cT0
@@ -1679,8 +1679,8 @@ Proof.
     apply all_in_ex_bar_tequality_implies_tequality.
     eapply all_in_ex_bar_modus_ponens1;try exact h0; clear h0; introv xt' h0; exrepnd; spcast; proof_irr.
 
-    apply (lib_extends_preserves_hyps_functionality_ext xt') in eqh.
-    apply (lib_extends_preserves_similarity xt') in sim.
+    apply (lib_extends_preserves_hyps_functionality_ext uk0 xt') in eqh.
+    apply (lib_extends_preserves_similarity uk0 xt') in sim.
 
     vr_seq_true in hyp2.
     pose proof (hyp2
@@ -1838,11 +1838,11 @@ Proof.
           [apply ccequivc_ext_sym; apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto|].
         apply member_product2.
 
-        dands; auto.
+        dands; auto; eauto 2 with slow.
 
         { apply tequality_product; dands; eauto 3 with slow;[].
           introv xt'' i.
-          apply h2 in i; eauto 3 with slow.
+          apply h3 in i; eauto 3 with slow.
 
           repeat (substc_lsubstc_vars3;[]).
           repeat (lsubstc_snoc2;[]).
@@ -1850,7 +1850,7 @@ Proof.
 
         { apply in_ext_implies_all_in_ex_bar; introv xt''.
           eexists; eexists; dands; eauto 2 with slow;[|].
-          - apply equality_refl in h5; auto; eauto 3 with slow.
+          - apply equality_refl in h6; auto; eauto 3 with slow.
           - repeat (substc_lsubstc_vars3;[]).
             repeat (lsubstc_snoc2;[]).
             proof_irr; auto.
@@ -2084,7 +2084,7 @@ Proof.
 
         { apply tequality_product; dands; eauto 3 with slow;[].
           introv xt'' i.
-          apply h2 in i; eauto 3 with slow.
+          apply h3 in i; eauto 3 with slow.
 
           repeat (substc_lsubstc_vars3;[]).
           repeat (lsubstc_snoc2;[]).
@@ -2092,7 +2092,7 @@ Proof.
 
         { apply in_ext_implies_all_in_ex_bar; introv xt''.
           eexists; eexists; dands; eauto 3 with slow;[|].
-          - apply equality_refl in h5; eauto 3 with slow.
+          - apply equality_refl in h6; eauto 3 with slow.
           - repeat (substc_lsubstc_vars3;[]).
             repeat (lsubstc_snoc2;[]).
             proof_irr; auto.
@@ -2263,7 +2263,7 @@ Lemma rule_spread_reduce_true {o} :
   forall lib (T s t u t2 : NTerm)
          (x y : NVar)
          (H   : @barehypotheses o),
-    rule_true lib (rule_spread_reduce T s t u t2 x y H).
+    rule_true uk0 lib (rule_spread_reduce T s t u t2 x y H).
 Proof.
   intros.
   unfold rule_spread_reduce, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -2304,8 +2304,8 @@ Proof.
 
   lsubst_tac.
   allrw <- @member_equality_iff.
-  rw @tequality_mkc_equality2_sp in hyp0; repnd.
-  rw @tequality_mkc_equality2_sp.
+  rw (@tequality_mkc_equality2_sp o uk0) in hyp0; repnd.
+  rw (@tequality_mkc_equality2_sp o uk0).
   repeat (rw prod_assoc).
   allunfold @equorsq2; repnd.
 

@@ -184,7 +184,7 @@ Lemma computes_to_val_like_in_max_k_steps_tuni_implies {p} :
         & {m : nat
            & k = S m
            # computes_to_val_like_in_max_k_steps lib t x m
-           # ({n : nat & v = mk_uni n # x = @mk_integer p (Z.of_nat n)}
+           # ({n : nat & v = mk_uni 0 n # x = @mk_integer p (Z.of_nat n)}
               [+]
               (isexc x # x = v))}}.
 Proof.
@@ -606,7 +606,7 @@ Qed.
 Hint Resolve isvalue_like_integer : slow.
 
 Lemma isvalue_like_uni {o} :
-  forall n, @isvalue_like o (mk_uni n).
+  forall u n, @isvalue_like o (mk_uni u n).
 Proof.
   introv; unfold isvalue_like; simpl; sp.
 Qed.

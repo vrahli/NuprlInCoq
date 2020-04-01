@@ -135,8 +135,8 @@ Proof.
 Qed.
 
 Lemma lsubstc_mk_uni {o} :
-  forall i p sub c,
-    lsubstc (mk_uni i) p sub c = @mkc_uni o i.
+  forall n i p sub c,
+    lsubstc (mk_uni n i) p sub c = @mkc_uni o n i.
 Proof.
   unfold lsubstc, mkc_uni; sp.
   apply cterm_eq; sp.

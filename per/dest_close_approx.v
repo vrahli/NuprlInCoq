@@ -147,9 +147,9 @@ Proof.
 Qed.
 
 Lemma per_approx_implies_per_bar {o} :
-  forall ts lib (T T' : @CTerm o) eq,
-    per_approx ts lib T T' eq
-    -> per_bar (per_approx ts) lib T T' eq.
+  forall ts uk lib (T T' : @CTerm o) eq,
+    per_approx ts uk lib T T' eq
+    -> per_bar (per_approx ts) uk lib T T' eq.
 Proof.
   introv per.
   unfold per_approx in *; exrepnd.
@@ -265,12 +265,12 @@ Qed.
 (* ====== dest lemmas ====== *)
 
 Lemma dest_close_per_approx_l {p} :
-  forall (ts : cts(p)) lib T A B T' eq,
+  forall (ts : cts(p)) uk lib T A B T' eq,
     type_system ts
     -> defines_only_universes ts
     -> ccomputes_to_valc_ext lib T (mkc_approx A B)
-    -> close ts lib T T' eq
-    -> per_bar (per_approx (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_approx (close ts)) uk lib T T' eq.
 Proof.
   introv tysys dou comp cl; try unfold per_approx_bar_or.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
@@ -281,12 +281,12 @@ Proof.
 Qed.
 
 Lemma dest_close_per_approx_r {p} :
-  forall (ts : cts(p)) lib T A B T' eq,
+  forall (ts : cts(p)) uk lib T A B T' eq,
     type_system ts
     -> defines_only_universes ts
     -> ccomputes_to_valc_ext lib T' (mkc_approx A B)
-    -> close ts lib T T' eq
-    -> per_bar (per_approx (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_approx (close ts)) uk lib T T' eq.
 Proof.
   introv tysys dou comp cl; try unfold per_approx_bar_or.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
@@ -302,7 +302,7 @@ Lemma dest_close_per_approx_l_ceq {p} :
     type_system ts
     -> defines_only_universes ts
     -> computes_to_valc_ceq_bar bar T (mkc_approx A B)
-    -> close ts lib T T' eq
+    -> close ts uk lib T T' eq
     -> per_bar (per_approx (close ts)) lib T T' eq.
 Proof.
   introv tysys dou comp cl; try unfold per_approx_bar_or.
@@ -316,7 +316,7 @@ Lemma dest_close_per_approx_r_ceq {p} :
     type_system ts
     -> defines_only_universes ts
     -> computes_to_valc_ceq_bar bar T' (mkc_approx A B)
-    -> close ts lib T T' eq
+    -> close ts uk lib T T' eq
     -> per_bar (per_approx (close ts)) lib T T' eq.
 Proof.
   introv tysys dou comp cl; try unfold per_approx_bar_or.

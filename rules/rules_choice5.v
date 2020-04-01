@@ -103,7 +103,7 @@ Definition rule_ils2 {o}
 
 Lemma rule_ils2_true {o} :
   forall (lib : library) (a b : NVar) (H : @bhyps o) (d1 : a <> b) (safe : safe_library lib),
-    rule_true lib (rule_ils2 lib a b H).
+    rule_true uk0 lib (rule_ils2 lib a b H).
 Proof.
   unfold rule_ils2, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -124,7 +124,7 @@ Proof.
   clear lib safe ext.
   rename lib' into lib; rename safe' into safe.
 
-  assert (tequality lib (ils2c a b) (ils2c a b)) as teq.
+  assert (tequality uk0 lib (ils2c a b) (ils2c a b)) as teq.
   {
     apply tequality_function; dands; eauto 3 with slow.
     intros lib' xt a1 a2 ea.
@@ -442,7 +442,7 @@ Qed.
 Hint Rewrite @substc_mkcv_nat2nat : slow.
 
 Lemma tequality_nat2nat {o} :
-  forall lib, @tequality o lib nat2nat nat2nat.
+  forall uk lib, @tequality o uk lib nat2nat nat2nat.
 Proof.
   introv; apply type_nat2nat.
 Qed.
@@ -911,7 +911,7 @@ Lemma rule_els2_true {o} :
          (norep : no_repeats_library lib)
          (satd  : lib_cond_sat_def lib)
          (sat   : sat_lib_cond lib),
-    rule_true lib (rule_els2 lib a b H).
+    rule_true uk0 lib (rule_els2 lib a b H).
 Proof.
   unfold rule_els2, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -935,7 +935,7 @@ Proof.
   clear lib safe norep satd sat ext.
   rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat; rename satd' into satd.
 
-  assert (tequality lib (els2c a b) (els2c a b)) as teq.
+  assert (tequality uk0 lib (els2c a b) (els2c a b)) as teq.
   {
     apply tequality_function; dands; eauto 3 with slow.
     intros lib' xt a1 a2 ea.
@@ -1376,7 +1376,7 @@ XXXXXXXXXXX
     eapply equality_respects_cequivc_right in inh;
       [|apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto].
 
-    apply (equality_nat2nat_apply _ _ _ (mkc_nat (length vals)) (mkc_nat (length vals))) in inh; eauto 3 with slow;[].
+    apply (equality_nat2nat_apply _ _ _ _ (mkc_nat (length vals)) (mkc_nat (length vals))) in inh; eauto 3 with slow;[].
     apply equality_in_tnat in inh.
 
     pose proof (inh _ (lib_extends_refl _)) as inh; exrepnd.

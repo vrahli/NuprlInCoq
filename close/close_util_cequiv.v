@@ -206,9 +206,9 @@ Hint Resolve per_cequiv_bar_type_system : slow.
 *)
 
 Lemma per_bar_per_cequiv_implies_close {o} :
-  forall (ts : cts(o)) lib T T' eq,
-    per_bar (per_cequiv (close ts)) lib T T' eq
-    -> close ts lib T T' eq.
+  forall (ts : cts(o)) uk lib T T' eq,
+    per_bar (per_cequiv (close ts)) uk lib T T' eq
+    -> close ts uk lib T T' eq.
 Proof.
   introv per.
   apply CL_bar.
@@ -229,14 +229,14 @@ Proof.
 Qed.
 
 Lemma type_equality_respecting_trans1_per_cequiv_bar_implies {o} :
-  forall (ts : cts(o)) lib T T' a b a' b',
+  forall (ts : cts(o)) uk lib T T' a b a' b',
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T (mkc_cequiv a b)
     -> ccomputes_to_valc_ext lib T' (mkc_cequiv a' b')
-    -> type_equality_respecting_trans1 (per_bar (per_cequiv (close ts))) lib T T'
-    -> type_equality_respecting_trans1 (close ts) lib T T'.
+    -> type_equality_respecting_trans1 (per_bar (per_cequiv (close ts))) uk lib T T'
+    -> type_equality_respecting_trans1 (close ts) uk lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
   apply per_bar_per_cequiv_implies_close.
@@ -257,14 +257,14 @@ Proof.
 Qed.
 
 Lemma type_equality_respecting_trans2_per_bar_per_cequiv_implies {o} :
-  forall (ts : cts(o)) lib T T' a b c d,
+  forall (ts : cts(o)) uk lib T T' a b c d,
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T  (mkc_cequiv a b)
     -> ccomputes_to_valc_ext lib T' (mkc_cequiv c d)
-    -> type_equality_respecting_trans2 (per_bar (per_cequiv (close ts))) lib T T'
-    -> type_equality_respecting_trans2 (close ts) lib T T'.
+    -> type_equality_respecting_trans2 (per_bar (per_cequiv (close ts))) uk lib T T'
+    -> type_equality_respecting_trans2 (close ts) uk lib T T'.
 Proof.
   introv tsts dou mon comp1 comp2 trans h ceq cl.
   apply per_bar_per_cequiv_implies_close.
@@ -299,7 +299,7 @@ Qed.
 Lemma per_cequiv_uniquely_valued {p} :
   forall (ts : cts(p)), uniquely_valued (per_cequiv ts).
 Proof.
-  unfold uniquely_valued, per_cequiv, eq_term_equals; introv cts h q; introv.
+  unfold uniquely_valued, per_cequiv, eq_term_equals; introv uk cts h q; introv.
   exrepnd.
   computes_to_eqval_ext.
   hide_hyp q2.
@@ -446,14 +446,14 @@ Qed.
 Hint Resolve per_cequiv_type_value_respecting : slow.
 
 Lemma type_equality_respecting_trans1_per_bar_per_cequiv_implies {o} :
-  forall (ts : cts(o)) lib T T' a b c d,
+  forall (ts : cts(o)) uk lib T T' a b c d,
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T  (mkc_cequiv a b)
     -> ccomputes_to_valc_ext lib T' (mkc_cequiv c d)
-    -> type_equality_respecting_trans1 (per_bar (per_cequiv (close ts))) lib T T'
-    -> type_equality_respecting_trans1 (close ts) lib T T'.
+    -> type_equality_respecting_trans1 (per_bar (per_cequiv (close ts))) uk lib T T'
+    -> type_equality_respecting_trans1 (close ts) uk lib T T'.
 Proof.
   introv tsts dou mon comp1 comp2 trans h ceq cl.
   apply per_bar_per_cequiv_implies_close.

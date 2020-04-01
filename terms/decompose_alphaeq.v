@@ -1642,9 +1642,9 @@ Proof.
 Qed.
 
 Lemma alpha_eq_mk_uni {o} :
-  forall i (u : @NTerm o),
-    alpha_eq (mk_uni i) u
-    -> u = mk_uni i.
+  forall n i (u : @NTerm o),
+    alpha_eq (mk_uni n i) u
+    -> u = mk_uni n i.
 Proof.
   introv aeq.
   inversion aeq as [|? ? ? len j]; subst; allsimpl.
@@ -1652,9 +1652,9 @@ Proof.
 Qed.
 
 Lemma alphaeqc_mkc_uni {o} :
-  forall i (u : @CTerm o),
-    alphaeqc (mkc_uni i) u
-    -> u = mkc_uni i.
+  forall n i (u : @CTerm o),
+    alphaeqc (mkc_uni n i) u
+    -> u = mkc_uni n i.
 Proof.
   introv aeq.
   destruct_cterms; simpl in *.
@@ -1752,7 +1752,7 @@ Ltac alphaeqc_decompose :=
   | [ H : alphaeqc mkc_Nat         _ |- _ ] => apply alphaeqc_mkc_Nat    in H; exrepnd; try subst
   | [ H : alphaeqc mkc_atom        _ |- _ ] => apply alphaeqc_mkc_atom   in H; exrepnd; try subst
   | [ H : alphaeqc mkc_uatom       _ |- _ ] => apply alphaeqc_mkc_uatom  in H; exrepnd; try subst
-  | [ H : alphaeqc (mkc_uni _)     _ |- _ ] => apply alphaeqc_mkc_uni    in H; exrepnd; try subst
+  | [ H : alphaeqc (mkc_uni _ _)   _ |- _ ] => apply alphaeqc_mkc_uni    in H; exrepnd; try subst
   | [ H : alphaeqc (mkc_csname _)  _ |- _ ] => apply alphaeqc_mkc_csname in H; exrepnd; try subst
 
   | [ H : alphaeqc (mkc_pw _ _ _ _ _ _ _ _ _ _ _) _ |- _ ] => apply alphaeqc_mkc_pw in H; exrepnd; try subst

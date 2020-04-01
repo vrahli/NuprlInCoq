@@ -37,10 +37,10 @@ Proof.
 Qed.
 
 Lemma lib_extends_preserves_equorsq {o} :
-  forall (lib1 lib2 : @library o) a b A,
+  forall uk (lib1 lib2 : @library o) a b A,
     lib_extends lib2 lib1
-    -> equorsq lib1 a b A
-    -> equorsq lib2 a b A.
+    -> equorsq uk lib1 a b A
+    -> equorsq uk lib2 a b A.
 Proof.
   introv ext h.
   unfold equorsq in *; repndors; eauto 3 with slow.

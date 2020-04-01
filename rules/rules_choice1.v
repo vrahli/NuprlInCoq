@@ -168,7 +168,7 @@ Lemma rule_ls1_true {o} :
          (safe  : safe_library lib)
          (norep : no_repeats_library lib)
          (sat   : lib_cond_sat_def lib),
-    rule_true lib (rule_ls1 lib n f a H).
+    rule_true uk0 lib (rule_ls1 lib n f a H).
 Proof.
   unfold rule_ls1, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -193,7 +193,7 @@ Proof.
   clear lib safe norep ext sat.
   rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat.
 
-  assert (tequality lib (ls1c n f a) (ls1c n f a)) as teq.
+  assert (tequality uk0 lib (ls1c n f a) (ls1c n f a)) as teq.
   {
     apply tequality_function; dands; eauto 3 with slow.
     introv xt ea.
@@ -340,7 +340,7 @@ Proof.
     [apply ccequivc_ext_sym;eapply ccequivc_ext_mkc_apply_ls1c_extract;eauto|].
 
   apply equality_in_function2.
-  dands.
+  dands; eauto 2 with slow;[|].
 
   {
     apply tequality_function; dands; eauto 3 with slow.
@@ -571,11 +571,11 @@ Definition rule_free_sub_baire {o}
     [].
 
 Lemma rule_free_sub_baire_true {o} :
-  forall (lib : library) (f e : NTerm) (H : @bhyps o)
+  forall uk (lib : library) (f e : NTerm) (H : @bhyps o)
          (safe  : safe_library lib)
          (norep : no_repeats_library lib)
          (sat   : lib_cond_sat_def lib),
-    rule_true lib (rule_free_sub_baire lib f e H).
+    rule_true uk lib (rule_free_sub_baire lib f e H).
 Proof.
   unfold rule_free_sub_baire, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.

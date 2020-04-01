@@ -36,11 +36,11 @@ Require Export local.
 
 
 Lemma dest_close_per_uni_l {p} :
-  forall (ts : cts(p)) lib T i T' eq,
+  forall (ts : cts(p)) (uk : ukind) lib T i T' eq,
     local_ts ts
-    -> ccomputes_to_valc_ext lib T (mkc_uni i)
-    -> close ts lib T T' eq
-    -> ts lib  T T' eq.
+    -> ccomputes_to_valc_ext lib T (mkc_uni uk i)
+    -> close ts uk lib T T' eq
+    -> ts uk lib  T T' eq.
 Proof.
   introv locts comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
@@ -50,11 +50,11 @@ Proof.
 Qed.
 
 Lemma dest_close_per_uni_r {p} :
-  forall (ts : cts(p)) lib T i T' eq,
+  forall (ts : cts(p)) (uk : ukind) lib T i T' eq,
     local_ts ts
-    -> ccomputes_to_valc_ext lib T' (mkc_uni i)
-    -> close ts lib T T' eq
-    -> ts lib T T' eq.
+    -> ccomputes_to_valc_ext lib T' (mkc_uni uk i)
+    -> close ts uk lib T T' eq
+    -> ts uk lib T T' eq.
 Proof.
   introv locts comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
@@ -64,11 +64,11 @@ Proof.
 Qed.
 
 Lemma dest_close_per_uni_comp_l {p} :
-  forall (ts : cts(p)) lib T T' eq,
+  forall (ts : cts(p)) (uk : ukind) lib T T' eq,
     local_ts ts
-    -> computes_to_uni lib T
-    -> close ts lib T T' eq
-    -> ts lib  T T' eq.
+    -> computes_to_uni uk lib T
+    -> close ts uk lib T T' eq
+    -> ts uk lib T T' eq.
 Proof.
   introv locts comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.
@@ -78,11 +78,11 @@ Proof.
 Qed.
 
 Lemma dest_close_per_uni_comp_r {p} :
-  forall (ts : cts(p)) lib T T' eq,
+  forall (ts : cts(p)) (uk : ukind) lib T T' eq,
     local_ts ts
-    -> computes_to_uni lib T'
-    -> close ts lib T T' eq
-    -> ts lib T T' eq.
+    -> computes_to_uni uk lib T'
+    -> close ts uk lib T T' eq
+    -> ts uk lib T T' eq.
 Proof.
   introv locts comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto.

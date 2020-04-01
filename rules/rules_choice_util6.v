@@ -148,56 +148,6 @@ Proof.
 Qed.
 Hint Rewrite @csubst_mk_swap_cs2 : slow.
 
-Lemma wf_swap_cs2 {o} :
-  forall n1 n2 (a : @NTerm o),
-    wf_term (mk_swap_cs2 n1 n2 a) <=> wf_term a.
-Proof.
-  introv; rw @wf_oterm_iff; simpl.
-  split; intro h; repnd; dands; tcsp.
-  { dLin_hyp; allrw @wf_bterm_iff; auto. }
-  { introv i; repndors; subst; tcsp. }
-Qed.
-
-Lemma isprog_swap_cs2 {o} :
-  forall n1 n2 (a : @NTerm o),
-    isprog (mk_swap_cs2 n1 n2 a) <=> isprog a.
-Proof.
-  introv.
-  unfold isprog; simpl; autorewrite with slow.
-  rw @wf_swap_cs2; tcsp.
-Qed.
-
-Lemma isprog_swap_cs2_implies {o} :
-  forall n1 n2 (a : @NTerm o),
-    isprog a
-    -> isprog (mk_swap_cs2 n1 n2 a).
-Proof.
-  introv ispa; apply isprog_swap_cs2; sp.
-Qed.
-
-Lemma isprog_vars_swap_cs2_implies {o} :
-  forall vs n1 n2 (a : @NTerm o),
-    isprog_vars vs a
-    -> isprog_vars vs (mk_swap_cs2 n1 n2 a).
-Proof.
-  introv ispa.
-  apply approx_star_swap.implies_isprog_vars_mk_swap_cs2; auto.
-Qed.
-
-Definition mkc_swap_cs2 {o} n1 n2 (t : @CTerm o) : CTerm :=
-  let (a,x) := t in
-  exist isprog (mk_swap_cs2 n1 n2 a) (isprog_swap_cs2_implies n1 n2 a x).
-
-Definition mkcv_swap_cs2 {o} vs n1 n2 (t : @CVTerm o vs) : CVTerm vs :=
-  let (a,x) := t in
-  exist (isprog_vars vs) (mk_swap_cs2 n1 n2 a) (isprog_vars_swap_cs2_implies vs n1 n2 a x).
-
-Definition mkc_swap_cs {o} (sw : cs_swap) (t : @CTerm o) :=
-  mkc_swap_cs2 (fst sw) (snd sw) t.
-
-Definition mkcv_swap_cs {o} vs (sw : cs_swap) (t : @CVTerm o vs) :=
-  mkcv_swap_cs2 _ (fst sw) (snd sw) t.
-
 Definition mkc_swap_per {o} (sw : cs_swap) (p : per(o)) : per(o) :=
   fun a b => p (mkc_swap_cs sw a) (mkc_swap_cs sw b).
 
@@ -240,198 +190,6 @@ Proof.
   introv; unfold mkc_swap_per; simpl.
   rw eqiff; tcsp.
 Qed.
-
-Definition push_swap_cs_oterm {o} sw (t : @NTerm o) : NTerm :=
-  match t with
-  | oterm (Can can) bs => push_swap_cs_can (fst sw) (snd sw) can bs
-  | _ => t
-  end.
-
-Lemma implies_isprog_push_swap_cs_oterm {o} :
-  forall sw (t : @NTerm o),
-    isprog t
-    -> isprog (push_swap_cs_oterm sw t).
-Proof.
-  introv isp.
-  destruct t as [v|op bs]; simpl; auto.
-  destruct op; simpl; auto; simpl in *.
-  unfold push_swap_cs_can; simpl.
-  allrw @isprog_ot_iff; repnd; unfold OpBindings; simpl; autorewrite with slow.
-  dands; auto.
-  introv i; apply in_map_iff in i; exrepnd; subst.
-  destruct a; simpl in *.
-  apply isp in i1.
-  allrw <- @isprogram_bt_eq.
-  unfold isprogram_bt in *; repnd; simpl in *.
-  unfold closed_bt in *; simpl in *; autorewrite with slow; dands; auto.
-  allrw @bt_wf_iff; eauto 3 with slow.
-Qed.
-Hint Resolve implies_isprog_push_swap_cs_oterm : slow.
-
-Definition push_swap_cs_otermc {o} sw (t : @CTerm o) : CTerm :=
-  let (a,x) := t in
-  exist isprog (push_swap_cs_oterm sw a) (implies_isprog_push_swap_cs_oterm sw a x).
-
-Lemma implies_isprogram_push_swap_cs_oterm {o} :
-  forall sw (t : @NTerm o),
-    isprogram t
-    -> isprogram (push_swap_cs_oterm sw t).
-Proof.
-  introv isp.
-  allrw @isprogram_eq; eauto 3 with slow.
-Qed.
-Hint Resolve implies_isprogram_push_swap_cs_oterm : slow.
-
-Lemma implies_iscan_push_swap_cs_oterm {o} :
-  forall sw (t : @NTerm o),
-    iscan t
-    -> iscan (push_swap_cs_oterm sw t).
-Proof.
-  introv isc.
-  destruct t as [|op bs]; simpl in *; tcsp.
-  destruct op; simpl in *; auto.
-Qed.
-Hint Resolve implies_iscan_push_swap_cs_oterm : slow.
-
-Lemma implies_isvalue_push_swap_cs_oterm {o} :
-  forall sw (t : @NTerm o),
-    isvalue t
-    -> isvalue (push_swap_cs_oterm sw t).
-Proof.
-  introv isv.
-  destruct isv as [? isp isc].
-  split; eauto 3 with slow.
-Qed.
-Hint Resolve implies_isvalue_push_swap_cs_oterm : slow.
-
-Lemma mkc_swap_preserves_computes_to_valc {o} :
-  forall sw lib (a b : @CTerm o),
-    computes_to_valc lib a b
-    -> computes_to_valc lib (mkc_swap_cs sw a) (push_swap_cs_otermc sw b).
-Proof.
-  introv comp.
-  destruct_cterms; unfold computes_to_valc in *; simpl in *.
-  unfold computes_to_value in *; repnd; dands; eauto 3 with slow.
-  eapply reduces_to_trans;[eapply reduces_to_prinarg; eauto|].
-  applydup @isvalue_implies_iscan in comp.
-  apply iscan_implies in comp1; exrepnd; subst.
-  apply reduces_to_if_step; csunf; simpl; auto.
-Qed.
-Hint Resolve mkc_swap_preserves_computes_to_valc : slow.
-
-Lemma implies_iscvalue_push_swap_cs_otermc {o} :
-  forall sw (t : @CTerm o),
-    iscvalue t
-    -> iscvalue (push_swap_cs_otermc sw t).
-Proof.
-  introv isv; destruct_cterms; simpl in *.
-  unfold iscvalue in *; simpl in *; eauto 3 with slow.
-Qed.
-Hint Resolve implies_iscvalue_push_swap_cs_otermc : slow.
-
-Lemma approx_canonical_form2_2 {o} :
-  forall lib (op1 op2 : @CanonicalOp o) bterms1 bterms2,
-    approx lib (oterm (Can op1) bterms1) (oterm (Can op2) bterms2)
-    -> (op1 = op2 # lblift (approx_open lib) bterms1 bterms2).
-Proof.
-  introv Hap; applydup @approx_relates_only_progs in Hap; repnd.
-  eapply approx_canonical_form in Hap; exrepnd; eauto with slow.
-  apply computes_to_value_isvalue_eq in Hap3;
-  inverts Hap3; eauto with slow.
-Qed.
-
-Lemma approx_implies_approx_starbts {o} :
-  forall lib op (bs1 bs2 : list (@BTerm o)),
-    lblift (approx_open lib) bs1 bs2
-    -> approx_starbts lib op bs1 bs2.
-Proof.
-  introv h.
-  unfold approx_starbts, lblift_sub, lblift in *; repnd; dands; auto.
-  introv i.
-  applydup h in i; clear h.
-  unfold blift, blift_sub in *; exrepnd.
-  exists lv nt1 nt2; dands; auto.
-  apply approx_open_implies_approx_star in i0.
-  destruct (dec_op_eq_fresh op) as [d|d]; subst; tcsp.
-  right.
-  pose proof (exists_nrut_sub lv (get_utokens_lib lib nt1 ++ get_utokens_lib lib nt2)) as q; exrepnd; subst.
-  exists sub; dands; auto.
-  apply lsubst_approx_star_congr3; eauto 3 with slow.
-Qed.
-Hint Resolve approx_implies_approx_starbts : slow.
-
-Lemma implies_approx_push_swap_cs_oterm {o} :
-  forall sw lib (a b : @NTerm o),
-    isvalue a
-    -> isvalue b
-    -> approx lib a b
-    -> approx lib (push_swap_cs_oterm sw a) (push_swap_cs_oterm sw b).
-Proof.
-  introv isva isvb apx.
-  applydup @isvalue_implies_iscan in isva.
-  applydup @isvalue_implies_iscan in isvb.
-  apply iscan_implies in isva0; exrepnd; subst.
-  apply iscan_implies in isvb0; exrepnd; subst.
-  apply approx_canonical_form2_2 in apx; repnd; subst; simpl.
-  applydup @isvalue_program in isva.
-  applydup @isvalue_program in isvb.
-
-  apply howetheorem1;
-    try apply approx_star_swap.implies_isprogram_push_swap_cs_can; auto.
-  destruct sw; simpl in *.
-  apply approx_star_swap.approx_star_push_swap_cs_can; eauto 2 with slow;[].
-  apply implies_nt_wf_push_swap_cs_oterm;
-    apply wf_term_implies; apply isprogram_implies_wf;
-      eauto 2 with slow.
-Qed.
-
-Lemma implies_cequiv_push_swap_cs_oterm {o} :
-  forall sw lib (a b : @NTerm o),
-    isvalue a
-    -> isvalue b
-    -> cequiv lib a b
-    -> cequiv lib (push_swap_cs_oterm sw a) (push_swap_cs_oterm sw b).
-Proof.
-  introv isva isvb ceq.
-  destruct ceq as [apx1 apx2]; split;
-    apply implies_approx_push_swap_cs_oterm; auto.
-Qed.
-
-Lemma implies_cequivc_push_swap_cs_otermc {o} :
-  forall sw lib (a b : @CTerm o),
-    iscvalue a
-    -> iscvalue b
-    -> cequivc lib a b
-    -> cequivc lib (push_swap_cs_otermc sw a) (push_swap_cs_otermc sw b).
-Proof.
-  introv isva iscb ceq.
-  destruct_cterms; unfold cequivc, iscvalue in *; simpl in *.
-  apply implies_cequiv_push_swap_cs_oterm; auto.
-Qed.
-
-Lemma mkc_swap_ccomputes_to_valc_ext {o} :
-  forall sw lib (a b : @CTerm o),
-    a ===>(lib) b
-    -> (mkc_swap_cs sw a) ===>(lib) (push_swap_cs_otermc sw b).
-Proof.
-  introv comp ext; apply comp in ext; exrepnd; spcast.
-  exists (push_swap_cs_otermc sw c); dands; spcast; eauto 3 with slow.
-  apply implies_cequivc_push_swap_cs_otermc; auto; eauto 2 with slow.
-Qed.
-
-Lemma push_swap_cs_otermc_int {o} :
-  forall sw, @push_swap_cs_otermc o sw mkc_int = mkc_int.
-Proof.
-  introv; apply cterm_eq; simpl; tcsp.
-Qed.
-Hint Rewrite @push_swap_cs_otermc_int : slow.
-
-Lemma push_swap_cs_otermc_integer {o} :
-  forall sw k, @push_swap_cs_otermc o sw (mkc_integer k) = mkc_integer k.
-Proof.
-  introv; apply cterm_eq; simpl; tcsp.
-Qed.
-Hint Rewrite @push_swap_cs_otermc_integer : slow.
 
 Lemma push_swap_cs_otermc_base {o} :
   forall sw, @push_swap_cs_otermc o sw mkc_base = mkc_base.
@@ -557,100 +315,10 @@ Lemma isprogram_mk_swap_cs2_iff {o} :
   forall n1 n2 (t : @NTerm o),
     isprogram (mk_swap_cs2 n1 n2 t) <=> isprogram t.
 Proof.
-  introv; split; intro h; try apply approx_star_swap.implies_isprogram_mk_swap_cs2; auto.
+  introv; split; intro h; try apply implies_isprogram_mk_swap_cs2; auto.
   destruct h as [cl wf]; split; unfold closed in *; simpl in *; autorewrite with slow in *; auto.
   apply nt_wf_oterm_iff in wf; repnd; simpl in *.
   dLin_hyp; allrw @bt_wf_iff; auto.
-Qed.
-
-Lemma implies_isvalue_push_swap_cs_can {o} :
-  forall c1 c2 (can : @CanonicalOp o) bs,
-    isvalue (oterm (Can can) bs)
-    -> isvalue (push_swap_cs_can c1 c2 can bs).
-Proof.
-  introv isv; inversion isv; subst; split; eauto 3 with slow.
-Qed.
-Hint Resolve implies_isvalue_push_swap_cs_can : slow.
-
-Lemma iscan_push_swap_cs_can {o} :
-  forall a b c (bs : list (@BTerm o)),
-    iscan (push_swap_cs_can a b c bs).
-Proof.
-  tcsp.
-Qed.
-Hint Resolve iscan_push_swap_cs_can : slow.
-
-Lemma compute_on_can {o} :
-  forall lib (t : @NTerm o) k,
-    iscan t
-    -> compute_at_most_k_steps lib k t = csuccess t.
-Proof.
-  induction k; introv isc; simpl in *; auto.
-  rewrite IHk; auto.
-  apply iscan_compute_step; auto.
-Qed.
-
-Lemma reduces_to_if_can {o} :
-  forall lib (t u : @NTerm o),
-    reduces_to lib t u
-    -> iscan t
-    -> t = u.
-Proof.
- unfold reduces_to, reduces_in_atmost_k_steps; introv Hc Hisv; exrepnd.
- rewrite compute_on_can in Hc0; ginv; auto.
-Qed.
-
-Lemma swap_cs2_computes_to_value_implies {o} :
-  forall lib a b (t : @NTerm o) u,
-    isprog t
-    -> (mk_swap_cs2 a b t) =v>(lib) u
-    -> {c : CanonicalOp & {bs : list BTerm
-       & (t =v>(lib) (oterm (Can c) bs))
-       # u = (push_swap_cs_can a b c bs) }}.
-Proof.
-  introv wf comp.
-  unfold computes_to_value, reduces_to in comp; exrepnd.
-
-  pose proof (approx_star_swap.computes_to_val_like_in_max_k_steps_swap_cs2_implies
-                lib k (MkSwapCsNfo a b) t u) as q.
-  repeat (autodimp q hyp); eauto 3 with slow.
-  { unfold computes_to_val_like_in_max_k_steps; dands; eauto 3 with slow. }
-  repndors; exrepnd; subst; simpl in *;
-    allapply @isvalue_mk_exception; tcsp;[].
-
-  exists can bs; dands; auto.
-  { unfold computes_to_value; dands; eauto 3 with slow.
-    unfold computes_to_can_in_max_k_steps in *; repnd.
-    apply reduces_atmost_preserves_program in q4; eauto 3 with slow. }
-
-  unfold computes_to_val_like_in_max_k_steps in *; repnd; eauto 3 with slow.
-  apply reduces_in_atmost_k_steps_implies_reduces_to in q4.
-  apply reduces_to_if_can in q4; eauto 3 with slow.
-Qed.
-
-Lemma mkc_swap_ccomputes_to_valc_ext_integer_implies {o} :
-  forall sw lib (t : @CTerm o) k,
-  (mkc_swap_cs sw t) ===>(lib) (mkc_integer k)
-  -> t ===>(lib) (mkc_integer k).
-Proof.
-  introv comp ext; apply comp in ext; clear comp; exrepnd; spcast.
-  destruct_cterms; unfold computes_to_valc, cequivc in *; simpl in *.
-  apply swap_cs2_computes_to_value_implies in ext1; auto; exrepnd; subst.
-  eapply cequiv_integer in ext0; eauto 3 with slow.
-  apply computes_to_value_if_iscan in ext0; eauto 3 with slow; subst.
-  inversion ext0; subst; simpl in *.
-  destruct bs; simpl in *; ginv.
-  destruct c; simpl in *; ginv.
-  exists (@mkc_integer o k); dands; spcast; tcsp.
-Qed.
-
-Lemma mkc_swap_ccomputes_to_valc_ext_nat_implies {o} :
-  forall sw lib (t : @CTerm o) k,
-  (mkc_swap_cs sw t) ===>(lib) (mkc_nat k)
-  -> t ===>(lib) (mkc_nat k).
-Proof.
-  introv comp.
-  apply mkc_swap_ccomputes_to_valc_ext_integer_implies in comp; auto.
 Qed.
 
 Lemma mkc_swap_ccomputes_to_valc_ext_axiom_implies {o} :
@@ -802,7 +470,7 @@ Lemma implies_isprogram_lsust_mk_swap_cs2 {o} :
 Proof.
   introv isp.
   unfold lsubst in *; simpl in *; autorewrite with slow in *.
-  boolvar; apply approx_star_swap.implies_isprogram_mk_swap_cs2; auto.
+  boolvar; apply implies_isprogram_mk_swap_cs2; auto.
 Qed.
 Hint Resolve implies_isprogram_lsust_mk_swap_cs2 : sow.
 
@@ -875,8 +543,8 @@ Proof.
       try (complete (econstructor; try exact norep2; auto; apply disjoint_app_r; auto)).
 
     unfold approx_open, olift in *; repnd.
-    apply approx_star_swap.nt_wf_mk_swap_cs2_implies in i1.
-    apply approx_star_swap.nt_wf_mk_swap_cs2_implies in i2.
+    apply nt_wf_mk_swap_cs2_implies in i1.
+    apply nt_wf_mk_swap_cs2_implies in i2.
     dands; auto.
     introv wf cova covb.
     pose proof (i0 sub) as i0; repeat (autodimp i0 hyp);
@@ -1069,7 +737,7 @@ Lemma approx_mk_swap_cs2_twice {o} :
 Proof.
   cofix ind; introv isp.
   constructor; unfold close_comput; dands; auto;
-    repeat apply approx_star_swap.implies_isprogram_mk_swap_cs2;
+    repeat apply implies_isprogram_mk_swap_cs2;
     eauto 2 with slow; introv comp;[|].
 
   { (* VAL case *)
@@ -1118,7 +786,7 @@ Lemma approx_mk_swap_cs2_twice_rev {o} :
 Proof.
   cofix ind; introv isp.
   constructor; unfold close_comput; dands; auto;
-    repeat apply approx_star_swap.implies_isprogram_mk_swap_cs2;
+    repeat apply implies_isprogram_mk_swap_cs2;
     eauto 2 with slow; introv comp;[|].
 
   { (* VAL case *)
@@ -1145,7 +813,7 @@ Proof.
       allrw; eauto 3 with slow. }
     applydup @isprogram_bt_implies_bt_wf in comp0.
     allrw @bt_wf_iff.
-    repeat apply approx_star_swap.nt_wf_mk_swap_cs2_implies in comp2.
+    repeat apply nt_wf_mk_swap_cs2_implies in comp2.
     exists l n0 (mk_swap_cs2 a b (mk_swap_cs2 a b n0)); dands; auto.
     unfold olift.
     dands; eauto 3 with slow;[].
@@ -1158,7 +826,7 @@ Proof.
     apply (reduces_in_atmost_k_steps_implies_swap_cs2_computes_to_exc a b) in comp.
     apply (reduces_in_atmost_k_steps_implies_swap_cs2_computes_to_exc a b) in comp.
     applydup @preserve_program_exc2 in comp; repnd;
-      repeat apply approx_star_swap.implies_isprogram_mk_swap_cs2; eauto 3 with slow;[].
+      repeat apply implies_isprogram_mk_swap_cs2; eauto 3 with slow;[].
     exists a0 e; dands; auto; left; apply approx_refl; auto. }
 Qed.
 
@@ -1310,9 +978,9 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_tysys_implies_in_ext_ext_term_equality_respecting {o} :
-  forall lib ts (eqa : lib-per(lib,o)) A B,
+  forall uk lib ts (eqa : lib-per(lib,o)) A B,
     type_system ts
-    -> in_ext_ext lib (fun lib' x => ts lib' A B (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => ts uk lib' A B (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x)).
 Proof.
   introv tysys h; introv.
@@ -1322,9 +990,9 @@ Qed.
 Hint Resolve in_ext_ext_tysys_implies_in_ext_ext_term_equality_respecting : slow.
 
 Lemma in_ext_ext_tysys_implies_in_ext_ext_term_equality_transitive {o} :
-  forall lib ts (eqa : lib-per(lib,o)) A B,
+  forall uk lib ts (eqa : lib-per(lib,o)) A B,
     type_system ts
-    -> in_ext_ext lib (fun lib' x => ts lib' A B (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => ts uk lib' A B (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x)).
 Proof.
   introv tysys h; introv.
@@ -1334,9 +1002,9 @@ Qed.
 Hint Resolve in_ext_ext_tysys_implies_in_ext_ext_term_equality_transitive : slow.
 
 Lemma in_ext_ext_tysys_implies_in_ext_ext_term_equality_symmetric {o} :
-  forall lib ts (eqa : lib-per(lib,o)) A B,
+  forall uk lib ts (eqa : lib-per(lib,o)) A B,
     type_system ts
-    -> in_ext_ext lib (fun lib' x => ts lib' A B (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => ts uk lib' A B (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x)).
 Proof.
   introv tysys h; introv.
@@ -1346,7 +1014,7 @@ Qed.
 Hint Resolve in_ext_ext_tysys_implies_in_ext_ext_term_equality_symmetric : slow.
 
 Lemma implies_close_mk_swap {o} :
-  forall sw (lib : library) (u : cts(o)) (t1 t2 : @CTerm o) e,
+  forall sw uk (lib : library) (u : cts(o)) (t1 t2 : @CTerm o) e,
     sane_swapping sw
     -> lib_nodup lib
     -> strong_sat_lib_cond lib
@@ -1356,16 +1024,16 @@ Lemma implies_close_mk_swap {o} :
     -> type_system u
     -> defines_only_universes u
     -> type_monotone u
-    -> (forall lib t1 t2 e,
-           u lib t1 t2 e
-           -> u lib
+    -> (forall uk lib t1 t2 e,
+           u uk lib t1 t2 e
+           -> u uk lib
                 (mkc_swap_cs sw t1)
                 (mkc_swap_cs sw t2)
                 (mkc_swap_per sw e))
-    -> close u lib t1 t2 e
+    -> close u uk lib t1 t2 e
     -> close
          u
-         lib
+         uk lib
          (mkc_swap_cs sw t1)
          (mkc_swap_cs sw t2)
          (mkc_swap_per sw e).
@@ -1541,19 +1209,19 @@ admit.
 
     { unfold type_family_ext; simpl.
       eexists; eexists; eexists; eexists; eexists; eexists.
-      dands; eauto.
+      dands; eauto; eauto 2 with slow.
 
       { introv; simpl.
         pose proof (reca _ e) as reca; simpl in reca.
         repeat (autodimp reca hyp); eauto 3 with slow. }
 
       introv; simpl.
-      autorewrite with slow.
       unfold mkc_swap_per in e0.
+      autorewrite with slow.
       pose proof (recb _ e _ _ e0) as recb; simpl in recb.
       repeat (autodimp recb hyp); eauto 3 with slow.
 
-(* ====> Will this only works if the domain [A] is such that [mkc_swap_cs] doesn't affect
+(* ====> Will this only work if the domain [A] is such that [mkc_swap_cs] doesn't affect
    its members such as nat? Can I find a counterexample otherwise?
  *)
 

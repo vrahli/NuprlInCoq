@@ -36,6 +36,7 @@ Require Export close_util_union2.
 
 Lemma close_type_system_union {o} :
   forall (ts : cts(o))
+         uk
          lib
          T T'
          (eq : per)
@@ -45,12 +46,12 @@ Lemma close_type_system_union {o} :
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T (mkc_union A1 B1)
     -> ccomputes_to_valc_ext lib T' (mkc_union A2 B2)
-    -> in_ext_ext lib (fun lib' x => close ts lib' A1 A2 (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A1 A2 (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => close ts lib' B1 B2 (eqb lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' B1 B2 (eqb lib' x))
+    -> in_ext_ext lib (fun lib' x => close ts uk lib' A1 A2 (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) uk lib' A1 A2 (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => close ts uk lib' B1 B2 (eqb lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) uk lib' B1 B2 (eqb lib' x))
     -> (eq <=2=> (per_union_eq_bar lib eqa eqb))
-    -> type_sys_props4 (close ts) lib T T' eq.
+    -> type_sys_props4 (close ts) uk lib T T' eq.
 Proof.
   introv tysys dou mon c1 c2 cla tsa clb tsb eqiff.
 

@@ -39,7 +39,7 @@ Require Export types_converge.
 
 
 Lemma tequality_converge_left {o} :
-  forall lib (t1 t2 : @CTerm o), tequality lib t1 t2 -> chaltsc_bar lib t1.
+  forall uk lib (t1 t2 : @CTerm o), tequality uk lib t1 t2 -> chaltsc_bar lib t1.
 Proof.
   introv teq.
   apply tequality_refl in teq.
@@ -47,7 +47,7 @@ Proof.
 Qed.
 
 Lemma tequality_converge_right {o} :
-  forall lib (t1 t2 : @CTerm o), tequality lib t1 t2 -> chaltsc_bar lib t2.
+  forall uk lib (t1 t2 : @CTerm o), tequality uk lib t1 t2 -> chaltsc_bar lib t2.
 Proof.
   introv teq.
   apply tequality_sym in teq.
@@ -56,14 +56,14 @@ Proof.
 Qed.
 
 Lemma nuprl_converge_left {o} :
-  forall lib (t1 t2 : @CTerm o) eq, nuprl lib t1 t2 eq -> chaltsc_bar lib t1.
+  forall uk lib (t1 t2 : @CTerm o) eq, nuprl uk lib t1 t2 eq -> chaltsc_bar lib t1.
 Proof.
   introv teq.
   eapply tequality_converge_left; exists eq; eauto.
 Qed.
 
 Lemma nuprl_converge_right {o} :
-  forall lib (t1 t2 : @CTerm o) eq, nuprl lib t1 t2 eq -> chaltsc_bar lib t2.
+  forall uk lib (t1 t2 : @CTerm o) eq, nuprl uk lib t1 t2 eq -> chaltsc_bar lib t2.
 Proof.
   introv teq.
   eapply tequality_converge_right; exists eq; eauto.
@@ -75,7 +75,7 @@ Qed.
 Lemma equality_in_uni_iff {p} :
   forall lib a b,
     {i : nat , @equality p lib a b (mkc_uni i)}
-    <=> tequality lib a b.
+    <=> tequality uk lib a b.
 Proof.
   sp; split; introv e; exrepnd.
   apply equality_in_uni in e0; sp.
@@ -147,7 +147,7 @@ Lemma computes_to_valc_tuni_implies {o} :
     computes_to_valc lib (mkc_tuni t) v
     -> {k : nat
         & computes_to_valc lib t (mkc_nat k)
-        # v = mkc_uni k}.
+        # v = mkc_uni 0 k}.
 Proof.
   introv comp.
   destruct_cterms.
@@ -197,9 +197,9 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_uni_diff {o} :
-  forall (lib : @library o) i j eq,
-    nuprl lib (mkc_uni i) (mkc_uni j) eq
-    -> univ lib  (mkc_uni i) (mkc_uni j) eq.
+  forall uk (lib : @library o) i j eq,
+    nuprl uk lib (mkc_uni uk i) (mkc_uni uk j) eq
+    -> univ uk lib  (mkc_uni uk i) (mkc_uni uk j) eq.
 Proof.
   introv cl.
   eapply dest_close_per_uni_l in cl;
@@ -208,9 +208,9 @@ Qed.
 
 
 Lemma univ_implies_univi_bar_diff {o} :
-  forall lib i1 i2 (eq : per(o)),
-    univ lib (mkc_uni i1) (mkc_uni i2) eq
-    -> i1 = i2 # exists k, i1 < k # univi_bar k lib (mkc_uni i1) (mkc_uni i1) eq.
+  forall uk lib i1 i2 (eq : per(o)),
+    univ uk lib (mkc_uni uk i1) (mkc_uni uk i2) eq
+    -> i1 = i2 # exists k, i1 < k # univi_bar k uk lib (mkc_uni uk i1) (mkc_uni uk i1) eq.
 Proof.
   introv u.
   dands.
@@ -235,13 +235,13 @@ Proof.
 Qed.
 
 Lemma univ_implies_univi_bar2_diff {o} :
-  forall lib i1 i2 (eq : per(o)),
-    univ lib (mkc_uni i1) (mkc_uni i2) eq
+  forall uk lib i1 i2 (eq : per(o)),
+    univ uk lib (mkc_uni uk i1) (mkc_uni uk i2) eq
     ->
     i1 = i2 #
     exists (eqa : lib-per(lib,o)),
       (eq <=2=> (per_bar_eq lib eqa))
-        # in_open_bar_ext lib (fun lib' x => (eqa lib' x) <=2=> (univi_eq (univi_bar i2) lib')).
+        # in_open_bar_ext lib (fun lib' x => (eqa lib' x) <=2=> (univi_eq (univi_bar i2) uk lib')).
 Proof.
   introv u.
   unfold univ, univi_bar, per_bar in u; exrepnd.
@@ -264,10 +264,10 @@ Proof.
  Qed.
 
 Lemma univ_implies_univi_bar3_diff {o} :
-  forall lib i1 i2 (eq : per(o)),
-    univ lib (mkc_uni i1) (mkc_uni i2) eq
+  forall uk lib i1 i2 (eq : per(o)),
+    univ uk lib (mkc_uni uk i1) (mkc_uni uk i2) eq
     ->
-    i1 = i2 # eq <=2=> (per_bar_eq lib (univi_eq_lib_per lib i1)).
+    i1 = i2 # eq <=2=> (per_bar_eq lib (univi_eq_lib_per uk lib i1)).
 Proof.
   introv u.
   apply univ_implies_univi_bar2_diff in u; exrepnd; subst.
@@ -308,7 +308,7 @@ Qed.
 Lemma ccequivc_ext_mkc_tuni_mkc_nat_implies_ccequivc_mkc_uni {o} :
   forall lib (a : @CTerm o) i,
     ccequivc_ext lib a (mkc_tuni (mkc_nat i))
-    -> ccequivc_ext lib a (mkc_uni i).
+    -> ccequivc_ext lib a (mkc_uni 0 i).
 Proof.
   introv ceq ext; apply ceq in ext; clear ceq; spcast.
   eapply cequivc_trans;[eauto|]; clear ext.
@@ -322,8 +322,8 @@ Lemma dest_nuprl_tuni_sub_per {o} :
   forall (lib : @library o) a b eq i,
     ccomputes_to_valc_ext lib a (mkc_nat i)
     -> ccomputes_to_valc_ext lib b (mkc_nat i)
-    -> nuprl lib (mkc_tuni a) (mkc_tuni b) eq
-    -> (eq) <=2=> (per_bar_eq lib (univi_eq_lib_per lib i)).
+    -> nuprl uk0 lib (mkc_tuni a) (mkc_tuni b) eq
+    -> (eq) <=2=> (per_bar_eq lib (univi_eq_lib_per uk0 lib i)).
 Proof.
   introv compa compb cl.
   apply ccomputes_to_valc_ext_implies_ccequivc_ext in compa.
@@ -346,7 +346,7 @@ Lemma tequality_mkc_tuni {o} :
   forall lib (a b : @CTerm o) i,
     ccomputes_to_valc_ext lib a (mkc_nat i)
     -> ccomputes_to_valc_ext lib b (mkc_nat i)
-    -> tequality lib (mkc_tuni a) (mkc_tuni b).
+    -> tequality uk0 lib (mkc_tuni a) (mkc_tuni b).
 Proof.
   introv compa compb.
   apply ccomputes_to_valc_ext_implies_ccequivc_ext in compa.
@@ -364,7 +364,7 @@ Hint Resolve tequality_mkc_tuni : slow.
 Lemma equality_of_nat_bar_implies_tequality_mkc_uni {o} :
   forall lib (a b : @CTerm o),
     equality_of_nat_bar lib a b
-    -> tequality lib (mkc_tuni a) (mkc_tuni b).
+    -> tequality uk0 lib (mkc_tuni a) (mkc_tuni b).
 Proof.
   introv e.
   apply all_in_ex_bar_tequality_implies_tequality.

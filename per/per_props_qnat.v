@@ -37,17 +37,17 @@ Require Export per_props_util.
 
 
 Lemma dest_nuprl_qnat {o} :
-  forall (lib : @library o) eq c,
-    nuprl lib (mkc_qnat c) (mkc_qnat c) eq
-    -> per_bar (per_qnat nuprl) lib (mkc_qnat c) (mkc_qnat c) eq.
+  forall uk (lib : @library o) eq c,
+    nuprl uk lib (mkc_qnat c) (mkc_qnat c) eq
+    -> per_bar (per_qnat nuprl) uk lib (mkc_qnat c) (mkc_qnat c) eq.
 Proof.
   introv cl.
   eapply dest_close_per_qnat_l in cl; eauto 3 with slow.
 Qed.
 
 Lemma dest_nuprl_qnat2 {o} :
-  forall lib (eq : per(o)) c,
-    nuprl lib (mkc_qnat c) (mkc_qnat c) eq
+  forall uk lib (eq : per(o)) c,
+    nuprl uk lib (mkc_qnat c) (mkc_qnat c) eq
     -> eq <=2=> (equality_of_qnat_bar lib c).
 Proof.
   introv u.
@@ -63,7 +63,7 @@ Proof.
 Qed.
 
 Lemma nuprl_qnat {p} :
-  forall lib c, @nuprl p lib (mkc_qnat c) (mkc_qnat c) (equality_of_qnat_bar lib c).
+  forall uk lib c, @nuprl p uk lib (mkc_qnat c) (mkc_qnat c) (equality_of_qnat_bar lib c).
 Proof.
   sp.
   apply CL_qnat.
@@ -72,8 +72,8 @@ Qed.
 Hint Resolve nuprl_qnat : slow.
 
 Lemma equality_in_qnat {p} :
-  forall lib (t1 t2 : @CTerm p) c,
-    equality lib t1 t2 (mkc_qnat c) <=> equality_of_qnat_bar lib c t1 t2.
+  forall uk lib (t1 t2 : @CTerm p) c,
+    equality uk lib t1 t2 (mkc_qnat c) <=> equality_of_qnat_bar lib c t1 t2.
 Proof.
   intros; split; intro e.
 
@@ -84,7 +84,7 @@ Proof.
   - exists (equality_of_qnat_bar lib c); dands; auto; eauto 3 with slow.
 Qed.
 
-Lemma tequality_qnat {p} : forall lib c, @tequality p lib (mkc_qnat c) (mkc_qnat c).
+Lemma tequality_qnat {p} : forall uk lib c, @tequality p uk lib (mkc_qnat c) (mkc_qnat c).
 Proof.
   introv.
   exists (@equality_of_qnat_bar p lib c).
@@ -298,7 +298,7 @@ Qed.
 Hint Resolve sat_qnat_cond_nat : slow.
 
 Lemma equality_nat_in_qnat {o} :
-  forall (lib : @library o) k c, equality lib (mkc_nat k) (mkc_nat k) (mkc_qnat c).
+  forall uk (lib : @library o) k c, equality uk lib (mkc_nat k) (mkc_nat k) (mkc_qnat c).
 Proof.
   introv.
   apply equality_in_qnat; eauto 2 with slow.

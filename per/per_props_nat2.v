@@ -42,9 +42,9 @@ Require Export per_props_union.
 
 
 Lemma equality_mkc_inl_implies {o} :
-  forall lib (t1 t2 A B : @CTerm o),
-    equality lib (mkc_inl t1) (mkc_inl t2) (mkc_union A B)
-    -> equality lib t1 t2 A.
+  forall uk lib (t1 t2 A B : @CTerm o),
+    equality uk lib (mkc_inl t1) (mkc_inl t2) (mkc_union A B)
+    -> equality uk lib t1 t2 A.
 Proof.
   introv e.
   apply equality_mkc_union in e; repnd.
@@ -74,8 +74,8 @@ Proof.
 Qed.
 
 Lemma equality_tt_in_bool_implies_cequiv {o} :
-  forall lib (t : @CTerm o),
-    equality lib t tt mkc_bool
+  forall uk lib (t : @CTerm o),
+    equality uk lib t tt mkc_bool
     -> ccequivc_bar lib t tt.
 Proof.
   introv e.
@@ -123,9 +123,9 @@ Proof.
 Qed.
 
 Lemma implies_isl_in_bool {o} :
-  forall lib (A B a b : @CTerm o),
-    equality lib a b (mkc_union A B)
-    -> equality lib (mkc_isl a) (mkc_isl b) mkc_bool.
+  forall uk lib (A B a b : @CTerm o),
+    equality uk lib a b (mkc_union A B)
+    -> equality uk lib (mkc_isl a) (mkc_isl b) mkc_bool.
 Proof.
   introv e.
   apply equality_mkc_union in e; exrepnd.
@@ -179,7 +179,7 @@ Proof.
 Qed.
 
 Lemma type_nat2nat {o} :
-  forall (lib : @library o), type lib nat2nat.
+  forall uk (lib : @library o), type uk lib nat2nat.
 Proof.
   introv.
   unfold nat2nat.
@@ -189,7 +189,7 @@ Hint Resolve type_nat2nat : slow.
 
 (*Lemma tequality_natk2nat {o} :
   forall lib (a b : @CTerm o),
-    tequality lib (natk2nat a) (natk2nat b)
+    tequality uk lib (natk2nat a) (natk2nat b)
      <=> all_in_ex_bar lib (fun lib => {k1 , k2 : Z
           , (a) ===>(lib) (mkc_integer k1)
           # (b) ===>(lib) (mkc_integer k2)
@@ -206,25 +206,25 @@ Proof.
 Qed.*)
 
 Lemma tequality_natk2nat_aux {o} :
-  forall lib (a b : @CTerm o) k1 k2,
+  forall uk lib (a b : @CTerm o) k1 k2,
     (a) ===>(lib) (mkc_integer k1)
     ->  (b) ===>(lib) (mkc_integer k2)
-    -> (tequality lib (natk2nat a) (natk2nat b)
+    -> (tequality uk lib (natk2nat a) (natk2nat b)
         <=> forall k : Z, (0 <= k)%Z -> ((k < k1)%Z # (k < k2)%Z){+}(k1 <= k)%Z # (k2 <= k)%Z).
 Proof.
   introv compa compb.
   unfold natk2nat.
   rw @tequality_mkc_fun.
-  rw (tequality_mkc_natk_aux lib a b k1 k2 compa compb).
+  rw (tequality_mkc_natk_aux uk lib a b k1 k2 compa compb).
   split; intro k; exrepnd; dands; eauto 3 with slow.
   introv x inh; apply type_tnat.
 Qed.
 
 Lemma equality_natk_to_tnat {o} :
-  forall lib (n1 n2 k : @CTerm o) n,
+  forall uk lib (n1 n2 k : @CTerm o) n,
     k ===>(lib) (mkc_integer n)
-    -> equality lib n1 n2 (mkc_natk k)
-    -> equality lib n1 n2 mkc_tnat.
+    -> equality uk lib n1 n2 (mkc_natk k)
+    -> equality uk lib n1 n2 mkc_tnat.
 Proof.
   introv compk e.
 
@@ -235,10 +235,10 @@ Proof.
 Qed.
 
 Lemma equality_nat2nat_to_natk2nat {o} :
-  forall lib (n f g : @CTerm o),
-    member lib n mkc_tnat
-    -> equality lib f g nat2nat
-    -> equality lib f g (natk2nat n).
+  forall uk lib (n f g : @CTerm o),
+    member uk lib n mkc_tnat
+    -> equality uk lib f g nat2nat
+    -> equality uk lib f g (natk2nat n).
 Proof.
   introv m e.
 
@@ -258,8 +258,8 @@ Proof.
 Qed.
 
 Lemma nat_in_nat {o} :
-  forall (lib : @library o) n,
-    member lib (mkc_nat n) mkc_tnat.
+  forall uk (lib : @library o) n,
+    member uk lib (mkc_nat n) mkc_tnat.
 Proof.
   introv.
   apply equality_in_tnat.
@@ -416,7 +416,7 @@ Proof.
 Qed.*)
 
 Lemma equality_in_tnat_nat {o} :
-  forall (lib : @library o) n, equality lib (mkc_nat n) (mkc_nat n) mkc_tnat.
+  forall uk (lib : @library o) n, equality uk lib (mkc_nat n) (mkc_nat n) mkc_tnat.
 Proof.
   introv.
   apply equality_in_tnat.
@@ -427,8 +427,8 @@ Qed.
 Hint Resolve equality_in_tnat_nat : slow.
 
 Lemma member_tnat_implies_computes {o} :
-  forall lib (t : @CTerm o),
-    member lib t mkc_tnat
+  forall uk lib (t : @CTerm o),
+    member uk lib t mkc_tnat
     -> in_open_bar lib (fun lib => {k : nat , ccomputes_to_valc_ext lib t (mkc_nat k)}).
 Proof.
   introv mem.
@@ -439,22 +439,22 @@ Proof.
 Qed.
 
 Lemma member_tnat_iff {o} :
-  forall lib (t : @CTerm o),
-    member lib t mkc_tnat
+  forall uk lib (t : @CTerm o),
+    member uk lib t mkc_tnat
     <=> in_open_bar lib (fun lib => {k : nat , ccomputes_to_valc_ext lib t (mkc_nat k)}).
 Proof.
   introv; split; introv mem.
-  - apply member_tnat_implies_computes; auto.
+  - eapply member_tnat_implies_computes; eauto.
   - apply equality_in_tnat.
     eapply all_in_ex_bar_modus_ponens1;try exact mem; clear mem; introv x mem; exrepnd; spcast.
     exists k; dands; spcast; auto.
 Qed.
 
 Lemma equality_nat2nat_apply {o} :
-  forall lib (f g a b : @CTerm o),
-    equality lib f g nat2nat
-    -> equality lib a b mkc_tnat
-    -> equality lib (mkc_apply f a) (mkc_apply g b) mkc_tnat.
+  forall uk lib (f g a b : @CTerm o),
+    equality uk lib f g nat2nat
+    -> equality uk lib a b mkc_tnat
+    -> equality uk lib (mkc_apply f a) (mkc_apply g b) mkc_tnat.
 Proof.
   introv eqf eqn.
   unfold nat2nat in eqf.
@@ -463,8 +463,8 @@ Proof.
 Qed.
 
 Lemma equality_int_nat_implies_cequivc {o} :
-  forall lib (a b : @CTerm o),
-    equality lib a b mkc_tnat
+  forall uk lib (a b : @CTerm o),
+    equality uk lib a b mkc_tnat
     -> ccequivc_bar lib a b.
 Proof.
   introv e.

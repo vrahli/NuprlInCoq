@@ -2364,7 +2364,7 @@ Proof.
             repeat (destruct bs; allsimpl; ginv).
             repeat (destruct bts; allsimpl; ginv).
 
-            - exists (@mk_uni o n).
+            - exists (@mk_uni o 0 n).
               unflsubst; simpl; dands; eauto 3 with slow.
 
               introv nrut' eqdoms diff'.

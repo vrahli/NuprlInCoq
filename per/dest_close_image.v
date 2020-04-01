@@ -43,9 +43,9 @@ Require Export dest_close_util.
 
 
 Lemma per_image_implies_per_bar {o} :
-  forall ts lib (T T' : @CTerm o) eq,
-    per_image ts lib T T' eq
-    -> per_bar (per_image ts) lib T T' eq.
+  forall ts uk lib (T T' : @CTerm o) eq,
+    per_image ts uk lib T T' eq
+    -> per_bar (per_image ts) uk lib T T' eq.
 Proof.
   introv per.
 
@@ -168,16 +168,16 @@ Proof.
 Qed.
 
 Lemma per_image_eq_bar_change_pers {o} :
-  forall ts (lib lib0 : @library o) A A' A1 A2 A3 A4
+  forall ts uk (lib lib0 : @library o) A A' A1 A2 A3 A4
          (eqa : lib-per(lib,o)) (eqa1 eqa2 : lib-per(lib0,o)) f g t1 t2,
     lib_extends lib0 lib
     -> ccequivc_ext lib0 A4 A2
     -> ccequivc_ext lib0 A3 A1
     -> ccequivc_ext lib0 A1 A
     -> ccequivc_ext lib0 f g
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib0 (fun lib' x => ts lib' A1 A2 (eqa1 lib' x))
-    -> in_ext_ext lib0 (fun lib' x => ts lib' A3 A4 (eqa2 lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> in_ext_ext lib0 (fun lib' x => ts uk lib' A1 A2 (eqa1 lib' x))
+    -> in_ext_ext lib0 (fun lib' x => ts uk lib' A3 A4 (eqa2 lib' x))
     -> per_image_eq_bar lib0 eqa2 f t1 t2
     -> per_image_eq_bar lib0 eqa1 g t1 t2.
 Proof.
@@ -199,12 +199,12 @@ Proof.
 Qed.
 
 Lemma per_image_eq_bar_change_pers2 {o} :
-  forall ts (lib lib0 : @library o) T T' A A' f (eqa : lib-per(lib,o)) eqa' eqb' t1 t2,
+  forall ts uk (lib lib0 : @library o) T T' A A' f (eqa : lib-per(lib,o)) eqa' eqb' t1 t2,
     lib_extends lib0 lib
     -> (T ===>(lib) (mkc_image A f))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> per_image ts lib0 T T' eqa'
-    -> per_image ts lib0 T T' eqb'
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> per_image ts uk lib0 T T' eqa'
+    -> per_image ts uk lib0 T T' eqb'
     -> eqa' t1 t2
     -> eqb' t1 t2.
 Proof.
@@ -225,16 +225,16 @@ Proof.
   apply pera0 in eqs.
   apply perb0.
 
-  eapply (per_image_eq_bar_change_pers ts lib lib0 A A' A1 A2 A0 A3); eauto; eauto 3 with slow.
+  eapply (per_image_eq_bar_change_pers ts uk lib lib0 A A' A1 A2 A0 A3); eauto; eauto 3 with slow.
 Qed.
 
 Lemma per_image_eq_bar_change_pers3 {o} :
-  forall ts (lib lib0 : @library o) T T' A A' f (eqa : lib-per(lib,o)) eqa' eqb' t1 t2,
+  forall ts uk (lib lib0 : @library o) T T' A A' f (eqa : lib-per(lib,o)) eqa' eqb' t1 t2,
     lib_extends lib0 lib
     -> (T' ===>(lib) (mkc_image A f))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> per_image ts lib0 T T' eqa'
-    -> per_image ts lib0 T T' eqb'
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> per_image ts uk lib0 T T' eqa'
+    -> per_image ts uk lib0 T T' eqb'
     -> eqa' t1 t2
     -> eqb' t1 t2.
 Proof.
@@ -255,14 +255,14 @@ Proof.
   apply pera0 in eqs.
   apply perb0.
 
-  eapply (per_image_eq_bar_change_pers ts lib lib0 A A' A2 A1 A3 A0); eauto; eauto 3 with slow.
+  eapply (per_image_eq_bar_change_pers ts uk lib lib0 A A' A2 A1 A3 A0); eauto; eauto 3 with slow.
 Qed.
 
 Lemma local_per_bar_per_image {o} :
-  forall (ts : cts(o)) lib T A A' f (eqa : lib-per(lib,o)),
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+  forall (ts : cts(o)) uk lib T A A' f (eqa : lib-per(lib,o)),
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
     -> T ===>(lib) (mkc_image A f)
-    -> local_ts_T (per_bar (per_image ts)) lib T.
+    -> local_ts_T (per_bar (per_image ts)) uk lib T.
 Proof.
   introv tsa comp eqiff alla.
   unfold per_bar in *.
@@ -324,7 +324,7 @@ Proof.
     apply cequivc_ext_mkc_image_implies in ceq1.
     repnd.
 
-    eapply (per_image_eq_bar_change_pers ts lib lib'0 A A' A1 A2 A0 A3); eauto.
+    eapply (per_image_eq_bar_change_pers ts uk lib lib'0 A A' A1 A2 A0 A3); eauto.
   }
 
   {
@@ -362,17 +362,17 @@ Proof.
     pose proof (imp lib1 ext1 lib2 ext2 extz) as imp; simpl in *; repnd; clear imp.
     pose proof (imp0 lib3 ext3 lib'2 (lib_extends_trans w ext4) z1) as imp0; simpl in *.
 
-    eapply (per_image_eq_bar_change_pers2 ts lib lib'2 T T' A A');
+    eapply (per_image_eq_bar_change_pers2 ts uk lib lib'2 T T' A A');
       auto; try exact imp0; eauto; eauto 3 with slow.
   }
 Qed.
 Hint Resolve local_per_bar_per_image : slow.
 
 Lemma local_per_bar_per_image2 {o} :
-  forall (ts : cts(o)) lib T A A' f (eqa : lib-per(lib,o)),
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A' A (eqa lib' x))
+  forall (ts : cts(o)) uk lib T A A' f (eqa : lib-per(lib,o)),
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A' A (eqa lib' x))
     -> T ===>(lib) (mkc_image A f)
-    -> local_ts_T2 (per_bar (per_image ts)) lib T.
+    -> local_ts_T2 (per_bar (per_image ts)) uk lib T.
 Proof.
   introv tsa comp eqiff alla.
   unfold per_bar in *.
@@ -435,8 +435,8 @@ Proof.
     repnd.
 
     applydup @in_ext_ext_type_sys_props4_sym in tsa.
-    eapply (per_image_eq_bar_change_pers ts lib lib'0 A A' A2 A1 A3 A0); eauto.
-    { eapply (in_ext_ext_type_ceq_sym ts lib lib'0); auto; try exact tsa0; auto. }
+    eapply (per_image_eq_bar_change_pers ts uk lib lib'0 A A' A2 A1 A3 A0); eauto.
+    { eapply (in_ext_ext_type_ceq_sym ts uk lib lib'0); auto; try exact tsa0; auto. }
     { eauto 3 with slow. }
   }
 
@@ -477,7 +477,7 @@ Proof.
 
     applydup @in_ext_ext_type_sys_props4_sym in tsa.
 
-    eapply (per_image_eq_bar_change_pers3 ts lib lib'2 T0 T A A');
+    eapply (per_image_eq_bar_change_pers3 ts uk lib lib'2 T0 T A A');
       auto; try exact imp0; eauto; eauto 3 with slow.
   }
 Qed.
@@ -489,13 +489,13 @@ Hint Resolve local_per_bar_per_image2 : slow.
 
 
 Lemma dest_close_per_image_l {o} :
-  forall (ts : cts(o)) lib T A A' f T' eq (eqa : lib-per(lib,o)),
+  forall (ts : cts(o)) uk lib T A A' f T' eq (eqa : lib-per(lib,o)),
     type_system ts
     -> defines_only_universes ts
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) uk lib' A A' (eqa lib' x))
     -> ccomputes_to_valc_ext lib T (mkc_image A f)
-    -> close ts lib T T' eq
-    -> per_bar (per_image (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_image (close ts)) uk lib T T' eq.
 Proof.
   introv tysys dou tsa comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
@@ -507,13 +507,13 @@ Proof.
 Qed.
 
 Lemma dest_close_per_image_r {o} :
-  forall (ts : cts(o)) lib T A A' f T' eq (eqa : lib-per(lib,o)),
+  forall (ts : cts(o)) uk lib T A A' f T' eq (eqa : lib-per(lib,o)),
     type_system ts
     -> defines_only_universes ts
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A' A (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) uk lib' A' A (eqa lib' x))
     -> ccomputes_to_valc_ext lib T' (mkc_image A f)
-    -> close ts lib T T' eq
-    -> per_bar (per_image (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_image (close ts)) uk lib T T' eq.
 Proof.
   introv tysys dou tsa comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.

@@ -35,12 +35,12 @@ Require Export close_util_nat.
 
 
 Lemma close_type_system_nat {p} :
-  forall (ts : cts(p)) lib T T' eq,
+  forall (ts : cts(p)) uk lib T T' eq,
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> per_nat (close ts) lib T T' eq
-    -> type_sys_props4 (close ts) lib T T' eq.
+    -> per_nat (close ts) uk lib T T' eq
+    -> type_sys_props4 (close ts) uk lib T T' eq.
 Proof.
   introv tysys dou mon per.
 
@@ -110,7 +110,7 @@ Proof.
   + SCase "term_value_respecting".
     assert (term_value_respecting (per_nat_bar (close ts))) as tvr
         by (apply per_nat_bar_term_value_respecting).
-    apply tvr with (T := T); auto.
+    eapply tvr; eauto.
     apply @type_system_type_mem with (T' := T'); eauto 3 with slow.
 
   + SCase "type_gsymmetric"; repdors; subst; split; sp; dclose_lr.

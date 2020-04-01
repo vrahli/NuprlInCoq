@@ -41,13 +41,13 @@ Definition rule_move_to_last {p}
     [].
 
 Lemma rule_move_to_last_true {p} :
-  forall (lib : library)
+  forall uk (lib : library)
          (b : bool)
          (T C e : NTerm)
          (x : NVar)
          (H J : @barehypotheses p)
          (ni1 : !LIn x (free_vars_hyps J)),
-    rule_true lib
+    rule_true uk lib
               (rule_move_to_last
                  b
                  T C e
@@ -145,11 +145,11 @@ Proof.
 Qed.
 
 Lemma rule_move_to_last_true2 {o} :
-  forall lib b T C e x H J (ni1 : !LIn x (free_vars_hyps J)),
-    @rule_true2 o lib (rule_move_to_last b T C e x H J).
+  forall uk lib b T C e x H J (ni1 : !LIn x (free_vars_hyps J)),
+    @rule_true2 o uk lib (rule_move_to_last b T C e x H J).
 Proof.
   introv ni1.
-  generalize (rule_move_to_last_true lib b T C e x H J ni1); intro rt.
+  generalize (rule_move_to_last_true uk lib b T C e x H J ni1); intro rt.
   apply rule_true_iff_rule_true2; sp.
 Qed.
 
@@ -166,13 +166,13 @@ Definition rule_move_down {p}
     [].
 
 Lemma rule_move_down_true {p} :
-  forall (lib : library)
+  forall uk (lib : library)
          (b : bool)
          (T C e : NTerm)
          (x : NVar)
          (H J K : @barehypotheses p)
          (ni1 : !LIn x (free_vars_hyps J)),
-    rule_true lib
+    rule_true uk lib
               (rule_move_down
                  b T C e
                  x
@@ -277,11 +277,11 @@ Proof.
 Qed.
 
 Lemma rule_move_down_true2 {o} :
-  forall lib b T C e x H J K (ni1 : !LIn x (free_vars_hyps J)),
-    @rule_true2 o lib (rule_move_down b T C e x H J K).
+  forall uk lib b T C e x H J K (ni1 : !LIn x (free_vars_hyps J)),
+    @rule_true2 o uk lib (rule_move_down b T C e x H J K).
 Proof.
   introv ni1.
-  generalize (rule_move_down_true lib b T C e x H J K ni1); intro rt.
+  generalize (rule_move_down_true uk lib b T C e x H J K ni1); intro rt.
   apply rule_true_iff_rule_true2; sp.
 Qed.
 
@@ -331,13 +331,13 @@ Definition rule_move_up {p}
     [].
 
 Lemma rule_move_up_true {p} :
-  forall (lib : library)
+  forall uk (lib : library)
          (b : bool)
          (T C e : NTerm)
          (x : NVar)
          (H J K : @barehypotheses p)
          (ni1 : !LIn x (free_vars_hyps J)),
-    rule_true lib
+    rule_true uk lib
               (rule_move_up
                  b T C e
                  x
@@ -444,11 +444,11 @@ Proof.
 Qed.
 
 Lemma rule_move_up_true2 {o} :
-  forall lib b T C e x H J K (ni1 : !LIn x (free_vars_hyps J)),
-    @rule_true2 o lib (rule_move_up b T C e x H J K).
+  forall uk lib b T C e x H J K (ni1 : !LIn x (free_vars_hyps J)),
+    @rule_true2 o uk lib (rule_move_up b T C e x H J K).
 Proof.
   introv ni1.
-  generalize (rule_move_up_true lib b T C e x H J K ni1); intro rt.
+  generalize (rule_move_up_true uk lib b T C e x H J K ni1); intro rt.
   apply rule_true_iff_rule_true2; sp.
 Qed.
 

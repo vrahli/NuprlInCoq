@@ -130,10 +130,10 @@ Definition exists_1_choice {o} (a : choice_sequence_name) (n : NVar) : @CTerm o 
        (mkcv_one _)
        (mkcv_tnat _)).
 
-Lemma int_in_uni {o} : forall i lib, @equality o lib mkc_int mkc_int (mkc_uni i).
+Lemma int_in_uni {o} : forall i uk lib, @equality o uk lib mkc_int mkc_int (mkc_uni uk i).
 Proof.
   introv.
-  exists (per_bar_eq lib (univi_eq_lib_per lib i)).
+  exists (per_bar_eq lib (univi_eq_lib_per uk lib i)).
   dands; auto; eauto 3 with slow;[].
 
   apply in_ext_ext_implies_in_open_bar_ext; introv; simpl.
@@ -144,21 +144,21 @@ Qed.
 Hint Resolve int_in_uni : slow.
 
 Lemma mkc_less_aux_in_uni {o} :
-  forall i lib (a b c d e f g h : @CTerm o) ka kb ke kf,
+  forall i uk lib (a b c d e f g h : @CTerm o) ka kb ke kf,
     ccomputes_to_valc_ext lib a (mkc_integer ka)
     -> ccomputes_to_valc_ext lib b (mkc_integer kb)
     -> ccomputes_to_valc_ext lib e (mkc_integer ke)
     -> ccomputes_to_valc_ext lib f (mkc_integer kf)
-    -> (equality lib (mkc_less a b c d) (mkc_less e f g h) (mkc_uni i)
+    -> (equality uk lib (mkc_less a b c d) (mkc_less e f g h) (mkc_uni uk i)
         <=>
         (
-          ((ka < kb)%Z # (ke < kf)%Z # equality lib c g (mkc_uni i))
+          ((ka < kb)%Z # (ke < kf)%Z # equality uk lib c g (mkc_uni uk i))
           [+]
-          ((kb <= ka)%Z # (kf <= ke)%Z # equality lib d h (mkc_uni i))
+          ((kb <= ka)%Z # (kf <= ke)%Z # equality uk lib d h (mkc_uni uk i))
           [+]
-          ((ka < kb)%Z # (kf <= ke)%Z # equality lib c h (mkc_uni i))
+          ((ka < kb)%Z # (kf <= ke)%Z # equality uk lib c h (mkc_uni uk i))
           [+]
-          ((kb <= ka)%Z # (ke < kf)%Z # equality lib d g (mkc_uni i))
+          ((kb <= ka)%Z # (ke < kf)%Z # equality uk lib d g (mkc_uni uk i))
         )
        ).
 Proof.
@@ -316,7 +316,7 @@ Qed.
 
 (*Lemma mkc_less_in_uni {o} :
   forall i lib (a b c d e f g h : @CTerm o),
-    equality lib (mkc_less a b c d) (mkc_less e f g h) (mkc_uni i)
+    equality uk lib (mkc_less a b c d) (mkc_less e f g h) (mkc_uni uk i)
     <=>
     all_in_ex_bar
       lib
@@ -327,13 +327,13 @@ Qed.
          # e ===>(lib) (mkc_integer ke)
          # f ===>(lib) (mkc_integer kf)
          # (
-             ((ka < kb)%Z # (ke < kf)%Z # equality lib c g (mkc_uni i))
+             ((ka < kb)%Z # (ke < kf)%Z # equality uk lib c g (mkc_uni uk i))
              {+}
-             ((kb <= ka)%Z # (kf <= ke)%Z # equality lib d h (mkc_uni i))
+             ((kb <= ka)%Z # (kf <= ke)%Z # equality uk lib d h (mkc_uni uk i))
              {+}
-             ((ka < kb)%Z # (kf <= ke)%Z # equality lib c h (mkc_uni i))
+             ((ka < kb)%Z # (kf <= ke)%Z # equality uk lib c h (mkc_uni uk i))
              {+}
-             ((kb <= ka)%Z # (ke < kf)%Z # equality lib d g (mkc_uni i))
+             ((kb <= ka)%Z # (ke < kf)%Z # equality uk lib d g (mkc_uni uk i))
            )}).
 Proof.
   introv.
@@ -392,7 +392,7 @@ Proof.
 Qed.*)
 
 Lemma false_in_uni {p} :
-  forall i lib, @equality p lib mkc_false mkc_false (mkc_uni i).
+  forall i uk lib, @equality p uk lib mkc_false mkc_false (mkc_uni uk i).
 Proof.
   introv.
   rw @mkc_false_eq.
@@ -403,14 +403,14 @@ Qed.
 Hint Resolve false_in_uni : slow.
 
 Lemma void_in_uni {p} :
-  forall i lib, @equality p lib mkc_void mkc_void (mkc_uni i).
+  forall i uk lib, @equality p uk lib mkc_void mkc_void (mkc_uni uk i).
 Proof.
   introv; rw @mkc_void_eq_mkc_false; eauto 3 with slow.
 Qed.
 Hint Resolve void_in_uni : slow.
 
 Lemma true_in_uni {p} :
-  forall i lib, @equality p lib mkc_true mkc_true (mkc_uni i).
+  forall i uk lib, @equality p uk lib mkc_true mkc_true (mkc_uni uk i).
 Proof.
   introv.
   rw @mkc_true_eq.
@@ -421,17 +421,17 @@ Qed.
 Hint Resolve true_in_uni : slow.
 
 Lemma mkc_less_than_in_uni_aux {o} :
-  forall i lib (a b c d : @CTerm o) ka kb kc kd,
+  forall i uk lib (a b c d : @CTerm o) ka kb kc kd,
     a ===>(lib) (mkc_integer ka)
     -> b ===>(lib) (mkc_integer kb)
     -> c ===>(lib) (mkc_integer kc)
     -> d ===>(lib) (mkc_integer kd)
-    -> (equality lib (mkc_less_than a b) (mkc_less_than c d) (mkc_uni i)
+    -> (equality uk lib (mkc_less_than a b) (mkc_less_than c d) (mkc_uni uk i)
         <=> (((ka < kb)%Z # (kc < kd)%Z) {+} ((kb <= ka)%Z # (kd <= kc)%Z))).
 Proof.
   introv compa compb compc compd.
   allrw @mkc_less_than_eq.
-  rw (mkc_less_aux_in_uni i lib a b mkc_true mkc_false c d mkc_true mkc_false ka kb kc kd compa compb compc compd).
+  rw (mkc_less_aux_in_uni i uk lib a b mkc_true mkc_false c d mkc_true mkc_false ka kb kc kd compa compb compc compd).
 
   split; intro k; exrepnd; repndors; repnd; tcsp.
 
@@ -455,7 +455,7 @@ Qed.
 
 (*Lemma mkc_less_than_in_uni {o} :
   forall i lib (a b c d : @CTerm o),
-    equality lib (mkc_less_than a b) (mkc_less_than c d) (mkc_uni i)
+    equality uk lib (mkc_less_than a b) (mkc_less_than c d) (mkc_uni uk i)
     <=>
     all_in_ex_bar
       lib
@@ -498,16 +498,16 @@ Proof.
 Qed.*)
 
 Lemma fun_in_uni {p} :
-  forall i lib (A1 A2 B1 B2 : @CTerm p),
-    equality lib (mkc_fun A1 B1) (mkc_fun A2 B2) (mkc_uni i)
+  forall i uk lib (A1 A2 B1 B2 : @CTerm p),
+    equality uk lib (mkc_fun A1 B1) (mkc_fun A2 B2) (mkc_uni uk i)
     <=>
-    (equality lib A1 A2 (mkc_uni i)
-      # (forall lib' (x : lib_extends lib' lib), inhabited_type lib' A1 -> equality lib' B1 B2 (mkc_uni i))).
+    (equality uk lib A1 A2 (mkc_uni uk i)
+      # (forall lib' (x : lib_extends lib' lib), inhabited_type uk lib' A1 -> equality uk lib' B1 B2 (mkc_uni uk i))).
 Proof.
   intros.
   allrw <- @fold_mkc_fun.
-  rw (equality_function lib).
-  split; intro teq; repnd; dands; auto; introv x e.
+  rw (equality_function uk lib).
+  split; intro teq; repnd; dands; auto; eauto 3 with slow; introv x e.
 
   - unfold inhabited_type in e; exrepnd.
     generalize (teq lib' x t t); intro k; autodimp k hyp.
@@ -520,34 +520,34 @@ Proof.
 Qed.
 
 Lemma not_in_uni {p} :
-  forall i lib (A1 A2 : @CTerm p),
-    equality lib (mkc_not A1) (mkc_not A2) (mkc_uni i)
+  forall i uk lib (A1 A2 : @CTerm p),
+    equality uk lib (mkc_not A1) (mkc_not A2) (mkc_uni uk i)
     <=>
-    equality lib A1 A2 (mkc_uni i).
+    equality uk lib A1 A2 (mkc_uni uk i).
 Proof.
   intros.
   rw @fun_in_uni; split; sp; eauto 3 with slow.
 Qed.
 
 Lemma mkc_le_in_uni_aux {o} :
-  forall i lib (a b c d : @CTerm o) ka kb kc kd,
+  forall i uk lib (a b c d : @CTerm o) ka kb kc kd,
     a ===>(lib) (mkc_integer ka)
     -> b ===>(lib) (mkc_integer kb)
     -> c ===>(lib) (mkc_integer kc)
     -> d ===>(lib) (mkc_integer kd)
-    -> (equality lib (mkc_le a b) (mkc_le c d) (mkc_uni i)
+    -> (equality uk lib (mkc_le a b) (mkc_le c d) (mkc_uni uk i)
         <=> (((ka <= kb)%Z # (kc <= kd)%Z) {+} ((kb < ka)%Z # (kd < kc)%Z))).
 Proof.
   introv compa compb compc compd.
   allrw @mkc_le_eq.
   rw @not_in_uni.
-  rw (mkc_less_than_in_uni_aux i lib b a d c kb ka kd kc compb compa compd compc).
+  rw (mkc_less_than_in_uni_aux i uk lib b a d c kb ka kd kc compb compa compd compc).
   split; intro k; repndors; repnd; tcsp; try omega.
 Qed.
 
 (*Lemma mkc_le_in_uni {o} :
   forall i lib (a b c d : @CTerm o),
-    equality lib (mkc_le a b) (mkc_le c d) (mkc_uni i)
+    equality uk lib (mkc_le a b) (mkc_le c d) (mkc_uni uk i)
     <=>
     all_in_ex_bar
       lib
@@ -579,7 +579,7 @@ Proof.
     repndors; repnd; tcsp.
 Qed.*)
 
-Lemma tnat_in_uni {o} : forall i lib, @equality o lib mkc_tnat mkc_tnat (mkc_uni i).
+Lemma tnat_in_uni {o} : forall i uk lib, @equality o uk lib mkc_tnat mkc_tnat (mkc_uni uk i).
 Proof.
   introv.
   rw @mkc_tnat_eq.
@@ -1458,15 +1458,41 @@ Qed.
 
 Hint Resolve nat_in_nat : slow.
 
+Lemma equality_swap_invariant_nat {o} :
+  forall (lib : @library o) v B,
+    equality_swap_invariant lib mkc_tnat v B.
+Proof.
+  introv ext mem.
+  apply equality_in_tnat in mem.
+  eapply in_open_bar_pres; eauto; clear mem; introv xt h.
+  unfold equality_of_nat in *; exrepnd.
+  apply (mkc_swap_ccomputes_to_valc_ext sw) in h0; autorewrite with slow in *.
+  apply substc_ccequivc_ext.
+  apply ccomputes_to_valc_ext_implies_ccequivc_ext in h1.
+  apply ccomputes_to_valc_ext_implies_ccequivc_ext in h0.
+  eapply ccequivc_ext_trans;[eauto|].
+  apply ccequivc_ext_sym; auto.
+Qed.
+Hint Resolve equality_swap_invariant_nat : slow.
+
+Lemma equality_swap_invariant_cond_nat {o} :
+  forall uk (lib : @library o) v1 B1 v2 B2,
+    equality_swap_invariant_cond uk lib mkc_tnat v1 B1 v2 B2.
+Proof.
+  introv; destruct uk; simpl; auto; dands; eauto 3 with slow.
+Qed.
+Hint Resolve equality_swap_invariant_cond_nat : slow.
+
+
 Lemma not_in_ext_not_inhabited_exists_1_choice {o} :
-  forall (lib : @library o) name v n restr,
+  forall uk (lib : @library o) name v n restr,
     lib_cond_sat_def lib
     -> sat_cond_restr lib restr
     -> csn_kind name = cs_kind_seq []
     -> same_restrictions restr (csc_seq [])
     -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes n mkc_zero) restr)) lib
     -> safe_library lib
-    -> in_ext lib (fun lib => !inhabited_type lib (exists_1_choice name v))
+    -> in_ext lib (fun lib => !inhabited_type uk lib (exists_1_choice name v))
     -> False.
 Proof.
   introv sat satr ck srestr ilib safe inh.
@@ -1484,7 +1510,7 @@ Proof.
   rename sat' into sat.
   rename satr' into satr.
 
-  apply inhabited_exists; dands; eauto 3 with slow.
+  apply inhabited_exists; dands; eauto 3 with slow;[|].
 
   {
     introv ext ea.
@@ -1523,7 +1549,7 @@ Proof.
 Qed.
 
 Lemma one_in_nat {o} :
-  forall (lib : @library o), equality lib mkc_one mkc_one mkc_tnat.
+  forall uk (lib : @library o), equality uk lib mkc_one mkc_one mkc_tnat.
 Proof.
   introv.
   allrw @mkc_one_eq; eauto 3 with slow.

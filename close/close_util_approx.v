@@ -265,7 +265,7 @@ Qed.
 Lemma per_approx_uniquely_valued {p} :
   forall (ts : cts(p)), uniquely_valued (per_approx ts).
 Proof.
-  unfold uniquely_valued, per_approx, eq_term_equals; introv cts h q; introv.
+  unfold uniquely_valued, per_approx, eq_term_equals; introv uk cts h q; introv.
   exrepnd.
   computes_to_eqval_ext.
   hide_hyp q2.
@@ -374,9 +374,9 @@ Qed.
 Hint Resolve per_approx_type_transitive : slow.
 
 Lemma per_bar_per_approx_implies_close {o} :
-  forall (ts : cts(o)) lib T T' eq,
-    per_bar (per_approx (close ts)) lib T T' eq
-    -> close ts lib T T' eq.
+  forall (ts : cts(o)) uk lib T T' eq,
+    per_bar (per_approx (close ts)) uk lib T T' eq
+    -> close ts uk lib T T' eq.
 Proof.
   introv per.
   apply CL_bar.
@@ -433,14 +433,14 @@ Qed.
 Hint Resolve per_approx_type_value_respecting : slow.
 
 Lemma type_equality_respecting_trans1_per_bar_per_approx_implies {o} :
-  forall (ts : cts(o)) lib T T' a b c d,
+  forall (ts : cts(o)) uk lib T T' a b c d,
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T  (mkc_approx a b)
     -> ccomputes_to_valc_ext lib T' (mkc_approx c d)
-    -> type_equality_respecting_trans1 (per_bar (per_approx (close ts))) lib T T'
-    -> type_equality_respecting_trans1 (close ts) lib T T'.
+    -> type_equality_respecting_trans1 (per_bar (per_approx (close ts))) uk lib T T'
+    -> type_equality_respecting_trans1 (close ts) uk lib T T'.
 Proof.
   introv tsts dou mon comp1 comp2 trans h ceq cl.
   apply per_bar_per_approx_implies_close.
@@ -461,14 +461,14 @@ Proof.
 Qed.
 
 Lemma type_equality_respecting_trans2_per_bar_per_approx_implies {o} :
-  forall (ts : cts(o)) lib T T' a b c d,
+  forall (ts : cts(o)) uk lib T T' a b c d,
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T  (mkc_approx a b)
     -> ccomputes_to_valc_ext lib T' (mkc_approx c d)
-    -> type_equality_respecting_trans2 (per_bar (per_approx (close ts))) lib T T'
-    -> type_equality_respecting_trans2 (close ts) lib T T'.
+    -> type_equality_respecting_trans2 (per_bar (per_approx (close ts))) uk lib T T'
+    -> type_equality_respecting_trans2 (close ts) uk lib T T'.
 Proof.
   introv tsts dou mon comp1 comp2 trans h ceq cl.
   apply per_bar_per_approx_implies_close.

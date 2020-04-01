@@ -91,9 +91,9 @@ Proof.
 Qed.
 
 Lemma per_nat_implies_per_nat_bar {o} :
-  forall ts lib (T T' : @CTerm o) eq,
-    per_nat ts lib T T' eq
-    -> per_nat_bar ts lib T T' eq.
+  forall ts uk lib (T T' : @CTerm o) eq,
+    per_nat ts uk lib T T' eq
+    -> per_nat_bar ts uk lib T T' eq.
 Proof.
   introv per.
   unfold per_nat in per; repnd.
@@ -106,12 +106,12 @@ Hint Resolve per_nat_implies_per_nat_bar : slow.
 (* ====== dest lemmas ====== *)
 
 Lemma dest_close_per_nat_l {p} :
-  forall (ts : cts(p)) lib T T' eq,
+  forall (ts : cts(p)) uk lib T T' eq,
     type_system ts
     -> defines_only_universes ts
     -> ccomputes_to_valc_ext lib T mkc_Nat
-    -> close ts lib T T' eq
-    -> per_nat_bar (close ts) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_nat_bar (close ts) uk lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
@@ -121,12 +121,12 @@ Proof.
 Qed.
 
 Lemma dest_close_per_nat_r {p} :
-  forall (ts : cts(p)) lib T T' eq,
+  forall (ts : cts(p)) uk lib T T' eq,
     type_system ts
     -> defines_only_universes ts
     -> ccomputes_to_valc_ext lib T' mkc_Nat
-    -> close ts lib T T' eq
-    -> per_nat_bar (close ts) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_nat_bar (close ts) uk lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
@@ -142,7 +142,7 @@ Lemma dest_close_per_nat_bar_l {p} :
     -> defines_only_universes ts
     -> type_monotone ts
     -> all_in_bar bar (fun lib => T ===>(lib) mkc_Nat)
-    -> close ts lib T T' eq
+    -> close ts uk lib T T' eq
     -> per_nat_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.
@@ -157,7 +157,7 @@ Lemma dest_close_per_nat_bar_r {p} :
     -> defines_only_universes ts
     -> type_monotone ts
     -> all_in_bar bar (fun lib => T' ===>(lib) mkc_Nat)
-    -> close ts lib T T' eq
+    -> close ts uk lib T T' eq
     -> per_nat_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.
@@ -172,7 +172,7 @@ Lemma dest_close_per_nat_ceq_bar_l {p} :
     -> defines_only_universes ts
     -> type_monotone ts
     -> T ==b==>(bar) mkc_Nat
-    -> close ts lib T T' eq
+    -> close ts uk lib T T' eq
     -> per_nat_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.
@@ -187,7 +187,7 @@ Lemma dest_close_per_nat_ceq_bar_r {p} :
     -> defines_only_universes ts
     -> type_monotone ts
     -> T' ==b==>(bar) mkc_Nat
-    -> close ts lib T T' eq
+    -> close ts uk lib T T' eq
     -> per_nat_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.

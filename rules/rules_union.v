@@ -60,7 +60,7 @@ Require Import list.
  *)
 Definition rule_union_equality {p}
            (A1 A2 B1 B2 : NTerm)
-           (i : nat)
+           (u i : nat)
            (H : @barehypotheses p) :=
   mk_rule
     (mk_baresequent
@@ -68,9 +68,9 @@ Definition rule_union_equality {p}
        (mk_conclax (mk_equality
                       (mk_union A1 B1)
                       (mk_union A2 B2)
-                      (mk_uni i))))
-    [ mk_baresequent H (mk_conclax (mk_equality A1 A2 (mk_uni i))),
-      mk_baresequent H (mk_conclax (mk_equality B1 B2 (mk_uni i)))
+                      (mk_uni u i))))
+    [ mk_baresequent H (mk_conclax (mk_equality A1 A2 (mk_uni u i))),
+      mk_baresequent H (mk_conclax (mk_equality B1 B2 (mk_uni u i)))
     ]
     [].
 
@@ -86,7 +86,7 @@ Definition rule_union_equality {p}
  *)
 Definition rule_inl_equality {p}
            (A B a1 a2 : NTerm)
-           (i : nat)
+           (u i : nat)
            (H : @barehypotheses p) :=
   mk_rule
     (mk_baresequent
@@ -97,7 +97,7 @@ Definition rule_inl_equality {p}
                       (mk_union A B)
                       )))
     [ mk_baresequent H (mk_conclax (mk_equality a1 a2 A)),
-      mk_baresequent H (mk_conclax (mk_equality B B (mk_uni i)))
+      mk_baresequent H (mk_conclax (mk_equality B B (mk_uni u i)))
     ]
     [].
 
@@ -114,7 +114,7 @@ Definition rule_inl_equality {p}
 
 Definition rule_inr_equality {p}
            (A B b1 b2 : NTerm)
-           (i : nat)
+           (u i : nat)
            (H : @barehypotheses p) :=
   mk_rule
     (mk_baresequent
@@ -125,7 +125,7 @@ Definition rule_inr_equality {p}
                       (mk_union A B)
                       )))
     [ mk_baresequent H (mk_conclax (mk_equality b1 b2 B)),
-      mk_baresequent H (mk_conclax (mk_equality A A (mk_uni i)))
+      mk_baresequent H (mk_conclax (mk_equality A A (mk_uni u i)))
     ]
     [].
 
@@ -141,13 +141,13 @@ Definition rule_inr_equality {p}
  *)
 Definition rule_inl_formation {p}
            (A B s : NTerm)
-           (i : nat)
+           (u i : nat)
            (H : @barehypotheses p) :=
   mk_rule
     (mk_baresequent H (mk_concl (mk_union A B) (mk_inl s)))
     [
       mk_baresequent H (mk_concl A s),
-      mk_baresequent H (mk_conclax (mk_member B (mk_uni i)))
+      mk_baresequent H (mk_conclax (mk_member B (mk_uni u i)))
     ]
     [].
 
@@ -164,26 +164,26 @@ Definition rule_inl_formation {p}
 
 Definition rule_inr_formation {p}
            (A B s : NTerm)
-           (i : nat)
+           (u i : nat)
            (H : @barehypotheses p) :=
   mk_rule
     (mk_baresequent H (mk_concl (mk_union A B) (mk_inr s)))
     [
       mk_baresequent H (mk_concl B s),
-      mk_baresequent H (mk_conclax (mk_member A (mk_uni i)))
+      mk_baresequent H (mk_conclax (mk_member A (mk_uni u i)))
     ]
     [].
 
 
 
 Lemma rule_inl_equality_true {p} :
-  forall lib,
+  forall uk lib,
   forall A B a1 a2 : NTerm,
   forall i : nat,
   forall H : @barehypotheses p,
-    rule_true lib
+    rule_true uk lib
               (rule_inl_equality
-                 A B a1 a2 i H).
+                 A B a1 a2 uk i H).
 Proof.
    unfold rule_inl_equality, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -219,7 +219,7 @@ Proof.
   repnd.
 
   generalize (teq_and_eq_if_equality
-                lib' (mk_union A B) (mk_inl a1) (mk_inl a2) s1 s2 H
+                uk lib' (mk_union A B) (mk_inl a1) (mk_inl a2) s1 s2 H
                 wT w1 w2 c1 c0 c2 c3  cT cT0  eqh sim);
     intro k; lsubst_tac; apply k; clear k; auto.
 
@@ -259,11 +259,11 @@ Proof.
      repnd.
 
      dimp teq1.
-     assert ( type lib' B1 ) as Btyp.
+     assert (type uk lib' B1 ) as Btyp.
      { apply equality_in_uni in hyp2.
        eapply tequality_refl; eauto 3 with slow. }
 
-     assert (equality lib' a11 a22  A1) as eq2.
+     assert (equality uk lib' a11 a22  A1) as eq2.
      + eapply equality_trans with (t2 := a12).
        {
          apply all_in_ex_bar_equality_implies_equality.
@@ -287,13 +287,13 @@ Proof.
 Qed.
 
 Lemma rule_inr_equality_true {p} :
-  forall lib,
+  forall uk lib,
   forall A B b1 b2 : NTerm,
   forall i : nat,
   forall H : @barehypotheses p,
-    rule_true lib
+    rule_true uk lib
          (rule_inr_equality
-                 A B b1 b2 i H).
+                 A B b1 b2 uk i H).
 Proof.
   unfold rule_inr_equality, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -329,7 +329,7 @@ Proof.
   repnd.
 
   generalize (teq_and_eq_if_equality
-                lib' (mk_union A B) (mk_inr b1) (mk_inr b2) s1 s2 H
+                uk lib' (mk_union A B) (mk_inr b1) (mk_inr b2) s1 s2 H
                 wT w1 w2 c1 c0 c2 c3  cT cT0  eqh sim);
     intro k; lsubst_tac; apply k; clear k; auto.
 
@@ -368,11 +368,11 @@ Proof.
     apply tequality_mkc_equality_implies in teq.
     repnd.
     dimp teq1.
-    assert ( type lib' A1 ) as Atyp.
+    assert (type uk lib' A1 ) as Atyp.
     { apply equality_in_uni in hyp2.
       eapply tequality_refl; eauto. }
 
-    assert (equality lib' b11 b22  B1) as eq2.
+    assert (equality uk lib' b11 b22  B1) as eq2.
     + eapply equality_trans with (t2 := b12).
       {
          apply all_in_ex_bar_equality_implies_equality.
@@ -394,11 +394,11 @@ Proof.
 Qed.
 
 Lemma rule_inl_formation_true3 {p} :
-  forall lib,
+  forall uk lib,
   forall A B s : NTerm,
   forall i : nat,
   forall H : @barehypotheses p,
-    rule_true3 lib (rule_inl_formation A B s i H).
+    rule_true3 uk lib (rule_inl_formation A B s uk i H).
 Proof.
   unfold rule_inl_formation, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros; repnd.
@@ -447,11 +447,11 @@ Proof.
 Qed.
 
 Lemma rule_inr_formation_true3 {p} :
-  forall lib,
+  forall uk lib,
   forall A B s : NTerm,
   forall i : nat,
   forall H : @barehypotheses p,
-    rule_true3 lib (rule_inr_formation A B s i H).
+    rule_true3 uk lib (rule_inr_formation A B s uk i H).
 Proof.
   unfold rule_inl_formation, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros; repnd.
@@ -500,14 +500,14 @@ Proof.
 Qed.
 
 Lemma rule_union_equality_true {p} :
-  forall lib,
+  forall uk lib,
   forall A1 A2 B1 B2 : NTerm,
   forall i : nat,
   forall H : @barehypotheses p,
-    rule_true lib
+    rule_true uk lib
          (rule_union_equality
                  A1 A2 B1 B2
-                 i
+                 uk i
                  H).
 Proof.
   unfold rule_union_equality, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -517,9 +517,9 @@ Proof.
   (* We prove the well-formedness of things *)
   inversion wg as [ wfh wfc ]; allsimpl.
   inversion wfc as [ wtt wte ]; allsimpl; clear wfc.
-  generalize (hyps (mk_baresequent H (mk_conclax (mk_equality A1 A2 (mk_uni i))))
+  generalize (hyps (mk_baresequent H (mk_conclax (mk_equality A1 A2 (mk_uni uk i))))
                    (inl eq_refl))
-             (hyps (mk_baresequent H (mk_conclax (mk_equality B1 B2 (mk_uni i))))
+             (hyps (mk_baresequent H (mk_conclax (mk_equality B1 B2 (mk_uni uk i))))
                    (inr (inl eq_refl)));
     simpl; intros hyp1 hyp2; clear hyps.
   destruct hyp1 as [ ws1 hyp1 ].
@@ -545,13 +545,13 @@ Proof.
 
   vr_seq_true.
   lsubst_tac.
-  assert (tequality lib (mkc_uni i) (mkc_uni i)) as Z by
+  assert (tequality uk lib (mkc_uni uk i) (mkc_uni uk i)) as Z by
         (apply tequality_mkc_uni).
   assert (wf_term (mk_union A1 B1)) as wfa by (apply wf_union; auto).
   assert (wf_term (mk_union A2 B2)) as wfb by (apply wf_union; auto).
 
   pose proof (teq_and_eq_if_equality
-                lib' (@mk_uni p i) (mk_union A1 B1) (mk_union A2 B2)
+                uk lib' (@mk_uni p uk i) (mk_union A1 B1) (mk_union A2 B2)
                 s1 s2 H wT wfa wfb c1 c0 c2 c3 cT cT0 eqh sim) as X.
   lsubst_tac.
   allrw @member_eq; allrw <- @member_equality_iff.
@@ -572,7 +572,7 @@ Proof.
   repeat (dest_imp hyp1 h); repeat (dest_imp hyp2 h); exrepnd.
   lsubst_tac.
   allrw @member_eq; allrw <- @member_equality_iff.
-  rw @tequality_mkc_equality in hyp0; rw @tequality_mkc_equality in hyp3; repnd.
+  rw (@tequality_mkc_equality p uk) in hyp0; rw (@tequality_mkc_equality p uk) in hyp3; repnd.
   dands; auto.
 
   - generalize_lsubstc_terms A11.
@@ -584,13 +584,13 @@ Proof.
     apply all_in_ex_bar_equality_implies_equality.
     eapply all_in_ex_bar_modus_ponens4;[|exact hyp9|exact hyp0|exact aa|exact bb]; clear hyp9 hyp0 aa bb; introv y hyp9 hyp0 aa bb; exrepnd; spcast.
 
-    assert (equality lib'0 A11 A12 (mkc_uni i)) as eq1 by
+    assert (equality uk lib'0 A11 A12 (mkc_uni uk i)) as eq1 by
           ( destruct aa; auto;
             spcast; apply equality_respects_cequivc; auto;
             eapply equality_refl; eauto 3 with slow).
-    assert (equality lib'0 A21 A11 (mkc_uni i)) by
+    assert (equality uk lib'0 A21 A11 (mkc_uni uk i)) by
         (apply equality_sym; eauto 3 with slow).
-    assert (equality lib'0 A21 A22 (mkc_uni i)) as eq2 by
+    assert (equality uk lib'0 A21 A22 (mkc_uni uk i)) as eq2 by
           (destruct bb; auto;
            spcast; apply equality_respects_cequivc; auto;
            eapply equality_refl; eauto 3 with slow).
@@ -605,13 +605,13 @@ Proof.
     apply all_in_ex_bar_equality_implies_equality.
     eapply all_in_ex_bar_modus_ponens4;[|exact hyp6|exact hyp3|exact aa|exact bb]; clear hyp6 hyp3 aa bb; introv y hyp6 hyp3 aa bb; exrepnd; spcast.
 
-    assert (equality lib'0 B11 B12 (mkc_uni i)) as eq1 by
+    assert (equality uk lib'0 B11 B12 (mkc_uni uk i)) as eq1 by
           ( destruct aa; auto;
             spcast; apply equality_respects_cequivc; auto;
             eapply equality_refl; eauto 3 with slow).
-    assert (equality lib'0 B21 B11 (mkc_uni i)) by
+    assert (equality uk lib'0 B21 B11 (mkc_uni uk i)) by
         (apply equality_sym; eauto 3 with slow).
-    assert (equality lib'0 B21 B22 (mkc_uni i)) as eq2 by
+    assert (equality uk lib'0 B21 B22 (mkc_uni uk i)) as eq2 by
           (destruct bb; auto;
            spcast; apply equality_respects_cequivc; auto;
            eapply equality_refl; eauto 3 with slow).
@@ -669,11 +669,11 @@ Hint Rewrite @nh_vars_hyps_snoc : core.
 Hint Rewrite @nh_vars_hyps_lsubst_hyps : slow core.
 
 Lemma rule_union_elimination_true {p} :
-  forall lib,
+  forall uk lib,
   forall A B C l r : NTerm,
   forall z x y : NVar,
   forall H J: @barehypotheses p,
-    rule_true lib
+    rule_true uk lib
          (rule_union_elimination
                  A B C l r z x y H J).
 Proof.

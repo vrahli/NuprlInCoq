@@ -78,7 +78,7 @@ Lemma per_base_bar_term_symmetric {p} :
   forall (ts : cts(p)), term_symmetric (per_base_bar ts).
 Proof.
   introv; unfold term_symmetric, term_equality_symmetric, per_base_bar.
-  introv k e; repnd.
+  introv uk k e; repnd.
   allrw.
   apply k in e.
   unfold per_base_eq in *; exrepnd.
@@ -91,7 +91,7 @@ Lemma per_base_bar_term_transitive {p} :
   forall (ts : cts(p)), term_transitive (per_base_bar ts).
 Proof.
   unfold term_transitive, term_equality_transitive, per_base_bar.
-  introv cts per i j.
+  introv uk cts per i j.
   exrepnd.
   rw per in i; rw per in j; rw per; clear per.
   allunfold @per_base_eq; exrepnd.
@@ -141,9 +141,9 @@ Proof.
 Qed.
 
 Lemma per_base_bar_implies_close {o} :
-  forall (ts : cts(o)) lib T T' eq,
-    per_base_bar (close ts) lib T T' eq
-    -> close ts lib T T' eq.
+  forall (ts : cts(o)) uk lib T T' eq,
+    per_base_bar (close ts) uk lib T T' eq
+    -> close ts uk lib T T' eq.
 Proof.
   introv per.
   apply CL_bar.
@@ -172,14 +172,14 @@ Proof.
 Qed.
 
 Lemma type_equality_respecting_trans1_per_base_bar_implies {o} :
-  forall (ts : cts(o)) lib T T',
+  forall (ts : cts(o)) uk lib T T',
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T mkc_base
     -> ccomputes_to_valc_ext lib T' mkc_base
-    -> type_equality_respecting_trans1 (per_base_bar (close ts)) lib T T'
-    -> type_equality_respecting_trans1 (close ts) lib T T'.
+    -> type_equality_respecting_trans1 (per_base_bar (close ts)) uk lib T T'
+    -> type_equality_respecting_trans1 (close ts) uk lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
   apply per_base_bar_implies_close.
@@ -200,14 +200,14 @@ Proof.
 Qed.
 
 Lemma type_equality_respecting_trans2_per_base_bar_implies {o} :
-  forall (ts : cts(o)) lib T T',
+  forall (ts : cts(o)) uk lib T T',
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T mkc_base
     -> ccomputes_to_valc_ext lib T' mkc_base
-    -> type_equality_respecting_trans2 (per_base_bar (close ts)) lib T T'
-    -> type_equality_respecting_trans2 (close ts) lib T T'.
+    -> type_equality_respecting_trans2 (per_base_bar (close ts)) uk lib T T'
+    -> type_equality_respecting_trans2 (close ts) uk lib T T'.
 Proof.
   introv tsts dou mon inbar1 inbar2 trans h ceq cl.
   apply per_base_bar_implies_close.

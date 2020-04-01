@@ -199,8 +199,8 @@ Proof.
 Qed.*)
 
 Lemma term_symmetric_in_open_bar_ext_implies {o} :
-  forall (lib : @library o) ts T T' (eqa : lib-per(lib,o)),
-    in_open_bar_ext lib (fun lib' x => ts lib' T T' (eqa lib' x))
+  forall uk (lib : @library o) ts T T' (eqa : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => ts uk lib' T T' (eqa lib' x))
     -> term_symmetric ts
     -> in_open_bar_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x)).
 Proof.
@@ -248,8 +248,8 @@ Proof.
 Qed.*)
 
 Lemma term_transitive_in_open_bar_ext_implies {o} :
-  forall (lib : @library o) ts T T' (eqa : lib-per(lib,o)),
-    in_open_bar_ext lib (fun lib' x => ts lib' T T' (eqa lib' x))
+  forall uk (lib : @library o) ts T T' (eqa : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => ts uk lib' T T' (eqa lib' x))
     -> term_transitive ts
     -> in_open_bar_ext lib (fun lib' x => term_equality_transitive (eqa lib' x)).
 Proof.
@@ -299,8 +299,8 @@ Proof.
 Qed.*)
 
 Lemma term_value_respecting_in_open_bar_ext_implies {o} :
-  forall (lib : @library o) ts T (eqa : lib-per(lib,o)),
-    in_open_bar_ext lib (fun lib' x => ts lib' T T (eqa lib' x))
+  forall uk (lib : @library o) ts T (eqa : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => ts uk lib' T T (eqa lib' x))
     -> term_value_respecting ts
     -> in_open_bar_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x)).
 Proof.
@@ -338,8 +338,8 @@ Qed.
 Hint Resolve term_value_respecting_per_bar : slow.
 
 Definition uniquely_valued2 {p} (ts : cts(p)) :=
-  forall lib T T1 T2 eq eq',
-    ts lib T T1 eq -> ts lib T T2 eq' -> eq <=2=> eq'.
+  forall uk lib T T1 T2 eq eq',
+    ts uk lib T T1 eq -> ts uk lib T T2 eq' -> eq <=2=> eq'.
 
 Lemma uniquely_valued2_per_bar {o} :
   forall (ts : cts(o)),

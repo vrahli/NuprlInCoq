@@ -66,18 +66,18 @@ Fixpoint lib_free_from_choice_seq_name {o} (lib : @plibrary o) (name : choice_se
       # lib_free_from_choice_seq_name es name
   end.
 
-Definition sequent_true_ex_ext {o} lib (s : @csequent o) :=
-  {lib' : library & lib_extends lib' lib # sequent_true lib' s}.
+Definition sequent_true_ex_ext {o} uk lib (s : @csequent o) :=
+  {lib' : library & lib_extends lib' lib # sequent_true uk lib' s}.
 
-Definition rule_true_ex_ext {o} lib (R : @rule o) : Type :=
+Definition rule_true_ex_ext {o} uk lib (R : @rule o) : Type :=
   forall wg : wf_sequent (goal R),
   forall cg : closed_type_baresequent (goal R),
   forall cargs: args_constraints (sargs R) (hyps (goal R)),
   forall hyps : (forall s : baresequent,
                    LIn s (subgoals R)
-                   -> {c : wf_csequent s & sequent_true lib (mk_wcseq s c)}),
+                   -> {c : wf_csequent s & sequent_true uk lib (mk_wcseq s c)}),
     {c : closed_extract_baresequent (goal R)
-     & sequent_true_ex_ext lib (mk_wcseq (goal R) (ext_wf_cseq (goal R) wg cg c))}.
+     & sequent_true_ex_ext uk lib (mk_wcseq (goal R) (ext_wf_cseq (goal R) wg cg c))}.
 
 
 Definition ls1 {o} (n f a : NVar) : @NTerm o :=
@@ -207,7 +207,7 @@ Qed.
 Hint Rewrite @lsubstc_ls1_eq : slow.
 
 (* MOVE *)
-Lemma tequality_mkc_tnat {o} : forall lib, @tequality o lib mkc_tnat mkc_tnat.
+Lemma tequality_mkc_tnat {o} : forall uk lib, @tequality o uk lib mkc_tnat mkc_tnat.
 Proof.
   introv; apply tnat_type.
 Qed.
@@ -343,7 +343,7 @@ Proof.
 Qed.
 
 Lemma implies_equality_natk2nat_bar {o} :
-  forall lib (f g : @CTerm o) n,
+  forall uk lib (f g : @CTerm o) n,
     in_open_bar
       lib
       (fun lib =>
@@ -352,7 +352,7 @@ Lemma implies_equality_natk2nat_bar {o} :
            -> {k : nat
                , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)
                # ccomputes_to_valc_ext lib (mkc_apply g (mkc_nat m)) (mkc_nat k)})
-    -> equality lib f g (natk2nat (mkc_nat n)).
+    -> equality uk lib f g (natk2nat (mkc_nat n)).
 Proof.
   introv imp.
   apply equality_in_fun; dands; eauto 3 with slow.
@@ -399,14 +399,14 @@ Proof.
 Qed.
 
 Lemma implies_member_natk2nat_bar {o} :
-  forall lib (f : @CTerm o) n,
+  forall uk lib (f : @CTerm o) n,
     in_open_bar
       lib
       (fun lib =>
          forall m,
            m < n
            -> {k : nat , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)})
-    -> member lib f (natk2nat (mkc_nat n)).
+    -> member uk lib f (natk2nat (mkc_nat n)).
 Proof.
   introv imp.
   apply implies_equality_natk2nat_bar.
@@ -750,13 +750,13 @@ Qed.
 Hint Resolve lib_extends_preserves_sat_cond_name2restr : slow.
 
 Lemma mkc_choice_seq_in_natk2nat {o} :
-  forall (lib : @library o) (name : choice_sequence_name) k,
+  forall uk (lib : @library o) (name : choice_sequence_name) k,
     compatible_choice_sequence_name 0 name
     -> no_repeats_library lib
     -> safe_library lib
     -> lib_cond_sat_def lib
     -> sat_cond_name2restr lib name
-    -> member lib (mkc_choice_seq name) (natk2nat (mkc_nat k)).
+    -> member uk lib (mkc_choice_seq name) (natk2nat (mkc_nat k)).
 Proof.
   introv comp norep safe sat satr.
   apply implies_member_natk2nat_bar.
@@ -812,13 +812,13 @@ Qed.
 Hint Resolve comp0_implies_sat_cond_name2restr : slow.
 
 Lemma equality_in_csname_implies_equality_in_natk2nat {o} :
-  forall (lib : library) (a b t : @CTerm o) k,
+  forall uk (lib : library) (a b t : @CTerm o) k,
     no_repeats_library lib
     -> safe_library lib
     -> lib_cond_sat_def lib
     -> ccomputes_to_valc_ext lib t (mkc_nat k)
-    -> equality lib a b (mkc_csname 0)
-    -> equality lib a b (natk2nat t).
+    -> equality uk lib a b (mkc_csname 0)
+    -> equality uk lib a b (natk2nat t).
 Proof.
   introv norep safe sat comp ecs.
   apply equality_in_csname in ecs.
@@ -927,8 +927,8 @@ Proof.
 Qed.
 
 Lemma equality_natk2nat_implies2 {o} :
-  forall lib (f g : @CTerm o) n,
-    equality lib f g (natk2nat (mkc_nat n))
+  forall uk lib (f g : @CTerm o) n,
+    equality uk lib f g (natk2nat (mkc_nat n))
     -> in_open_bar
          lib
          (fun lib =>
@@ -952,9 +952,9 @@ Proof.
 Qed.
 
 Lemma all_in_ex_bar_inhabited_type_bar_implies_inhabited_type_bar {o} :
-  forall lib (A : @CTerm o),
-    in_open_bar lib (fun lib => inhabited_type_bar lib A)
-    -> inhabited_type_bar lib A.
+  forall uk lib (A : @CTerm o),
+    in_open_bar lib (fun lib => inhabited_type_bar uk lib A)
+    -> inhabited_type_bar uk lib A.
 Proof.
   introv h.
   unfold inhabited_type_bar in *.
@@ -1053,13 +1053,13 @@ Qed.
 Hint Resolve csn_kind_seq_implies_is_primitive_kind : slow.
 
 Lemma implies_equality_natk2nat_prop {o} :
-  forall lib (f g : @CTerm o) n,
+  forall uk lib (f g : @CTerm o) n,
     (forall m,
        m < n
        -> {k : nat
            , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)
            # ccomputes_to_valc_ext lib (mkc_apply g (mkc_nat m)) (mkc_nat k)})
-    -> equality lib f g (natk2nat (mkc_nat n)).
+    -> equality uk lib f g (natk2nat (mkc_nat n)).
 Proof.
   introv imp.
   apply equality_in_fun; dands; eauto 3 with slow.
@@ -1238,11 +1238,11 @@ Hint Resolve lib_extends_preserves_name_in_library : slow.
 
 
 Lemma implies_member_nat2nat_bar {o} :
-  forall lib (f : @CTerm o),
+  forall uk lib (f : @CTerm o),
     in_open_bar
       lib
       (fun lib => forall m, {k : nat , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)})
-    -> member lib f nat2nat.
+    -> member uk lib f nat2nat.
 Proof.
   introv imp.
   apply equality_in_fun; dands; eauto 3 with slow.
@@ -1278,7 +1278,7 @@ Proof.
 Qed.
 
 Lemma implies_member_nat2nat_bar2 {o} :
-  forall lib (f : @CTerm o),
+  forall uk lib (f : @CTerm o),
     in_open_bar
       lib
       (fun lib =>
@@ -1286,7 +1286,7 @@ Lemma implies_member_nat2nat_bar2 {o} :
            in_open_bar
              lib
              (fun lib => {k : nat , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)}))
-    -> member lib f nat2nat.
+    -> member uk lib f nat2nat.
 Proof.
   introv imp.
   apply equality_in_fun; dands; eauto 3 with slow.
@@ -1321,12 +1321,12 @@ Proof.
 Qed.
 
 Lemma mkc_choice_seq_in_nat2nat {o} :
-  forall (lib : @library o) (name : choice_sequence_name),
+  forall uk (lib : @library o) (name : choice_sequence_name),
     compatible_choice_sequence_name 0 name
     -> no_repeats_library lib
     -> safe_library lib
     -> lib_cond_sat_def lib
-    -> member lib (mkc_choice_seq name) nat2nat.
+    -> member uk lib (mkc_choice_seq name) nat2nat.
 Proof.
   introv comp norep safe sat.
   apply implies_member_nat2nat_bar2.
@@ -1369,12 +1369,12 @@ Proof.
 Qed.
 
 Lemma equality_in_csname_implies_equality_in_nat2nat {o} :
-  forall (lib : library) (a b : @CTerm o),
+  forall uk (lib : library) (a b : @CTerm o),
     no_repeats_library lib
     -> safe_library lib
     -> lib_cond_sat_def lib
-    -> equality lib a b (mkc_csname 0)
-    -> equality lib a b nat2nat.
+    -> equality uk lib a b (mkc_csname 0)
+    -> equality uk lib a b nat2nat.
 Proof.
   introv norep safe sat ecs.
   apply equality_in_csname in ecs.

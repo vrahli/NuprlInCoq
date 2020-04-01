@@ -1631,7 +1631,7 @@ Lemma compute_step_tuni_success {p} :
          arg1c = Nint (Z.of_nat n)
          # arg1bts = []
          # bstr = []
-         # u = @mk_uni p n}.
+         # u = @mk_uni p 0 n}.
 Proof.
   introv e.
   unfold compute_step_tuni in e.
@@ -9294,7 +9294,7 @@ Proof.
   rw @sorange_mk_abs_subst in i; auto.
 Qed.
 
-Lemma nt_wf_mk_uni {o} : forall n, @nt_wf o (mk_uni n).
+Lemma nt_wf_mk_uni {o} : forall u n, @nt_wf o (mk_uni u n).
 Proof.
   introv.
   repeat constructor; simpl; tcsp.

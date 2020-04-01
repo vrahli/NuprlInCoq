@@ -56,12 +56,12 @@ Require Export per_props_util2.
 (* begin hide *)
 
 Lemma member_equality {o} :
-  forall lib (t1 t2 T : @CTerm o),
-    equality lib t1 t2 T
-    -> member lib mkc_axiom (mkc_equality t1 t2 T).
+  forall uk lib (t1 t2 T : @CTerm o),
+    equality uk lib t1 t2 T
+    -> member uk lib mkc_axiom (mkc_equality t1 t2 T).
 Proof.
   introv h.
-  assert (forall lib' (x : lib_extends lib' lib), equality lib' t1 t2 T) as q by eauto 3 with slow.
+  assert (forall lib' (x : lib_extends lib' lib), equality uk lib' t1 t2 T) as q by eauto 3 with slow.
   clear h.
   apply choice_ext_lib_eq in q; exrepnd.
 
@@ -230,11 +230,11 @@ Qed.
 Hint Resolve local_per_bar_per_eq_nuprli : slow.
 
 Lemma dest_nuprl_per_eq_l {o} :
-  forall (ts : cts(o)) lib T a1 a2 A T' eq,
+  forall (ts : cts(o)) uk lib T a1 a2 A T' eq,
     ts = univ
     -> ccomputes_to_valc_ext lib T (mkc_equality a1 a2 A)
-    -> close ts lib T T' eq
-    -> per_bar (per_eq (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_eq (close ts)) uk lib T T' eq.
 Proof.
   introv equ comp cl.
   assert (type_system ts) as sys by (subst; eauto 3 with slow).
@@ -247,11 +247,11 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_per_eq_l {o} :
-  forall i (ts : cts(o)) lib T a1 a2 A T' eq,
+  forall i (ts : cts(o)) uk lib T a1 a2 A T' eq,
     ts = univi_bar i
     -> ccomputes_to_valc_ext lib T (mkc_equality a1 a2 A)
-    -> close ts lib T T' eq
-    -> per_bar (per_eq (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_eq (close ts)) uk lib T T' eq.
 Proof.
   introv equ comp cl.
   assert (type_system ts) as sys by (subst; eauto 3 with slow).
@@ -264,9 +264,9 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_equality {o} :
-  forall (lib : @library o) a1 a2 A b1 b2 B eq,
-    nuprl lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq
-    -> per_bar (per_eq nuprl) lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq.
+  forall uk (lib : @library o) a1 a2 A b1 b2 B eq,
+    nuprl uk lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq
+    -> per_bar (per_eq nuprl) uk lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq.
 Proof.
   introv cl.
   unfold nuprl in cl.
@@ -275,9 +275,9 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_equality {o} :
-  forall i (lib : @library o) a1 a2 A b1 b2 B eq,
-    nuprli i lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq
-    -> per_bar (per_eq (nuprli i)) lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq.
+  forall i uk (lib : @library o) a1 a2 A b1 b2 B eq,
+    nuprli i uk lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq
+    -> per_bar (per_eq (nuprli i)) uk lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq.
 Proof.
   introv cl.
   unfold nuprli in cl.
@@ -286,12 +286,12 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_equality2 {o} :
-  forall lib (eq : per(o)) a1 a2 A b1 b2 B,
-    nuprl lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq
+  forall uk lib (eq : per(o)) a1 a2 A b1 b2 B,
+    nuprl uk lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq
     ->
     exists (eqa : lib-per(lib,o)),
       (eq <=2=> (per_bar_eq lib (eq_per_eq_bar_lib_per lib a1 a2 eqa)))
-        # in_open_bar_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x))
+        # in_open_bar_ext lib (fun lib' x => nuprl uk lib' A B (eqa lib' x))
         # in_open_bar_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) a1 b1)
         # in_open_bar_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) a2 b2).
 Proof.
@@ -303,7 +303,7 @@ Proof.
             lib
             (fun lib' x =>
                {eqa0 : lib-per(lib',o)
-               , in_ext_ext lib' (fun lib'' y => nuprl lib'' A B (eqa0 lib'' y))
+               , in_ext_ext lib' (fun lib'' y => nuprl uk lib'' A B (eqa0 lib'' y))
                # eqorceq_ext lib' eqa0 a1 b1
                # eqorceq_ext lib' eqa0 a2 b2
                # (eqa lib' x) <=2=> (eq_per_eq_bar lib' a1 a2 eqa0) })) as e.
@@ -405,12 +405,12 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_equality2 {o} :
-  forall i lib (eq : per(o)) a1 a2 A b1 b2 B,
-    nuprli i lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq
+  forall i uk lib (eq : per(o)) a1 a2 A b1 b2 B,
+    nuprli i uk lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) eq
     ->
     exists (eqa : lib-per(lib,o)),
       (eq <=2=> (per_bar_eq lib (eq_per_eq_bar_lib_per lib a1 a2 eqa)))
-        # in_open_bar_ext lib (fun lib' x => nuprli i lib' A B (eqa lib' x))
+        # in_open_bar_ext lib (fun lib' x => nuprli i uk lib' A B (eqa lib' x))
         # in_open_bar_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) a1 b1)
         # in_open_bar_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) a2 b2).
 Proof.
@@ -422,7 +422,7 @@ Proof.
             lib
             (fun lib' x =>
                {eqa0 : lib-per(lib',o)
-               , in_ext_ext lib' (fun lib'' y => nuprli i lib'' A B (eqa0 lib'' y))
+               , in_ext_ext lib' (fun lib'' y => nuprli i uk lib'' A B (eqa0 lib'' y))
                # eqorceq_ext lib' eqa0 a1 b1
                # eqorceq_ext lib' eqa0 a2 b2
                # (eqa lib' x) <=2=> (eq_per_eq_bar lib' a1 a2 eqa0) })) as e.
@@ -537,9 +537,9 @@ Qed.
  *)
 
 Lemma member_equality_iff {o} :
-  forall lib (t1 t2 T : @CTerm o),
-    equality lib t1 t2 T
-    <=> member lib mkc_axiom (mkc_equality t1 t2 T).
+  forall uk lib (t1 t2 T : @CTerm o),
+    equality uk lib t1 t2 T
+    <=> member uk lib mkc_axiom (mkc_equality t1 t2 T).
 Proof.
   introv; split; intro e.
 
@@ -563,23 +563,23 @@ Qed.
 (* begin hide *)
 
 Lemma member_member_iff {p} :
-  forall lib (t T : @CTerm p),
-    member lib t T
-    <=> member lib mkc_axiom (mkc_member t T).
+  forall uk lib (t T : @CTerm p),
+    member uk lib t T
+    <=> member uk lib mkc_axiom (mkc_member t T).
 Proof.
   sp; rewrite <- fold_mkc_member.
   apply member_equality_iff.
 Qed.
 
 Lemma if_member_vsubtype {p} :
-  forall lib (A : @CTerm p) v B,
-    member lib mkc_axiom (mkc_vsubtype A v B)
-    -> forall x y, equality lib x y A -> equality lib x y B.
+  forall uk lib (A : @CTerm p) v B,
+    member uk lib mkc_axiom (mkc_vsubtype A v B)
+    -> forall x y, equality uk lib x y A -> equality uk lib x y B.
 Proof.
   introv; rewrite <- fold_mkc_vsubtype; introv m e.
   apply member_member_iff in m.
 
-  pose proof (if_member_function lib mkc_id A v (cvterm_var v B) m lib (lib_extends_refl lib) x y e) as q.
+  pose proof (if_member_function uk lib mkc_id A v (cvterm_var v B) m lib (lib_extends_refl lib) x y e) as q.
 
   eapply equality_respects_cequivc_left in q;
     [|introv ext; spcast; apply reduces_toc_implies_cequivc; apply reduces_toc_apply_id].
@@ -590,8 +590,8 @@ Proof.
 Qed.
 
 Lemma member_equality_is_axiom {p} :
-  forall lib (t1 t2 T a b : @CTerm p),
-    equality lib a b (mkc_equality t1 t2 T)
+  forall uk lib (t1 t2 T a b : @CTerm p),
+    equality uk lib a b (mkc_equality t1 t2 T)
     -> in_open_bar lib (fun lib => a ===>(lib) mkc_axiom # b ===>(lib) mkc_axiom).
 Proof.
   unfold equality, nuprl; introv e; exrepd.
@@ -608,15 +608,15 @@ Proof.
 Qed.
 
 Lemma tequality_equality_if_cequivc {p} :
-  forall lib (t1 t2 t3 t4 A B : @CTerm p),
-    tequality lib A B
+  forall uk lib (t1 t2 t3 t4 A B : @CTerm p),
+    tequality uk lib A B
     -> ccequivc_ext lib t1 t3
     -> ccequivc_ext lib t2 t4
-    -> tequality lib (mkc_equality t1 t2 A) (mkc_equality t3 t4 B).
+    -> tequality uk lib (mkc_equality t1 t2 A) (mkc_equality t3 t4 B).
 Proof.
   introv teq ceq1 ceq2.
   unfold tequality in teq; exrepnd.
-  pose proof (nuprl_monotone_func lib A B eq teq0) as tya; exrepnd.
+  pose proof (nuprl_monotone_func uk lib A B eq teq0) as tya; exrepnd.
   rename eq' into eqa.
 
   exists (eq_per_eq_bar lib t1 t2 eqa).
@@ -626,13 +626,13 @@ Proof.
 Qed.
 
 Lemma tequality_mkc_equality_implies {o} :
-  forall lib (a1 a2 b1 b2 A B : @CTerm o),
-    tequality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B)
+  forall uk lib (a1 a2 b1 b2 A B : @CTerm o),
+    tequality uk lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B)
     ->
     (
-      tequality lib A B
-      # (equality lib a1 a2 A -> equality lib b1 b2 B)
-      # in_open_bar lib (fun lib => (equality lib a1 b1 A {+} ccequivc_ext lib a1 b1))
+      tequality uk lib A B
+      # (equality uk lib a1 a2 A -> equality uk lib b1 b2 B)
+      # in_open_bar lib (fun lib => (equality uk lib a1 b1 A {+} ccequivc_ext lib a1 b1))
     ).
 Proof.
   introv teq; unfold tequality in teq; exrepnd.
@@ -641,24 +641,24 @@ Proof.
   dands; tcsp; eauto 3 with slow;[].
 
   introv ea.
-  eapply (all_in_bar_ext_eqorceq_commutes_equality lib a1 b1 a2 b2); eauto.
+  eapply (all_in_bar_ext_eqorceq_commutes_equality uk lib a1 b1 a2 b2); eauto.
 Qed.
 
 Lemma tequality_mkc_equality_in_universe_true {p} :
-  forall lib (a1 b1 a2 b2 : @CTerm p) i,
-    tequality lib (mkc_equality a1 b1 (mkc_uni i)) (mkc_equality a2 b2 (mkc_uni i))
-    -> equality lib a1 b1 (mkc_uni i)
-    -> equality lib a2 b2 (mkc_uni i).
+  forall uk lib (a1 b1 a2 b2 : @CTerm p) i,
+    tequality uk lib (mkc_equality a1 b1 (mkc_uni uk i)) (mkc_equality a2 b2 (mkc_uni uk i))
+    -> equality uk lib a1 b1 (mkc_uni uk i)
+    -> equality uk lib a2 b2 (mkc_uni uk i).
 Proof.
   introv t e.
   allapply @tequality_mkc_equality_implies; sp.
 Qed.
 
 Lemma equality_in_universe {p} :
-  forall lib (a1 b1 a2 b2 : @CTerm p) i,
-    tequality lib (mkc_equality a1 b1 (mkc_uni i)) (mkc_equality a2 b2 (mkc_uni i))
-    -> equality lib a1 b1 (mkc_uni i)
-    -> tequality lib a2 b2.
+  forall uk lib (a1 b1 a2 b2 : @CTerm p) i,
+    tequality uk lib (mkc_equality a1 b1 (mkc_uni uk i)) (mkc_equality a2 b2 (mkc_uni uk i))
+    -> equality uk lib a1 b1 (mkc_uni uk i)
+    -> tequality uk lib a2 b2.
 Proof.
   introv t e.
   apply tequality_mkc_equality_in_universe_true in t; sp.
@@ -666,14 +666,14 @@ Proof.
 Qed.
 
 Lemma tequality_mkc_equality {o} :
-  forall lib (a1 a2 b1 b2 A B : @CTerm o),
-    tequality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B)
+  forall uk lib (a1 a2 b1 b2 A B : @CTerm o),
+    tequality uk lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B)
     <=>
     (
-      tequality lib A B
-      # (equality lib a1 a2 A <=> equality lib b1 b2 B)
-      # in_open_bar lib (fun lib' => equality lib' a1 b1 A {+} ccequivc_ext lib' a1 b1)
-      # in_open_bar lib (fun lib' => equality lib' a2 b2 A {+} ccequivc_ext lib' a2 b2)
+      tequality uk lib A B
+      # (equality uk lib a1 a2 A <=> equality uk lib b1 b2 B)
+      # in_open_bar lib (fun lib' => equality uk lib' a1 b1 A {+} ccequivc_ext lib' a1 b1)
+      # in_open_bar lib (fun lib' => equality uk lib' a2 b2 A {+} ccequivc_ext lib' a2 b2)
     ).
 Proof.
   introv; split; intro k.
@@ -686,7 +686,7 @@ Proof.
   - repnd.
     allunfold @tequality; exrepnd.
 
-    pose proof (nuprl_monotone_func lib A B eq k3) as tya; exrepnd.
+    pose proof (nuprl_monotone_func uk lib A B eq k3) as tya; exrepnd.
     rename eq' into eqa.
     exists (per_bar_eq lib (eq_per_eq_bar_lib_per lib a1 a2 eqa)).
     apply CL_bar; exists (eq_per_eq_bar_lib_per lib a1 a2 eqa).
@@ -711,7 +711,7 @@ Proof.
         pose proof (tya0 _ (lib_extends_trans e0 e)) as tya0; repnd;
         try (eapply equality_monotone in k; eauto);
         try (eapply equality_monotone in k2; eauto);
-        eapply (equality_eq1 lib'0 A B); auto.
+        eapply (equality_eq1 uk lib'0 A B); auto.
     }
 
     {
@@ -721,18 +721,18 @@ Proof.
         pose proof (tya0 _ (lib_extends_trans e0 e)) as tya0; repnd;
         try (eapply equality_monotone in k; eauto);
         try (eapply equality_monotone in k2; eauto);
-        eapply (equality_eq1 lib'0 A B); auto.
+        eapply (equality_eq1 uk lib'0 A B); auto.
     }
 Qed.
 
 Lemma tequality_mkc_equality_sp {o} :
-  forall lib (a1 a2 b1 b2 A B : @CTerm o),
-    tequality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B)
+  forall uk lib (a1 a2 b1 b2 A B : @CTerm o),
+    tequality uk lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B)
     <=>
     (
-      tequality lib A B
-      # in_open_bar lib (fun lib => equality lib a1 b1 A {+} ccequivc_ext lib a1 b1)
-      # in_open_bar lib (fun lib => equality lib a2 b2 A {+} ccequivc_ext lib a2 b2)
+      tequality uk lib A B
+      # in_open_bar lib (fun lib => equality uk lib a1 b1 A {+} ccequivc_ext lib a1 b1)
+      # in_open_bar lib (fun lib => equality uk lib a2 b2 A {+} ccequivc_ext lib a2 b2)
     ).
 Proof.
   introv; split; intro k.
@@ -745,7 +745,7 @@ Proof.
   - repnd.
     allunfold @tequality; exrepnd.
 
-    pose proof (nuprl_monotone_func lib A B eq k2) as tya; exrepnd.
+    pose proof (nuprl_monotone_func uk lib A B eq k2) as tya; exrepnd.
     rename eq' into eqa.
     exists (per_bar_eq lib (eq_per_eq_bar_lib_per lib a1 a2 eqa)).
     apply CL_bar; exists (eq_per_eq_bar_lib_per lib a1 a2 eqa).
@@ -770,7 +770,7 @@ Proof.
         pose proof (tya0 _ (lib_extends_trans e0 e)) as tya0; repnd;
         try (eapply equality_monotone in k; eauto);
         try (eapply equality_monotone in k1; eauto);
-        eapply (equality_eq1 lib'0 A B); auto.
+        eapply (equality_eq1 uk lib'0 A B); auto.
     }
 
     {
@@ -780,138 +780,138 @@ Proof.
         pose proof (tya0 _ (lib_extends_trans e0 e)) as tya0; repnd;
         try (eapply equality_monotone in k; eauto);
         try (eapply equality_monotone in k1; eauto);
-        eapply (equality_eq1 lib'0 A B); auto.
+        eapply (equality_eq1 uk lib'0 A B); auto.
     }
 Qed.
 
 Lemma tequality_mkc_equality_if_equal {p} :
-  forall lib (a1 a2 b1 b2 A B : @CTerm p),
-    tequality lib A B
-    -> equality lib a1 b1 A
-    -> equality lib a2 b2 A
-    -> tequality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B).
+  forall uk lib (a1 a2 b1 b2 A B : @CTerm p),
+    tequality uk lib A B
+    -> equality uk lib a1 b1 A
+    -> equality uk lib a2 b2 A
+    -> tequality uk lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B).
 Proof.
   introv teq e1 e2.
-  rw @tequality_mkc_equality_sp; dands; auto; eauto 3 with slow.
+  rw (@tequality_mkc_equality_sp p uk); dands; auto; eauto 3 with slow.
 Qed.
 
 Lemma tequality_mkc_equality2 {p} :
-  forall lib (a1 a2 b1 b2 A B : @CTerm p),
-    tequality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B)
+  forall uk lib (a1 a2 b1 b2 A B : @CTerm p),
+    tequality uk lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B)
     <=>
     (
-      tequality lib A B
-      # (equality lib a1 a2 A <=> equality lib b1 b2 B)
-      # equorsq2_bar lib a1 b1 a2 b2 A
+      tequality uk lib A B
+      # (equality uk lib a1 a2 A <=> equality uk lib b1 b2 B)
+      # equorsq2_bar uk lib a1 b1 a2 b2 A
     ).
 Proof.
   intros.
-  rw @tequality_mkc_equality.
+  rw (@tequality_mkc_equality p uk).
   repeat (rw @fold_equorsq_bar).
   rw @fold_equorsq2_bar; sp.
 Qed.
 
 Lemma tequality_mkc_equality2_sp {p} :
-  forall lib (a1 a2 b1 b2 A B : @CTerm p),
-    tequality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B)
+  forall uk lib (a1 a2 b1 b2 A B : @CTerm p),
+    tequality uk lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B)
     <=>
     (
-      tequality lib A B
-      # equorsq2_bar lib a1 b1 a2 b2 A
+      tequality uk lib A B
+      # equorsq2_bar uk lib a1 b1 a2 b2 A
     ).
 Proof.
   intros.
-  rw @tequality_mkc_equality_sp.
+  rw (@tequality_mkc_equality_sp p uk).
   repeat (rw @fold_equorsq_bar).
   rw @fold_equorsq2_bar; sp.
 Qed.
 
 Lemma tequality_mkc_member {p} :
-  forall lib (a b A B : @CTerm p),
-    tequality lib (mkc_member a A) (mkc_member b B)
+  forall uk lib (a b A B : @CTerm p),
+    tequality uk lib (mkc_member a A) (mkc_member b B)
     <=>
     (
-      tequality lib A B
-      # (member lib a A <=> member lib b B)
-      # in_open_bar lib (fun lib => equality lib a b A {+} ccequivc_ext lib a b)
+      tequality uk lib A B
+      # (member uk lib a A <=> member uk lib b B)
+      # in_open_bar lib (fun lib => equality uk lib a b A {+} ccequivc_ext lib a b)
     ).
 Proof.
   sp; repeat (rewrite <- fold_mkc_member).
-  trw @tequality_mkc_equality; split; sp.
+  trw (@tequality_mkc_equality p uk); split; sp.
 Qed.
 
 Lemma tequality_mkc_member_sp {p} :
-  forall lib (a b A B : @CTerm p),
-    tequality lib (mkc_member a A) (mkc_member b B)
+  forall uk lib (a b A B : @CTerm p),
+    tequality uk lib (mkc_member a A) (mkc_member b B)
     <=>
     (
-      tequality lib A B
-      # in_open_bar lib (fun lib => equality lib a b A {+} ccequivc_ext lib a b)
+      tequality uk lib A B
+      # in_open_bar lib (fun lib => equality uk lib a b A {+} ccequivc_ext lib a b)
     ).
 Proof.
   sp; repeat (rewrite <- fold_mkc_member).
-  trw @tequality_mkc_equality_sp; split; sp.
+  trw (@tequality_mkc_equality_sp p uk); split; sp.
 Qed.
 
 Lemma equality_commutes {p} :
-  forall lib (T a1 a2 a3 a4 : @CTerm p),
-    tequality lib (mkc_equality a1 a2 T) (mkc_equality a3 a4 T)
-    -> equality lib a1 a2 T
-    -> equality lib a1 a4 T.
+  forall uk lib (T a1 a2 a3 a4 : @CTerm p),
+    tequality uk lib (mkc_equality a1 a2 T) (mkc_equality a3 a4 T)
+    -> equality uk lib a1 a2 T
+    -> equality uk lib a1 a4 T.
 Proof.
   introv teq eq.
-  rw @tequality_mkc_equality in teq; sp.
+  rw (@tequality_mkc_equality p uk) in teq; sp.
   allrw @fold_equorsq_bar; eauto 3 with slow.
 Qed.
 
 Lemma equality_commutes2 {p} :
-  forall lib (T a1 a2 a3 a4 : @CTerm p),
-    tequality lib (mkc_equality a1 a2 T) (mkc_equality a3 a4 T)
-    -> equality lib a1 a2 T
-    -> equality lib a1 a3 T.
+  forall uk lib (T a1 a2 a3 a4 : @CTerm p),
+    tequality uk lib (mkc_equality a1 a2 T) (mkc_equality a3 a4 T)
+    -> equality uk lib a1 a2 T
+    -> equality uk lib a1 a3 T.
 Proof.
   introv teq eq.
-  rw @tequality_mkc_equality in teq; repnd.
+  rw (@tequality_mkc_equality p uk) in teq; repnd.
   allrw @fold_equorsq_bar; eauto 3 with slow.
 Qed.
 
 Lemma equality_commutes3 {p} :
-  forall lib (T U a1 a2 a3 a4 : @CTerm p),
-    tequality lib (mkc_equality a1 a2 T) (mkc_equality a3 a4 U)
-    -> equality lib a1 a2 T
-    -> equality lib a1 a3 T.
+  forall uk lib (T U a1 a2 a3 a4 : @CTerm p),
+    tequality uk lib (mkc_equality a1 a2 T) (mkc_equality a3 a4 U)
+    -> equality uk lib a1 a2 T
+    -> equality uk lib a1 a3 T.
 Proof.
   introv teq eq.
-  rw @tequality_mkc_equality in teq; repnd.
+  rw (@tequality_mkc_equality p uk) in teq; repnd.
   allrw @fold_equorsq_bar; eauto 3 with slow.
 Qed.
 
 Lemma equality_commutes4 {p} :
-  forall lib (T U a1 a2 a3 a4 : @CTerm p),
-    tequality lib (mkc_equality a1 a2 T) (mkc_equality a3 a4 U)
-    -> equality lib a1 a2 T
-    -> equality lib a1 a4 T.
+  forall uk lib (T U a1 a2 a3 a4 : @CTerm p),
+    tequality uk lib (mkc_equality a1 a2 T) (mkc_equality a3 a4 U)
+    -> equality uk lib a1 a2 T
+    -> equality uk lib a1 a4 T.
 Proof.
   introv teq eq.
-  rw @tequality_mkc_equality in teq; repnd.
+  rw (@tequality_mkc_equality p uk) in teq; repnd.
   allrw @fold_equorsq_bar; eauto 3 with slow.
 Qed.
 
 Lemma equality_commutes5 {p} :
-  forall lib (T U a1 a2 a3 a4 : @CTerm p),
-    tequality lib (mkc_equality a1 a2 T) (mkc_equality a3 a4 U)
-    -> equality lib a1 a2 T
-    -> equality lib a2 a4 T.
+  forall uk lib (T U a1 a2 a3 a4 : @CTerm p),
+    tequality uk lib (mkc_equality a1 a2 T) (mkc_equality a3 a4 U)
+    -> equality uk lib a1 a2 T
+    -> equality uk lib a2 a4 T.
 Proof.
   introv teq eq.
-  rw @tequality_mkc_equality in teq; repnd.
+  rw (@tequality_mkc_equality p uk) in teq; repnd.
   allrw @fold_equorsq_bar; eauto 3 with slow.
 Qed.
 
 Lemma equality_in_mkc_equality {o} :
-  forall lib (t1 t2 T a b : @CTerm o),
-    equality lib a b (mkc_equality t1 t2 T)
-    <=> (equality lib t1 t2 T
+  forall uk lib (t1 t2 T a b : @CTerm o),
+    equality uk lib a b (mkc_equality t1 t2 T)
+    <=> (equality uk lib t1 t2 T
          # in_open_bar lib (fun lib => a ===>(lib) mkc_axiom)
          # in_open_bar lib (fun lib => b ===>(lib) mkc_axiom)).
 Proof.
@@ -940,7 +940,7 @@ Proof.
     repnd.
     unfold equality in i0; exrepnd.
 
-    pose proof (nuprl_monotone_func lib T T eq i0) as tya; exrepnd.
+    pose proof (nuprl_monotone_func uk lib T T eq i0) as tya; exrepnd.
     rename eq' into eqa.
     exists (eq_per_eq_bar lib t1 t2 eqa).
     dands.
@@ -964,8 +964,8 @@ Proof.
 Qed.
 
 Lemma tequality_mkc_equality_base_iff {o} :
-  forall lib (t1 t2 t3 t4 : @CTerm o),
-    tequality lib (mkc_equality t1 t2 mkc_base) (mkc_equality t3 t4 mkc_base)
+  forall uk lib (t1 t2 t3 t4 : @CTerm o),
+    tequality uk lib (mkc_equality t1 t2 mkc_base) (mkc_equality t3 t4 mkc_base)
     <=>
     (ccequivc_bar lib t1 t3 # ccequivc_bar lib t2 t4).
 Proof.
@@ -1028,11 +1028,11 @@ Proof.
 Qed.
 
 Lemma tequality_equality_if_eqorceq {p} :
-  forall lib (t1 t2 t3 t4 A B : @CTerm p),
-    tequality lib A B
-    -> ccequivc_ext lib t1 t3 [+] equality lib t1 t3 A
-    -> ccequivc_ext lib t2 t4 [+] equality lib t2 t4 A
-    -> tequality lib (mkc_equality t1 t2 A)
+  forall uk lib (t1 t2 t3 t4 A B : @CTerm p),
+    tequality uk lib A B
+    -> ccequivc_ext lib t1 t3 [+] equality uk lib t1 t3 A
+    -> ccequivc_ext lib t2 t4 [+] equality uk lib t2 t4 A
+    -> tequality uk lib (mkc_equality t1 t2 A)
                  (mkc_equality t3 t4 B).
 Proof.
   introv teq eoa eob.
@@ -1078,8 +1078,8 @@ Proof.
 Qed.
 
 Lemma tequality_mkc_member_base {p} :
-  forall lib (a b : @CTerm p),
-    tequality lib (mkc_member a mkc_base) (mkc_member b mkc_base)
+  forall uk lib (a b : @CTerm p),
+    tequality uk lib (mkc_member a mkc_base) (mkc_member b mkc_base)
     <=>
     ccequivc_bar lib a b.
 Proof.
@@ -1102,32 +1102,32 @@ Proof.
 Qed.
 
 Lemma equality_on_closed_terms_is_a_type {p} :
-  forall lib (A x y : @CTerm p), type lib A -> type lib (mkc_equality x y A).
+  forall uk lib (A x y : @CTerm p), type uk lib A -> type uk lib (mkc_equality x y A).
 Proof.
   introv ta.
   apply tequality_equality_if_cequivc; eauto 3 with slow.
 Qed.
 
 Lemma type_mkc_equality {p} :
-  forall lib (A x y : @CTerm p), type lib (mkc_equality x y A) <=> type lib A.
+  forall uk lib (A x y : @CTerm p), type uk lib (mkc_equality x y A) <=> type uk lib A.
 Proof.
   introv; split; intro k.
-  rw @tequality_mkc_equality in k; sp.
+  rw (@tequality_mkc_equality p uk) in k; sp.
   apply equality_on_closed_terms_is_a_type; sp.
 Qed.
 
 Lemma type_mkc_equality2 {p} :
-  forall lib (A : @CTerm p), (forall x y, type lib (mkc_equality x y A)) <=> type lib A.
+  forall uk lib (A : @CTerm p), (forall x y, type uk lib (mkc_equality x y A)) <=> type uk lib A.
 Proof.
   introv; split; intro k; introv.
   generalize (k mkc_axiom mkc_axiom); clear k; intro k.
-  rw @tequality_mkc_equality in k; sp.
+  rw (@tequality_mkc_equality p uk) in k; sp.
   apply equality_on_closed_terms_is_a_type; sp.
 Qed.
 
 Lemma inhabited_mkc_equality {p} :
-  forall lib (A x y : @CTerm p),
-    inhabited_type lib (mkc_equality x y A) <=> equality lib x y A.
+  forall uk lib (A x y : @CTerm p),
+    inhabited_type uk lib (mkc_equality x y A) <=> equality uk lib x y A.
 Proof.
   introv; split; intro k.
   unfold inhabited_type in k; exrepnd.
@@ -1137,9 +1137,9 @@ Proof.
 Qed.
 
 Lemma inhabited_type_mkc_equality_sym {p} :
-  forall lib (A x y : @CTerm p),
-    inhabited_type lib (mkc_equality x y A)
-    -> inhabited_type lib (mkc_equality y x A).
+  forall uk lib (A x y : @CTerm p),
+    inhabited_type uk lib (mkc_equality x y A)
+    -> inhabited_type uk lib (mkc_equality y x A).
 Proof.
   introv inh.
   allrw @inhabited_mkc_equality.
@@ -1147,10 +1147,10 @@ Proof.
 Qed.
 
 Lemma inhabited_type_mkc_equality_trans {p} :
-  forall lib (A x y z : @CTerm p),
-    inhabited_type lib (mkc_equality x y A)
-    -> inhabited_type lib (mkc_equality y z A)
-    -> inhabited_type lib (mkc_equality x z A).
+  forall uk lib (A x y z : @CTerm p),
+    inhabited_type uk lib (mkc_equality x y A)
+    -> inhabited_type uk lib (mkc_equality y z A)
+    -> inhabited_type uk lib (mkc_equality x z A).
 Proof.
   introv inh1 inh2.
   allrw @inhabited_mkc_equality.
@@ -1158,9 +1158,9 @@ Proof.
 Qed.
 
 Lemma member_if_inhabited {p} :
-  forall lib (t1 t2 t T : @CTerm p),
-    equality lib t1 t2 (mkc_member t T)
-    -> member lib t T.
+  forall uk lib (t1 t2 t T : @CTerm p),
+    equality uk lib t1 t2 (mkc_member t T)
+    -> member uk lib t T.
 Proof.
   introv; allrw <- @fold_mkc_member.
   introv e.
@@ -1168,11 +1168,11 @@ Proof.
 Qed.
 
 Lemma tequality_in_uni_implies_tequality {p} :
-  forall lib (T1 T2 : @CTerm p) i,
-    tequality lib (mkc_member T1 (mkc_uni i))
-              (mkc_member T2 (mkc_uni i))
-    -> type lib T1
-    -> tequality lib T1 T2.
+  forall uk lib (T1 T2 : @CTerm p) i,
+    tequality uk lib (mkc_member T1 (mkc_uni uk i))
+              (mkc_member T2 (mkc_uni uk i))
+    -> type uk lib T1
+    -> tequality uk lib T1 T2.
 Proof.
   introv teq typ.
   rw @tequality_mkc_member_sp in teq; repnd.
@@ -1182,9 +1182,9 @@ Proof.
 Qed.
 
 Lemma iff_inhabited_type_if_tequality_mem {o} :
-  forall lib (T1 T2 : @CTerm o) i,
-    tequality lib (mkc_member T1 (mkc_uni i)) (mkc_member T2 (mkc_uni i))
-    -> (inhabited_type lib T1 <=> inhabited_type lib T2).
+  forall uk lib (T1 T2 : @CTerm o) i,
+    tequality uk lib (mkc_member T1 (mkc_uni uk i)) (mkc_member T2 (mkc_uni uk i))
+    -> (inhabited_type uk lib T1 <=> inhabited_type uk lib T2).
 Proof.
   introv teq.
   rw @tequality_mkc_member in teq; repnd.
@@ -1193,7 +1193,7 @@ Proof.
   {
     allrw @inhabited_type_iff_exists_per; exrepnd.
 
-    pose proof (nuprl_monotone_func lib T1 T1 eq inh0) as tya; exrepnd.
+    pose proof (nuprl_monotone_func uk lib T1 T1 eq inh0) as tya; exrepnd.
     rename eq' into eqa.
     exists (per_bar_eq lib eqa) t.
     dands.
@@ -1229,7 +1229,7 @@ Proof.
   {
     allrw @inhabited_type_iff_exists_per; exrepnd.
 
-    pose proof (nuprl_monotone_func lib T2 T2 eq inh0) as tya; exrepnd.
+    pose proof (nuprl_monotone_func uk lib T2 T2 eq inh0) as tya; exrepnd.
     rename eq' into eqa.
     exists (per_bar_eq lib eqa) t.
     dands.
@@ -1262,11 +1262,11 @@ Proof.
 Qed.
 
 Lemma equality_in_member {p} :
-  forall lib (a b t T : @CTerm p),
-    equality lib a b (mkc_member t T)
+  forall uk lib (a b t T : @CTerm p),
+    equality uk lib a b (mkc_member t T)
     <=> (in_open_bar lib (fun lib => a ===>(lib) mkc_axiom)
          # in_open_bar lib (fun lib => b ===>(lib) mkc_axiom)
-         # member lib t T).
+         # member uk lib t T).
 Proof.
   introv.
   rw <- @fold_mkc_member.
@@ -1275,16 +1275,16 @@ Proof.
 Qed.
 
 Lemma tequality_mkc_member_implies_sp {o} :
-  forall lib (a b A B : @CTerm o),
-    tequality lib (mkc_member a A) (mkc_member b B)
-    -> member lib a A
-    -> equality lib a b A.
+  forall uk lib (a b A B : @CTerm o),
+    tequality uk lib (mkc_member a A) (mkc_member b B)
+    -> member uk lib a A
+    -> equality uk lib a b A.
 Proof.
   introv teq mem.
   allrw @tequality_mkc_member_sp; repnd.
 
   unfold member, equality in mem; exrepnd.
-  pose proof (nuprl_monotone_func lib A A eq mem1) as tya; exrepnd.
+  pose proof (nuprl_monotone_func uk lib A A eq mem1) as tya; exrepnd.
   rename eq' into eqa.
   exists (per_bar_eq lib eqa).
   dands.
@@ -1309,26 +1309,26 @@ Proof.
 Qed.
 
 Lemma tequality_mkc_equality_sp_eq {p} :
-  forall lib (a1 a2 b1 b2 A B : @CTerm p),
-    equality lib a1 a2 A
-    -> (tequality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B)
-        <=> (tequality lib A B # equality lib a1 b1 A # equality lib a2 b2 A)).
+  forall uk lib (a1 a2 b1 b2 A B : @CTerm p),
+    equality uk lib a1 a2 A
+    -> (tequality uk lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B)
+        <=> (tequality uk lib A B # equality uk lib a1 b1 A # equality uk lib a2 b2 A)).
 Proof.
   introv eqa.
   split; intro h; repnd; dands; auto.
-  - rw @tequality_mkc_equality_sp in h; sp.
-  - rw @tequality_mkc_equality_sp in h; repnd; eauto 3 with slow.
-  - rw @tequality_mkc_equality_sp in h; repnd; eauto 3 with slow.
+  - rw (@tequality_mkc_equality_sp p uk) in h; sp.
+  - rw (@tequality_mkc_equality_sp p uk) in h; repnd; eauto 3 with slow.
+  - rw (@tequality_mkc_equality_sp p uk) in h; repnd; eauto 3 with slow.
   - apply tequality_mkc_equality_sp; dands; eauto 3 with slow.
 Qed.
 
 Lemma equality_mkc_equality2_sp_in_uni {o} :
-  forall lib i (a1 a2 b1 b2 A B : @CTerm o),
-    equality lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) (mkc_uni i)
+  forall uk lib i (a1 a2 b1 b2 A B : @CTerm o),
+    equality uk lib (mkc_equality a1 a2 A) (mkc_equality b1 b2 B) (mkc_uni uk i)
     <=>
     (
-      equality lib A B (mkc_uni i)
-      # equorsq2_bar lib a1 b1 a2 b2 A
+      equality uk lib A B (mkc_uni uk i)
+      # equorsq2_bar uk lib a1 b1 a2 b2 A
     ).
 Proof.
   introv.
@@ -1379,7 +1379,7 @@ Proof.
     eapply in_open_bar_ext_comb2; try exact eo2; clear eo2.
     apply in_ext_ext_implies_in_open_bar_ext; introv eo2 eo1; simpl.
 
-    pose proof (nuprli_monotone_func i lib A B eq' e3) as tya; exrepnd.
+    pose proof (nuprli_monotone_func i uk lib A B eq' e3) as tya; exrepnd.
     rename eq'0 into eqa.
 
     exists (eq_per_eq_bar lib' a1 a2 (raise_lib_per eqa e)).

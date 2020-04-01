@@ -46,3 +46,4 @@ Require Export rules_classical.
 Require Export rules_function.
 Require Export rules_function2.
 (*TO FIX*)(*Require Export rules_apply.*)
+Require Export rules_qnat.

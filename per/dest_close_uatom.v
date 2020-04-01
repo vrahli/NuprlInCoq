@@ -92,10 +92,10 @@ Qed.
 Hint Resolve all_in_bar_ext_equal_equality_of_uatom_bar_implies_per_bar_eq_implies_equality_of_uatom_bar : slow.
 
 Lemma local_per_uatom_bar {o} :
-  forall (lib : @library o) ts T T' eq eqa,
+  forall uk (lib : @library o) ts T T' eq eqa,
     (eq <=2=> (per_bar_eq lib eqa))
-    -> in_open_bar_ext lib (fun lib' x => per_uatom_bar ts lib' T T' (eqa lib' x))
-    -> per_uatom_bar ts lib T T' eq.
+    -> in_open_bar_ext lib (fun lib' x => per_uatom_bar ts uk lib' T T' (eqa lib' x))
+    -> per_uatom_bar ts uk lib T T' eq.
 Proof.
   introv eqiff alla.
   unfold per_uatom_bar in *.
@@ -107,9 +107,9 @@ Proof.
 Qed.
 
 Lemma per_uatom_implies_per_uatom_bar {o} :
-  forall ts lib (T T' : @CTerm o) eq,
-    per_uatom ts lib T T' eq
-    -> per_uatom_bar ts lib T T' eq.
+  forall ts uk lib (T T' : @CTerm o) eq,
+    per_uatom ts uk lib T T' eq
+    -> per_uatom_bar ts uk lib T T' eq.
 Proof.
   introv per.
   unfold per_uatom in per; repnd.
@@ -122,12 +122,12 @@ Hint Resolve per_uatom_implies_per_uatom_bar : slow.
 (* ====== dest lemmas ====== *)
 
 Lemma dest_close_per_uatom_l {p} :
-  forall (ts : cts(p)) lib T T' eq,
+  forall (ts : cts(p)) uk lib T T' eq,
     type_system ts
     -> defines_only_universes ts
     -> ccomputes_to_valc_ext lib T mkc_uatom
-    -> close ts lib T T' eq
-    -> per_uatom_bar (close ts) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_uatom_bar (close ts) uk lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
@@ -137,12 +137,12 @@ Proof.
 Qed.
 
 Lemma dest_close_per_uatom_r {p} :
-  forall (ts : cts(p)) lib T T' eq,
+  forall (ts : cts(p)) uk lib T T' eq,
     type_system ts
     -> defines_only_universes ts
     -> ccomputes_to_valc_ext lib T' mkc_uatom
-    -> close ts lib T T' eq
-    -> per_uatom_bar (close ts) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_uatom_bar (close ts) uk lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
@@ -158,7 +158,7 @@ Lemma dest_close_per_uatom_bar_l {p} :
     -> defines_only_universes ts
     -> type_monotone ts
     -> all_in_bar bar (fun lib => T ===>(lib) mkc_uatom)
-    -> close ts lib T T' eq
+    -> close ts uk lib T T' eq
     -> per_uatom_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.
@@ -173,7 +173,7 @@ Lemma dest_close_per_uatom_bar_r {p} :
     -> defines_only_universes ts
     -> type_monotone ts
     -> all_in_bar bar (fun lib => T' ===>(lib) mkc_uatom)
-    -> close ts lib T T' eq
+    -> close ts uk lib T T' eq
     -> per_uatom_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.
@@ -188,7 +188,7 @@ Lemma dest_close_per_uatom_ceq_bar_l {p} :
     -> defines_only_universes ts
     -> type_monotone ts
     -> T ==b==>(bar) mkc_uatom
-    -> close ts lib T T' eq
+    -> close ts uk lib T T' eq
     -> per_uatom_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.
@@ -203,7 +203,7 @@ Lemma dest_close_per_uatom_ceq_bar_r {p} :
     -> defines_only_universes ts
     -> type_monotone ts
     -> T' ==b==>(bar) mkc_uatom
-    -> close ts lib T T' eq
+    -> close ts uk lib T T' eq
     -> per_uatom_bar (close ts) lib T T' eq.
 Proof.
   introv tysys dou mon comp cl.

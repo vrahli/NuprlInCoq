@@ -36,7 +36,7 @@ Require Export per_props_cequiv.
 
 
 Lemma tequality_false {p} :
-  forall lib, @tequality p lib mkc_false mkc_false.
+  forall uk lib, @tequality p uk lib mkc_false mkc_false.
 Proof.
   introv.
   rw @mkc_false_eq.
@@ -47,7 +47,7 @@ Qed.
 Hint Resolve tequality_false : slow.
 
 Lemma equality_in_false {p} :
-  forall lib (t1 t2 : @CTerm p), equality lib t1 t2 mkc_false <=> False.
+  forall uk lib (t1 t2 : @CTerm p), equality uk lib t1 t2 mkc_false <=> False.
 Proof.
   introv; split; intro e; sp.
   rw @mkc_false_eq in e.
@@ -58,7 +58,7 @@ Proof.
 Qed.
 
 Lemma equality_in_void {p} :
-  forall lib (t1 t2 : @CTerm p), equality lib t1 t2 mkc_void <=> False.
+  forall uk lib (t1 t2 : @CTerm p), equality uk lib t1 t2 mkc_void <=> False.
 Proof.
   introv.
   rw @mkc_void_eq_mkc_false; sp.

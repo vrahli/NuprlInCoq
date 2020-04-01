@@ -33,6 +33,7 @@ Require Export close_util_ffdefs2.
 
 Lemma close_type_system_ffdefs {o} :
   forall (ts : cts(o))
+         uk
          lib
          T T'
          (eq : per)
@@ -43,11 +44,11 @@ Lemma close_type_system_ffdefs {o} :
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T (mkc_free_from_defs A1 x1)
     -> ccomputes_to_valc_ext lib T' (mkc_free_from_defs A2 x2)
-    -> in_ext_ext lib (fun lib' x => close ts lib' A1 A2 (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A1 A2 (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => close ts uk lib' A1 A2 (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) uk lib' A1 A2 (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => eqa lib' x x1 x2)
     -> (eq <=2=> (per_ffdefs_eq_bar lib eqa x1))
-    -> type_sys_props4 (close ts) lib T T' eq.
+    -> type_sys_props4 (close ts) uk lib T T' eq.
 Proof.
   introv tysys dou mon c1 c2 cla tsa eqx eqiff.
 

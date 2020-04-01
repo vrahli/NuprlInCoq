@@ -37,11 +37,11 @@ Require Export nuprl_mon.
 
 
 Definition type_monotone_func {o} (ts : cts(o)) :=
-  forall lib T1 T2 eq,
-    ts lib T1 T2 eq
+  forall uk lib T1 T2 eq,
+    ts uk lib T1 T2 eq
     -> exists (eq' : lib-per(lib,o)),
       forall lib' x,
-        ts lib' T1 T2 (eq' lib' x)
+        ts uk lib' T1 T2 (eq' lib' x)
         # sub_per eq (eq' lib' x).
 
 Lemma per_int_monotone_func {o} :
@@ -578,131 +578,132 @@ Proof.
   close_cases (induction cl using @close_ind') Case; introv.
 
   - Case "CL_init".
-    pose proof (m lib T T' eq) as h; repeat (autodimp h hyp).
+    pose proof (m uk lib T T' eq) as h; repeat (autodimp h hyp).
     exrepnd.
     exists eq'; introv.
     pose proof (h0 _ x) as h0; repnd; dands; auto.
 
   - Case "CL_bar".
-    pose proof (per_bar_monotone_func (close ts) lib T T' eq) as q.
+    pose proof (per_bar_monotone_func (close ts) uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_int".
-    pose proof (per_int_monotone_func ts lib T T' eq) as q.
+    pose proof (per_int_monotone_func ts uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_nat".
-    pose proof (per_nat_monotone_func ts lib T T' eq) as q.
+    pose proof (per_nat_monotone_func ts uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_qnat".
-    pose proof (per_qnat_monotone_func ts lib T T' eq) as q.
+    pose proof (per_qnat_monotone_func ts uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_csname".
-    pose proof (per_csname_monotone_func ts lib T T' eq) as q.
+    pose proof (per_csname_monotone_func ts uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_atom".
-    pose proof (per_atom_monotone_func ts lib T T' eq) as q.
+    pose proof (per_atom_monotone_func ts uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_uatom".
-    pose proof (per_uatom_monotone_func ts lib T T' eq) as q.
+    pose proof (per_uatom_monotone_func ts uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_base".
-    pose proof (per_base_monotone_func ts lib T T' eq) as q.
+    pose proof (per_base_monotone_func ts uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_approx".
-    pose proof (per_approx_monotone_func ts lib T T' eq) as q.
+    pose proof (per_approx_monotone_func ts uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_cequiv".
-    pose proof (per_cequiv_monotone_func ts lib T T' eq) as q.
+    pose proof (per_cequiv_monotone_func ts uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_eq".
-    pose proof (per_eq_monotone_func (close ts) lib T T' eq) as q.
+    pose proof (per_eq_monotone_func (close ts) uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_qtime".
-    pose proof (per_qtime_monotone_func (close ts) lib T T' eq) as q.
+    pose proof (per_qtime_monotone_func (close ts) uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_qlt".
-    pose proof (per_qlt_monotone_func (close ts) lib T T' eq) as q.
+    pose proof (per_qlt_monotone_func (close ts) uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_func".
-    pose proof (per_func_monotone_func (close ts) lib T T' eq) as q.
+    pose proof (per_func_monotone_func (close ts) uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_union".
-    pose proof (per_union_monotone_func (close ts) lib T T' eq) as q.
+    pose proof (per_union_monotone_func (close ts) uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_image".
-    pose proof (per_image_monotone_func (close ts) lib T T' eq) as q.
+    pose proof (per_image_monotone_func (close ts) uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_ffdefs".
-    pose proof (per_ffdefs_monotone_func (close ts) lib T T' eq) as q.
+    pose proof (per_ffdefs_monotone_func (close ts) uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_set".
-    pose proof (per_set_monotone_func (close ts) lib T T' eq) as q.
+    pose proof (per_set_monotone_func (close ts) uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
   - Case "CL_product".
-    pose proof (per_product_monotone_func (close ts) lib T T' eq) as q.
+    pose proof (per_product_monotone_func (close ts) uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 Qed.
 
 Definition univi_eq_lib_per {o}
+           (uk  : ukind)
            (lib : @library o)
-           (i : nat) : lib-per(lib,o).
+           (i   : nat) : lib-per(lib,o).
 Proof.
-  exists (fun lib' (x : lib_extends lib' lib) => univi_eq (univi_bar i) lib').
+  exists (fun lib' (x : lib_extends lib' lib) => univi_eq (univi_bar i) uk lib').
   introv x y; introv; tcsp.
 Defined.
 
@@ -727,7 +728,7 @@ Proof.
   induction i as [? ind] using comp_ind_type.
   introv h.
   allrw @univi_exists_iff; exrepnd.
-  exists (univi_eq_lib_per lib j); introv.
+  exists (univi_eq_lib_per uk lib j); introv.
   allrw @univi_exists_iff.
   dands; simpl.
 
@@ -739,7 +740,7 @@ Proof.
 
     pose proof (@close_monotone o (univi_bar j)) as q.
     repeat (autodimp q hyp); eauto 3 with slow;[].
-    pose proof (q lib lib' a b eqa) as q.
+    pose proof (q uk lib lib' a b eqa) as q.
     repeat (autodimp q hyp); exrepnd.
     exists eq'; dands; auto. }
 Qed.

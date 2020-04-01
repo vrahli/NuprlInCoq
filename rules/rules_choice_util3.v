@@ -573,16 +573,16 @@ Qed.
 Hint Rewrite length_app : nat.
 
 Lemma member_exists_1_choice {o} :
-  forall (lib : @library o) name v n restr,
+  forall uk (lib : @library o) name v n restr,
     csn_kind name = cs_kind_seq []
     -> same_restrictions restr (csc_seq [])
     -> entry_in_library (lib_cs name (MkChoiceSeqEntry _ (ntimes n mkc_zero ++ [mkc_one]) restr)) lib
     -> safe_library lib
-    -> member lib (mkc_pair (mkc_nat n) mkc_axiom) (exists_1_choice name v).
+    -> member uk lib (mkc_pair (mkc_nat n) mkc_axiom) (exists_1_choice name v).
 Proof.
   introv ck srestr ilib safe.
   unfold exists_1_choice, mkc_exists.
-  apply member_product2; dands.
+  apply member_product2; dands; eauto 2 with slow;[|].
 
   {
     apply tequality_product; dands; eauto 3 with slow.
@@ -682,12 +682,12 @@ Qed.
 Hint Resolve implies_ccequivc_ext_equality : slow.
 
 Lemma equality_exists_1_choice_fun_in_fun {o} :
-  forall (lib : @library o) name v i,
+  forall uk (lib : @library o) name v i,
     equality
-      lib
+      uk lib
       (exists_1_choice_fun name v)
       (exists_1_choice_fun name v)
-      (mkc_fun mkc_tnat (mkc_uni i)).
+      (mkc_fun mkc_tnat (mkc_uni uk i)).
 Proof.
   introv.
   apply equality_in_fun; dands; eauto 3 with slow;[].
@@ -711,8 +711,8 @@ Qed.
 Hint Resolve equality_exists_1_choice_fun_in_fun : slow.
 
 Lemma type_exists_1_choice {o} :
-  forall (lib : @library o) name v,
-    type lib (exists_1_choice name v).
+  forall uk (lib : @library o) name v,
+    type uk lib (exists_1_choice name v).
 Proof.
   introv; unfold exists_1_choice, mkc_exists.
   apply tequality_product; dands; eauto 3 with slow.

@@ -253,7 +253,7 @@ Lemma rule_ls_exists_true {o} :
          (safe  : safe_library lib)
          (norep : no_repeats_library lib)
          (sat   : lib_cond_sat_def lib),
-    rule_true lib (rule_ls_exists lib a n x H).
+    rule_true uk0 lib (rule_ls_exists lib a n x H).
 Proof.
   unfold rule_ls_exists, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -279,7 +279,7 @@ Proof.
   clear lib safe norep sat ext.
   rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat.
 
-  assert (tequality lib (ls_existsc a n x) (ls_existsc a n x)) as teq.
+  assert (tequality uk0 lib (ls_existsc a n x) (ls_existsc a n x)) as teq.
   {
     apply tequality_function; dands; eauto 3 with slow.
     introv xt ec.
@@ -368,7 +368,7 @@ Proof.
 
   autorewrite with slow.
   apply equality_in_function2.
-  dands.
+  dands; eauto 3 with slow;[|].
 
   {
     apply tequality_function; dands; eauto 3 with slow.

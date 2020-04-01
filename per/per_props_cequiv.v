@@ -61,9 +61,9 @@ Proof.
 Qed.*)
 
 Lemma dest_nuprl_cequiv {o} :
-  forall (lib : @library o) (a b c d : @CTerm o) eq,
-    nuprl lib (mkc_cequiv a b) (mkc_cequiv c d) eq
-    -> per_bar (per_cequiv nuprl) lib (mkc_cequiv a b) (mkc_cequiv c d) eq.
+  forall uk (lib : @library o) (a b c d : @CTerm o) eq,
+    nuprl uk lib (mkc_cequiv a b) (mkc_cequiv c d) eq
+    -> per_bar (per_cequiv nuprl) uk lib (mkc_cequiv a b) (mkc_cequiv c d) eq.
 Proof.
   introv cl.
   eapply dest_close_per_cequiv_l in cl;
@@ -71,9 +71,9 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_cequiv {o} :
-  forall i (lib : @library o) (a b c d : @CTerm o) eq,
-    nuprli i lib (mkc_cequiv a b) (mkc_cequiv c d) eq
-    -> per_bar (per_cequiv (nuprli i)) lib (mkc_cequiv a b) (mkc_cequiv c d) eq.
+  forall i uk (lib : @library o) (a b c d : @CTerm o) eq,
+    nuprli i uk lib (mkc_cequiv a b) (mkc_cequiv c d) eq
+    -> per_bar (per_cequiv (nuprli i)) uk lib (mkc_cequiv a b) (mkc_cequiv c d) eq.
 Proof.
   introv cl.
   eapply dest_close_per_cequiv_l in cl;
@@ -81,9 +81,9 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_approx {o} :
-  forall i (lib : @library o) (a b c d : @CTerm o) eq,
-    nuprli i lib (mkc_approx a b) (mkc_approx c d) eq
-    -> per_bar (per_approx (nuprli i)) lib (mkc_approx a b) (mkc_approx c d) eq.
+  forall i uk (lib : @library o) (a b c d : @CTerm o) eq,
+    nuprli i uk lib (mkc_approx a b) (mkc_approx c d) eq
+    -> per_bar (per_approx (nuprli i)) uk lib (mkc_approx a b) (mkc_approx c d) eq.
 Proof.
   introv cl.
   eapply dest_close_per_approx_l in cl;
@@ -122,8 +122,8 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_cequiv2 {o} :
-  forall lib (eq : per(o)) a b c d,
-    nuprl lib (mkc_cequiv a b) (mkc_cequiv c d) eq
+  forall uk lib (eq : per(o)) a b c d,
+    nuprl uk lib (mkc_cequiv a b) (mkc_cequiv c d) eq
     ->
     (eq <=2=> (per_bar_eq lib (per_cequiv_eq_bar_lib_per lib a b)))
       # in_open_bar lib (fun lib => (ccequivc lib a b <=> ccequivc lib c d)).
@@ -154,8 +154,8 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_cequiv2 {o} :
-  forall i lib (eq : per(o)) a b c d,
-    nuprli i lib (mkc_cequiv a b) (mkc_cequiv c d) eq
+  forall i uk lib (eq : per(o)) a b c d,
+    nuprli i uk lib (mkc_cequiv a b) (mkc_cequiv c d) eq
     ->
     (eq <=2=> (per_bar_eq lib (per_cequiv_eq_bar_lib_per lib a b)))
       # in_open_bar lib (fun lib => (ccequivc lib a b <=> ccequivc lib c d)).
@@ -186,8 +186,8 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_approx2 {o} :
-  forall i lib (eq : per(o)) a b c d,
-    nuprli i lib (mkc_approx a b) (mkc_approx c d) eq
+  forall i uk lib (eq : per(o)) a b c d,
+    nuprli i uk lib (mkc_approx a b) (mkc_approx c d) eq
     ->
     (eq <=2=> (per_bar_eq lib (per_approx_eq_bar_lib_per lib a b)))
       # in_open_bar lib (fun lib => (capproxc lib a b <=> capproxc lib c d)).
@@ -218,8 +218,8 @@ Proof.
 Qed.
 
 Lemma mkc_cequiv_equality_in_uni {o} :
-  forall lib (a b c d : @CTerm o) i,
-    equality lib (mkc_cequiv a b) (mkc_cequiv c d) (mkc_uni i)
+  forall uk lib (a b c d : @CTerm o) i,
+    equality uk lib (mkc_cequiv a b) (mkc_cequiv c d) (mkc_uni uk i)
     <=>
     in_open_bar lib (fun lib => (ccequivc lib a b <=> ccequivc lib c d)).
 Proof.
@@ -242,7 +242,7 @@ Proof.
     apply dest_nuprli_cequiv2 in e1; exrepnd; auto.
 
   - Case "<-".
-    exists (per_bar_eq lib (univi_eq_lib_per lib i)).
+    exists (per_bar_eq lib (univi_eq_lib_per uk lib i)).
     dands; auto; eauto 3 with slow;[].
 
     apply implies_all_in_ex_bar_in_ext in e.
@@ -256,8 +256,8 @@ Proof.
 Qed.
 
 Lemma mkc_approx_equality_in_uni {o} :
-  forall lib (a b c d : @CTerm o) i,
-    equality lib (mkc_approx a b) (mkc_approx c d) (mkc_uni i)
+  forall uk lib (a b c d : @CTerm o) i,
+    equality uk lib (mkc_approx a b) (mkc_approx c d) (mkc_uni uk i)
     <=>
     in_open_bar lib (fun lib => (capproxc lib a b <=> capproxc lib c d)).
 Proof.
@@ -279,7 +279,7 @@ Proof.
     apply dest_nuprli_approx2 in e1; exrepnd; auto.
 
   - Case "<-".
-    exists (per_bar_eq lib (univi_eq_lib_per lib i)).
+    exists (per_bar_eq lib (univi_eq_lib_per uk lib i)).
     dands; auto; eauto 3 with slow;[].
 
     apply implies_all_in_ex_bar_in_ext in e.
@@ -293,7 +293,7 @@ Proof.
 Qed.
 
 Lemma member_approx_refl {p} :
-  forall lib t, @member p lib mkc_axiom (mkc_approx t t).
+  forall uk lib t, @member p uk lib mkc_axiom (mkc_approx t t).
 Proof.
   intros.
   exists (per_approx_eq_bar lib t t).
@@ -313,7 +313,7 @@ Proof.
 Qed.
 
 Lemma member_cequiv_refl {p} :
-  forall lib t, @member p lib mkc_axiom (mkc_cequiv t t).
+  forall uk lib t, @member p uk lib mkc_axiom (mkc_cequiv t t).
 Proof.
   intros.
   exists (per_cequiv_eq_bar lib t t).
@@ -333,8 +333,8 @@ Proof.
 Qed.
 
 Lemma equal_approx {p} :
-  forall lib t u,
-    @tequality p lib (mkc_approx t t) (mkc_approx u u).
+  forall uk lib t u,
+    @tequality p uk lib (mkc_approx t t) (mkc_approx u u).
 Proof.
   intros.
   exists (per_approx_eq_bar lib t t).
@@ -343,8 +343,8 @@ Proof.
 Qed.
 
 Lemma equal_cequiv {p} :
-  forall lib t u,
-    @tequality p lib (mkc_cequiv t t) (mkc_cequiv u u).
+  forall uk lib t u,
+    @tequality p uk lib (mkc_cequiv t t) (mkc_cequiv u u).
 Proof.
   intros.
   exists (per_cequiv_eq_bar lib t t).
@@ -353,7 +353,7 @@ Proof.
 Qed.
 
 Lemma member_base {p} :
-  forall lib t, @member p lib t mkc_base.
+  forall uk lib t, @member p uk lib t mkc_base.
 Proof.
   introv.
   exists (per_base_eq lib); dands; auto.
@@ -368,9 +368,9 @@ Qed.
 Hint Resolve member_base : slow.
 
 Lemma member_cequiv {o} :
-  forall lib (t1 t2 : @CTerm o),
+  forall uk lib (t1 t2 : @CTerm o),
     ccequivc_ext lib t1 t2
-    -> member lib mkc_axiom (mkc_cequiv t1 t2).
+    -> member uk lib mkc_axiom (mkc_cequiv t1 t2).
 Proof.
   introv ceq.
   exists (per_cequiv_eq_bar lib t1 t2); dands; auto.
@@ -386,9 +386,9 @@ Proof.
 Qed.
 
 Lemma member_cequiv_bar {o} :
-  forall lib (t1 t2 : @CTerm o),
+  forall uk lib (t1 t2 : @CTerm o),
     in_open_bar lib (fun lib => ccequivc lib t1 t2)
-    -> member lib mkc_axiom (mkc_cequiv t1 t2).
+    -> member uk lib mkc_axiom (mkc_cequiv t1 t2).
 Proof.
   introv ceq.
   exists (per_cequiv_eq_bar lib t1 t2); dands; auto.
@@ -404,9 +404,9 @@ Proof.
 Qed.
 
 Lemma member_approx {o} :
-  forall lib (t1 t2 : @CTerm o),
+  forall uk lib (t1 t2 : @CTerm o),
     in_ext lib (fun lib => capproxc lib t1 t2)
-    -> member lib mkc_axiom (mkc_approx t1 t2).
+    -> member uk lib mkc_axiom (mkc_approx t1 t2).
 Proof.
   introv apr.
   exists (per_approx_eq_bar lib t1 t2); dands; auto.
@@ -422,9 +422,9 @@ Proof.
 Qed.
 
 Lemma member_approx_bar {o} :
-  forall lib (t1 t2 : @CTerm o),
+  forall uk lib (t1 t2 : @CTerm o),
     in_open_bar lib (fun lib => capproxc lib t1 t2)
-    -> member lib mkc_axiom (mkc_approx t1 t2).
+    -> member uk lib mkc_axiom (mkc_approx t1 t2).
 Proof.
   introv apr.
   exists (per_approx_eq_bar lib t1 t2); dands; auto.
@@ -440,9 +440,9 @@ Proof.
 Qed.
 
 Lemma member_approx_iff {o} :
-  forall lib (t1 t2 : @CTerm o),
+  forall uk lib (t1 t2 : @CTerm o),
     in_open_bar lib (fun lib => capproxc lib t1 t2)
-    <=> member lib mkc_axiom (mkc_approx t1 t2).
+    <=> member uk lib mkc_axiom (mkc_approx t1 t2).
 Proof.
   introv; split; intro e;
     try (complete (eapply member_approx_bar; eauto)).
@@ -461,13 +461,13 @@ Proof.
 Qed.
 
 Lemma member_halts_iff {p} :
-  forall lib (t : @CTerm p),
+  forall uk lib (t : @CTerm p),
     in_open_bar lib (fun lib => chaltsc lib t)
-    <=> member lib mkc_axiom (mkc_halts t).
+    <=> member uk lib mkc_axiom (mkc_halts t).
 Proof.
   introv.
   rewrite <- fold_mkc_halts.
-  pose proof (member_approx_iff lib mkc_axiom (mkc_cbv t nvarx (mkcv_axiom nvarx))) as i.
+  pose proof (member_approx_iff uk lib mkc_axiom (mkc_cbv t nvarx (mkcv_axiom nvarx))) as i.
   rw <- i; clear i.
 
   sp_iff Case.
@@ -492,9 +492,9 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_base {o} :
-  forall (lib : @library o) eq,
-    nuprl lib mkc_base mkc_base eq
-    -> per_bar (per_base nuprl) lib mkc_base mkc_base eq.
+  forall uk (lib : @library o) eq,
+    nuprl uk lib mkc_base mkc_base eq
+    -> per_bar (per_base nuprl) uk lib mkc_base mkc_base eq.
 Proof.
   introv cl.
   eapply dest_close_per_base_l in cl;
@@ -515,8 +515,8 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_base2 {o} :
-  forall lib (eq : per(o)),
-    nuprl lib mkc_base mkc_base eq
+  forall uk lib (eq : per(o)),
+    nuprl uk lib mkc_base mkc_base eq
     -> eq <=2=> (per_base_eq lib).
 Proof.
   introv u.
@@ -531,8 +531,8 @@ Proof.
 Qed.
 
 Lemma equality_in_base {p} :
-  forall lib (t1 t2 : @CTerm p),
-    equality lib t1 t2 mkc_base
+  forall uk lib (t1 t2 : @CTerm p),
+    equality uk lib t1 t2 mkc_base
     -> per_base_eq lib t1 t2.
 Proof.
   unfold equality, nuprl; introv e; exrepnd.
@@ -541,11 +541,11 @@ Proof.
 Qed.
 
 Lemma equality_in_base_iff {p} :
-  forall lib (t1 t2 : @CTerm p),
-    equality lib t1 t2 mkc_base
+  forall uk lib (t1 t2 : @CTerm p),
+    equality uk lib t1 t2 mkc_base
     <=> per_base_eq lib t1 t2.
 Proof.
-  intros; split; intro i; try (apply equality_in_base; sp).
+  intros; split; intro i; try (eapply equality_in_base; eauto).
   unfold equality, nuprl.
   exists (per_base_eq lib); dands; auto.
   apply CL_base.
@@ -553,7 +553,7 @@ Proof.
 Qed.
 
 Lemma tequality_base {p} :
-  forall lib, @tequality p lib mkc_base mkc_base.
+  forall uk lib, @tequality p uk lib mkc_base mkc_base.
 Proof.
   introv.
   exists (per_base_eq lib).
@@ -563,8 +563,8 @@ Qed.
 Hint Immediate tequality_base.
 
 Lemma tequality_mkc_approx {p} :
-  forall lib (a b c d : @CTerm p),
-    tequality lib (mkc_approx a b) (mkc_approx c d)
+  forall uk lib (a b c d : @CTerm p),
+    tequality uk lib (mkc_approx a b) (mkc_approx c d)
     <=>
     in_open_bar lib (fun lib => (capproxc lib a b <=> capproxc lib c d)).
 Proof.
@@ -598,8 +598,8 @@ Proof.
 Qed.
 
 Lemma tequality_mkc_halts {p} :
-  forall lib (a b : @CTerm p),
-    tequality lib (mkc_halts a) (mkc_halts b)
+  forall uk lib (a b : @CTerm p),
+    tequality uk lib (mkc_halts a) (mkc_halts b)
     <=>
     in_open_bar lib (fun lib => (chaltsc lib a <=> chaltsc lib b)).
 Proof.
@@ -612,7 +612,7 @@ Qed.
 (*
 Lemma tequality_mkc_halts :
   forall a b,
-    tequality lib (mkc_halts a) (mkc_halts b)
+    tequality uk lib (mkc_halts a) (mkc_halts b)
     <->
     (hasvaluec a <-> hasvaluec b).
 Proof.
@@ -624,8 +624,8 @@ Qed.
 *)
 
 Lemma member_approx_is_axiom {o} :
-  forall lib (t t1 t2 : @CTerm o),
-    member lib t (mkc_approx t1 t2)
+  forall uk lib (t t1 t2 : @CTerm o),
+    member uk lib t (mkc_approx t1 t2)
     -> in_open_bar lib (fun lib => t ===>(lib) mkc_axiom).
 Proof.
   introv m.
@@ -641,9 +641,9 @@ Proof.
 Qed.
 
 Lemma member_cequiv_iff {o} :
-  forall lib (t1 t2 : @CTerm o),
+  forall uk lib (t1 t2 : @CTerm o),
     in_open_bar lib (fun lib => ccequivc lib t1 t2)
-    <=> member lib mkc_axiom (mkc_cequiv t1 t2).
+    <=> member uk lib mkc_axiom (mkc_cequiv t1 t2).
 Proof.
   sp; split; intro e.
 
@@ -662,8 +662,8 @@ Proof.
 Qed.
 
 Lemma tequality_mkc_cequiv {p} :
-  forall lib (a b c d : @CTerm p),
-    tequality lib (mkc_cequiv a b) (mkc_cequiv c d)
+  forall uk lib (a b c d : @CTerm p),
+    tequality uk lib (mkc_cequiv a b) (mkc_cequiv c d)
     <=>
     in_open_bar lib (fun lib => (ccequivc lib a b <=> ccequivc lib c d)).
 Proof.
@@ -686,9 +686,9 @@ Proof.
 Qed.
 
 Lemma equality_in_approx {o} :
-  forall lib (a b t1 t2 : @CTerm o),
+  forall uk lib (a b t1 t2 : @CTerm o),
     in_open_bar lib (fun lib => (capproxc lib t1 t2 # a ===>(lib) mkc_axiom # b ===>(lib) mkc_axiom))
-    <=> equality lib a b (mkc_approx t1 t2).
+    <=> equality uk lib a b (mkc_approx t1 t2).
 Proof.
   sp; split; intro e.
 
@@ -718,8 +718,8 @@ Proof.
 Qed.
 
 Lemma equality_in_mkc_cequiv {o} :
-  forall lib a b (t1 t2 : @CTerm o),
-    equality lib a b (mkc_cequiv t1 t2)
+  forall uk lib a b (t1 t2 : @CTerm o),
+    equality uk lib a b (mkc_cequiv t1 t2)
     <=> in_open_bar lib (fun lib => (a ===>(lib) mkc_axiom
                                        # b ===>(lib) mkc_axiom
                                        # ccequivc lib t1 t2)).
@@ -743,8 +743,8 @@ Proof.
 Qed.
 
 Lemma inhabited_cequiv {o} :
-  forall lib (t1 t2 : @CTerm o),
-    inhabited_type lib (mkc_cequiv t1 t2)
+  forall uk lib (t1 t2 : @CTerm o),
+    inhabited_type uk lib (mkc_cequiv t1 t2)
     <=> in_open_bar lib (fun lib => ccequivc lib t1 t2).
 Proof.
   unfold inhabited_type.
@@ -756,13 +756,13 @@ Proof.
 Qed.
 
 Lemma inhabited_halts {o} :
-  forall lib (t : @CTerm o),
+  forall uk lib (t : @CTerm o),
     in_open_bar lib (fun lib => chaltsc lib t)
-    <=> inhabited_type lib (mkc_halts t).
+    <=> inhabited_type uk lib (mkc_halts t).
 Proof.
   introv; split; intro h.
 
-  { rw @member_halts_iff in h; exists (@mkc_axiom o); auto. }
+  { rw (@member_halts_iff o uk) in h; exists (@mkc_axiom o); auto. }
 
   unfold inhabited_type in h; exrepnd.
   unfold member, equality in h0; exrepnd.
@@ -781,16 +781,16 @@ Proof.
 Qed.
 
 Lemma type_mkc_halts {p} :
-  forall lib (a : @CTerm p), type lib (mkc_halts a).
+  forall uk lib (a : @CTerm p), type uk lib (mkc_halts a).
 Proof.
   introv; rw @tequality_mkc_halts; eauto 3 with slow refl.
 Qed.
 Hint Immediate type_mkc_halts.
 
 Lemma equality_in_halts {p} :
-  forall lib (a b t : @CTerm p),
+  forall uk lib (a b t : @CTerm p),
     in_open_bar lib (fun lib => (chaltsc lib t # a ===>(lib) mkc_axiom # b ===>(lib) mkc_axiom))
-    <=> equality lib a b (mkc_halts t).
+    <=> equality uk lib a b (mkc_halts t).
 Proof.
   introv.
   rewrite <- fold_mkc_halts.
@@ -799,7 +799,7 @@ Proof.
     repnd; dands; auto; apply chasvaluec_as_capproxc; auto.
 Qed.
 
-Lemma type_mkc_unit {p} : forall lib, @type p lib mkc_unit.
+Lemma type_mkc_unit {p} : forall uk lib, @type p uk lib mkc_unit.
 Proof.
   introv; rw @mkc_unit_eq.
   apply equal_approx.
@@ -808,7 +808,7 @@ Hint Immediate type_mkc_unit.
 Hint Resolve type_mkc_unit : slow.
 
 Lemma tequality_unit {o} :
-  forall lib, @tequality o lib mkc_unit mkc_unit.
+  forall uk lib, @tequality o uk lib mkc_unit mkc_unit.
 Proof.
   introv; allrw @mkc_unit_eq.
   rw @tequality_mkc_approx; eauto 3 with slow refl.
@@ -816,8 +816,8 @@ Qed.
 Hint Resolve tequality_unit : slow.
 
 Lemma equality_in_unit {o} :
-  forall lib (a b : @CTerm o),
-    equality lib a b mkc_unit
+  forall uk lib (a b : @CTerm o),
+    equality uk lib a b mkc_unit
     <=> in_open_bar lib (fun lib => (a ===>(lib) mkc_axiom # b ===>(lib) mkc_axiom)).
 Proof.
   introv.
@@ -838,8 +838,8 @@ Qed.
 Hint Resolve resp_cvc_approxc : respects.
 
 Lemma equality_in_uni_mkc_halts {p} :
-  forall lib i (a b : @CTerm p),
-    equality lib (mkc_halts a) (mkc_halts b) (mkc_uni i)
+  forall uk lib i (a b : @CTerm p),
+    equality uk lib (mkc_halts a) (mkc_halts b) (mkc_uni uk i)
     <=>
     in_open_bar lib (fun lib => (chaltsc lib a <=> chaltsc lib b)).
 Proof.
@@ -850,8 +850,8 @@ Proof.
 Qed.
 
 Lemma cequorsq_mkc_halts_implies {p} :
-  forall lib i (a b : @CTerm p),
-    equorsq lib (mkc_halts a) (mkc_halts b) (mkc_uni i)
+  forall uk lib i (a b : @CTerm p),
+    equorsq uk lib (mkc_halts a) (mkc_halts b) (mkc_uni uk i)
     -> in_open_bar lib (fun lib => (chaltsc lib a <=> chaltsc lib b)).
 Proof.
   unfold equorsq; introv h; repndors; allrw @equality_in_uni_mkc_halts; tcsp.
@@ -861,8 +861,8 @@ Proof.
 Qed.
 
 Lemma cequorsq_mkc_halts {p} :
-  forall lib i (a b : @CTerm p),
-    equorsq lib (mkc_halts a) (mkc_halts b) (mkc_uni i)
+  forall uk lib i (a b : @CTerm p),
+    equorsq uk lib (mkc_halts a) (mkc_halts b) (mkc_uni uk i)
     <=>
     (chaltsc lib a <=> chaltsc lib b).
 Proof.
@@ -875,7 +875,7 @@ Abort.
 (*Qed.*)
 
 Lemma member_in_base_iff {o} :
-  forall lib (t : @CTerm o), member lib t mkc_base <=> True.
+  forall uk lib (t : @CTerm o), member uk lib t mkc_base <=> True.
 Proof.
   intros; split; intro; auto; apply member_base.
 Qed.

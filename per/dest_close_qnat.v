@@ -149,9 +149,9 @@ Proof.
 Qed.
 
 Lemma per_qnat_implies_per_bar_per_qnat {o} :
-  forall ts lib (T T' : @CTerm o) eq,
-    per_qnat ts lib T T' eq
-    -> per_bar (per_qnat ts) lib T T' eq.
+  forall ts uk lib (T T' : @CTerm o) eq,
+    per_qnat ts uk lib T T' eq
+    -> per_bar (per_qnat ts) uk lib T T' eq.
 Proof.
   introv per.
   unfold per_qnat in per; exrepnd.
@@ -174,12 +174,12 @@ Hint Resolve per_qnat_implies_per_bar_per_qnat : slow.
 (* ====== dest lemmas ====== *)
 
 Lemma dest_close_per_qnat_l {p} :
-  forall (ts : cts(p)) lib T T' eq c,
+  forall (ts : cts(p)) uk lib T T' eq c,
     type_system ts
     -> defines_only_universes ts
     -> ccomputes_to_valc_ext lib T (mkc_qnat c)
-    -> close ts lib T T' eq
-    -> per_bar (per_qnat (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_qnat (close ts)) uk lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.
@@ -189,12 +189,12 @@ Proof.
 Qed.
 
 Lemma dest_close_per_qnat_r {p} :
-  forall (ts : cts(p)) lib T T' eq c,
+  forall (ts : cts(p)) uk lib T T' eq c,
     type_system ts
     -> defines_only_universes ts
     -> ccomputes_to_valc_ext lib T' (mkc_qnat c)
-    -> close ts lib T T' eq
-    -> per_bar (per_qnat (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_qnat (close ts)) uk lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 2 with slow.

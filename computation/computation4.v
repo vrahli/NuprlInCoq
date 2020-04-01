@@ -1799,7 +1799,7 @@ Lemma computes_to_val_or_exc_in_max_k_steps_tuni_implies {p} :
         & {m : nat
            & k = S m
            # computes_to_val_or_exc_in_max_k_steps lib t x m
-           # ({n : nat & v = mk_uni n # x = @mk_integer p (Z.of_nat n)}
+           # ({n : nat & v = mk_uni 0 n # x = @mk_integer p (Z.of_nat n)}
               [+]
               (isexc x # x = v))}}.
 Proof.

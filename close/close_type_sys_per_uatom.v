@@ -32,12 +32,12 @@ Require Export close_util_uatom.
 
 
 Lemma close_type_system_uatom {p} :
-  forall lib (ts : cts(p)) T T' eq,
+  forall uk lib (ts : cts(p)) T T' eq,
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> per_uatom (close ts) lib T T' eq
-    -> type_sys_props4 (close ts) lib T T' eq.
+    -> per_uatom (close ts) uk lib T T' eq
+    -> type_sys_props4 (close ts) uk lib T T' eq.
 Proof.
   introv tysys dou mon per.
 
@@ -105,7 +105,7 @@ Proof.
   + SCase "term_value_respecting".
     assert (term_value_respecting (per_uatom_bar (close ts))) as tvr
       by (apply per_uatom_bar_term_value_respecting).
-    apply tvr with (T := T); auto.
+    eapply tvr; eauto.
     apply @type_system_type_mem with (T' := T'); eauto 3 with slow.
 
   + SCase "type_gsymmetric"; repdors; subst; split; sp; dclose_lr.

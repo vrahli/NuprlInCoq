@@ -29,47 +29,9 @@
 *)
 
 
+Require Export terms_swap.
 Require Export approx_star0.
 
-
-Lemma isprogram_swap_cs1_implies {p} :
-  forall (bterms : list (@BTerm p)),
-    isprogram (oterm (NCan NSwapCs1) bterms)
-    -> {a : NTerm
-        $ {b : NTerm
-        $ {c : NTerm
-           $ bterms = [bterm [] a, bterm [] b, bterm [] c]
-           # isprogram a
-           # isprogram b
-           # isprogram c }}}.
-Proof.
-  introv isp.
-  apply isprogram_ot_iff in isp; simpl in isp; repnd.
-  repeat (destruct bterms; allsimpl; cpx).
-  allunfold @num_bvars.
-  destruct b, b0, b1; simpl in *; ginv.
-  destruct l, l0, l1; simpl in *; ginv.
-  eexists; eexists; eexists; dands; eauto;
-    dLin_hyp; allapply @isprogram_bt_nobnd; auto.
-Qed.
-
-Lemma isprogram_swap_cs1_iff {p} :
-  forall (bterms : list (@BTerm p)),
-    isprogram (oterm (NCan NSwapCs1) bterms)
-    <=> {a : NTerm
-        $ {b : NTerm
-        $ {c : NTerm
-        $ bterms = [bterm [] a, bterm [] b, bterm [] c]
-        # isprogram a
-        # isprogram b
-        # isprogram c }}}.
-Proof.
-  introv; split; intro k.
-  apply isprogram_swap_cs1_implies in k; auto.
-  exrepnd; subst.
-  apply isprogram_ot_iff; unfold num_bvars; simpl; sp; subst;
-    apply implies_isprogram_bt0; auto.
-Qed.
 
 Lemma compute_step_swap_cs1_aux_success_implies {o} :
   forall can1 can2 l1 l2 bs (t : @NTerm o) u,
@@ -312,75 +274,6 @@ Proof.
   destruct bs; simpl in *; ginv.
 Qed.
 
-Lemma implies_isprog_vars_mk_swap_cs1 {o} :
-  forall l n1 n2 (t : @NTerm o),
-    isprog_vars l n1
-    -> isprog_vars l n2
-    -> isprog_vars l t
-    -> isprog_vars l (mk_swap_cs1 n1 n2 t).
-Proof.
-  introv ispa ipsb ispc.
-  unfold mk_swap_cs1; apply isprog_vars_ot_iff; simpl; dands; tcsp.
-  introv i; repndors; subst; tcsp; unfold nobnd in *; ginv; autorewrite with slow; auto.
-Qed.
-Hint Resolve implies_isprog_vars_mk_swap_cs1 : slow.
-
-Lemma implies_isprog_vars_mk_swap_cs2 {o} :
-  forall l n1 n2 (t : @NTerm o),
-    isprog_vars l t
-    -> isprog_vars l (mk_swap_cs2 n1 n2 t).
-Proof.
-  introv ispa.
-  unfold mk_swap_cs2; apply isprog_vars_ot_iff; simpl; dands; tcsp.
-  introv i; repndors; subst; tcsp; unfold nobnd in *; ginv; autorewrite with slow; auto.
-Qed.
-Hint Resolve implies_isprog_vars_mk_swap_cs2 : slow.
-
-Lemma implies_isprogram_mk_swap_cs1 {o} :
-  forall n1 n2 (t : @NTerm o),
-    isprogram n1
-    -> isprogram n2
-    -> isprogram t
-    -> isprogram (mk_swap_cs1 n1 n2 t).
-Proof.
-  introv ispa ipsb ispc.
-  allrw @isprogram_eq; allrw @isprog_vars_nil_iff_isprog; eauto 3 with slow.
-Qed.
-Hint Resolve implies_isprogram_mk_swap_cs1 : slow.
-
-Lemma implies_isprogram_mk_swap_cs2 {o} :
-  forall n1 n2 (t : @NTerm o),
-    isprogram t
-    -> isprogram (mk_swap_cs2 n1 n2 t).
-Proof.
-  introv ispa.
-  allrw @isprogram_eq; allrw @isprog_vars_nil_iff_isprog; eauto 3 with slow.
-Qed.
-Hint Resolve implies_isprogram_mk_swap_cs2 : slow.
-
-Lemma isprog_vars_mk_choice_seq {o} :
-  forall l n, @isprog_vars o l (mk_choice_seq n).
-Proof.
-  introv; apply isprog_vars_ot_iff; simpl; dands; tcsp.
-Qed.
-Hint Resolve isprog_vars_mk_choice_seq : slow.
-
-Lemma implies_isprogram_push_swap_cs_can {o} :
-  forall c1 c2 can (bs : list (@BTerm o)),
-    isprogram (oterm (Can can) bs)
-    -> isprogram (push_swap_cs_can c1 c2 can bs).
-Proof.
-  introv isp.
-  unfold push_swap_cs_can.
-  allrw @isprogram_ot_iff; simpl; autorewrite with slow in *; repnd; dands; auto.
-  introv i.
-  unfold push_swap_cs_bterms in i; apply in_map_iff in i; exrepnd; subst.
-  destruct a; simpl.
-  apply isp in i1.
-  allrw @isprogram_bt_iff_isprog_vars; eauto 3 with slow.
-Qed.
-Hint Resolve implies_isprogram_push_swap_cs_can : slow.
-
 Lemma implies_approx_star_mk_swap_cs1 {o} :
   forall lib (a b c u v w : @NTerm o),
     approx_star lib a u
@@ -438,45 +331,6 @@ Proof.
   introv; tcsp.
 Qed.
 Hint Rewrite @lsubst_mk_choice_seq : slow.
-
-Lemma nt_wf_mk_swap_cs1_implies {o} :
-  forall (a b c : @NTerm o),
-    nt_wf (mk_swap_cs1 a b c)
-    -> nt_wf a # nt_wf b # nt_wf c.
-Proof.
-  introv wf.
-  unfold mk_swap_cs1 in *.
-  allrw @nt_wf_oterm_iff; autorewrite with slow in *; repnd; dands; auto;
-    simpl in *; dLin_hyp; allrw @bt_wf_iff; auto.
-Qed.
-
-Lemma nt_wf_mk_swap_cs2_implies {o} :
-  forall a b (c : @NTerm o),
-    nt_wf (mk_swap_cs2 a b c)
-    -> nt_wf c.
-Proof.
-  introv wf.
-  unfold mk_swap_cs1 in *.
-  allrw @nt_wf_oterm_iff; autorewrite with slow in *; repnd; dands; auto;
-    simpl in *; dLin_hyp; allrw @bt_wf_iff; auto.
-Qed.
-
-Lemma nt_wf_push_swap_cs_can_implies {o} :
-  forall c1 c2 can (bs : list (@BTerm o)),
-    nt_wf (push_swap_cs_can c1 c2 can bs)
-    -> nt_wf (oterm (Can can) bs).
-Proof.
-  introv wf.
-  unfold push_swap_cs_can in *.
-  allrw @nt_wf_oterm_iff; simpl in *; autorewrite with slow in *; repnd; dands; auto.
-  introv i.
-  pose proof (wf (push_swap_cs_bterm c1 c2 b)) as wf.
-  autodimp wf hyp.
-  { apply in_map_iff; eexists; dands; eauto. }
-  destruct b; simpl in *.
-  allrw @bt_wf_iff.
-  apply nt_wf_mk_swap_cs2_implies in wf; tcsp.
-Qed.
 
 Lemma isprogram_lsubst_push_swap_cs_can_implies {o} :
   forall c1 c2 can (bs : list (@BTerm o)) sub,
@@ -543,20 +397,6 @@ Proof.
   introv comp1 comp2.
   unfold computes_to_value, reduces_to in *; exrepnd.
   eapply implies_compute_at_most_k_steps_mk_swap_cs1 in comp4; try exact comp0; exrepnd; eauto 3 with slow.
-Qed.
-
-Lemma isprogram_swap_cs2_implies {p} :
-  forall nfo (bterms : list (@BTerm p)),
-    isprogram (oterm (NCan (NSwapCs2 nfo)) bterms)
-    -> {a : NTerm $ bterms = [bterm [] a] # isprogram a }.
-Proof.
-  introv isp.
-  apply isprogram_ot_iff in isp; simpl in isp; repnd.
-  repeat (destruct bterms; allsimpl; cpx).
-  allunfold @num_bvars.
-  destruct b; simpl in *; ginv.
-  destruct l; simpl in *; ginv.
-  eexists; dands; eauto; dLin_hyp; allapply @isprogram_bt_nobnd; auto.
 Qed.
 
 Lemma computes_to_val_like_in_max_k_steps_swap_cs2_implies {o} :

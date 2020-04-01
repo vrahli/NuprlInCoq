@@ -36,8 +36,8 @@ Require Export per_props_nat2.
 
 
 Lemma tequality_natk2nat_nat {o} :
-  forall lib n,
-    @tequality o lib (natk2nat (mkc_nat n)) (natk2nat (mkc_nat n)).
+  forall uk lib n,
+    @tequality o uk lib (natk2nat (mkc_nat n)) (natk2nat (mkc_nat n)).
 Proof.
   introv.
   eapply tequality_natk2nat_aux;
@@ -48,13 +48,13 @@ Qed.
 Hint Resolve tequality_natk2nat_nat : slow.
 
 Lemma implies_equality_natk2nat {o} :
-  forall lib (f g : @CTerm o) n,
+  forall uk lib (f g : @CTerm o) n,
     (forall m,
        m < n
        -> {k : nat
            & ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)
            # ccomputes_to_valc_ext lib (mkc_apply g (mkc_nat m)) (mkc_nat k)})
-    -> equality lib f g (natk2nat (mkc_nat n)).
+    -> equality uk lib f g (natk2nat (mkc_nat n)).
 Proof.
   introv imp.
   apply equality_in_fun; dands; eauto 3 with slow.
@@ -98,11 +98,11 @@ Proof.
 Qed.
 
 Lemma implies_member_natk2nat {o} :
-  forall lib (f : @CTerm o) n,
+  forall uk lib (f : @CTerm o) n,
     (forall m,
        m < n
        -> {k : nat & ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)})
-    -> member lib f (natk2nat (mkc_nat n)).
+    -> member uk lib f (natk2nat (mkc_nat n)).
 Proof.
   introv imp.
   apply implies_equality_natk2nat.
@@ -112,9 +112,9 @@ Proof.
 Qed.
 
 Lemma equality_natk2nat_implies {o} :
-  forall lib m (f g : @CTerm o) n,
+  forall uk lib m (f g : @CTerm o) n,
     m < n
-    -> equality lib f g (natk2nat (mkc_nat n))
+    -> equality uk lib f g (natk2nat (mkc_nat n))
     -> in_open_bar lib (fun lib => {k : nat
         , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)
         # ccomputes_to_valc_ext lib (mkc_apply g (mkc_nat m)) (mkc_nat k)}).
@@ -137,9 +137,9 @@ Proof.
 Qed.
 
 Lemma member_natk2nat_implies {o} :
-  forall lib m (f : @CTerm o) n,
+  forall uk lib m (f : @CTerm o) n,
     m < n
-    -> member lib f (natk2nat (mkc_nat n))
+    -> member uk lib f (natk2nat (mkc_nat n))
     -> in_open_bar lib (fun lib => {k : nat , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)}).
 Proof.
   introv ltm mem.

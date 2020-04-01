@@ -919,7 +919,7 @@ Definition compute_step_tuni {p}
   match (arg1bts, btsr, get_param_from_cop arg1c) with
     | ([],[],Some (PKi n)) =>
       if Z_le_gt_dec 0 n
-      then csuccess (mk_uni (Z.to_nat n))
+      then csuccess (mk_uni 0 (Z.to_nat n))
       else cfailure tuni_not_well_formed t
     | _ => cfailure tuni_not_well_formed t
   end.

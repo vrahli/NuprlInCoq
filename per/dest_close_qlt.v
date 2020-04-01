@@ -41,9 +41,9 @@ Require Export dest_close_util.
 
 
 Lemma per_qlt_implies_per_bar {o} :
-  forall ts lib (T T' : @CTerm o) eq,
-    per_qlt ts lib T T' eq
-    -> per_bar (per_qlt ts) lib T T' eq.
+  forall ts uk lib (T T' : @CTerm o) eq,
+    per_qlt ts uk lib T T' eq
+    -> per_bar (per_qlt ts) uk lib T T' eq.
 Proof.
   introv per.
 
@@ -129,11 +129,11 @@ Proof.
 Qed.
 
 Lemma per_qlt_eq_bar_change_pers2 {o} :
-  forall ts (lib lib0 : @library o) T T' a b eqa' eqb' t1 t2,
+  forall ts uk (lib lib0 : @library o) T T' a b eqa' eqb' t1 t2,
     lib_extends lib0 lib
     -> (T ===>(lib) (mkc_qlt a b))
-    -> per_qlt ts lib0 T T' eqa'
-    -> per_qlt ts lib0 T T' eqb'
+    -> per_qlt ts uk lib0 T T' eqa'
+    -> per_qlt ts uk lib0 T T' eqb'
     -> eqa' t1 t2
     -> eqb' t1 t2.
 Proof.
@@ -158,11 +158,11 @@ Proof.
 Qed.
 
 Lemma per_qlt_eq_bar_change_pers3 {o} :
-  forall ts (lib lib0 : @library o) T T' a b eqa' eqb' t1 t2,
+  forall ts uk (lib lib0 : @library o) T T' a b eqa' eqb' t1 t2,
     lib_extends lib0 lib
     -> (T' ===>(lib) (mkc_qlt a b))
-    -> per_qlt ts lib0 T T' eqa'
-    -> per_qlt ts lib0 T T' eqb'
+    -> per_qlt ts uk lib0 T T' eqa'
+    -> per_qlt ts uk lib0 T T' eqb'
     -> eqa' t1 t2
     -> eqb' t1 t2.
 Proof.
@@ -187,9 +187,9 @@ Proof.
 Qed.
 
 Lemma local_per_bar_per_qlt {o} :
-  forall (ts : cts(o)) lib T a b,
+  forall (ts : cts(o)) uk lib T a b,
     T ===>(lib) (mkc_qlt a b)
-    -> local_ts_T (per_bar (per_qlt ts)) lib T.
+    -> local_ts_T (per_bar (per_qlt ts)) uk lib T.
 Proof.
   introv comp eqiff alla.
   unfold per_bar in *.
@@ -289,16 +289,16 @@ Proof.
     pose proof (imp lib1 ext1 lib2 ext2 extz) as imp; simpl in *; repnd; clear imp.
     pose proof (imp0 lib3 ext3 lib'2 (lib_extends_trans w ext4) z1) as imp0; simpl in *.
 
-    eapply (per_qlt_eq_bar_change_pers2 ts lib lib'2 T T' a b);
+    eapply (per_qlt_eq_bar_change_pers2 ts uk lib lib'2 T T' a b);
       auto; try exact imp0; eauto; eauto 3 with slow.
   }
 Qed.
 Hint Resolve local_per_bar_per_qlt : slow.
 
 Lemma local_per_bar_per_qlt2 {o} :
-  forall (ts : cts(o)) lib T a b,
+  forall (ts : cts(o)) uk lib T a b,
     T ===>(lib) (mkc_qlt a b)
-    -> local_ts_T2 (per_bar (per_qlt ts)) lib T.
+    -> local_ts_T2 (per_bar (per_qlt ts)) uk lib T.
 Proof.
   introv comp eqiff alla.
   unfold per_bar in *.
@@ -397,7 +397,7 @@ Proof.
     pose proof (imp lib1 ext1 lib2 ext2 extz) as imp; simpl in *; repnd; clear imp.
     pose proof (imp0 lib3 ext3 lib'2 (lib_extends_trans w ext4) z1) as imp0; simpl in *.
 
-    eapply (per_qlt_eq_bar_change_pers3 ts lib lib'2 T0 T);
+    eapply (per_qlt_eq_bar_change_pers3 ts uk lib lib'2 T0 T);
       auto; try exact imp0; eauto; eauto 3 with slow.
   }
 Qed.
@@ -407,12 +407,12 @@ Hint Resolve local_per_bar_per_qlt2 : slow.
 (* ====== dest lemmas ====== *)
 
 Lemma dest_close_per_qlt_l {o} :
-  forall (ts : cts(o)) lib T a b T' eq,
+  forall (ts : cts(o)) uk lib T a b T' eq,
     type_system ts
     -> defines_only_universes ts
     -> ccomputes_to_valc_ext lib T (mkc_qlt a b)
-    -> close ts lib T T' eq
-    -> per_bar (per_qlt (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_qlt (close ts)) uk lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
@@ -424,12 +424,12 @@ Proof.
 Qed.
 
 Lemma dest_close_per_qlt_r {o} :
-  forall (ts : cts(o)) lib T a b T' eq,
+  forall (ts : cts(o)) uk lib T a b T' eq,
     type_system ts
     -> defines_only_universes ts
     -> ccomputes_to_valc_ext lib T' (mkc_qlt a b)
-    -> close ts lib T T' eq
-    -> per_bar (per_qlt (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_qlt (close ts)) uk lib T T' eq.
 Proof.
   introv tysys dou comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.

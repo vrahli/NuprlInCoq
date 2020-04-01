@@ -70,9 +70,9 @@ Ltac free_vars_rw :=
 
 Ltac insub_step :=
   match goal with
-    | [ H : similarity _ _ _ _ |- _ ] => apply similarity_dom in H; repnd
-    | [ H : eq_hyps _ _ _ _ |- _ ] => apply eq_hyps_dom in H; repnd
-    | [ H : sub_eq_hyps _ _ _ _ _ _ |- _ ] => apply sub_eq_hyps_dom in H; repnd
+    | [ H : similarity _ _ _ _ _ |- _ ] => apply similarity_dom in H; repnd
+    | [ H : eq_hyps _ _ _ _ _ |- _ ] => apply eq_hyps_dom in H; repnd
+    | [ H : sub_eq_hyps _ _ _ _ _ _ _ |- _ ] => apply sub_eq_hyps_dom in H; repnd
     | [ |- context[dom_csub (snoc _ _)] ] => rewrite dom_csub_snoc
     | [ |- context[LIn _ (snoc _ _)] ] => trw in_snoc
     | [ |- context[_ ++ nil] ] => rewrite app_nil_r

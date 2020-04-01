@@ -42,13 +42,13 @@ Proof.
 Defined.
 
 Lemma nuprl_mkc_not {o} :
-  forall lib (a b : @CTerm o) eq,
-    nuprl lib a b eq
-    -> exists eq', nuprl lib (mkc_not a) (mkc_not b) eq'.
+  forall uk lib (a b : @CTerm o) eq,
+    nuprl uk lib a b eq
+    -> exists eq', nuprl uk lib (mkc_not a) (mkc_not b) eq'.
 Proof.
   introv n.
 
-  pose proof (nuprl_monotone_func lib a b eq n) as tya; exrepnd.
+  pose proof (nuprl_monotone_func uk lib a b eq n) as tya; exrepnd.
   rename eq' into eqa.
 
   exists (per_func_ext_eq lib eqa (empty_lib_per_fam eqa)).
@@ -59,9 +59,8 @@ Proof.
   unfold mkc_not.
   repeat (rw <- @fold_mkc_fun).
   eexists; eexists; eexists; eexists; eexists; eexists;
-    dands; auto; spcast; eauto 3 with slow; try (fold (@nuprl o)).
-
-  { introv; apply tya0. }
+    dands; auto; spcast; eauto 3 with slow; try (fold (@nuprl o));
+      eauto 2 with slow; try (complete (introv; apply tya0));[].
 
   introv.
   allrw @csubst_mk_cv; simpl.
@@ -83,14 +82,14 @@ Proof.
 Qed.
 
 Lemma tequality_void {p} :
-  forall lib, @tequality p lib mkc_void mkc_void.
+  forall uk lib, @tequality p uk lib mkc_void mkc_void.
 Proof.
   introv; rw @mkc_void_eq_mkc_false; eauto 3 with slow.
 Qed.
 Hint Resolve tequality_void : slow.
 
 Lemma type_void {p} :
-  forall lib, @type p lib mkc_void.
+  forall uk lib, @type p uk lib mkc_void.
 Proof.
   introv.
   unfold type; eauto 3 with slow.
@@ -98,20 +97,21 @@ Qed.
 Hint Resolve type_void : slow.
 
 Lemma tequality_not {p} :
-  forall lib (A1 A2 : @CTerm p),
-    tequality lib (mkc_not A1) (mkc_not A2)
+  forall uk lib (A1 A2 : @CTerm p),
+    tequality uk lib (mkc_not A1) (mkc_not A2)
     <=>
-    tequality lib A1 A2.
+    tequality uk lib A1 A2.
 Proof.
   intros.
   rw @tequality_fun; split; sp; eauto 3 with slow.
 Qed.
 
 Lemma equality_in_not {p} :
-  forall lib (t1 t2 A : @CTerm p),
-    equality lib t1 t2 (mkc_not A)
+  forall uk lib (t1 t2 A : @CTerm p),
+    equality uk lib t1 t2 (mkc_not A)
     <=>
-    (type lib A # in_ext lib (fun lib => !inhabited_type lib A)).
+    (type uk lib A
+     # in_ext lib (fun lib => !inhabited_type uk lib A)).
 Proof.
   introv.
   rw @equality_in_fun; split; intro e; repnd; dands; auto; tcsp; eauto 3 with slow;[|].

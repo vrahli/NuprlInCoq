@@ -80,11 +80,11 @@ Qed.
 Hint Resolve ccequivc_ext_isvalue_implies_ccomputes_to_valc_ext : slow.
 
 Lemma equality_in_mkc_squash {p} :
-  forall lib (t1 t2 T : @CTerm p),
-    equality lib t1 t2 (mkc_squash T)
+  forall uk lib (t1 t2 T : @CTerm p),
+    equality uk lib t1 t2 (mkc_squash T)
     <=> (computes_to_valc_ex_bar lib t1 mkc_axiom
          # computes_to_valc_ex_bar lib t2 mkc_axiom
-         # inhabited_type_bar lib T).
+         # inhabited_type_bar uk lib T).
 Proof.
   intros.
   rw @equality_in_mkc_image; split; intro e; exrepnd; dands; eauto 3 with slow.
@@ -139,20 +139,20 @@ Proof.
 Qed.
 
 Lemma tequality_mkc_squash {p} :
-  forall lib (T1 T2 : @CTerm p),
-    tequality lib (mkc_squash T1) (mkc_squash T2)
-    <=> tequality lib T1 T2.
+  forall uk lib (T1 T2 : @CTerm p),
+    tequality uk lib (mkc_squash T1) (mkc_squash T2)
+    <=> tequality uk lib T1 T2.
 Proof.
   introv.
   rw @tequality_mkc_image; split; sp; spcast; eauto 3 with slow.
 Qed.
 
 Lemma implies_tequality_equality_mkc_squash {o} :
-  forall lib (t1 t2 : @CTerm o),
-    tequality lib t1 t2
-    -> inhabited_type lib t1
-    -> (tequality lib (mkc_squash t1) (mkc_squash t2)
-        # equality lib mkc_axiom mkc_axiom (mkc_squash t1)).
+  forall uk lib (t1 t2 : @CTerm o),
+    tequality uk lib t1 t2
+    -> inhabited_type uk lib t1
+    -> (tequality uk lib (mkc_squash t1) (mkc_squash t2)
+        # equality uk lib mkc_axiom mkc_axiom (mkc_squash t1)).
 Proof.
   introv teq inh.
   rw @equality_in_mkc_squash.
@@ -161,27 +161,27 @@ Proof.
 Qed.
 
 Lemma implies_tequality_equality_mkc_squash_and {o} :
-  forall lib (t1 t2 : @CTerm o),
-    (tequality lib t1 t2 # inhabited_type lib t1)
-    -> (tequality lib (mkc_squash t1) (mkc_squash t2)
-        # equality lib mkc_axiom mkc_axiom (mkc_squash t1)).
+  forall uk lib (t1 t2 : @CTerm o),
+    (tequality uk lib t1 t2 # inhabited_type uk lib t1)
+    -> (tequality uk lib (mkc_squash t1) (mkc_squash t2)
+        # equality uk lib mkc_axiom mkc_axiom (mkc_squash t1)).
 Proof.
   introv h.
   apply implies_tequality_equality_mkc_squash; sp.
 Qed.
 
 Lemma equality_in_mkc_squash_ax {o} :
-  forall lib (t : @CTerm o),
-    equality lib mkc_axiom mkc_axiom (mkc_squash t)
-    <=> inhabited_type_bar lib t.
+  forall uk lib (t : @CTerm o),
+    equality uk lib mkc_axiom mkc_axiom (mkc_squash t)
+    <=> inhabited_type_bar uk lib t.
 Proof.
   introv.
   rw @equality_in_mkc_squash; split; intro h; repnd; dands; auto; spcast; eauto 3 with slow.
 Qed.
 
 Lemma inhabited_squash {o} :
-  forall lib (t : @CTerm o),
-    inhabited_type lib (mkc_squash t) <=> inhabited_type_bar lib t.
+  forall uk lib (t : @CTerm o),
+    inhabited_type uk lib (mkc_squash t) <=> inhabited_type_bar uk lib t.
 Proof.
   introv.
   split; intro k; allunfold @inhabited_type; exrepnd.

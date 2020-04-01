@@ -118,10 +118,10 @@ Hint Resolve computes_to_valc_implies_ccequivc_ext : slow.*)
 Hint Resolve ccomputes_to_valc_ext_implies_ccequivc_ext : slow.
 
 Lemma nuprl_computes_left {o} :
-  forall lib (t1 t2 t3 : @CTerm o) eq,
-    nuprl lib t1 t2 eq
+  forall uk lib (t1 t2 t3 : @CTerm o) eq,
+    nuprl uk lib t1 t2 eq
     -> ccomputes_to_valc_ext lib t3 t1
-    -> nuprl lib t3 t2 eq.
+    -> nuprl uk lib t3 t2 eq.
 Proof.
   introv n c.
   apply @nuprl_value_respecting_left with (t1 := t1); auto.
@@ -129,10 +129,10 @@ Proof.
 Qed.
 
 Lemma nuprl_computes_right {o} :
-  forall lib (t1 t2 t3 : @CTerm o) eq,
-    nuprl lib t1 t2 eq
+  forall uk lib (t1 t2 t3 : @CTerm o) eq,
+    nuprl uk lib t1 t2 eq
     -> ccomputes_to_valc_ext lib t3 t2
-    -> nuprl lib t1 t3 eq.
+    -> nuprl uk lib t1 t3 eq.
 Proof.
   introv n c.
   apply @nuprl_value_respecting_right with (t2 := t2); auto.
@@ -143,7 +143,7 @@ Lemma computes_to_valc_tuni {o} :
   forall lib (t : @CTerm o) k,
     (0 <= k)%Z
     -> computes_to_valc lib t (mkc_integer k)
-    -> computes_to_valc lib (mkc_tuni t) (mkc_uni (Z.to_nat k)).
+    -> computes_to_valc lib (mkc_tuni t) (mkc_uni 0 (Z.to_nat k)).
 Proof.
   introv le c.
   destruct_cterms.
@@ -161,7 +161,7 @@ Lemma ccomputes_to_valc_tuni {o} :
   forall lib (t : @CTerm o) k,
     (0 <= k)%Z
     -> t ===>(lib) (mkc_integer k)
-    -> (mkc_tuni t) ===>(lib) (mkc_uni (Z.to_nat k)).
+    -> (mkc_tuni t) ===>(lib) (mkc_uni 0 (Z.to_nat k)).
 Proof.
   introv le c.
   introv ext; apply c in ext; clear c; exrepnd.
@@ -169,7 +169,7 @@ Proof.
   eapply cequivc_integer in ext0;[|eauto 3 with slow].
   apply computes_to_valc_isvalue_eq in ext0; eauto 3 with slow; subst.
 
-  exists (@mkc_uni o (Z.to_nat k)).
+  exists (@mkc_uni o 0 (Z.to_nat k)).
   dands; spcast; auto.
   destruct_cterms.
   allunfold @computes_to_valc; allsimpl.

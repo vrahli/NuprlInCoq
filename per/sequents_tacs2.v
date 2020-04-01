@@ -29,13 +29,13 @@ Ltac sim_snoc :=
   match goal with
     | [ w : wf_term ?t
             , c : cover_vars ?t ?s1
-        |- similarity _ (snoc ?s1 (?x,?t1)) (snoc ?s2 (?x,?t2)) (snoc _ (mk_hhyp ?x ?t))
+        |- similarity _ _ (snoc ?s1 (?x,?t1)) (snoc ?s2 (?x,?t2)) (snoc _ (mk_hhyp ?x ?t))
       ] =>
       apply similarity_snoc; simpl;
       exists s1 s2 t1 t2 w c
     | [ w : wf_term ?t
             , c : cover_vars ?t ?s1
-        |- similarity _ (snoc ?s1 (?x,?t1)) (snoc ?s2 (?x,?t2)) (snoc _ (mk_hyp ?x ?t))
+        |- similarity _ _ (snoc ?s1 (?x,?t1)) (snoc ?s2 (?x,?t2)) (snoc _ (mk_hyp ?x ?t))
       ] =>
       apply similarity_snoc; simpl;
       exists s1 s2 t1 t2 w c
@@ -43,7 +43,7 @@ Ltac sim_snoc :=
 
 Ltac sim_snoc2 :=
   match goal with
-    | [ |- similarity _ (snoc ?s1 (?x,?t1)) (snoc ?s2 (?x,?t2)) (snoc _ (mk_hhyp ?x ?t)) ] =>
+    | [ |- similarity _ _ (snoc ?s1 (?x,?t1)) (snoc ?s2 (?x,?t2)) (snoc _ (mk_hhyp ?x ?t)) ] =>
       let w := fresh "w" in
       let c := fresh "c" in
       assert (wf_term t) as w;
@@ -54,7 +54,7 @@ Ltac sim_snoc2 :=
             exists s1 s2 t1 t2 w c
           ]
         ]
-    | [ |- similarity _ (snoc ?s1 (?x,?t1)) (snoc ?s2 (?x,?t2)) (snoc _ (mk_hyp ?x ?t)) ] =>
+    | [ |- similarity _ _ (snoc ?s1 (?x,?t1)) (snoc ?s2 (?x,?t2)) (snoc _ (mk_hyp ?x ?t)) ] =>
       let w := fresh "w" in
       let c := fresh "c" in
       assert (wf_term t) as w;
@@ -69,13 +69,6 @@ Ltac sim_snoc2 :=
 
 Ltac generalize_lsubstc_terms nm :=
   match goal with
-  | [ |- context[lsubstc ?x ?y ?z ?w] ] =>  
+  | [ |- context[lsubstc ?x ?y ?z ?w] ] =>
     remember (lsubstc x y z w) as nm; clear_eq nm (lsubstc x y z w)
  end.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

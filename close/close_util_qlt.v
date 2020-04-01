@@ -90,9 +90,9 @@ Proof.
 Qed.
 
 Lemma per_qlt_bar_implies_per_bar {o} :
-  forall ts lib (T T' : @CTerm o) eq,
-    per_qlt (close ts) lib T T' eq
-    -> per_bar (close ts) lib T T' eq.
+  forall ts uk lib (T T' : @CTerm o) eq,
+    per_qlt (close ts) uk lib T T' eq
+    -> per_bar (close ts) uk lib T T' eq.
 Proof.
   introv per.
   unfold per_qlt in *; exrepnd.

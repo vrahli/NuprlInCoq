@@ -39,31 +39,34 @@ Require Export per_props_equality.
 Require Export sequents_equality.
 
 
+Hint Rewrite @lsubstc_mk_uni : slow.
+
+
 Definition rule_tyfam_equality {p}
            C
            (a1 a2 b1 b2 : NTerm)
            (e1 e2 : NTerm)
            (x1 x2 y : NVar)
-           (i   : nat)
+           (u i   : nat)
            (H   : @barehypotheses p) :=
   mk_rule
     (mk_baresequent
        H
-       (mk_conclax (mk_equality (C a1 x1 b1) (C a2 x2 b2) (mk_uni i))))
+       (mk_conclax (mk_equality (C a1 x1 b1) (C a2 x2 b2) (mk_uni u i))))
     [ mk_baresequent
         H
-        (mk_concl (mk_equality a1 a2 (mk_uni i)) e1),
+        (mk_concl (mk_equality a1 a2 (mk_uni u i)) e1),
       mk_baresequent
         (snoc H (mk_hyp y a1))
         (mk_concl (mk_equality
                      (subst b1 x1 (mk_var y))
                      (subst b2 x2 (mk_var y))
-                     (mk_uni i)) e2)
+                     (mk_uni u i)) e2)
     ]
     [ sarg_var y ].
 
 Lemma rule_tyfam_equality_true3 {pp} :
-  forall lib C Cc (a1 a2 b1 b2 : NTerm) (e1 e2 : NTerm)
+  forall uk lib C Cc (a1 a2 b1 b2 : NTerm) (e1 e2 : NTerm)
          (x1 x2 y : NVar) (i : nat) (H : @barehypotheses pp),
 (*  forall bc1 : !LIn y (bound_vars b1),
   forall bc2 : !LIn y (bound_vars b2), *)
@@ -77,15 +80,15 @@ Lemma rule_tyfam_equality_true3 {pp} :
                      = Cc (lsubstc a wa s ca) x (lsubstc_vars b wb (csub_filter s [x]) [x] cb)
                }}}}),
   forall eqC : (in_ext lib (fun lib => forall a1 a2 v1 v2 b1 b2 i,
-                  equality lib (Cc a1 v1 b1) (Cc a2 v2 b2) (mkc_uni i)
-                  <=> (equality lib a1 a2 (mkc_uni i)
+                  equality uk lib (Cc a1 v1 b1) (Cc a2 v2 b2) (mkc_uni uk i)
+                  <=> (equality uk lib a1 a2 (mkc_uni uk i)
                        # (in_ext lib (fun lib => forall a a',
-                            equality lib a a' a1
-                            -> equality lib (substc a v1 b1) (substc a' v2 b2) (mkc_uni i)))))),
-    rule_true3 lib (rule_tyfam_equality
+                            equality uk lib a a' a1
+                            -> equality uk lib (substc a v1 b1) (substc a' v2 b2) (mkc_uni uk i)))))),
+    rule_true3 uk lib (rule_tyfam_equality
                       C a1 a2 b1 b2 e1 e2
                       x1 x2 y
-                      i
+                      uk i
                       H).
 Proof.
   unfold rule_tyfam_equality, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -99,7 +102,7 @@ Proof.
   destruct Hyp0 as [ ws2 hyp2 ].
   destseq; allsimpl; proof_irr; GC.
 
-  assert (wf_csequent ((H) ||- (mk_conclax (mk_equality (C a1 x1 b1) (C a2 x2 b2) (mk_uni i))))) as wfc.
+  assert (wf_csequent ((H) ||- (mk_conclax (mk_equality (C a1 x1 b1) (C a2 x2 b2) (mk_uni uk i))))) as wfc.
   {
     unfold wf_csequent, wf_sequent, wf_concl; simpl.
     dands; eauto 2 with slow.
@@ -150,11 +153,12 @@ Proof.
   rewrite @member_eq.
   rw <- @member_equality_iff.
 
-  teq_and_eq (@mk_uni pp i) (C a1 x1 b1) (C a2 x2 b2) s1 s2 H;
-    [apply tequality_mkc_uni|];[].
+  teq_and_eq (@mk_uni pp (ukind2nat uk) i) (C a1 x1 b1) (C a2 x2 b2) s1 s2 H;
+    [  autorewrite with slow;eapply tequality_mkc_uni|];[].
 
   pose proof (pd a1 x1 b1 w1 s1 ca1) as z; exrepnd; rw z1; clear z1.
   pose proof (pd a2 x2 b2 w2 s2 cb2) as z; exrepnd; rw z1; clear z1.
+  autorewrite with slow.
   apply eqC; auto;[].
   dands.
 
@@ -165,7 +169,7 @@ Proof.
     exrepnd.
     lsubst_tac.
     apply equality_in_mkc_equality in hyp1; repnd.
-    apply equality_commutes4 in hyp0; auto.
+    apply equality_commutes4 in hyp0; autorewrite with slow in *; auto.
   }
 
   { (* Then we prove that the b's are type families *)
@@ -185,7 +189,7 @@ Proof.
       rw @eq_hyps_snoc; simpl.
       assert (cover_vars a1 s4)
         as cv4
-          by (apply (similarity_cover_vars lib''') with (hs := H) (s1 := s1); auto).
+          by (apply (similarity_cover_vars uk lib''') with (hs := H) (s1 := s1); auto).
       exists s1 s4 a t2 w p cv4; sp; eauto 2 with slow; try (eapply hf; eauto).
       (* while proving that functionality result, we have to prove that
        * a1 is functional, which we prove using our 1st hyp *)
@@ -196,7 +200,8 @@ Proof.
       autodimp hyp1 hyp1'; eauto 3 with slow; exrepnd; clear_irr.
       lift_lsubst in hyp0; lift_lsubst in hyp1.
       apply equality_in_mkc_equality in hyp1; repnd.
-      apply @equality_commutes2 in hyp0; auto.
+      autorewrite with slow in *.
+      apply equality_commutes2 in hyp0; auto.
       allapply @equality_in_uni; auto. }
 
     { rw @similarity_snoc; simpl.
@@ -237,12 +242,13 @@ Proof.
     repeat (substc_lsubstc_vars3;[]).
     lsubst_tac.
     repeat lsubstc_snoc2.
+    autorewrite with slow in *.
     GC; proof_irr; auto.
   }
 Qed.
 
 Lemma rule_tyfam_equality_true {pp} :
-  forall lib C Cc (a1 a2 b1 b2 : NTerm) (e1 e2 : NTerm)
+  forall uk lib C Cc (a1 a2 b1 b2 : NTerm) (e1 e2 : NTerm)
          (x1 x2 y : NVar) (i : nat) (H : @barehypotheses pp),
 (*  forall bc1 : !LIn y (bound_vars b1),
   forall bc2 : !LIn y (bound_vars b2), *)
@@ -256,15 +262,15 @@ Lemma rule_tyfam_equality_true {pp} :
                      = Cc (lsubstc a wa s ca) x (lsubstc_vars b wb (csub_filter s [x]) [x] cb)
                }}}}),
   forall eqC : (in_ext lib (fun lib => forall a1 a2 v1 v2 b1 b2 i,
-                  equality lib (Cc a1 v1 b1) (Cc a2 v2 b2) (mkc_uni i)
-                  <=> (equality lib a1 a2 (mkc_uni i)
+                  equality uk lib (Cc a1 v1 b1) (Cc a2 v2 b2) (mkc_uni uk i)
+                  <=> (equality uk lib a1 a2 (mkc_uni uk i)
                        # (in_ext lib (fun lib => forall a a',
-                            equality lib a a' a1
-                            -> equality lib (substc a v1 b1) (substc a' v2 b2) (mkc_uni i)))))),
-    rule_true lib (rule_tyfam_equality
+                            equality uk lib a a' a1
+                            -> equality uk lib (substc a v1 b1) (substc a' v2 b2) (mkc_uni uk i)))))),
+    rule_true uk lib (rule_tyfam_equality
                      C a1 a2 b1 b2 e1 e2
                      x1 x2 y
-                     i
+                     uk i
                      H).
 Proof.
   introv fvs lsub iff.

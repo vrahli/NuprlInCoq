@@ -233,14 +233,14 @@ Ltac ccomputes_to_valc_ext_val :=
     apply ccequivc_ext_mkc_qnat_implies in H;
     try subst
 
-  | [ H : (mkc_uni _) ===>(_) (mkc_uni _) |- _ ] =>
+  | [ H : (mkc_uni _ _) ===>(_) (mkc_uni _ _) |- _ ] =>
     apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;
     apply ccequivc_ext_uni_uni_implies in H;
-    try subst
+    repnd; try subst
 
-  | [ H : ccequivc_ext _ (mkc_uni _) (mkc_uni _) |- _ ] =>
+  | [ H : ccequivc_ext _ (mkc_uni _ _) (mkc_uni _ _) |- _ ] =>
     apply ccequivc_ext_uni_uni_implies in H;
-    try subst
+    repnd; try subst
 
   | [ H : (mkc_integer _) ===>(_) (mkc_integer _) |- _ ] =>
     apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;

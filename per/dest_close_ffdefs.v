@@ -41,9 +41,9 @@ Require Export dest_close_util.
 
 
 Lemma per_ffdefs_implies_per_bar {o} :
-  forall ts lib (T T' : @CTerm o) eq,
-    per_ffdefs ts lib T T' eq
-    -> per_bar (per_ffdefs ts) lib T T' eq.
+  forall ts uk lib (T T' : @CTerm o) eq,
+    per_ffdefs ts uk lib T T' eq
+    -> per_bar (per_ffdefs ts) uk lib T T' eq.
 Proof.
   introv per.
 
@@ -109,14 +109,14 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_type_sys_prop4_implies_in_ext_term_equality_transitive_ext {o} :
-  forall ts lib lib' (ext : lib_extends lib' lib) (A A1 A2 : @CTerm o) (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A1 (eqa lib' x))
-    -> in_ext_ext lib' (fun lib'' x => ts lib'' A A2 (eqa1 lib'' x))
+  forall ts uk lib lib' (ext : lib_extends lib' lib) (A A1 A2 : @CTerm o) (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A1 (eqa lib' x))
+    -> in_ext_ext lib' (fun lib'' x => ts uk lib'' A A2 (eqa1 lib'' x))
     -> in_ext_ext lib' (fun lib'' x => term_equality_transitive (eqa1 lib'' x)).
 Proof.
   introv ext tsp tsts.
   applydup @in_ext_ext_type_sys_prop4_implies_in_ext_term_equality_transitive in tsp.
-  eapply (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4 ts ext) in tsp;
+  eapply (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4 ts uk ext) in tsp;
     try exact tsts;[].
   apply (lib_extends_preserves_in_ext_ext ext) in tsp0.
   introv h1 h2.
@@ -126,14 +126,14 @@ Qed.
 Hint Resolve in_ext_ext_type_sys_prop4_implies_in_ext_term_equality_transitive_ext : slow.
 
 Lemma in_ext_ext_type_sys_prop4_implies_in_ext_term_equality_symmetric_ext {o} :
-  forall ts lib lib' (ext : lib_extends lib' lib) (A A1 A2 : @CTerm o) (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A1 (eqa lib' x))
-    -> in_ext_ext lib' (fun lib'' x => ts lib'' A A2 (eqa1 lib'' x))
+  forall ts uk lib lib' (ext : lib_extends lib' lib) (A A1 A2 : @CTerm o) (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A1 (eqa lib' x))
+    -> in_ext_ext lib' (fun lib'' x => ts uk lib'' A A2 (eqa1 lib'' x))
     -> in_ext_ext lib' (fun lib'' x => term_equality_symmetric (eqa1 lib'' x)).
 Proof.
   introv ext tsp tsts.
   applydup @in_ext_ext_type_sys_prop4_implies_in_ext_term_equality_symmetric in tsp.
-  eapply (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4 ts ext) in tsp;
+  eapply (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4 ts uk ext) in tsp;
     try exact tsts;[].
   apply (lib_extends_preserves_in_ext_ext ext) in tsp0.
   introv h1.
@@ -143,14 +143,14 @@ Qed.
 Hint Resolve in_ext_ext_type_sys_prop4_implies_in_ext_term_equality_symmetric_ext : slow.
 
 Lemma in_ext_ext_type_sys_prop4_implies_in_ext_term_equality_transitive_ext2 {o} :
-  forall ts lib lib' (ext : lib_extends lib' lib) (A A1 A2 : @CTerm o) (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A1 A (eqa lib' x))
-    -> in_ext_ext lib' (fun lib'' x => ts lib'' A2 A (eqa1 lib'' x))
+  forall ts uk lib lib' (ext : lib_extends lib' lib) (A A1 A2 : @CTerm o) (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A1 A (eqa lib' x))
+    -> in_ext_ext lib' (fun lib'' x => ts uk lib'' A2 A (eqa1 lib'' x))
     -> in_ext_ext lib' (fun lib'' x => term_equality_transitive (eqa1 lib'' x)).
 Proof.
   introv ext tsp tsts.
   applydup @in_ext_ext_type_sys_prop4_implies_in_ext_term_equality_transitive in tsp.
-  eapply (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5 ts ext) in tsp;
+  eapply (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5 ts uk ext) in tsp;
     try exact tsts;[].
   apply (lib_extends_preserves_in_ext_ext ext) in tsp0.
   introv h1 h2.
@@ -160,14 +160,14 @@ Qed.
 Hint Resolve in_ext_ext_type_sys_prop4_implies_in_ext_term_equality_transitive_ext2 : slow.
 
 Lemma in_ext_ext_type_sys_prop4_implies_in_ext_term_equality_symmetric_ext2 {o} :
-  forall ts lib lib' (ext : lib_extends lib' lib) (A A1 A2 : @CTerm o) (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A1 A (eqa lib' x))
-    -> in_ext_ext lib' (fun lib'' x => ts lib'' A2 A (eqa1 lib'' x))
+  forall ts uk lib lib' (ext : lib_extends lib' lib) (A A1 A2 : @CTerm o) (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A1 A (eqa lib' x))
+    -> in_ext_ext lib' (fun lib'' x => ts uk lib'' A2 A (eqa1 lib'' x))
     -> in_ext_ext lib' (fun lib'' x => term_equality_symmetric (eqa1 lib'' x)).
 Proof.
   introv ext tsp tsts.
   applydup @in_ext_ext_type_sys_prop4_implies_in_ext_term_equality_symmetric in tsp.
-  eapply (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5 ts ext) in tsp;
+  eapply (in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5 ts uk ext) in tsp;
     try exact tsts;[].
   apply (lib_extends_preserves_in_ext_ext ext) in tsp0.
   introv h1.
@@ -305,16 +305,16 @@ Proof.
 Qed.
 
 Lemma per_ffdefs_eq_bar_change_pers {o} :
-  forall ts (lib lib0 : @library o) A A' A1 A2 A3 A4
+  forall ts uk (lib lib0 : @library o) A A' A1 A2 A3 A4
          (eqa : lib-per(lib,o)) (eqa1 eqa2 : lib-per(lib0,o)) f g t1 t2,
     lib_extends lib0 lib
     -> ccequivc_ext lib0 A4 A2
     -> ccequivc_ext lib0 A3 A1
     -> ccequivc_ext lib0 A1 A
     -> ccequivc_ext lib0 f g
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib0 (fun lib' x => ts lib' A1 A2 (eqa1 lib' x))
-    -> in_ext_ext lib0 (fun lib' x => ts lib' A3 A4 (eqa2 lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> in_ext_ext lib0 (fun lib' x => ts uk lib' A1 A2 (eqa1 lib' x))
+    -> in_ext_ext lib0 (fun lib' x => ts uk lib' A3 A4 (eqa2 lib' x))
     -> per_ffdefs_eq_bar lib0 eqa2 f t1 t2
     -> per_ffdefs_eq_bar lib0 eqa1 g t1 t2.
 Proof.
@@ -336,12 +336,12 @@ Proof.
 Qed.
 
 Lemma per_ffdefs_eq_bar_change_pers2 {o} :
-  forall ts (lib lib0 : @library o) T T' A A' f (eqa : lib-per(lib,o)) eqa' eqb' t1 t2,
+  forall ts uk (lib lib0 : @library o) T T' A A' f (eqa : lib-per(lib,o)) eqa' eqb' t1 t2,
     lib_extends lib0 lib
     -> (T ===>(lib) (mkc_free_from_defs A f))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> per_ffdefs ts lib0 T T' eqa'
-    -> per_ffdefs ts lib0 T T' eqb'
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> per_ffdefs ts uk lib0 T T' eqa'
+    -> per_ffdefs ts uk lib0 T T' eqb'
     -> eqa' t1 t2
     -> eqb' t1 t2.
 Proof.
@@ -362,16 +362,16 @@ Proof.
   apply pera0 in eqs.
   apply perb0.
 
-  eapply (per_ffdefs_eq_bar_change_pers ts lib lib0 A A' A1 A2 A0 A3); eauto; eauto 3 with slow.
+  eapply (per_ffdefs_eq_bar_change_pers ts uk lib lib0 A A' A1 A2 A0 A3); eauto; eauto 3 with slow.
 Qed.
 
 Lemma per_ffdefs_eq_bar_change_pers3 {o} :
-  forall ts (lib lib0 : @library o) T T' A A' f (eqa : lib-per(lib,o)) eqa' eqb' t1 t2,
+  forall ts uk (lib lib0 : @library o) T T' A A' f (eqa : lib-per(lib,o)) eqa' eqb' t1 t2,
     lib_extends lib0 lib
     -> (T' ===>(lib) (mkc_free_from_defs A f))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> per_ffdefs ts lib0 T T' eqa'
-    -> per_ffdefs ts lib0 T T' eqb'
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> per_ffdefs ts uk lib0 T T' eqa'
+    -> per_ffdefs ts uk lib0 T T' eqb'
     -> eqa' t1 t2
     -> eqb' t1 t2.
 Proof.
@@ -392,14 +392,14 @@ Proof.
   apply pera0 in eqs.
   apply perb0.
 
-  eapply (per_ffdefs_eq_bar_change_pers ts lib lib0 A A' A2 A1 A3 A0); eauto; eauto 3 with slow.
+  eapply (per_ffdefs_eq_bar_change_pers ts uk lib lib0 A A' A2 A1 A3 A0); eauto; eauto 3 with slow.
 Qed.
 
 Lemma local_per_bar_per_ffdefs {o} :
-  forall (ts : cts(o)) lib T A a A' (eqa : lib-per(lib,o)),
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
+  forall (ts : cts(o)) uk lib T A a A' (eqa : lib-per(lib,o)),
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
     -> T ===>(lib) (mkc_free_from_defs A a)
-    -> local_ts_T (per_bar (per_ffdefs ts)) lib T.
+    -> local_ts_T (per_bar (per_ffdefs ts)) uk lib T.
 Proof.
   introv tsa comp eqiff alla.
   unfold per_bar in *.
@@ -463,7 +463,7 @@ Proof.
 
     pose proof (implies_eq_term_equals_per_ffdefs_bar lib'0 eqa1 eqa2 x1 x0) as xx.
 
-    eapply (per_ffdefs_eq_bar_change_pers ts lib lib'0 A A' A1 A2 A0 A3); eauto.
+    eapply (per_ffdefs_eq_bar_change_pers ts uk lib lib'0 A A' A1 A2 A0 A3); eauto.
   }
 
   {
@@ -501,17 +501,17 @@ Proof.
     pose proof (imp lib1 ext1 lib2 ext2 extz) as imp; simpl in *; repnd; clear imp.
     pose proof (imp0 lib3 ext3 lib'2 (lib_extends_trans w ext4) z1) as imp0; simpl in *.
 
-    eapply (per_ffdefs_eq_bar_change_pers2 ts lib lib'2 T T' A A');
+    eapply (per_ffdefs_eq_bar_change_pers2 ts uk lib lib'2 T T' A A');
       auto; try exact imp0; eauto; eauto 3 with slow.
   }
 Qed.
 Hint Resolve local_per_bar_per_ffdefs : slow.
 
 Lemma local_per_bar_per_ffdefs2 {o} :
-  forall (ts : cts(o)) lib T A a A' (eqa : lib-per(lib,o)),
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A' A (eqa lib' x))
+  forall (ts : cts(o)) uk lib T A a A' (eqa : lib-per(lib,o)),
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A' A (eqa lib' x))
     -> T ===>(lib) (mkc_free_from_defs A a)
-    -> local_ts_T2 (per_bar (per_ffdefs ts)) lib T.
+    -> local_ts_T2 (per_bar (per_ffdefs ts)) uk lib T.
 Proof.
   introv tsa comp eqiff alla.
   unfold per_bar in *.
@@ -574,8 +574,8 @@ Proof.
     repnd.
 
     applydup @in_ext_ext_type_sys_props4_sym in tsa.
-    eapply (per_ffdefs_eq_bar_change_pers ts lib lib'0 A A' A2 A1 A3 A0); eauto.
-    { eapply (in_ext_ext_type_ceq_sym ts lib lib'0); auto; try exact tsa0; auto. }
+    eapply (per_ffdefs_eq_bar_change_pers ts uk lib lib'0 A A' A2 A1 A3 A0); eauto.
+    { eapply (in_ext_ext_type_ceq_sym ts uk lib lib'0); auto; try exact tsa0; auto. }
     { eauto 3 with slow. }
   }
 
@@ -616,7 +616,7 @@ Proof.
 
     applydup @in_ext_ext_type_sys_props4_sym in tsa.
 
-    eapply (per_ffdefs_eq_bar_change_pers3 ts lib lib'2 T0 T A A');
+    eapply (per_ffdefs_eq_bar_change_pers3 ts uk lib lib'2 T0 T A A');
       auto; try exact imp0; eauto; eauto 3 with slow.
   }
 Qed.
@@ -627,13 +627,13 @@ Hint Resolve local_per_bar_per_ffdefs2 : slow.
 (* ====== dest lemmas ====== *)
 
 Lemma dest_close_per_ffdefs_l {o} :
-  forall (ts : cts(o)) lib T A a A' T' eq (eqa : lib-per(lib,o)),
+  forall (ts : cts(o)) uk lib T A a A' T' eq (eqa : lib-per(lib,o)),
     type_system ts
     -> defines_only_universes ts
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) uk lib' A A' (eqa lib' x))
     -> ccomputes_to_valc_ext lib T (mkc_free_from_defs A a)
-    -> close ts lib T T' eq
-    -> per_bar (per_ffdefs (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_ffdefs (close ts)) uk lib T T' eq.
 Proof.
   introv tysys dou tsa comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
@@ -645,13 +645,13 @@ Proof.
 Qed.
 
 Lemma dest_close_per_ffdefs_r {o} :
-  forall (ts : cts(o)) lib T A a A' T' eq (eqa : lib-per(lib,o)),
+  forall (ts : cts(o)) uk lib T A a A' T' eq (eqa : lib-per(lib,o)),
     type_system ts
     -> defines_only_universes ts
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A' A (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) uk lib' A' A (eqa lib' x))
     -> ccomputes_to_valc_ext lib T' (mkc_free_from_defs A a)
-    -> close ts lib T T' eq
-    -> per_bar (per_ffdefs (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_ffdefs (close ts)) uk lib T T' eq.
 Proof.
   introv tysys dou tsa comp cl.
   close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.

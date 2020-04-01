@@ -136,11 +136,11 @@ Qed.
 Hint Resolve local_per_bar_per_ffdefs_nuprli : slow.
 
 Lemma dest_nuprl_per_ffdefs_l {o} :
-  forall (ts : cts(o)) lib T A f T' eq,
+  forall (ts : cts(o)) uk lib T A f T' eq,
     ts = univ
     -> ccomputes_to_valc_ext lib T (mkc_free_from_defs A f)
-    -> close ts lib T T' eq
-    -> per_bar (per_ffdefs (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_ffdefs (close ts)) uk lib T T' eq.
 Proof.
   introv equ comp cl.
   assert (type_system ts) as sys by (subst; eauto 3 with slow).
@@ -153,11 +153,11 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_per_ffdefs_l {o} :
-  forall i (ts : cts(o)) lib T A f T' eq,
+  forall i (ts : cts(o)) uk lib T A f T' eq,
     ts = univi_bar i
     -> ccomputes_to_valc_ext lib T (mkc_free_from_defs A f)
-    -> close ts lib T T' eq
-    -> per_bar (per_ffdefs (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_ffdefs (close ts)) uk lib T T' eq.
 Proof.
   introv equ comp cl.
   assert (type_system ts) as sys by (subst; eauto 3 with slow).
@@ -179,9 +179,9 @@ Qed.
 Hint Resolve iscvalue_ffdefs : slow.
 
 Lemma dest_nuprl_ffdefs {o} :
-  forall (lib : @library o) A f B g eq,
-    nuprl lib (mkc_free_from_defs A f) (mkc_free_from_defs B g) eq
-    -> per_bar (per_ffdefs nuprl) lib (mkc_free_from_defs A f) (mkc_free_from_defs B g) eq.
+  forall uk (lib : @library o) A f B g eq,
+    nuprl uk lib (mkc_free_from_defs A f) (mkc_free_from_defs B g) eq
+    -> per_bar (per_ffdefs nuprl) uk lib (mkc_free_from_defs A f) (mkc_free_from_defs B g) eq.
 Proof.
   introv cl.
   unfold nuprl in cl.
@@ -190,9 +190,9 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_ffdefs {o} :
-  forall i (lib : @library o) A f B g eq,
-    nuprli i lib (mkc_free_from_defs A f) (mkc_free_from_defs B g) eq
-    -> per_bar (per_ffdefs (nuprli i)) lib (mkc_free_from_defs A f) (mkc_free_from_defs B g) eq.
+  forall i uk (lib : @library o) A f B g eq,
+    nuprli i uk lib (mkc_free_from_defs A f) (mkc_free_from_defs B g) eq
+    -> per_bar (per_ffdefs (nuprli i)) uk lib (mkc_free_from_defs A f) (mkc_free_from_defs B g) eq.
 Proof.
   introv cl.
   unfold nuprli in cl.
@@ -201,19 +201,19 @@ Proof.
 Qed.
 
 Lemma nuprl_per_value_respecting_left {p} :
-  forall lib (t1 t2 a b c : @CTerm p) eq,
-    nuprl lib t1 t2 eq
+  forall uk lib (t1 t2 a b c : @CTerm p) eq,
+    nuprl uk lib t1 t2 eq
     -> eq a b
     -> ccequivc_ext lib a c
     -> eq c b.
 Proof.
   introv h q ceq.
   nts.
-  pose proof (nts_tev lib t1 eq) as w1.
+  pose proof (nts_tev uk lib t1 eq) as w1.
   autodimp w1 hyp; eauto 3 with slow;[].
-  pose proof (nts_tet lib t1 t2 eq) as w2.
+  pose proof (nts_tet uk lib t1 t2 eq) as w2.
   autodimp w2 hyp; eauto 3 with slow;[].
-  pose proof (nts_tes lib t1 t2 eq) as w3.
+  pose proof (nts_tes uk lib t1 t2 eq) as w3.
   autodimp w3 hyp; eauto 3 with slow;[].
   eapply w2;[|eauto]; apply w3.
   eapply w1; auto.
@@ -221,19 +221,19 @@ Proof.
 Qed.
 
 Lemma nuprl_per_value_respecting_right {p} :
-  forall lib (t1 t2 a b c : @CTerm p) eq,
-    nuprl lib t1 t2 eq
+  forall uk lib (t1 t2 a b c : @CTerm p) eq,
+    nuprl uk lib t1 t2 eq
     -> eq a b
     -> ccequivc_ext lib b c
     -> eq a c.
 Proof.
   introv h q ceq.
   nts.
-  pose proof (nts_tev lib t1 eq) as w1.
+  pose proof (nts_tev uk lib t1 eq) as w1.
   autodimp w1 hyp; eauto 3 with slow;[].
-  pose proof (nts_tet lib t1 t2 eq) as w2.
+  pose proof (nts_tet uk lib t1 t2 eq) as w2.
   autodimp w2 hyp; eauto 3 with slow;[].
-  pose proof (nts_tes lib t1 t2 eq) as w3.
+  pose proof (nts_tes uk lib t1 t2 eq) as w3.
   autodimp w3 hyp; eauto 3 with slow;[].
   eapply w2;[eauto|]; apply w3.
   eapply w3; auto.
@@ -242,19 +242,19 @@ Proof.
 Qed.
 
 Lemma nuprli_per_value_respecting_left {p} :
-  forall i lib (t1 t2 a b c : @CTerm p) eq,
-    nuprli i lib t1 t2 eq
+  forall i uk lib (t1 t2 a b c : @CTerm p) eq,
+    nuprli i uk lib t1 t2 eq
     -> eq a b
     -> ccequivc_ext lib a c
     -> eq c b.
 Proof.
   introv h q ceq.
   ntsi.
-  pose proof (nts_tev lib t1 eq) as w1.
+  pose proof (nts_tev uk lib t1 eq) as w1.
   autodimp w1 hyp; eauto 3 with slow;[].
-  pose proof (nts_tet lib t1 t2 eq) as w2.
+  pose proof (nts_tet uk lib t1 t2 eq) as w2.
   autodimp w2 hyp; eauto 3 with slow;[].
-  pose proof (nts_tes lib t1 t2 eq) as w3.
+  pose proof (nts_tes uk lib t1 t2 eq) as w3.
   autodimp w3 hyp; eauto 3 with slow;[].
   eapply w2;[|eauto]; apply w3.
   eapply w1; auto.
@@ -262,19 +262,19 @@ Proof.
 Qed.
 
 Lemma nuprli_per_value_respecting_right {p} :
-  forall i lib (t1 t2 a b c : @CTerm p) eq,
-    nuprli i lib t1 t2 eq
+  forall i uk lib (t1 t2 a b c : @CTerm p) eq,
+    nuprli i uk lib t1 t2 eq
     -> eq a b
     -> ccequivc_ext lib b c
     -> eq a c.
 Proof.
   introv h q ceq.
   ntsi.
-  pose proof (nts_tev lib t1 eq) as w1.
+  pose proof (nts_tev uk lib t1 eq) as w1.
   autodimp w1 hyp; eauto 3 with slow;[].
-  pose proof (nts_tet lib t1 t2 eq) as w2.
+  pose proof (nts_tet uk lib t1 t2 eq) as w2.
   autodimp w2 hyp; eauto 3 with slow;[].
-  pose proof (nts_tes lib t1 t2 eq) as w3.
+  pose proof (nts_tes uk lib t1 t2 eq) as w3.
   autodimp w3 hyp; eauto 3 with slow;[].
   eapply w2;[eauto|]; apply w3.
   eapply w3; auto.
@@ -283,8 +283,8 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_nuprl_per_value_respecting_left {o} :
-  forall lib (t1 t2 a b c : @CTerm o) (eq : lib-per(lib,o)),
-    in_ext_ext lib (fun lib x => nuprl lib t1 t2 (eq lib x))
+  forall uk lib (t1 t2 a b c : @CTerm o) (eq : lib-per(lib,o)),
+    in_ext_ext lib (fun lib x => nuprl uk lib t1 t2 (eq lib x))
     -> in_ext_ext lib (fun lib x => eq lib x a b)
     -> ccequivc_ext lib a c
     -> in_ext_ext lib (fun lib x => eq lib x c b).
@@ -296,8 +296,8 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_nuprl_per_value_respecting_right {o} :
-  forall lib (t1 t2 a b c : @CTerm o) (eq : lib-per(lib,o)),
-    in_ext_ext lib (fun lib x => nuprl lib t1 t2 (eq lib x))
+  forall uk lib (t1 t2 a b c : @CTerm o) (eq : lib-per(lib,o)),
+    in_ext_ext lib (fun lib x => nuprl uk lib t1 t2 (eq lib x))
     -> in_ext_ext lib (fun lib x => eq lib x a b)
     -> ccequivc_ext lib b c
     -> in_ext_ext lib (fun lib x => eq lib x a c).
@@ -309,8 +309,8 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_nuprli_per_value_respecting_left {o} :
-  forall i lib (t1 t2 a b c : @CTerm o) (eq : lib-per(lib,o)),
-    in_ext_ext lib (fun lib x => nuprli i lib t1 t2 (eq lib x))
+  forall i uk lib (t1 t2 a b c : @CTerm o) (eq : lib-per(lib,o)),
+    in_ext_ext lib (fun lib x => nuprli i uk lib t1 t2 (eq lib x))
     -> in_ext_ext lib (fun lib x => eq lib x a b)
     -> ccequivc_ext lib a c
     -> in_ext_ext lib (fun lib x => eq lib x c b).
@@ -322,8 +322,8 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_nuprli_per_value_respecting_right {o} :
-  forall i lib (t1 t2 a b c : @CTerm o) (eq : lib-per(lib,o)),
-    in_ext_ext lib (fun lib x => nuprli i lib t1 t2 (eq lib x))
+  forall i uk lib (t1 t2 a b c : @CTerm o) (eq : lib-per(lib,o)),
+    in_ext_ext lib (fun lib x => nuprli i uk lib t1 t2 (eq lib x))
     -> in_ext_ext lib (fun lib x => eq lib x a b)
     -> ccequivc_ext lib b c
     -> in_ext_ext lib (fun lib x => eq lib x a c).
@@ -335,12 +335,12 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_ffdefs2 {o} :
-  forall lib (eq : per(o)) A f B g,
-    nuprl lib (mkc_free_from_defs A f) (mkc_free_from_defs B g) eq
+  forall uk lib (eq : per(o)) A f B g,
+    nuprl uk lib (mkc_free_from_defs A f) (mkc_free_from_defs B g) eq
     ->
     exists (eqa : lib-per(lib,o)),
       (eq <=2=> (per_bar_eq lib (per_ffdefs_eq_bar_lib_per lib eqa f)))
-        # in_open_bar_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x))
+        # in_open_bar_ext lib (fun lib' x => nuprl uk lib' A B (eqa lib' x))
         # in_open_bar_ext lib (fun lib' x => eqa lib' x f g).
 Proof.
   introv u.
@@ -351,7 +351,7 @@ Proof.
             lib
             (fun lib' x =>
                {eqa0 : lib-per(lib',o)
-               , in_ext_ext lib' (fun lib'' y => nuprl lib'' A B (eqa0 lib'' y))
+               , in_ext_ext lib' (fun lib'' y => nuprl uk lib'' A B (eqa0 lib'' y))
                # in_ext_ext lib' (fun lib'' y => eqa0 lib'' y f g)
                # (eqa lib' x) <=2=> (per_ffdefs_eq_bar lib' eqa0 f) })) as e.
   {
@@ -430,12 +430,12 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_ffdefs2 {o} :
-  forall i lib (eq : per(o)) A f B g,
-    nuprli i lib (mkc_free_from_defs A f) (mkc_free_from_defs B g) eq
+  forall i uk lib (eq : per(o)) A f B g,
+    nuprli i uk lib (mkc_free_from_defs A f) (mkc_free_from_defs B g) eq
     ->
     exists (eqa : lib-per(lib,o)),
       (eq <=2=> (per_bar_eq lib (per_ffdefs_eq_bar_lib_per lib eqa f)))
-        # in_open_bar_ext lib (fun lib' x => nuprli i lib' A B (eqa lib' x))
+        # in_open_bar_ext lib (fun lib' x => nuprli i uk lib' A B (eqa lib' x))
         # in_open_bar_ext lib (fun lib' x => eqa lib' x f g).
 Proof.
   introv u.
@@ -446,7 +446,7 @@ Proof.
             lib
             (fun lib' x =>
                {eqa0 : lib-per(lib',o)
-               , in_ext_ext lib' (fun lib'' y => nuprli i lib'' A B (eqa0 lib'' y))
+               , in_ext_ext lib' (fun lib'' y => nuprli i uk lib'' A B (eqa0 lib'' y))
                # in_ext_ext lib' (fun lib'' y => eqa0 lib'' y f g)
                # (eqa lib' x) <=2=> (per_ffdefs_eq_bar lib' eqa0 f) })) as e.
   {
@@ -550,19 +550,19 @@ Proof.
       try (apply lib_per_cond).
 Qed.
 
-Definition ex_nodefsc_eq {o} (lib : library) (t T : @CTerm o) :=
-  {u : @CTerm o , equality lib t u T # nodefsc u}.
+Definition ex_nodefsc_eq {o} uk (lib : library) (t T : @CTerm o) :=
+  {u : @CTerm o , equality uk lib t u T # nodefsc u}.
 
-Definition ex_nodefsc_eq_bar {o} (lib : library) (t T : @CTerm o) :=
-  in_open_bar lib (fun lib' => ex_nodefsc_eq lib' t T).
+Definition ex_nodefsc_eq_bar {o} uk (lib : library) (t T : @CTerm o) :=
+  in_open_bar lib (fun lib' => ex_nodefsc_eq uk lib' t T).
 
 Lemma equality_in_mkc_ffdefs {p} :
-  forall lib (t1 t2 T t : @CTerm p),
-    equality lib t1 t2 (mkc_free_from_defs T t)
+  forall uk lib (t1 t2 T t : @CTerm p),
+    equality uk lib t1 t2 (mkc_free_from_defs T t)
     <=> (computes_to_valc_ex_bar lib t1 mkc_axiom
          # computes_to_valc_ex_bar lib t2 mkc_axiom
-         # ex_nodefsc_eq_bar lib t T
-         # member lib t T).
+         # ex_nodefsc_eq_bar uk lib t T
+         # member uk lib t T).
 Proof.
   introv; split; intro e.
 
@@ -593,7 +593,7 @@ Proof.
 
   - exrepnd.
     unfold member, equality in e; exrepnd.
-    pose proof (nuprl_monotone_func lib T T eq e4) as tya; exrepnd.
+    pose proof (nuprl_monotone_func uk lib T T eq e4) as tya; exrepnd.
     rename eq' into eqa.
     exists (per_ffdefs_eq_bar lib eqa t); dands; auto; eauto 3 with slow.
 
@@ -613,9 +613,9 @@ Proof.
 Qed.
 
 Lemma tequality_mkc_ffdefs {o} :
-  forall lib (T1 T2 t1 t2 : @CTerm o),
-    tequality lib (mkc_free_from_defs T1 t1) (mkc_free_from_defs T2 t2)
-    <=> (tequality lib T1 T2 # equality lib t1 t2 T1).
+  forall uk lib (T1 T2 t1 t2 : @CTerm o),
+    tequality uk lib (mkc_free_from_defs T1 t1) (mkc_free_from_defs T2 t2)
+    <=> (tequality uk lib T1 T2 # equality uk lib t1 t2 T1).
 Proof.
   introv; split; intro teq; repnd.
 
@@ -629,7 +629,7 @@ Proof.
     apply nuprl_refl in h; auto.
 
   - unfold tequality in teq0; exrepnd.
-    pose proof (nuprl_monotone_func lib T1 T2 eq teq1) as tya; exrepnd.
+    pose proof (nuprl_monotone_func uk lib T1 T2 eq teq1) as tya; exrepnd.
     rename eq' into eqa.
 
     exists (per_ffdefs_eq_bar lib eqa t1).

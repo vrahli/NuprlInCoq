@@ -33,7 +33,7 @@ Require Export close_util_qlt2.
 
 Lemma close_type_system_qlt {o} :
   forall (ts : cts(o))
-         lib
+         uk lib
          T T'
          (eq : per)
          a b a' b',
@@ -45,7 +45,7 @@ Lemma close_type_system_qlt {o} :
     -> equality_of_qnat lib qnat_mon_cond a a'
     -> equality_of_qnat lib qnat_mon_cond b b'
     -> (eq <=2=> (equality_of_qlt_bar lib a b))
-    -> type_sys_props4 (close ts) lib T T' eq.
+    -> type_sys_props4 (close ts) uk lib T T' eq.
 Proof.
   introv tysys dou mon c1 c2 ceqa ceqb eqiff.
 

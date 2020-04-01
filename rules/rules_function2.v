@@ -71,8 +71,8 @@ Definition rule_apply_lambda_equality {o}
     [].
 
 Lemma rule_apply_lambda_equality_true3 {o} :
-  forall lib (H : @bhyps o) a1 a2 b1 b2 A B x1 x2 x z,
-    rule_true3 lib (rule_apply_lambda_equality H a1 a2 b1 b2 A B x1 x2 x z).
+  forall uk lib (H : @bhyps o) a1 a2 b1 b2 A B x1 x2 x z,
+    rule_true3 uk lib (rule_apply_lambda_equality H a1 a2 b1 b2 A B x1 x2 x z).
 Proof.
   intros.
   unfold rule_apply_lambda_equality, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -87,7 +87,7 @@ Proof.
   destseq; allsimpl; proof_irr; GC.
 
   match goal with
-  | [ |- sequent_true2 _ ?s ] => assert (wf_csequent s) as wfc
+  | [ |- sequent_true2 _ _ ?s ] => assert (wf_csequent s) as wfc
   end.
   { clear hyp1 hyp2.
     unfold wf_csequent, closed_type, closed_extract, wf_sequent, wf_concl; simpl.
@@ -129,7 +129,7 @@ Proof.
   rw <- @member_equality_iff.
 
   pose proof (teq_and_eq_if_equality
-                lib'
+                uk lib'
                 (subst B x a1)
                 (mk_apply (mk_lam x1 b1) a1)
                 (mk_apply (mk_lam x2 b2) a2)

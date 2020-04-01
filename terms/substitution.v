@@ -516,7 +516,7 @@ Qed.
 Hint Immediate covered_axiom.
 
 Lemma covered_uni {p} :
-  forall vs i, @covered p (mk_uni i) vs.
+  forall vs u i, @covered p (mk_uni u i) vs.
 Proof.
   unfold covered; sp; simpl.
 Qed.
@@ -1459,7 +1459,7 @@ Proof.
 Qed.
 
 Lemma cover_vars_uni {p} :
-  forall i sub, @cover_vars p (mk_uni i) sub.
+  forall u i sub, @cover_vars p (mk_uni u i) sub.
 Proof.
   sp; rw @cover_vars_eq; simpl.
   autorewrite with core; sp.
@@ -2325,7 +2325,7 @@ Proof.
 Qed.
 
 Lemma csubst_mk_uni {p} :
-  forall i sub, @csubst p (mk_uni i) sub = mk_uni i.
+  forall u i sub, @csubst p (mk_uni u i) sub = mk_uni u i.
 Proof.
   sp.
 Qed.

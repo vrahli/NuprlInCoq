@@ -52,9 +52,9 @@ Qed.
 Hint Rewrite @substc_mkcv_csname : slow.
 
 Lemma dest_nuprl_csname {o} :
-  forall (lib : @library o) eq n,
-    nuprl lib (mkc_csname n) (mkc_csname n) eq
-    -> per_bar (per_csname nuprl) lib (mkc_csname n) (mkc_csname n) eq.
+  forall uk (lib : @library o) eq n,
+    nuprl uk lib (mkc_csname n) (mkc_csname n) eq
+    -> per_bar (per_csname nuprl) uk lib (mkc_csname n) (mkc_csname n) eq.
 Proof.
   introv cl.
   eapply dest_close_per_csname_l in cl;
@@ -62,8 +62,8 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_csname2 {o} :
-  forall lib (eq : per(o)) n,
-    nuprl lib (mkc_csname n) (mkc_csname n) eq
+  forall uk lib (eq : per(o)) n,
+    nuprl uk lib (mkc_csname n) (mkc_csname n) eq
     -> eq <=2=> (equality_of_csname_bar lib n).
 Proof.
   introv u.
@@ -79,7 +79,7 @@ Proof.
 Qed.
 
 Lemma tequality_csname {o} :
-  forall lib n, @tequality o lib (mkc_csname n) (mkc_csname n).
+  forall uk lib n, @tequality o uk lib (mkc_csname n) (mkc_csname n).
 Proof.
   introv.
   exists (equality_of_csname_bar lib n).
@@ -93,8 +93,8 @@ Hint Rewrite @mkcv_equality_substc : slow.
 Hint Rewrite @mkc_var_substc : slow.
 
 Lemma equality_in_csname {p} :
-  forall lib (t1 t2 : @CTerm p) n,
-    equality lib t1 t2 (mkc_csname n)
+  forall uk lib (t1 t2 : @CTerm p) n,
+    equality uk lib t1 t2 (mkc_csname n)
     -> equality_of_csname_bar lib n t1 t2.
 Proof.
   unfold equality; introv e; exrepnd.
@@ -103,19 +103,19 @@ Proof.
 Qed.
 
 Lemma type_csname {o} :
-  forall (lib : @library o) n,
-    type lib (mkc_csname n).
+  forall uk (lib : @library o) n,
+    type uk lib (mkc_csname n).
 Proof.
   introv; unfold type; eauto 3 with slow.
 Qed.
 Hint Resolve type_csname : slow.
 
 Lemma equality_in_csname_iff {p} :
-  forall lib (t1 t2 : @CTerm p) n,
-    equality lib t1 t2 (mkc_csname n)
+  forall uk lib (t1 t2 : @CTerm p) n,
+    equality uk lib t1 t2 (mkc_csname n)
     <-> equality_of_csname_bar lib n t1 t2.
 Proof.
-  introv; split; intro h; try apply equality_in_csname; auto.
+  introv; split; intro h; try eapply equality_in_csname; eauto.
   exists (equality_of_csname_bar lib n); dands; auto.
   apply CL_csname; unfold per_csname; exists n; dands; spcast; eauto 3 with slow.
 Qed.

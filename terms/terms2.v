@@ -111,7 +111,7 @@ Definition mk_integer {p} n : @NTerm p := oterm (Can (Nint n)) [].
 
 Definition mk_nat {p} (n : nat) : @NTerm p := mk_integer (Z_of_nat n).
 
-Definition mk_uni {p} n : @NTerm p := oterm (Can (NUni n)) [].
+Definition mk_uni {p} u n : @NTerm p := oterm (Can (NUni u n)) [].
 
 Definition mk_tuni {p} n : @NTerm p := oterm (NCan NTUni) [nobnd n].
 
@@ -854,7 +854,7 @@ Fixpoint depth (t : NTerm) : nat :=
 
 Definition IsTypeOpid {p} (opid : @Opid p) : bool :=
   match opid with
-  | Can (NUni _)   => true
+  | Can (NUni _ _) => true
   | Can NEquality  => true
   | Can NREquality => true
   | Can NTEquality => true
@@ -1813,22 +1813,22 @@ Proof.
 Qed.
 
 
-Lemma isprogram_mk_uni {p} : forall n : nat, @isprogram p (mk_uni n).
+Lemma isprogram_mk_uni {p} : forall u n : nat, @isprogram p (mk_uni u n).
 Proof.
   repeat constructor. intros. allsimpl; sp.
 Qed.
 
-Lemma isprog_mk_uni {p} : forall n : nat, @isprog p (mk_uni n).
+Lemma isprog_mk_uni {p} : forall u n : nat, @isprog p (mk_uni u n).
 Proof.
   repeat constructor.
 Qed.
 
-Lemma isvalue_mk_uni {p} : forall n : nat, @isvalue p (mk_uni n).
+Lemma isvalue_mk_uni {p} : forall u n : nat, @isvalue p (mk_uni u n).
 Proof.
   repeat constructor. intros. allsimpl; sp.
 Qed.
 
-Lemma wf_mk_uni {p} : forall n : nat, @wf_term p (mk_uni n).
+Lemma wf_mk_uni {p} : forall u n : nat, @wf_term p (mk_uni u n).
 Proof.
   sp.
 Qed.
@@ -5557,18 +5557,17 @@ Definition mkc_nat {p} (n : nat) : @CTerm p :=
 Definition mkw_nat {p} (n : nat) : @WTerm p :=
   exist wf_term (mk_nat n) (wf_mk_nat n).
 
-Definition mkc_uni {p} (i : nat) : @CTerm p :=
-  exist isprog (mk_uni i) (isprog_mk_uni i).
-Definition mkw_uni {p} (i : nat) : @WTerm p :=
-  exist wf_term (mk_uni i) (wf_mk_uni i).
+Definition mkc_uni {p} (u i : nat) : @CTerm p :=
+  exist isprog (mk_uni u i) (isprog_mk_uni u i).
+Definition mkw_uni {p} (u i : nat) : @WTerm p :=
+  exist wf_term (mk_uni u i) (wf_mk_uni u i).
 
 Lemma mkc_uni_eq {p} :
-  forall a b,
-    @mkc_uni p a = mkc_uni b
-    -> a = b.
+  forall u v a b,
+    @mkc_uni p u a = mkc_uni v b
+    -> u = v # a = b.
 Proof.
-  unfold mkc_uni; sp.
-  inversion H; sp.
+  unfold mkc_uni; sp; inversion H; sp.
 Qed.
 
 Definition mkc_base {p} : @CTerm p :=
@@ -7808,7 +7807,7 @@ Proof.
   repeat constructor; sp; allsimpl; sp.
 Qed.
 
-Theorem iscvalue_mkc_uni {p} : forall i : nat, @iscvalue p (mkc_uni i).
+Theorem iscvalue_mkc_uni {p} : forall u i : nat, @iscvalue p (mkc_uni u i).
 Proof.
   repeat constructor; sp; allsimpl; sp.
 Qed.

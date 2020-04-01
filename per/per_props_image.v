@@ -139,11 +139,11 @@ Qed.
 Hint Resolve local_per_bar_per_image_nuprli : slow.
 
 Lemma dest_nuprl_per_image_l {o} :
-  forall (ts : cts(o)) lib T A f T' eq,
+  forall (ts : cts(o)) uk lib T A f T' eq,
     ts = univ
     -> ccomputes_to_valc_ext lib T (mkc_image A f)
-    -> close ts lib T T' eq
-    -> per_bar (per_image (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_image (close ts)) uk lib T T' eq.
 Proof.
   introv equ comp cl.
   assert (type_system ts) as sys by (subst; eauto 3 with slow).
@@ -155,11 +155,11 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_per_image_l {o} :
-  forall i (ts : cts(o)) lib T A f T' eq,
+  forall i (ts : cts(o)) uk lib T A f T' eq,
     ts = univi_bar i
     -> ccomputes_to_valc_ext lib T (mkc_image A f)
-    -> close ts lib T T' eq
-    -> per_bar (per_image (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_image (close ts)) uk lib T T' eq.
 Proof.
   introv equ comp cl.
   assert (type_system ts) as sys by (subst; eauto 3 with slow).
@@ -180,9 +180,9 @@ Qed.
 Hint Resolve iscvalue_image : slow.
 
 Lemma dest_nuprl_image {o} :
-  forall (lib : @library o) A f B g eq,
-    nuprl lib (mkc_image A f) (mkc_image B g) eq
-    -> per_bar (per_image nuprl) lib (mkc_image A f) (mkc_image B g) eq.
+  forall uk (lib : @library o) A f B g eq,
+    nuprl uk lib (mkc_image A f) (mkc_image B g) eq
+    -> per_bar (per_image nuprl) uk lib (mkc_image A f) (mkc_image B g) eq.
 Proof.
   introv cl.
   unfold nuprl in cl.
@@ -191,9 +191,9 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_image {o} :
-  forall i (lib : @library o) A f B g eq,
-    nuprli i lib (mkc_image A f) (mkc_image B g) eq
-    -> per_bar (per_image (nuprli i)) lib (mkc_image A f) (mkc_image B g) eq.
+  forall i uk (lib : @library o) A f B g eq,
+    nuprli i uk lib (mkc_image A f) (mkc_image B g) eq
+    -> per_bar (per_image (nuprli i)) uk lib (mkc_image A f) (mkc_image B g) eq.
 Proof.
   introv cl.
   unfold nuprli in cl.
@@ -202,12 +202,12 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_image2 {o} :
-  forall lib (eq : per(o)) A f B g,
-    nuprl lib (mkc_image A f) (mkc_image B g) eq
+  forall uk lib (eq : per(o)) A f B g,
+    nuprl uk lib (mkc_image A f) (mkc_image B g) eq
     ->
     exists (eqa : lib-per(lib,o)),
       (eq <=2=> (per_bar_eq lib (per_image_eq_bar_lib_per lib eqa f)))
-        # in_open_bar_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x))
+        # in_open_bar_ext lib (fun lib' x => nuprl uk lib' A B (eqa lib' x))
         # in_open_bar_ext lib (fun lib' x => ccequivc_ext lib' f g).
 Proof.
   introv u.
@@ -218,7 +218,7 @@ Proof.
             lib
             (fun lib' x =>
                {eqa0 : lib-per(lib',o)
-               , in_ext_ext lib' (fun lib'' y => nuprl lib'' A B (eqa0 lib'' y))
+               , in_ext_ext lib' (fun lib'' y => nuprl uk lib'' A B (eqa0 lib'' y))
                # ccequivc_ext lib' f g
                # (eqa lib' x) <=2=> (per_image_eq_bar lib' eqa0 f) })) as e.
   {
@@ -291,12 +291,12 @@ Proof.
 Qed.
 
 Lemma dest_nuprli_image2 {o} :
-  forall i lib (eq : per(o)) A f B g,
-    nuprli i lib (mkc_image A f) (mkc_image B g) eq
+  forall i uk lib (eq : per(o)) A f B g,
+    nuprli i uk lib (mkc_image A f) (mkc_image B g) eq
     ->
     exists (eqa : lib-per(lib,o)),
       (eq <=2=> (per_bar_eq lib (per_image_eq_bar_lib_per lib eqa f)))
-        # in_open_bar_ext lib (fun lib' x => nuprli i lib' A B (eqa lib' x))
+        # in_open_bar_ext lib (fun lib' x => nuprli i uk lib' A B (eqa lib' x))
         # in_open_bar_ext lib (fun lib' x => ccequivc_ext lib' f g).
 Proof.
   introv u.
@@ -307,7 +307,7 @@ Proof.
             lib
             (fun lib' x =>
                {eqa0 : lib-per(lib',o)
-               , in_ext_ext lib' (fun lib'' y => nuprli i lib'' A B (eqa0 lib'' y))
+               , in_ext_ext lib' (fun lib'' y => nuprli i uk lib'' A B (eqa0 lib'' y))
                # ccequivc_ext lib' f g
                # (eqa lib' x) <=2=> (per_image_eq_bar lib' eqa0 f) })) as e.
   {
@@ -406,25 +406,25 @@ Qed.
 
 
 
-Inductive equal_in_image {p} lib (A f t1 t2 : @CTerm p) : [U] :=
+Inductive equal_in_image {p} uk lib (A f t1 t2 : @CTerm p) : [U] :=
 | eq_in_image_cl :
     forall t,
-      equal_in_image lib A f t1 t
-      -> equal_in_image lib A f t t2
-      -> equal_in_image lib A f t1 t2
+      equal_in_image uk lib A f t1 t
+      -> equal_in_image uk lib A f t t2
+      -> equal_in_image uk lib A f t1 t2
 | eq_in_image_eq :
     forall a1 a2,
-      equality lib a1 a2 A
+      equality uk lib a1 a2 A
       -> ccequivc_ext lib t1 (mkc_apply f a1)
       -> ccequivc_ext lib t2 (mkc_apply f a2)
-      -> equal_in_image lib A f t1 t2.
+      -> equal_in_image uk lib A f t1 t2.
 
 
 Lemma per_image_eq_implies_equal_in_image {o} :
-  forall lib (eq : per(o)) T f t1 t2,
-    nuprl lib T T eq
+  forall uk lib (eq : per(o)) T f t1 t2,
+    nuprl uk lib T T eq
     -> per_image_eq lib eq f t1 t2
-    -> equal_in_image lib T f t1 t2.
+    -> equal_in_image uk lib T f t1 t2.
 Proof.
   introv n h.
   induction h.
@@ -432,14 +432,14 @@ Proof.
   - eapply eq_in_image_cl; eauto.
 
   - eapply eq_in_image_eq; eauto.
-    apply (equality_eq1 lib T T a1 a2 eq); auto.
+    apply (equality_eq1 uk lib T T a1 a2 eq); auto.
 Qed.
 Hint Resolve per_image_eq_implies_equal_in_image : slow.
 
 Lemma equal_in_image_implies_per_image_eq {o} :
-  forall lib (eq : per(o)) T f t1 t2,
-    nuprl lib T T eq
-    -> equal_in_image lib T f t1 t2
+  forall uk lib (eq : per(o)) T f t1 t2,
+    nuprl uk lib T T eq
+    -> equal_in_image uk lib T f t1 t2
     -> per_image_eq lib eq f t1 t2.
 Proof.
   introv n h.
@@ -448,14 +448,14 @@ Proof.
   - eapply image_eq_cl; eauto.
 
   - eapply image_eq_eq; eauto.
-    apply (equality_eq1 lib T T a1 a2 eq); auto.
+    apply (equality_eq1 uk lib T T a1 a2 eq); auto.
 Qed.
 Hint Resolve equal_in_image_implies_per_image_eq : slow.
 
 Lemma equality_in_mkc_image {p} :
-  forall lib (t1 t2 T f : @CTerm p),
-    equality lib t1 t2 (mkc_image T f)
-    <=> (type lib T # in_open_bar lib (fun lib => equal_in_image lib T f t1 t2)).
+  forall uk lib (t1 t2 T f : @CTerm p),
+    equality uk lib t1 t2 (mkc_image T f)
+    <=> (type uk lib T # in_open_bar lib (fun lib => equal_in_image uk lib T f t1 t2)).
 Proof.
   intros; split; intro e.
 
@@ -474,7 +474,7 @@ Proof.
   - exrepnd.
     unfold type, tequality in e0; exrepnd.
 
-    pose proof (nuprl_monotone_func lib T T eq e1) as tya; exrepnd.
+    pose proof (nuprl_monotone_func uk lib T T eq e1) as tya; exrepnd.
     rename eq' into eqa'.
 
     exists (per_image_eq_bar lib eqa' f); dands; auto; eauto 3 with slow.
@@ -493,13 +493,13 @@ Proof.
 Qed.
 
 Lemma equal_in_image_prop {p} :
-  forall lib (A f t1 t2 : @CTerm p),
-    equal_in_image lib A f t1 t2
+  forall uk lib (A f t1 t2 : @CTerm p),
+    equal_in_image uk lib A f t1 t2
     -> {a1, a2 : CTerm
         , ccequivc_ext lib t1 (mkc_apply f a1)
         # ccequivc_ext lib t2 (mkc_apply f a2)
-        # member lib a1 A
-        # member lib a2 A}.
+        # member uk lib a1 A
+        # member uk lib a2 A}.
 Proof.
   introv e.
   induction e; exrepnd.
@@ -511,9 +511,9 @@ Proof.
 Qed.
 
 Lemma tequality_mkc_image {o} :
-  forall lib (T1 T2 f1 f2 : @CTerm o),
-    tequality lib (mkc_image T1 f1) (mkc_image T2 f2)
-    <=> (tequality lib T1 T2 # ccequivc_bar lib f1 f2).
+  forall uk lib (T1 T2 f1 f2 : @CTerm o),
+    tequality uk lib (mkc_image T1 f1) (mkc_image T2 f2)
+    <=> (tequality uk lib T1 T2 # ccequivc_bar lib f1 f2).
 Proof.
   introv; split; intro teq; repnd.
 
@@ -525,7 +525,7 @@ Proof.
     apply in_ext_ext_implies_in_open_bar_ext; introv ext ceq; auto.
 
   - unfold tequality in teq0; exrepnd.
-    pose proof (nuprl_monotone_func lib T1 T2 eq teq1) as tya; exrepnd.
+    pose proof (nuprl_monotone_func uk lib T1 T2 eq teq1) as tya; exrepnd.
     rename eq' into eqa'.
     apply ccequivc_ext_bar_iff_ccequivc_bar in teq.
     unfold ccequivc_ext_bar in teq; exrepnd.

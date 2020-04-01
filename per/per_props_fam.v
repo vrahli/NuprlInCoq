@@ -37,9 +37,9 @@ Require Export cvterm.
 
 
 Definition pair2lib_per {o}
-           {lib A  B}
+           {uk lib A B}
            (f : {lib' : library $ lib_extends lib' lib} -> per(o))
-           (p : forall a, nuprl (projT1 a) A B (f a)): lib-per(lib,o).
+           (p : forall a, nuprl uk (projT1 a) A B (f a)): lib-per(lib,o).
 Proof.
   exists (fun (lib' : library) (ext : lib_extends lib' lib) =>
             f (existT (fun lib' => lib_extends lib' lib) lib' ext)).
@@ -54,17 +54,17 @@ Proof.
 Defined.
 
 Lemma choice_ext_lib_teq {o} :
-  forall lib (A B : @CTerm o),
-    in_ext lib (fun lib' => tequality lib' A B)
+  forall uk lib (A B : @CTerm o),
+    in_ext lib (fun lib' => tequality uk lib' A B)
     -> {eqa : lib-per(lib,o),
-        forall lib' (e : lib_extends lib' lib), nuprl lib' A B (eqa lib' e) }.
+        forall lib' (e : lib_extends lib' lib), nuprl uk lib' A B (eqa lib' e) }.
 Proof.
   introv F.
 
   pose proof (FunctionalChoice_on
                 {lib' : library & lib_extends lib' lib}
                 per(o)
-                (fun a b => nuprl (projT1 a) A B b)) as C.
+                (fun a b => nuprl uk (projT1 a) A B b)) as C.
   autodimp C hyp.
 
   {
@@ -80,11 +80,12 @@ Proof.
 Qed.
 
 Definition pair_dep2lib_per {o}
+           {uk  : ukind}
            {lib : library}
            {eqa : lib-per(lib,o)}
            {v1 v2 B1 B2}
            (f : {lib' : library $ {ext : lib_extends lib' lib $ {a1, a2 : CTerm $ eqa lib' ext a1 a2}}} -> per(o))
-           (p : forall a, nuprl (projT1 a) (B1)[[v1\\projT1(projT2(projT2 a))]] (B2)[[v2\\projT1(projT2(projT2(projT2 a)))]] (f a))
+           (p : forall a, nuprl uk (projT1 a) (B1)[[v1\\projT1(projT2(projT2 a))]] (B2)[[v2\\projT1(projT2(projT2(projT2 a)))]] (f a))
   : lib-per-fam(lib,eqa,o).
 Proof.
   exists (fun (lib' : library) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a') =>
@@ -100,25 +101,25 @@ Proof.
 Defined.
 
 Lemma choice_ext_lib_teq_fam {o} :
-  forall lib (A1 : @CTerm o) v1 B1 A2 v2 B2 (eqa : lib-per(lib,o)),
-    (forall lib' e, nuprl lib' A1 A2 (eqa lib' e))
+  forall uk lib (A1 : @CTerm o) v1 B1 A2 v2 B2 (eqa : lib-per(lib,o)),
+    (forall lib' e, nuprl uk lib' A1 A2 (eqa lib' e))
     -> (forall lib',
            lib_extends lib' lib
            -> forall a a' : CTerm,
-             equality lib' a a' A1
-             -> exists eq, nuprl lib' (B1)[[v1\\a]] (B2)[[v2\\a']] eq)
+             equality uk lib' a a' A1
+             -> exists eq, nuprl uk lib' (B1)[[v1\\a]] (B2)[[v2\\a']] eq)
     -> {eqb : lib-per-fam(lib,eqa,o),
               forall lib' (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
-                nuprl lib' (B1)[[v1\\a]] (B2)[[v2\\a']] (eqb lib' x a a' e) }.
+                nuprl uk lib' (B1)[[v1\\a]] (B2)[[v2\\a']] (eqb lib' x a a' e) }.
 Proof.
   introv teqa F.
 
   assert (forall lib' (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
-             exists eq, nuprl lib' (B1) [[v1 \\ a]] (B2) [[v2 \\ a']] eq) as G.
+             exists eq, nuprl uk lib' (B1) [[v1 \\ a]] (B2) [[v2 \\ a']] eq) as G.
   {
     introv e.
     apply (F lib' x a a').
-    apply (equality_eq1 lib' A1 A2 a a' (eqa lib' x)); auto.
+    apply (equality_eq1 uk lib' A1 A2 a a' (eqa lib' x)); auto.
   }
   clear F; rename G into F.
 
@@ -126,7 +127,7 @@ Proof.
                 {lib' : library & {ext : lib_extends lib' lib & {a1 : CTerm & {a2 : CTerm & eqa lib' ext a1 a2}}}}
                 per
                 (fun a b => nuprl
-                              (projT1 a)
+                              uk (projT1 a)
                               (substc (projT1 (projT2 (projT2 a))) v1 B1)
                               (substc (projT1 (projT2 (projT2 (projT2 a)))) v2 B2)
                               b)) as C.
@@ -227,12 +228,13 @@ Proof.
 Defined.
 
 Definition pair_dep2lib_per2 {o}
+           {uk  : ukind}
            {lib : library}
            {eqa : lib-per(lib,o)}
            {v B F1 F2}
            (f : {lib' : library $ {ext : lib_extends lib' lib $ {a1, a2 : CTerm $ eqa lib' ext a1 a2}}} -> per(o))
            (p : forall a : {lib' : library $ {ext : lib_extends lib' lib $ {a1, a2 : CTerm $ eqa lib' ext a1 a2}}},
-               (nuprl (projT1 a) (B) [[v \\ projT1 (projT2 (projT2 a))]] (B) [[v \\ projT1 (projT2 (projT2 a))]] (f a))
+               (nuprl uk (projT1 a) (B) [[v \\ projT1 (projT2 (projT2 a))]] (B) [[v \\ projT1 (projT2 (projT2 a))]] (f a))
                  # f a (F1 (projT1 (projT2 (projT2 a)))) (F2 (projT1 (projT2 (projT2 (projT2 a))))))
   : lib-per-fam(lib,eqa,o).
 Proof.
@@ -248,24 +250,24 @@ Proof.
 Defined.
 
 Lemma choice_ext_lib_eq_fam {o} :
-  forall lib (A A' : @CTerm o) v B (eqa : lib-per(lib,o)) F1 F2,
-    (forall lib' e, nuprl lib' A A' (eqa lib' e))
+  forall uk lib (A A' : @CTerm o) v B (eqa : lib-per(lib,o)) F1 F2,
+    (forall lib' e, nuprl uk lib' A A' (eqa lib' e))
     -> (forall lib' (x : lib_extends lib' lib) a a',
-           equality lib' a a' A
-           -> equality lib' (F1 a) (F2 a') (B)[[v\\a]])
+           equality uk lib' a a' A
+           -> equality uk lib' (F1 a) (F2 a') (B)[[v\\a]])
     -> {eqb : lib-per-fam(lib,eqa,o),
               forall lib' (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
-                nuprl lib' (B)[[v\\a]] (B)[[v\\a]] (eqb lib' x a a' e)
+                nuprl uk lib' (B)[[v\\a]] (B)[[v\\a]] (eqb lib' x a a' e)
                       # eqb lib' x a a' e (F1 a) (F2 a')}.
 Proof.
   introv teqa F.
 
   assert (forall lib' (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
-             equality lib' (F1 a) (F2 a') (B)[[v\\a]]) as G.
+             equality uk lib' (F1 a) (F2 a') (B)[[v\\a]]) as G.
   {
     introv e.
     apply (F lib' x a a').
-    apply (equality_eq1 lib' A A' a a' (eqa lib' x)); auto.
+    apply (equality_eq1 uk lib' A A' a a' (eqa lib' x)); auto.
   }
   clear F; rename G into F.
 
@@ -273,7 +275,7 @@ Proof.
                 {lib' : library & {ext : lib_extends lib' lib & {a1 : CTerm & {a2 : CTerm & eqa lib' ext a1 a2}}}}
                 per
                 (fun a b => nuprl
-                              (projT1 a)
+                              uk (projT1 a)
                               (substc (projT1 (projT2 (projT2 a))) v B)
                               (substc (projT1 (projT2 (projT2 a))) v B)
                               b
@@ -295,11 +297,12 @@ Proof.
 Qed.
 
 Definition pair_dep2lib_per3 {o}
+           {uk  : ukind}
            {lib : library}
            {eqa : lib-per(lib,o)}
            {v1 v2 B1 B2 i}
            (f : {lib' : library $ {ext : lib_extends lib' lib $ {a1, a2 : CTerm $ eqa lib' ext a1 a2}}} -> per(o))
-           (p : forall a, nuprli i (projT1 a) (B1)[[v1\\projT1(projT2(projT2 a))]] (B2)[[v2\\projT1(projT2(projT2(projT2 a)))]] (f a))
+           (p : forall a, nuprli i uk (projT1 a) (B1)[[v1\\projT1(projT2(projT2 a))]] (B2)[[v2\\projT1(projT2(projT2(projT2 a)))]] (f a))
   : lib-per-fam(lib,eqa,o).
 Proof.
   exists (fun (lib' : library) (x : lib_extends lib' lib) a a' (e : eqa lib' x a a') =>
@@ -315,23 +318,23 @@ Proof.
 Defined.
 
 Lemma choice_ext_teqi {o} :
-  forall lib i (A A' : @CTerm o) v1 B1 v2 B2 (eqa : lib-per(lib,o)),
-    (forall lib' e, nuprl lib' A A' (eqa lib' e))
+  forall uk lib i (A A' : @CTerm o) v1 B1 v2 B2 (eqa : lib-per(lib,o)),
+    (forall lib' e, nuprl uk lib' A A' (eqa lib' e))
     -> (forall lib' (x : lib_extends lib' lib) a1 a2,
-           equality lib' a1 a2 A
-           -> equality lib' (substc a1 v1 B1) (substc a2 v2 B2) (mkc_uni i))
+           equality uk lib' a1 a2 A
+           -> equality uk lib' (substc a1 v1 B1) (substc a2 v2 B2) (mkc_uni uk i))
     -> {eqb : lib-per-fam(lib,eqa,o),
          forall lib' (x : lib_extends lib' lib) a1 a2 (e : eqa lib' x a1 a2),
-            nuprli i lib' (substc a1 v1 B1) (substc a2 v2 B2) (eqb lib' x a1 a2 e)}.
+            nuprli i uk lib' (substc a1 v1 B1) (substc a2 v2 B2) (eqb lib' x a1 a2 e)}.
 Proof.
   introv teqa F.
 
   assert (forall lib' (x : lib_extends lib' lib) a a' (e : eqa lib' x a a'),
-             equality lib' (B1)[[v1\\a]] (B2)[[v2\\a']] (mkc_uni i)) as G.
+             equality uk lib' (B1)[[v1\\a]] (B2)[[v2\\a']] (mkc_uni uk i)) as G.
   {
     introv e.
     apply (F lib' x a a').
-    apply (equality_eq1 lib' A A' a a' (eqa lib' x)); auto.
+    apply (equality_eq1 uk lib' A A' a a' (eqa lib' x)); auto.
   }
   clear F; rename G into F.
 
@@ -340,7 +343,7 @@ Proof.
                 per
                 (fun a b => nuprli
                               i
-                              (projT1 a)
+                              uk (projT1 a)
                               (substc (projT1 (projT2 (projT2 a))) v1 B1)
                               (substc (projT1 (projT2 (projT2 (projT2 a)))) v2 B2)
                               b)) as C.
@@ -374,7 +377,7 @@ Proof.
 
     exrepnd.
     pose proof (G0 _ ext1 _ ext2 extz) as w.
-    eapply (nuprli_monotone _ lib2 lib'1) in w; auto; exrepnd.
+    eapply (nuprli_monotone _ _ lib2 lib'1) in w; auto; exrepnd.
     apply nuprli_refl in w1.
     apply nuprli_refl in q.
     eapply nuprli_uniquely_valued in w1; try exact q; apply w1; clear w1; apply w0; auto.

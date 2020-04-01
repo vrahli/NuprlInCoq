@@ -96,8 +96,8 @@ Tactic Notation "one_lift_lsubst" constr(T) ident(name) tactic(tac) :=
         intro name; tac
 
     (* Universe *)
-    | context [lsubstc (mk_uni ?i) ?w ?s ?c ] =>
-      generalize (lsubstc_mk_uni i w s c);
+    | context [lsubstc (mk_uni ?u ?i) ?w ?s ?c ] =>
+      generalize (lsubstc_mk_uni u i w s c);
         intro name; tac
 
     (* integer *)

@@ -50,7 +50,7 @@ Qed.
 Hint Rewrite @lsubstc_qtnat : slow.
 
 Lemma tequality_qtnat {o} :
-  forall (lib : @library o), tequality lib mkc_qtnat mkc_qtnat.
+  forall uk (lib : @library o), tequality uk lib mkc_qtnat mkc_qtnat.
 Proof.
   introv; apply tequality_mkc_qtime; apply type_tnat.
 Qed.
@@ -66,8 +66,8 @@ Proof.
 Qed.
 
 Lemma equality_in_qtnat {p} :
-  forall lib (t1 t2 : @CTerm p),
-    equality lib t1 t2 mkc_qtnat
+  forall uk lib (t1 t2 : @CTerm p),
+    equality uk lib t1 t2 mkc_qtnat
     <=> in_open_bar lib (fun lib => {a1, a2 : CTerm
              , ccequivc lib t1 a1
              # ccequivc lib t2 a2
@@ -96,7 +96,7 @@ Proof.
 Qed.
 
 Lemma equality_nat_in_qtnat {o} :
-  forall (lib : @library o) k, equality lib (mkc_nat k) (mkc_nat k) mkc_qtnat.
+  forall uk (lib : @library o) k, equality uk lib (mkc_nat k) (mkc_nat k) mkc_qtnat.
 Proof.
   introv.
   apply equality_in_qtnat; eauto 2 with slow.

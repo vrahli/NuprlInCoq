@@ -517,11 +517,11 @@ Proof.
 Qed.
 
 Lemma similarity_preserves_alpha_eq_hyps {o} :
-  forall lib (hs1 hs2 : @bhyps o) s1 s2,
+  forall uk lib (hs1 hs2 : @bhyps o) s1 s2,
     vars_hyps hs1 = vars_hyps hs2
     -> alpha_eq_hyps hs1 hs2
-    -> similarity lib s1 s2 hs1
-    -> similarity lib s1 s2 hs2.
+    -> similarity uk lib s1 s2 hs1
+    -> similarity uk lib s1 s2 hs2.
 Proof.
   induction hs1 using rev_list_indT; introv eqvs aeq sim.
   - inversion aeq; subst; auto.
@@ -779,13 +779,13 @@ Proof.
 Qed.
 
 Lemma similarity_preserves_cequiv_open_hyps {o} :
-  forall lib (hs1 hs2 : @bhyps o) s1 s2,
+  forall uk lib (hs1 hs2 : @bhyps o) s1 s2,
     wf_hyps hs2
     -> eq_free_vars_hyps hs1 hs2
     -> vars_hyps hs1 = vars_hyps hs2
     -> cequiv_open_hyps lib hs1 hs2
-    -> similarity lib s1 s2 hs1
-    -> similarity lib s1 s2 hs2.
+    -> similarity uk lib s1 s2 hs1
+    -> similarity uk lib s1 s2 hs2.
 Proof.
   induction hs1 using rev_list_indT; introv wf2 efvs vsh ceq sim; allsimpl.
 
@@ -990,10 +990,10 @@ Proof.
 Qed.
 
 Lemma tequalityi_alphaeqc_l {o} :
-forall lib n (a b c : @CTerm o),
+forall uk lib n (a b c : @CTerm o),
   alphaeqc a b
-  -> tequalityi lib n a c
-  -> tequalityi lib n b c.
+  -> tequalityi lib uk n a c
+  -> tequalityi lib uk n b c.
 Proof.
   introv aeq teq.
   allunfold @tequalityi.
@@ -1002,10 +1002,10 @@ Qed.
 Hint Resolve tequalityi_alphaeqc_l : nequality.
 
 Lemma tequalityi_alphaeqc_r {o} :
-forall lib n (a b c : @CTerm o),
+forall uk lib n (a b c : @CTerm o),
   alphaeqc b c
-  -> tequalityi lib n a b
-  -> tequalityi lib n a c.
+  -> tequalityi lib uk n a b
+  -> tequalityi lib uk n a c.
 Proof.
   introv aeq teq.
   allunfold @tequalityi.
@@ -1014,10 +1014,10 @@ Qed.
 Hint Resolve tequalityi_alphaeqc_r : nequality.
 
 Lemma eqtypes_alphaeqc_l {o} :
-  forall lib lvl (a b c : @CTerm o),
+  forall uk lib lvl (a b c : @CTerm o),
     alphaeqc a b
-    -> eqtypes lib lvl a c
-    -> eqtypes lib lvl b c.
+    -> eqtypes uk lib lvl a c
+    -> eqtypes uk lib lvl b c.
 Proof.
   introv aeq eqt.
   allunfold @eqtypes.
@@ -1026,10 +1026,10 @@ Qed.
 Hint Resolve eqtypes_alphaeqc_l : nequality.
 
 Lemma eqtypes_alphaeqc_r {o} :
-  forall lib lvl (a b c : @CTerm o),
+  forall uk lib lvl (a b c : @CTerm o),
     alphaeqc b c
-    -> eqtypes lib lvl a b
-    -> eqtypes lib lvl a c.
+    -> eqtypes uk lib lvl a b
+    -> eqtypes uk lib lvl a c.
 Proof.
   introv aeq eqt.
   allunfold @eqtypes.
@@ -1049,12 +1049,12 @@ Proof.
 Qed.
 
 Lemma sub_eq_hyps_snoc_subst {o} :
-  forall lib hs (s1 s2 s3 s4 : @CSub o) s
+  forall uk lib hs (s1 s2 s3 s4 : @CSub o) s
          (wf : wf_sub s)
          (c1 : covered_csub s s1)
          (c2 : covered_csub s s2),
-    sub_eq_hyps lib s1 s2 s3 s4 (lsubst_hyps s hs)
-    <=> sub_eq_hyps lib (lsubstc_sub s s1 wf c1 ++ s1) (lsubstc_sub s s2 wf c2 ++ s2) s3 s4 hs.
+    sub_eq_hyps uk lib s1 s2 s3 s4 (lsubst_hyps s hs)
+    <=> sub_eq_hyps uk lib (lsubstc_sub s s1 wf c1 ++ s1) (lsubstc_sub s s2 wf c2 ++ s2) s3 s4 hs.
 Proof.
   induction hs using rev_list_ind; introv; simpl; split; intro h; tcsp;
   allrw @lsubst_hyps_snoc;
@@ -1098,7 +1098,7 @@ Proof.
       apply p0.
       rw in_remove_nvars; sp. }
 
-    apply (sub_eq_hyps_cons _ _ _ _ _ _ _ a hs wfa cov1 cov2); auto;[].
+    apply (sub_eq_hyps_cons _ _ _ _ _ _ _ _ a hs wfa cov1 cov2); auto;[].
 
     clear seh.
     destruct a; allsimpl.
@@ -1171,7 +1171,7 @@ Proof.
         allapply @sub_find_some.
         apply in_sub_free_vars_iff; eexists; eexists; dands; eauto. }
 
-    pose proof (sub_eq_hyps_cons lib t1 t2 _ _ _ _ _ (lsubst_hyps s hs) wfa cov1 cov2) as h.
+    pose proof (sub_eq_hyps_cons uk lib t1 t2 _ _ _ _ _ (lsubst_hyps s hs) wfa cov1 cov2) as h.
     autorewrite with core slow in *.
     repeat (autodimp h hyp).
 
@@ -1202,10 +1202,10 @@ Proof.
 Qed.
 
 Lemma sub_eq_hyps_snoc_weak_dup1 {o} :
-  forall lib (hs : @bhyps o) s1 s2 s3 s4 x t1,
+  forall uk lib (hs : @bhyps o) s1 s2 s3 s4 x t1,
     LIn x (dom_csub s1)
-    -> sub_eq_hyps lib s1 s2 s3 s4 hs
-    -> sub_eq_hyps lib (snoc s1 (x, t1)) s2 s3 s4 hs.
+    -> sub_eq_hyps uk lib s1 s2 s3 s4 hs
+    -> sub_eq_hyps uk lib (snoc s1 (x, t1)) s2 s3 s4 hs.
 Proof.
   induction hs using rev_list_indT; simpl; introv nih seh;
   inversion seh; subst; cpx.
@@ -1236,10 +1236,10 @@ Proof.
 Qed.
 
 Lemma sub_eq_hyps_snoc_weak_dup2 {o} :
-  forall lib (hs : @bhyps o) s1 s2 s3 s4 x t2,
+  forall uk lib (hs : @bhyps o) s1 s2 s3 s4 x t2,
     LIn x (dom_csub s2)
-    -> sub_eq_hyps lib s1 s2 s3 s4 hs
-    -> sub_eq_hyps lib s1 (snoc s2 (x, t2)) s3 s4 hs.
+    -> sub_eq_hyps uk lib s1 s2 s3 s4 hs
+    -> sub_eq_hyps uk lib s1 (snoc s2 (x, t2)) s3 s4 hs.
 Proof.
   induction hs using rev_list_indT; simpl; introv nih seh;
   inversion seh; subst; cpx.
@@ -1274,10 +1274,10 @@ Ltac clear_cover :=
          end.
 
 Lemma sub_eq_hyps_snoc_move1 {o} :
-  forall lib (hs : @bhyps o) s1 s2 s3 s4 x t1,
+  forall uk lib (hs : @bhyps o) s1 s2 s3 s4 x t1,
     !LIn x (dom_csub s1)
-    -> sub_eq_hyps lib (snoc s1 (x, t1)) s2 s3 s4 hs
-    -> sub_eq_hyps lib ((x,t1) :: s1) s2 s3 s4 hs.
+    -> sub_eq_hyps uk lib (snoc s1 (x, t1)) s2 s3 s4 hs
+    -> sub_eq_hyps uk lib ((x,t1) :: s1) s2 s3 s4 hs.
 Proof.
   induction hs using rev_list_indT; simpl; introv nih seh;
   inversion seh; subst; cpx.
@@ -1310,10 +1310,10 @@ Proof.
 Qed.
 
 Lemma sub_eq_hyps_snoc_move2 {o} :
-  forall lib (hs : @bhyps o) s1 s2 s3 s4 x t2,
+  forall uk lib (hs : @bhyps o) s1 s2 s3 s4 x t2,
     !LIn x (dom_csub s2)
-    -> sub_eq_hyps lib s1 (snoc s2 (x, t2)) s3 s4 hs
-    -> sub_eq_hyps lib s1 ((x,t2) :: s2) s3 s4 hs.
+    -> sub_eq_hyps uk lib s1 (snoc s2 (x, t2)) s3 s4 hs
+    -> sub_eq_hyps uk lib s1 ((x,t2) :: s2) s3 s4 hs.
 Proof.
   induction hs using rev_list_indT; simpl; introv nih seh;
   inversion seh; subst; cpx.
@@ -1376,10 +1376,10 @@ Proof.
 Qed.
 
 Lemma tequalityi_cequivc_l {o} :
-  forall lib n (a b c : @CTerm o),
+  forall uk lib n (a b c : @CTerm o),
     ccequivc_ext lib a b
-    -> tequalityi lib n a c
-    -> tequalityi lib n b c.
+    -> tequalityi lib uk n a c
+    -> tequalityi lib uk n b c.
 Proof.
   introv ceq teq.
   allunfold @tequalityi.
@@ -1388,10 +1388,10 @@ Qed.
 Hint Resolve tequalityi_cequivc_l : nequality.
 
 Lemma tequalityi_cequivc_r {o} :
-  forall lib n (a b c : @CTerm o),
+  forall uk lib n (a b c : @CTerm o),
     ccequivc_ext lib b c
-    -> tequalityi lib n a b
-    -> tequalityi lib n a c.
+    -> tequalityi lib uk n a b
+    -> tequalityi lib uk n a c.
 Proof.
   introv ceq teq.
   allunfold @tequalityi.
@@ -1400,10 +1400,10 @@ Qed.
 Hint Resolve tequalityi_cequivc_r : nequality.
 
 Lemma eqtypes_cequivc_l {o} :
-  forall lib lvl (a b c : @CTerm o),
+  forall uk lib lvl (a b c : @CTerm o),
     ccequivc_ext lib a b
-    -> eqtypes lib lvl a c
-    -> eqtypes lib lvl b c.
+    -> eqtypes uk lib lvl a c
+    -> eqtypes uk lib lvl b c.
 Proof.
   introv ceq eqt.
   allunfold @eqtypes.
@@ -1412,10 +1412,10 @@ Qed.
 Hint Resolve eqtypes_cequivc_l : nequality.
 
 Lemma eqtypes_cequivc_r {o} :
-  forall lib lvl (a b c : @CTerm o),
+  forall uk lib lvl (a b c : @CTerm o),
     ccequivc_ext lib b c
-    -> eqtypes lib lvl a b
-    -> eqtypes lib lvl a c.
+    -> eqtypes uk lib lvl a b
+    -> eqtypes uk lib lvl a c.
 Proof.
   introv ceq eqt.
   allunfold @eqtypes.
@@ -1478,10 +1478,10 @@ Proof.
 Qed.
 
 Lemma sub_eq_hyps_cequiv_csub1 {o} :
-  forall lib (hs : @bhyps o) s1 s2 s3 s4 s',
+  forall uk lib (hs : @bhyps o) s1 s2 s3 s4 s',
     cequiv_csub_ext lib s1 s'
-    -> sub_eq_hyps lib s1 s2 s3 s4 hs
-    -> sub_eq_hyps lib s' s2 s3 s4 hs.
+    -> sub_eq_hyps uk lib s1 s2 s3 s4 hs
+    -> sub_eq_hyps uk lib s' s2 s3 s4 hs.
 Proof.
   induction hs using rev_list_indT; simpl; introv ceq seh;
   inversion seh; subst; cpx.
@@ -1523,10 +1523,10 @@ Proof.
 Qed.
 
 Lemma sub_eq_hyps_cequiv_csub2 {o} :
-  forall lib (hs : @bhyps o) s1 s2 s3 s4 s',
+  forall uk lib (hs : @bhyps o) s1 s2 s3 s4 s',
     cequiv_csub_ext lib s2 s'
-    -> sub_eq_hyps lib s1 s2 s3 s4 hs
-    -> sub_eq_hyps lib s1 s' s3 s4 hs.
+    -> sub_eq_hyps uk lib s1 s2 s3 s4 hs
+    -> sub_eq_hyps uk lib s1 s' s3 s4 hs.
 Proof.
   induction hs using rev_list_indT; simpl; introv ceq seh;
   inversion seh; subst; cpx.

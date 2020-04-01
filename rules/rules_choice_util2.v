@@ -58,7 +58,7 @@ Proof.
 Qed.
 
 Lemma type_nat2bool {o} :
-  forall (lib : @library o), type lib nat2bool.
+  forall uk (lib : @library o), type uk lib nat2bool.
 Proof.
   introv.
   unfold nat2bool.
@@ -68,8 +68,8 @@ Qed.
 Hint Resolve type_nat2bool : slow.
 
 Lemma tequality_nat2bool {o} :
-  forall (lib : @library o),
-    tequality lib nat2bool nat2bool.
+  forall uk (lib : @library o),
+    tequality uk lib nat2bool nat2bool.
 Proof.
   introv.
   apply type_nat2bool.
@@ -77,10 +77,10 @@ Qed.
 Hint Resolve tequality_nat2bool : slow.
 
 Lemma equality_nat2bool_apply {o} :
-  forall lib (f g a b : @CTerm o),
-    equality lib f g nat2bool
-    -> equality lib a b mkc_tnat
-    -> equality lib (mkc_apply f a) (mkc_apply g b) mkc_bool.
+  forall uk lib (f g a b : @CTerm o),
+    equality uk lib f g nat2bool
+    -> equality uk lib a b mkc_tnat
+    -> equality uk lib (mkc_apply f a) (mkc_apply g b) mkc_bool.
 Proof.
   introv eqf eqn.
   unfold nat2bool in eqf.
@@ -177,8 +177,8 @@ Qed.
 Hint Resolve ccequivc_ext_mkc_inr_if : slow.
 
 Lemma equality_in_bool_ext {o} :
-  forall lib (a b : @CTerm o),
-    equality lib a b mkc_bool
+  forall uk lib (a b : @CTerm o),
+    equality uk lib a b mkc_bool
     <=>
     in_open_bar lib (fun lib =>
                        (ccequivc_ext lib a tt # ccequivc_ext lib b tt)
@@ -289,9 +289,9 @@ Proof.
 Qed.
 
 Lemma equality_in_bool_implies_tequality {o} :
-  forall lib (a b : @CTerm o),
-    equality lib a b mkc_bool
-    -> tequality lib (mkc_assert a) (mkc_assert b).
+  forall uk lib (a b : @CTerm o),
+    equality uk lib a b mkc_bool
+    -> tequality uk lib (mkc_assert a) (mkc_assert b).
 Proof.
   introv eb.
   apply equality_in_bool_ext in eb.
@@ -314,10 +314,10 @@ Qed.
 Hint Resolve equality_in_bool_implies_tequality : slow.
 
 Lemma tequality_assert_apply_nat2bool {o} :
-  forall lib (f g a b : @CTerm o),
-    equality lib f g nat2bool
-    -> equality lib a b mkc_tnat
-    -> tequality lib (mkc_assert (mkc_apply f a)) (mkc_assert (mkc_apply g b)).
+  forall uk lib (f g a b : @CTerm o),
+    equality uk lib f g nat2bool
+    -> equality uk lib a b mkc_tnat
+    -> tequality uk lib (mkc_assert (mkc_apply f a)) (mkc_assert (mkc_apply g b)).
 Proof.
   introv ef en.
   eapply equality_nat2bool_apply in ef;[|exact en]; eauto 3 with slow.
@@ -436,14 +436,14 @@ Definition exists_ff_choice {o} (a : choice_sequence_name) (n : NVar) : @CTerm o
        (mkcv_ff _)
        (mkcv_bool _)).
 
-Lemma type_bool {o} : forall lib, @type o lib mkc_bool.
+Lemma type_bool {o} : forall uk lib, @type o uk lib mkc_bool.
 Proof.
   introv; apply tequality_bool.
 Qed.
 Hint Resolve type_bool : slow.
 
 Lemma implies_member_nat2bool_bar2 {o} :
-  forall lib (f : @CTerm o),
+  forall uk lib (f : @CTerm o),
     in_open_bar
       lib
       (fun lib =>
@@ -451,7 +451,7 @@ Lemma implies_member_nat2bool_bar2 {o} :
            in_open_bar
              lib
              (fun lib => {b : bool , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_boolean b)}))
-    -> member lib f nat2bool.
+    -> member uk lib f nat2bool.
 Proof.
   introv imp.
   apply equality_in_fun; dands; eauto 3 with slow.
@@ -580,12 +580,12 @@ Qed.
 Hint Resolve iscvalue_mkc_boolean : slow.
 
 Lemma mkc_choice_seq_in_nat2bool {o} :
-  forall (lib : @library o) (name : choice_sequence_name),
+  forall uk (lib : @library o) (name : choice_sequence_name),
     compatible_choice_sequence_name 1 name
     -> no_repeats_library lib
     -> safe_library lib
     -> lib_cond_sat_def lib
-    -> member lib (mkc_choice_seq name) nat2bool.
+    -> member uk lib (mkc_choice_seq name) nat2bool.
 Proof.
   introv comp norep safe sat.
   applydup compatible_choice_sequence_name_1_implies_is_primitive_kind in comp as isn.
@@ -631,12 +631,12 @@ Qed.
 Hint Resolve mkc_choice_seq_in_nat2bool : slow.
 
 Lemma mkc_choice_seq_equality_in_nat2bool {o} :
-  forall (lib : @library o) (name : choice_sequence_name),
+  forall uk (lib : @library o) (name : choice_sequence_name),
     compatible_choice_sequence_name 1 name
     -> safe_library lib
     -> no_repeats_library lib
     -> lib_cond_sat_def lib
-    -> equality lib (mkc_choice_seq name) (mkc_choice_seq name) nat2bool.
+    -> equality uk lib (mkc_choice_seq name) (mkc_choice_seq name) nat2bool.
 Proof.
   introv comp safe norep sat; apply mkc_choice_seq_in_nat2bool; auto.
 Qed.

@@ -47,9 +47,9 @@ Proof.
 Qed.*)
 
 Definition pair2lib_per2 {o}
-           {lib A B u v}
+           {uk lib A B u v}
            (f : {lib' : library $ lib_extends lib' lib} -> per(o))
-           (p : forall a, nuprl (projT1 a) A B (f a) # f a u v) : lib-per(lib,o).
+           (p : forall a, nuprl uk (projT1 a) A B (f a) # f a u v) : lib-per(lib,o).
 Proof.
   exists (fun (lib' : library) (ext : lib_extends lib' lib) =>
             f (existT (fun lib' => lib_extends lib' lib) lib' ext)).
@@ -66,17 +66,17 @@ Defined.
 
 (* MOVE *)
 Lemma choice_ext_lib_eq {o} :
-  forall lib (a b A : @CTerm o),
-    (forall lib' (x : lib_extends lib' lib), equality lib' a b A)
+  forall uk lib (a b A : @CTerm o),
+    (forall lib' (x : lib_extends lib' lib), equality uk lib' a b A)
     -> {eqa : lib-per(lib,o),
-        forall lib' (x : lib_extends lib' lib), nuprl lib' A A (eqa lib' x) # eqa lib' x a b}.
+        forall lib' (x : lib_extends lib' lib), nuprl uk lib' A A (eqa lib' x) # eqa lib' x a b}.
 Proof.
   introv F.
 
   pose proof (FunctionalChoice_on
                 {lib' : library & lib_extends lib' lib}
                 per(o)
-                (fun x y => nuprl (projT1 x) A A y # y a b)) as C.
+                (fun x y => nuprl uk (projT1 x) A A y # y a b)) as C.
   autodimp C hyp.
 
   {
@@ -113,8 +113,8 @@ Defined.*)
 
 (* !!MOVE *)
 Lemma nuprl_term_equality_symmetric {o} :
-  forall lib (A B : @CTerm o) eq,
-    nuprl lib A B eq
+  forall uk lib (A B : @CTerm o) eq,
+    nuprl uk lib A B eq
     -> term_equality_symmetric eq.
 Proof.
   introv h.
@@ -125,9 +125,9 @@ Qed.
 Hint Resolve nuprl_term_equality_symmetric : slow.
 
 Lemma all_in_bar_ext_nuprl_implies_nuprl {o} :
-  forall (lib : @library o) A B (eqa : lib-per(lib,o)),
-    in_open_bar_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x))
-    -> nuprl lib A B (per_bar_eq lib eqa).
+  forall uk (lib : @library o) A B (eqa : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => nuprl uk lib' A B (eqa lib' x))
+    -> nuprl uk lib A B (per_bar_eq lib eqa).
 Proof.
   introv all.
   apply CL_bar; exists eqa; dands; auto.
@@ -135,9 +135,9 @@ Qed.
 Hint Resolve all_in_bar_ext_nuprl_implies_nuprl : slow.
 
 Lemma all_in_bar_ext_nuprl_implies_tequality {o} :
-  forall (lib : @library o) A B (eqa : lib-per(lib,o)),
-    in_open_bar_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x))
-    -> tequality lib A B.
+  forall uk (lib : @library o) A B (eqa : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => nuprl uk lib' A B (eqa lib' x))
+    -> tequality uk lib A B.
 Proof.
   introv all.
   exists (per_bar_eq lib eqa); eauto 3 with slow.
@@ -145,9 +145,9 @@ Qed.
 Hint Resolve all_in_bar_ext_nuprl_implies_tequality : slow.
 
 Lemma all_in_bar_ext_nuprl_implies_type {o} :
-  forall (lib : @library o) A (eqa : lib-per(lib,o)),
-    in_open_bar_ext lib (fun lib' x => nuprl lib' A A (eqa lib' x))
-    -> type lib A.
+  forall uk (lib : @library o) A (eqa : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => nuprl uk lib' A A (eqa lib' x))
+    -> type uk lib A.
 Proof.
   introv all.
   exists (per_bar_eq lib eqa); eauto 3 with slow.
@@ -155,11 +155,11 @@ Qed.
 Hint Resolve all_in_bar_ext_nuprl_implies_type : slow.
 
 Lemma all_in_bar_ext_eqorceq_commutes_equality {o} :
-  forall (lib : @library o) a b c d A B (eqa : lib-per(lib,o)),
-    in_open_bar_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x))
+  forall uk (lib : @library o) a b c d A B (eqa : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => nuprl uk lib' A B (eqa lib' x))
     -> in_open_bar_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) a b)
     -> in_open_bar_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) c d)
-    -> equality lib a c A <=> equality lib b d B.
+    -> equality uk lib a c A <=> equality uk lib b d B.
 Proof.
   introv n eoa eob; split; intro h.
 
@@ -174,7 +174,7 @@ Proof.
       eapply in_open_bar_ext_comb; try exact eoa; clear eoa.
       eapply in_open_bar_ext_pres; try exact eob; clear eob; introv eob eoa n.
       eapply equality_monotone in h;[|exact e].
-      pose proof (equality_eq1 lib' A B b d (eqa lib' e)) as q.
+      pose proof (equality_eq1 uk lib' A B b d (eqa lib' e)) as q.
       apply q; auto; clear q.
       apply nuprl_refl in n; auto.
       eapply eqorceq_commutes_equality; try exact h; try apply eqorceq_sym; eauto;
@@ -191,16 +191,16 @@ Proof.
       eapply in_open_bar_ext_comb; try exact eoa; clear eoa.
       eapply in_open_bar_ext_pres; try exact eob; clear eob; introv eob eoa n.
       eapply equality_monotone in h;[|exact e].
-      pose proof (equality_eq1 lib' A B a c (eqa lib' e)) as q.
+      pose proof (equality_eq1 uk lib' A B a c (eqa lib' e)) as q.
       apply q; auto; clear q.
       eapply eqorceq_commutes_equality; try exact h; eauto 3 with slow.
 Qed.
 
 Lemma implies_all_in_ex_bar_equality_or_ccequivc_ext {o} :
-  forall (lib : @library o) a b A B (eqa : lib-per(lib,o)),
-    in_open_bar_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x))
+  forall uk (lib : @library o) a b A B (eqa : lib-per(lib,o)),
+    in_open_bar_ext lib (fun lib' x => nuprl uk lib' A B (eqa lib' x))
     -> in_open_bar_ext lib (fun lib' x => eqorceq lib' (eqa lib' x) a b)
-    -> in_open_bar lib (fun lib' => equality lib' a b A {+} ccequivc_ext lib' a b).
+    -> in_open_bar lib (fun lib' => equality uk lib' a b A {+} ccequivc_ext lib' a b).
 Proof.
   introv an ae.
   eapply in_open_bar_comb2; try exact an; clear an.
@@ -318,11 +318,11 @@ Hint Resolve computes_to_valc_ceq_bar_refl : refl.*)
 
 (* !!MOVE *)
 Lemma nuprl_per_bar_eq_bar {o} :
-  forall (lib : @library o) i,
-    nuprl lib (mkc_uni i) (mkc_uni i) (per_bar_eq lib (univi_eq_lib_per lib i)).
+  forall uk (lib : @library o) i,
+    nuprl uk lib (mkc_uni uk i) (mkc_uni uk i) (per_bar_eq lib (univi_eq_lib_per uk lib i)).
 Proof.
   introv.
-  apply CL_init; exists (univi_eq_lib_per lib i); dands; tcsp.
+  apply CL_init; exists (univi_eq_lib_per uk lib i); dands; tcsp.
   apply in_ext_ext_implies_in_open_bar_ext; introv.
   exists (S i).
   apply univi_exists_iff; exists i; dands; spcast; tcsp; eauto 3 with slow.
@@ -450,9 +450,9 @@ Qed.
 Hint Resolve all_in_ex_bar_iff_same : refl.
 
 Lemma equality_implies_all_in_ex_bar_equality_or_ccequivc_ext {o} :
-  forall lib (a b A : @CTerm o),
-    equality lib a b A
-    -> in_open_bar lib (fun lib => equality lib a b A {+} ccequivc_ext lib a b).
+  forall uk lib (a b A : @CTerm o),
+    equality uk lib a b A
+    -> in_open_bar lib (fun lib => equality uk lib a b A {+} ccequivc_ext lib a b).
 Proof.
   introv ea.
   apply in_ext_implies_in_open_bar; introv ext.
@@ -460,34 +460,34 @@ Proof.
 Qed.
 Hint Resolve equality_implies_all_in_ex_bar_equality_or_ccequivc_ext : slow.
 
-Definition equorsq_bar {o} lib (t1 t2 T : @CTerm o) :=
-  in_open_bar lib (fun lib => equorsq lib t1 t2 T).
+Definition equorsq_bar {o} uk lib (t1 t2 T : @CTerm o) :=
+  in_open_bar lib (fun lib => equorsq uk lib t1 t2 T).
 
-Definition equorsq2_bar {o} lib (t1 t2 t3 t4 T : @CTerm o) :=
-  equorsq_bar lib t1 t2 T # equorsq_bar lib t3 t4 T.
+Definition equorsq2_bar {o} uk lib (t1 t2 t3 t4 T : @CTerm o) :=
+  equorsq_bar uk lib t1 t2 T # equorsq_bar uk lib t3 t4 T.
 
 Lemma fold_equorsq_bar {p} :
-  forall lib (t1 t2 T : @CTerm p),
-    in_open_bar lib (fun lib => equality lib t1 t2 T {+} ccequivc_ext lib t1 t2) = equorsq_bar lib t1 t2 T.
+  forall uk lib (t1 t2 T : @CTerm p),
+    in_open_bar lib (fun lib => equality uk lib t1 t2 T {+} ccequivc_ext lib t1 t2) = equorsq_bar uk lib t1 t2 T.
 Proof. sp. Qed.
 
 Lemma fold_equorsq2_bar {p} :
-  forall lib (t1 t2 t3 t4 T : @CTerm p),
-    (equorsq_bar lib t1 t2 T # equorsq_bar lib t3 t4 T) = equorsq2_bar lib t1 t2 t3 t4 T.
+  forall uk lib (t1 t2 t3 t4 T : @CTerm p),
+    (equorsq_bar uk lib t1 t2 T # equorsq_bar uk lib t3 t4 T) = equorsq2_bar uk lib t1 t2 t3 t4 T.
 Proof. sp. Qed.
 
 Lemma equality_respects_equorsq_bar_right {o} :
-  forall lib (a1 a2 a3 T : @CTerm o),
-    equality lib a1 a2 T
-    -> equorsq_bar lib a2 a3 T
-    -> equality lib a1 a3 T.
+  forall uk lib (a1 a2 a3 T : @CTerm o),
+    equality uk lib a1 a2 T
+    -> equorsq_bar uk lib a2 a3 T
+    -> equality uk lib a1 a3 T.
 Proof.
   introv ea equ.
   unfold equorsq_bar in equ.
   dup ea as xxx.
   unfold equality in ea; exrepnd.
 
-  pose proof (nuprl_monotone_func lib T T eq ea1) as tya; exrepnd.
+  pose proof (nuprl_monotone_func uk lib T T eq ea1) as tya; exrepnd.
   rename eq' into eqa.
 
   exists (per_bar_eq lib eqa).
@@ -510,10 +510,10 @@ Proof.
     unfold equorsq in *; repndors.
 
     - eapply equality_trans in equ;[|exact xxx].
-      apply (equality_eq1 lib' T T a1 a3 (eqa lib' e)); auto.
+      apply (equality_eq1 uk lib' T T a1 a3 (eqa lib' e)); auto.
 
-    - apply (equality_eq1 lib' T T a1 a3 (eqa lib' e)); auto.
-      apply (equality_eq1 lib' T T a1 a2 (eqa lib' e)) in ea0; auto.
+    - apply (equality_eq1 uk lib' T T a1 a3 (eqa lib' e)); auto.
+      apply (equality_eq1 uk lib' T T a1 a2 (eqa lib' e)) in ea0; auto.
       eauto 3 with slow.
       eapply equality_respects_cequivc_right; eauto.
   }
@@ -521,25 +521,25 @@ Qed.
 Hint Resolve equality_respects_equorsq_bar_right : slow.
 
 Lemma equality_respects_equorsq_bar_left {o} :
-  forall lib (a1 a2 a3 T : @CTerm o),
-    equality lib a1 a2 T
-    -> equorsq_bar lib a1 a3 T
-    -> equality lib a3 a2 T.
+  forall uk lib (a1 a2 a3 T : @CTerm o),
+    equality uk lib a1 a2 T
+    -> equorsq_bar uk lib a1 a3 T
+    -> equality uk lib a3 a2 T.
 Proof.
   introv ea equ.
-  pose proof (equality_respects_equorsq_bar_right lib a2 a1 a3 T) as q.
+  pose proof (equality_respects_equorsq_bar_right uk lib a2 a1 a3 T) as q.
   repeat (autodimp q hyp); apply equality_sym; auto.
 Qed.
 Hint Resolve equality_respects_equorsq_bar_left : slow.
 
 Lemma equality_respects_equorsq_bar1 {o} :
-  forall lib (a1 a2 a3 T : @CTerm o),
-    equality lib a1 a2 T
-    -> equorsq_bar lib a1 a3 T
-    -> equality lib a1 a3 T.
+  forall uk lib (a1 a2 a3 T : @CTerm o),
+    equality uk lib a1 a2 T
+    -> equorsq_bar uk lib a1 a3 T
+    -> equality uk lib a1 a3 T.
 Proof.
   introv ea equ.
-  pose proof (equality_respects_equorsq_bar_right lib a2 a1 a3 T) as q.
+  pose proof (equality_respects_equorsq_bar_right uk lib a2 a1 a3 T) as q.
   repeat (autodimp q hyp).
   { apply equality_sym; auto. }
   eapply equality_trans; eauto.
@@ -547,10 +547,10 @@ Qed.
 Hint Resolve equality_respects_equorsq_bar1 : slow.
 
 Lemma equality_respects_equorsq_bar2 {o} :
-  forall lib (a1 a2 a3 T : @CTerm o),
-    equality lib a2 a1 T
-    -> equorsq_bar lib a1 a3 T
-    -> equality lib a1 a3 T.
+  forall uk lib (a1 a2 a3 T : @CTerm o),
+    equality uk lib a2 a1 T
+    -> equorsq_bar uk lib a1 a3 T
+    -> equality uk lib a1 a3 T.
 Proof.
   introv ea equ.
   eapply equality_respects_equorsq_bar1; auto.
@@ -595,9 +595,9 @@ Proof.
 Qed.
 
 Lemma all_in_ex_bar_tequality_implies_tequality {o} :
-  forall lib (T1 T2 : @CTerm o),
-    in_open_bar lib (fun lib => tequality lib T1 T2)
-    -> tequality lib T1 T2.
+  forall uk lib (T1 T2 : @CTerm o),
+    in_open_bar lib (fun lib => tequality uk lib T1 T2)
+    -> tequality uk lib T1 T2.
 Proof.
   introv a.
   unfold tequality in a.
@@ -622,7 +622,7 @@ Proof.
 
   exrepnd.
   pose proof (a1 _ ext1 _ ext2 extz) as w.
-  eapply (nuprl_monotone lib2 lib'0) in w; auto; exrepnd.
+  eapply (nuprl_monotone uk lib2 lib'0) in w; auto; exrepnd.
   apply nuprl_refl in w1.
   apply nuprl_refl in a2.
   eapply nuprl_uniquely_valued in w1; try exact a2; apply w1; clear w1; tcsp.
@@ -632,9 +632,9 @@ Hint Resolve all_in_ex_bar_tequality_implies_tequality : slow.
 Hint Resolve meta_type_monotone : slow.
 
 Lemma inhabited_type_iff_exists_per {o} :
-  forall lib (T : @CTerm o),
-    inhabited_type lib T
-    <=> exists eq t, nuprl lib T T eq # eq t t.
+  forall uk lib (T : @CTerm o),
+    inhabited_type uk lib T
+    <=> exists eq t, nuprl uk lib T T eq # eq t t.
 Proof.
   introv.
   unfold inhabited_type, member, equality; split; intro h; exrepnd; eexists; eexists; eauto.
@@ -665,16 +665,16 @@ Qed.
 Hint Resolve inhabited_type_if_equality : slow.
 
 Lemma all_in_ex_bar_type_implies_type {o} :
-  forall lib (A : @CTerm o),
-    in_open_bar lib (fun lib' => type lib' A)
-    -> type lib A.
+  forall uk lib (A : @CTerm o),
+    in_open_bar lib (fun lib' => type uk lib' A)
+    -> type uk lib A.
 Proof.
   introv a.
   apply all_in_ex_bar_tequality_implies_tequality; auto.
 Qed.
 
-Definition inhabited_type_bar {o} lib (A : @CTerm o) :=
-  in_open_bar lib (fun lib => inhabited_type lib A).
+Definition inhabited_type_bar {o} uk lib (A : @CTerm o) :=
+  in_open_bar lib (fun lib => inhabited_type uk lib A).
 
 Lemma collapse_all_in_ex_bar {o} :
   forall (lib : @library o) F,
@@ -693,9 +693,9 @@ Proof.
 Qed.
 
 Lemma all_in_ex_bar_equality_implies_equality {o} :
-  forall lib (a b A : @CTerm o),
-    in_open_bar lib (fun lib => equality lib a b A)
-    -> equality lib a b A.
+  forall uk lib (a b A : @CTerm o),
+    in_open_bar lib (fun lib => equality uk lib a b A)
+    -> equality uk lib a b A.
 Proof.
   introv h.
   apply in_open_bar_implies_in_open_bar_ext in h.
@@ -721,7 +721,7 @@ Proof.
     exrepnd.
     pose proof (h1 _ ext1 _ ext2 extz) as w; repnd.
     apply nuprl_refl in w0; apply nuprl_refl in h0.
-    eapply (nuprl_monotone lib2 lib'0) in w0; auto; exrepnd.
+    eapply (nuprl_monotone uk lib2 lib'0) in w0; auto; exrepnd.
     eapply nuprl_uniquely_valued in w0; try exact h0.
     apply w0; apply w1; auto.
   }
@@ -776,9 +776,9 @@ Qed.
 Hint Resolve lib_extends_preserves_all_in_ex_bar : slow.
 
 Lemma lib_extends_inhabited_type {o} :
-  forall {lib lib'} (x : lib_extends lib' lib) (T : @CTerm o),
-    inhabited_type lib T
-    -> inhabited_type lib' T.
+  forall uk {lib lib'} (x : lib_extends lib' lib) (T : @CTerm o),
+    inhabited_type uk lib T
+    -> inhabited_type uk lib' T.
 Proof.
   introv x inh.
   unfold inhabited_type in *; exrepnd; exists t; eauto 3 with slow.
@@ -786,8 +786,8 @@ Qed.
 Hint Resolve lib_extends_inhabited_type : slow.
 
 Lemma inhabited_type_implies_inhabited_type_bar {o} :
-  forall lib (T : @CTerm o),
-    inhabited_type lib T -> inhabited_type_bar lib T.
+  forall uk lib (T : @CTerm o),
+    inhabited_type uk lib T -> inhabited_type_bar uk lib T.
 Proof.
   introv h.
   apply in_ext_implies_all_in_ex_bar; introv x; eauto 3 with slow.
@@ -795,18 +795,18 @@ Qed.
 Hint Resolve inhabited_type_implies_inhabited_type_bar : slow.
 
 Lemma fold_inhabited_type_bar {o} :
-  forall lib (A : @CTerm o),
-    in_open_bar lib (fun lib => inhabited_type lib A)
-    = inhabited_type_bar lib A.
+  forall uk lib (A : @CTerm o),
+    in_open_bar lib (fun lib => inhabited_type uk lib A)
+    = inhabited_type_bar uk lib A.
 Proof.
   tcsp.
 Qed.
 
 Lemma inhabited_type_bar_cequivc {p} :
-  forall lib (a b : @CTerm p),
+  forall uk lib (a b : @CTerm p),
     ccequivc_ext lib a b
-    -> inhabited_type_bar lib a
-    -> inhabited_type_bar lib b.
+    -> inhabited_type_bar uk lib a
+    -> inhabited_type_bar uk lib b.
 Proof.
   introv ceq inh.
   eapply all_in_ex_bar_modus_ponens1;try exact inh; clear inh; introv w inh; exrepnd; spcast.
@@ -815,7 +815,7 @@ Qed.
 Hint Resolve inhabited_type_bar_cequivc : slow.
 
 Lemma inhabited_type_bar_respects_alphaeqc {o} :
-  forall lib, respects1 alphaeqc (@inhabited_type_bar o lib).
+  forall uk lib, respects1 alphaeqc (@inhabited_type_bar o uk lib).
 Proof.
   introv aeq inh.
   apply (alphaeqc_implies_ccequivc_ext lib) in aeq; eauto 3 with slow.
@@ -831,12 +831,6 @@ Proof.
   allrw @computes_to_valc_iff_reduces_toc; sp.
 Qed.
 Hint Resolve computes_to_valc_implies_reduces_toc : slow.
-
-Definition ccequivc_ext_bar {o} lib (t1 t2 : @CTerm o) :=
-  in_open_bar lib (fun lib => ccequivc_ext lib t1 t2).
-
-Definition ccequivc_bar {o} lib (a b : @CTerm o) :=
-  in_open_bar lib (fun lib => ccequivc lib a b).
 
 Lemma implies_in_ext_in_ext {o} :
   forall (lib : @library o) F,
@@ -871,9 +865,9 @@ Proof.
 Qed.
 
 Lemma all_in_ex_bar_member_implies_member {o} :
-  forall lib (a A : @CTerm o),
-    in_open_bar lib (fun lib => member lib a A)
-    -> member lib a A.
+  forall uk lib (a A : @CTerm o),
+    in_open_bar lib (fun lib => member uk lib a A)
+    -> member uk lib a A.
 Proof.
   introv h.
   apply all_in_ex_bar_equality_implies_equality in h; auto.
@@ -887,9 +881,9 @@ Qed.
 Hint Resolve univ_uniquely_valued : slow.
 
 Lemma all_in_ex_bar_teq_and_eq_implies_teq_and_eq {o} :
-  forall lib (A B a b T : @CTerm o),
-    in_open_bar lib (fun lib => tequality lib A B # equality lib a b T)
-    -> tequality lib A B # equality lib a b T.
+  forall uk lib (A B a b T : @CTerm o),
+    in_open_bar lib (fun lib => tequality uk lib A B # equality uk lib a b T)
+    -> tequality uk lib A B # equality uk lib a b T.
 Proof.
   introv e; dands.
 
@@ -901,9 +895,9 @@ Proof.
 Qed.
 
 Lemma inhabited_type_implies_type {o} :
-  forall lib (T : @CTerm o),
-    inhabited_type lib T
-    -> type lib T.
+  forall uk lib (T : @CTerm o),
+    inhabited_type uk lib T
+    -> type uk lib T.
 Proof.
   introv e.
   unfold inhabited_type in e; exrepnd.
@@ -912,9 +906,9 @@ Qed.
 Hint Resolve inhabited_type_implies_type : slow.
 
 Lemma inhabited_type_bar_implies_type {o} :
-  forall lib (T : @CTerm o),
-    inhabited_type_bar lib T
-    -> type lib T.
+  forall uk lib (T : @CTerm o),
+    inhabited_type_bar uk lib T
+    -> type uk lib T.
 Proof.
   introv e.
   apply all_in_ex_bar_type_implies_type.
@@ -968,9 +962,9 @@ Ltac betared2 :=
   end.
 
 Lemma equality_implies_all_in_ex_bar_equality {o} :
-  forall lib (a b : @CTerm o) A,
-    equality lib a b A
-    -> in_open_bar lib (fun lib => equality lib a b A).
+  forall uk lib (a b : @CTerm o) A,
+    equality uk lib a b A
+    -> in_open_bar lib (fun lib => equality uk lib a b A).
 Proof.
   introv equ.
   apply in_ext_implies_all_in_ex_bar; introv x; eauto 3 with slow.

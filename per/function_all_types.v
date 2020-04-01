@@ -35,14 +35,12 @@ Require Export per_props_uni2.
 
 Lemma tuni_fun {o} :
   forall lib (v : NVar),
-    @type o lib (mkc_function mkc_tnat v (mkcv_tuni [v] (mkc_var v))).
+    @type o uk0 lib (mkc_function mkc_tnat v (mkcv_tuni [v] (mkc_var v))).
 Proof.
   introv.
-  apply tequality_function; dands; [apply type_tnat|].
+  apply tequality_function; dands; eauto 3 with slow; try apply type_tnat.
   introv ext en.
   apply equality_in_tnat in en.
   allrw @mkcv_tuni_substc; spcast.
   allrw @mkc_var_substc; eauto 3 with slow.
-SearchAbout tequality mkc_tuni.
-Locate equality_of_nat_bar.
 Qed.

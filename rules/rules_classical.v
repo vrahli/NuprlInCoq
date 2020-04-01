@@ -74,19 +74,19 @@ Require Export sequents_squash.
 
 Definition rule_squashed_excluded_middle {o}
            (P : NTerm)
-           (i : nat)
+           (u i : nat)
            (H : @barehypotheses o) :=
   mk_rule
     (mk_baresequent H (mk_conclax (mk_squash (mk_or P (mk_not P)))))
-    [ mk_baresequent H (mk_conclax (mk_member P (mk_uni i)))
+    [ mk_baresequent H (mk_conclax (mk_member P (mk_uni u i)))
     ]
     [].
 
 Lemma rule_squashed_excluded_middle_true {o} :
-  forall lib (P : NTerm),
+  forall uk lib (P : NTerm),
   forall i : nat,
   forall H : @barehypotheses o,
-    rule_true lib (rule_squashed_excluded_middle P i H).
+    rule_true uk lib (rule_squashed_excluded_middle P uk i H).
 Proof.
   unfold rule_squashed_excluded_middle, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -114,7 +114,7 @@ Proof.
   rw @member_eq.
   rw @equality_in_mkc_squash.
 
-  assert (tequality lib' (lsubstc P w0 s1 c0) (lsubstc P w0 s2 c4)) as teq.
+  assert (tequality uk lib' (lsubstc P w0 s1 c0) (lsubstc P w0 s2 c4)) as teq.
   (* begin proof of assert *)
   {
     vr_seq_true in hyp1.
@@ -141,7 +141,7 @@ Proof.
 
   introv ext.
 
-  generalize (classic (exists (lib'' : library) (ext'' : lib_extends lib'' lib'), inhabited_type lib'' (lsubstc P w0 s1 c0))); intro inh.
+  generalize (classic (exists (lib'' : library) (ext'' : lib_extends lib'' lib'), inhabited_type uk lib'' (lsubstc P w0 s1 c0))); intro inh.
   destruct inh as [inh | ninh].
 
   {

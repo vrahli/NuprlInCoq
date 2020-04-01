@@ -41,9 +41,9 @@ Require Export local.
 
 
 Lemma in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals4 {o} :
-  forall (ts : cts(o)) {lib lib'} (ext : lib_extends lib' lib) A B C (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A B (eqa lib' x))
-    -> in_ext_ext lib' (fun lib'' x => ts lib'' A C (eqa1 lib'' x))
+  forall (ts : cts(o)) uk {lib lib'} (ext : lib_extends lib' lib) A B C (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A B (eqa lib' x))
+    -> in_ext_ext lib' (fun lib'' x => ts uk lib'' A C (eqa1 lib'' x))
     -> in_ext_ext lib' (fun lib'' x => (eqa1 lib'' x) <=2=> (eqa lib'' (lib_extends_trans x ext))).
 Proof.
   introv h w; introv.
@@ -56,7 +56,7 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_type_sys_props4_fam_implies_in_ext_ext_eq_term_equals_fam2 {o} :
-  forall (ts : cts(o)) {lib lib'}
+  forall (ts : cts(o)) uk {lib lib'}
          (ext : lib_extends lib' lib)
          va A vb B vc C
          (eqa : lib-per(lib,o))
@@ -65,9 +65,9 @@ Lemma in_ext_ext_type_sys_props4_fam_implies_in_ext_ext_eq_term_equals_fam2 {o} 
          (eqb1 : lib-per-fam(lib',eqa1,o))
          (eqb2 : lib-per-fam(lib',eqa2,o)),
     in_ext_ext lib' (fun lib'' x => (eqa1 lib'' x) <=2=> (eqa lib'' (lib_extends_trans x ext)))
-    -> in_ext_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), type_sys_props4 ts lib' (substc a va A) (substc a' vb B) (eqb lib' x a a' e))
-    -> in_ext_ext lib' (fun lib' x => forall a a' (e : eqa1 lib' x a a'), ts lib' (substc a va A) (substc a' vc C) (eqb1 lib' x a a' e))
-    -> in_ext_ext lib' (fun lib' x => forall a a' (e : eqa2 lib' x a a'), ts lib' (substc a va A) (substc a' vc C) (eqb2 lib' x a a' e))
+    -> in_ext_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), type_sys_props4 ts uk lib' (substc a va A) (substc a' vb B) (eqb lib' x a a' e))
+    -> in_ext_ext lib' (fun lib' x => forall a a' (e : eqa1 lib' x a a'), ts uk lib' (substc a va A) (substc a' vc C) (eqb1 lib' x a a' e))
+    -> in_ext_ext lib' (fun lib' x => forall a a' (e : eqa2 lib' x a a'), ts uk lib' (substc a va A) (substc a' vc C) (eqb2 lib' x a a' e))
     -> in_ext_ext lib' (fun lib' x => forall a a' (u : eqa1 lib' x a a') (v : eqa2 lib' x a a'), (eqb1 lib' x a a' u) <=2=> (eqb2 lib' x a a' v)).
 Proof.
   introv eqas h w q; introv.
@@ -98,9 +98,9 @@ Qed.
 Hint Resolve implies_in_ext_ext_raise_ext_per_fam : slow.
 
 Lemma in_ext_ext_type_sys_props4_implies_in_ext_ext_eq_term_equals5 {o} :
-  forall (ts : cts(o)) {lib lib'} (ext : lib_extends lib' lib) A B C (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B A (eqa lib' x))
-    -> in_ext_ext lib' (fun lib'' x => ts lib'' C A (eqa1 lib'' x))
+  forall (ts : cts(o)) uk {lib lib'} (ext : lib_extends lib' lib) A B C (eqa : lib-per(lib,o)) (eqa1 : lib-per(lib',o)),
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' B A (eqa lib' x))
+    -> in_ext_ext lib' (fun lib'' x => ts uk lib'' C A (eqa1 lib'' x))
     -> in_ext_ext lib' (fun lib'' x => (eqa1 lib'' x) <=2=> (eqa lib'' (lib_extends_trans x ext))).
 Proof.
   introv h w; introv.
@@ -117,7 +117,7 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_type_sys_props4_fam_implies_in_ext_ext_eq_term_equals_fam3 {o} :
-  forall (ts : cts(o)) {lib lib'}
+  forall (ts : cts(o)) uk {lib lib'}
          (ext : lib_extends lib' lib)
          va A vb B vc C
          (eqa : lib-per(lib,o))
@@ -126,9 +126,9 @@ Lemma in_ext_ext_type_sys_props4_fam_implies_in_ext_ext_eq_term_equals_fam3 {o} 
          (eqb1 : lib-per-fam(lib',eqa1,o))
          (eqb2 : lib-per-fam(lib',eqa2,o)),
     in_ext_ext lib' (fun lib'' x => (eqa1 lib'' x) <=2=> (eqa lib'' (lib_extends_trans x ext)))
-    -> in_ext_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), type_sys_props4 ts lib' (substc a vb B) (substc a' va A) (eqb lib' x a a' e))
-    -> in_ext_ext lib' (fun lib' x => forall a a' (e : eqa1 lib' x a a'), ts lib' (substc a vc C) (substc a' va A) (eqb1 lib' x a a' e))
-    -> in_ext_ext lib' (fun lib' x => forall a a' (e : eqa2 lib' x a a'), ts lib' (substc a vc C) (substc a' va A) (eqb2 lib' x a a' e))
+    -> in_ext_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), type_sys_props4 ts uk lib' (substc a vb B) (substc a' va A) (eqb lib' x a a' e))
+    -> in_ext_ext lib' (fun lib' x => forall a a' (e : eqa1 lib' x a a'), ts uk lib' (substc a vc C) (substc a' va A) (eqb1 lib' x a a' e))
+    -> in_ext_ext lib' (fun lib' x => forall a a' (e : eqa2 lib' x a a'), ts uk lib' (substc a vc C) (substc a' va A) (eqb2 lib' x a a' e))
     -> in_ext_ext lib' (fun lib' x => forall a a' (u : eqa1 lib' x a a') (v : eqa2 lib' x a a'), (eqb1 lib' x a a' u) <=2=> (eqb2 lib' x a a' v)).
 Proof.
   introv eqas h w q; introv.

@@ -258,9 +258,9 @@ Proof.
 Qed.
 
 Lemma per_int_bar_implies_close {o} :
-  forall (ts : cts(o)) lib T T' eq,
-    per_int_bar (close ts) lib T T' eq
-    -> close ts lib T T' eq.
+  forall (ts : cts(o)) uk lib T T' eq,
+    per_int_bar (close ts) uk lib T T' eq
+    -> close ts uk lib T T' eq.
 Proof.
   introv per.
   apply CL_bar.
@@ -289,14 +289,14 @@ Proof.
 Qed.
 
 Lemma type_equality_respecting_trans1_per_int_bar_implies {o} :
-  forall (ts : cts(o)) lib T T',
+  forall (ts : cts(o)) uk lib T T',
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T  mkc_int
     -> ccomputes_to_valc_ext lib T' mkc_int
-    -> type_equality_respecting_trans1 (per_int_bar (close ts)) lib T T'
-    -> type_equality_respecting_trans1 (close ts) lib T T'.
+    -> type_equality_respecting_trans1 (per_int_bar (close ts)) uk lib T T'
+    -> type_equality_respecting_trans1 (close ts) uk lib T T'.
 Proof.
   introv tsts dou mon comp1 comp2 trans h ceq cl.
   apply per_int_bar_implies_close.
@@ -317,14 +317,14 @@ Proof.
 Qed.
 
 Lemma type_equality_respecting_trans2_per_int_bar_implies {o} :
-  forall (ts : cts(o)) lib T T',
+  forall (ts : cts(o)) uk lib T T',
     type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T  mkc_int
     -> ccomputes_to_valc_ext lib T' mkc_int
-    -> type_equality_respecting_trans2 (per_int_bar (close ts)) lib T T'
-    -> type_equality_respecting_trans2 (close ts) lib T T'.
+    -> type_equality_respecting_trans2 (per_int_bar (close ts)) uk lib T T'
+    -> type_equality_respecting_trans2 (close ts) uk lib T T'.
 Proof.
   introv tsts dou mon comp1 comp2 trans h ceq cl.
   apply per_int_bar_implies_close.

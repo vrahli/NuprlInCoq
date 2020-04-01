@@ -37,10 +37,10 @@ Require Export per_ceq_bar.
 
 
 Lemma ccequivc_ext_preserves_computes_to_uni {o} :
-  forall lib (T T' : @CTerm o),
+  forall uk lib (T T' : @CTerm o),
     ccequivc_ext lib T T'
-    -> computes_to_uni lib T
-    -> computes_to_uni lib T'.
+    -> computes_to_uni uk lib T
+    -> computes_to_uni uk lib T'.
 Proof.
   introv ceq comp.
   unfold computes_to_uni in *; exrepnd.
@@ -50,38 +50,38 @@ Qed.
 Hint Resolve ccequivc_ext_preserves_computes_to_uni : slow.
 
 Lemma type_equality_respecting_trans1_init_implies {o} :
-  forall (ts : cts(o)) lib T T',
+  forall (ts : cts(o)) (uk : ukind) lib T T',
     local_ts ts
-    -> computes_to_uni lib T
-    -> computes_to_uni lib T'
-    -> type_equality_respecting_trans1 ts lib T T'
-    -> type_equality_respecting_trans1 (close ts) lib T T'.
+    -> computes_to_uni uk lib T
+    -> computes_to_uni uk lib T'
+    -> type_equality_respecting_trans1 ts uk lib T T'
+    -> type_equality_respecting_trans1 (close ts) uk lib T T'.
 Proof.
   introv locts inbar1 inbar2 trans h ceq cl.
   apply CL_init.
   eapply trans; eauto.
   repndors; subst.
 
-  - apply ccequivc_ext_preserves_computes_to_uni in ceq; auto.
+  - eapply ccequivc_ext_preserves_computes_to_uni in ceq; eauto.
     dclose_lr; auto.
 
-  - apply ccequivc_ext_preserves_computes_to_uni in ceq; auto.
+  - eapply ccequivc_ext_preserves_computes_to_uni in ceq; eauto.
     dclose_lr; auto.
 
-  - apply ccequivc_ext_preserves_computes_to_uni in ceq; auto.
+  - eapply ccequivc_ext_preserves_computes_to_uni in ceq; eauto.
     dclose_lr; auto.
 
-  - apply ccequivc_ext_preserves_computes_to_uni in ceq; auto.
+  - eapply ccequivc_ext_preserves_computes_to_uni in ceq; eauto.
     dclose_lr; auto.
 Qed.
 
 Lemma type_equality_respecting_trans2_init_implies {o} :
-  forall (ts : cts(o)) lib T T',
+  forall (ts : cts(o)) (uk : ukind) lib T T',
     local_ts ts
-    -> computes_to_uni lib T
-    -> computes_to_uni lib T'
-    -> type_equality_respecting_trans2 ts lib T T'
-    -> type_equality_respecting_trans2 (close ts) lib T T'.
+    -> computes_to_uni uk lib T
+    -> computes_to_uni uk lib T'
+    -> type_equality_respecting_trans2 ts uk lib T T'
+    -> type_equality_respecting_trans2 (close ts) uk lib T T'.
 Proof.
   introv locts inbar1 inbar2 trans h cl ceq.
   apply CL_init.
@@ -101,13 +101,13 @@ Hint Resolve computes_to_valc_uni_implies_all_in_bar_trivial : slow.
 *)
 
 Lemma close_type_system_init {p} :
-  forall (ts : cts(p)) lib T T' eq,
+  forall (ts : cts(p)) uk lib T T' eq,
     local_ts ts
     -> type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
-    -> ts lib T T' eq
-    -> type_sys_props4 (close ts) lib T T' eq.
+    -> ts uk lib T T' eq
+    -> type_sys_props4 (close ts) uk lib T T' eq.
 Proof.
   introv locts tysys dou mon e.
   usedou.
@@ -120,7 +120,7 @@ Proof.
 
   + SCase "type_symmetric".
     introv cl eqiff.
-    repdors; subst; spcast; dest_close_lr h; apply CL_init; spts.
+    repdors; subst; spcast; dest_close_lr h; apply CL_init; try spts.
 
   + SCase "type_value_respecting".
     introv h ceq.
@@ -140,16 +140,15 @@ Proof.
 
   + SCase "term_symmetric".
     onedts uv tye tys tyt tyvr tes tet tevr.
-    apply tes with (lib := lib) (T := T) (T' := T'); auto.
+    eapply tes; eauto.
 
   + SCase "term_transitive".
     onedts uv tye tys tyt tyvr tes tet tevr.
-    apply tet with (lib := lib) (T := T) (T' := T'); auto.
+    eapply tet; eauto.
 
   + SCase "term_value_respecting".
     onedts uv tye tys tyt tyvr tes tet tevr.
-    apply tevr with (T := T); auto.
-    use_trans T'; sp.
+    eapply tevr; eauto.
 
   + SCase "type_gsymmetric".
     sp; split; sp; subst; spcast; dest_close_lr h; apply CL_init; sp; try spts.

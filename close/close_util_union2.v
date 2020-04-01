@@ -41,9 +41,9 @@ Require Export close_util2.
 
 
 Lemma per_bar_per_union_implies_close {o} :
-  forall (ts : cts(o)) lib T T' eq,
-    per_bar (per_union (close ts)) lib T T' eq
-    -> close ts lib T T' eq.
+  forall (ts : cts(o)) uk lib T T' eq,
+    per_bar (per_union (close ts)) uk lib T T' eq
+    -> close ts uk lib T T' eq.
 Proof.
   introv per.
   apply CL_bar.
@@ -63,11 +63,11 @@ Proof.
 Qed.
 
 Lemma per_bar_per_union_implies_eq_term_equals_per_union_eq_bar {o} :
-  forall (ts : cts(o)) lib T T' eq (eqa eqb : lib-per(lib,o)) A B A' B',
+  forall (ts : cts(o)) uk lib T T' eq (eqa eqb : lib-per(lib,o)) A B A' B',
     ccomputes_to_valc_ext lib T (mkc_union A B)
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B B' (eqb lib' x))
-    -> per_bar (per_union ts) lib T T' eq
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' B B' (eqb lib' x))
+    -> per_bar (per_union ts) uk lib T T' eq
     -> eq <=2=> (per_union_eq_bar lib eqa eqb).
 Proof.
   introv comp tsa tsb per.
@@ -94,11 +94,11 @@ Proof.
     apply cequivc_ext_mkc_union_right in ceq; repnd.
 
     dup per3 as eqas.
-    eapply (in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 _ e) in eqas;
+    eapply (in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 _ _ e) in eqas;
       [|exact tsa|]; eauto 3 with slow;[].
 
     dup per4 as eqbs.
-    eapply (in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 _ e) in eqbs;
+    eapply (in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 _ _ e) in eqbs;
       [|exact tsb|]; eauto 3 with slow;[].
 
     unfold per_union_eq, per_union_eq_L, per_union_eq_R in *.
@@ -119,11 +119,11 @@ Proof.
     apply cequivc_ext_mkc_union_right in ceq; repnd.
 
     dup per3 as eqas.
-    eapply (in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 _ e) in eqas;
+    eapply (in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 _ _ e) in eqas;
       [|exact tsa|]; eauto 3 with slow;[].
 
     dup per4 as eqbs.
-    eapply (in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 _ e) in eqbs;
+    eapply (in_ext_ext_type_sys_props4_ccequivc_ext_implies_in_ext_ext_eq_term_equals4 _ _ e) in eqbs;
       [|exact tsb|]; eauto 3 with slow;[].
 
     apply (sub_per_per_union_eq_bar _ _ e) in h.
@@ -133,15 +133,15 @@ Proof.
 Qed.
 
 Lemma type_value_respecting_trans_per_bar_per_union1 {o} :
-  forall lib (ts : cts(o)) T T1 T2 A B A' B' C D (eqa eqb : lib-per(lib,o)) eq,
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A C (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B D (eqb lib' x))
+  forall uk lib (ts : cts(o)) T T1 T2 A B A' B' C D (eqa eqb : lib-per(lib,o)) eq,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A C (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' B D (eqb lib' x))
     -> ccomputes_to_valc_ext lib T1 (mkc_union A' B')
     -> ccomputes_to_valc_ext lib T (mkc_union A B)
     -> ccequivc_ext lib A A'
     -> ccequivc_ext lib B B'
-    -> per_bar (per_union ts) lib T1 T2 eq
-    -> per_bar (per_union ts) lib T T2 eq.
+    -> per_bar (per_union ts) uk lib T1 T2 eq
+    -> per_bar (per_union ts) uk lib T T2 eq.
 Proof.
   introv tsa tsb comp1 comp2 ceqa ceqb per.
   unfold per_bar in *; exrepnd.
@@ -153,8 +153,8 @@ Proof.
   eapply ccomputes_to_valc_ext_monotone in comp1;[|exact e].
   eapply ccomputes_to_valc_ext_monotone in comp2;[|exact e].
 
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsb.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsb.
 
   spcast; computes_to_eqval_ext.
   apply cequivc_ext_mkc_union_right in ceq; repnd.
@@ -164,15 +164,15 @@ Proof.
 Qed.
 
 Lemma type_value_respecting_trans_per_bar_per_union2 {o} :
-  forall lib (ts : cts(o)) T T1 T2 A B A' B' C D (eqa eqb : lib-per(lib,o)) eq,
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A C (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B D (eqb lib' x))
+  forall uk lib (ts : cts(o)) T T1 T2 A B A' B' C D (eqa eqb : lib-per(lib,o)) eq,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A C (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' B D (eqb lib' x))
     -> ccomputes_to_valc_ext lib T1 (mkc_union A' B')
     -> ccomputes_to_valc_ext lib T (mkc_union A B)
     -> ccequivc_ext lib A A'
     -> ccequivc_ext lib B B'
-    -> per_bar (per_union ts) lib T2 T1 eq
-    -> per_bar (per_union ts) lib T T2 eq.
+    -> per_bar (per_union ts) uk lib T2 T1 eq
+    -> per_bar (per_union ts) uk lib T T2 eq.
 Proof.
   introv tsa tsb comp1 comp2 ceqa ceqb per.
   unfold per_bar in *; exrepnd.
@@ -184,8 +184,8 @@ Proof.
   eapply ccomputes_to_valc_ext_monotone in comp1;[|exact e].
   eapply ccomputes_to_valc_ext_monotone in comp2;[|exact e].
 
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsb.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsb.
 
   spcast; computes_to_eqval_ext.
   apply cequivc_ext_mkc_union_right in ceq; repnd.
@@ -195,12 +195,12 @@ Proof.
 Qed.
 
 Lemma per_union_sym {o} :
-  forall ts lib (T1 T2 : @CTerm o) A A' B B' equ (eqa eqb : lib-per(lib,o)),
+  forall ts uk lib (T1 T2 : @CTerm o) A A' B B' equ (eqa eqb : lib-per(lib,o)),
     ccomputes_to_valc_ext lib T1 (mkc_union A B)
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B B' (eqb lib' x))
-    -> per_union ts lib T1 T2 equ
-    -> per_union ts lib T2 T1 equ.
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' B B' (eqb lib' x))
+    -> per_union ts uk lib T1 T2 equ
+    -> per_union ts uk lib T2 T1 equ.
 Proof.
   introv comp tspa tspb per.
 
@@ -216,12 +216,12 @@ Proof.
 Qed.
 
 Lemma per_union_sym_rev {o} :
-  forall ts lib (T1 T2 : @CTerm o) A A' B B' equ (eqa eqb : lib-per(lib,o)),
+  forall ts uk lib (T1 T2 : @CTerm o) A A' B B' equ (eqa eqb : lib-per(lib,o)),
     ccomputes_to_valc_ext lib T1 (mkc_union A B)
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B B' (eqb lib' x))
-    -> per_union ts lib T2 T1 equ
-    -> per_union ts lib T1 T2 equ.
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' B B' (eqb lib' x))
+    -> per_union ts uk lib T2 T1 equ
+    -> per_union ts uk lib T1 T2 equ.
 Proof.
   introv comp tspa tspb per.
 
@@ -237,12 +237,12 @@ Proof.
 Qed.
 
 Lemma per_bar_per_union_sym {o} :
-  forall (ts : cts(o)) lib T T' A B A' B' (eqa eqb : lib-per(lib,o)) eq,
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B B' (eqb lib' x))
+  forall (ts : cts(o)) uk lib T T' A B A' B' (eqa eqb : lib-per(lib,o)) eq,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' B B' (eqb lib' x))
     -> ccomputes_to_valc_ext lib T (mkc_union A B)
-    -> per_bar (per_union ts) lib T T' eq
-    -> per_bar (per_union ts) lib T' T eq.
+    -> per_bar (per_union ts) uk lib T T' eq
+    -> per_bar (per_union ts) uk lib T' T eq.
 Proof.
   introv tsa tsb comp per.
   unfold per_bar in *; exrepnd.
@@ -251,19 +251,19 @@ Proof.
 
   eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
 
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsb.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsb.
 
   eapply per_union_sym; try exact comp; eauto.
 Qed.
 
 Lemma per_bar_per_union_sym_rev {o} :
-  forall (ts : cts(o)) lib T T' A B A' B' (eqa eqb : lib-per(lib,o)) eq,
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B B' (eqb lib' x))
+  forall (ts : cts(o)) uk lib T T' A B A' B' (eqa eqb : lib-per(lib,o)) eq,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' B B' (eqb lib' x))
     -> ccomputes_to_valc_ext lib T (mkc_union A B)
-    -> per_bar (per_union ts) lib T' T eq
-    -> per_bar (per_union ts) lib T T' eq.
+    -> per_bar (per_union ts) uk lib T' T eq
+    -> per_bar (per_union ts) uk lib T T' eq.
 Proof.
   introv tsa tsb comp per.
   unfold per_bar in *; exrepnd.
@@ -272,20 +272,20 @@ Proof.
 
   eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
 
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsb.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsb.
 
   eapply per_union_sym_rev; try exact comp; eauto.
 Qed.
 
 Lemma per_union_trans1 {o} :
-  forall ts lib (T T1 T2 : @CTerm o) eq1 eq2 (eqa eqb : lib-per(lib,o)) A B A' B',
+  forall ts uk lib (T T1 T2 : @CTerm o) eq1 eq2 (eqa eqb : lib-per(lib,o)) A B A' B',
     ccomputes_to_valc_ext lib T (mkc_union A B)
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B B' (eqb lib' x))
-    -> per_union ts lib T T2 eq2
-    -> per_union ts lib T1 T eq1
-    -> per_union ts lib T1 T2 eq1.
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' B B' (eqb lib' x))
+    -> per_union ts uk lib T T2 eq2
+    -> per_union ts uk lib T1 T eq1
+    -> per_union ts uk lib T1 T2 eq1.
 Proof.
   introv comp tsa tsb pera perb.
   unfold per_union in *; exrepnd.
@@ -315,13 +315,13 @@ Proof.
 Qed.
 
 Lemma per_union_trans2 {o} :
-  forall ts lib (T T1 T2 : @CTerm o) eq1 eq2 (eqa eqb : lib-per(lib,o)) A B A' B',
+  forall ts uk lib (T T1 T2 : @CTerm o) eq1 eq2 (eqa eqb : lib-per(lib,o)) A B A' B',
     ccomputes_to_valc_ext lib T (mkc_union A B)
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B B' (eqb lib' x))
-    -> per_union ts lib T T2 eq2
-    -> per_union ts lib T1 T eq1
-    -> per_union ts lib T1 T2 eq2.
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' B B' (eqb lib' x))
+    -> per_union ts uk lib T T2 eq2
+    -> per_union ts uk lib T1 T eq1
+    -> per_union ts uk lib T1 T2 eq2.
 Proof.
   introv comp tsa tsb pera perb.
   unfold per_union in *; exrepnd.
@@ -351,13 +351,13 @@ Proof.
 Qed.
 
 Lemma per_union_trans3 {o} :
-  forall ts lib (T T1 T2 : @CTerm o) eq1 eq2 (eqa eqb : lib-per(lib,o)) A B A' B',
+  forall ts uk lib (T T1 T2 : @CTerm o) eq1 eq2 (eqa eqb : lib-per(lib,o)) A B A' B',
     ccomputes_to_valc_ext lib T (mkc_union A' B')
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B B' (eqb lib' x))
-    -> per_union ts lib T T2 eq2
-    -> per_union ts lib T1 T eq1
-    -> per_union ts lib T1 T2 eq1.
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' B B' (eqb lib' x))
+    -> per_union ts uk lib T T2 eq2
+    -> per_union ts uk lib T1 T eq1
+    -> per_union ts uk lib T1 T2 eq1.
 Proof.
   introv comp tsa tsb pera perb.
   unfold per_union in *; exrepnd.
@@ -391,13 +391,13 @@ Proof.
 Qed.
 
 Lemma per_union_trans4 {o} :
-  forall ts lib (T T1 T2 : @CTerm o) eq1 eq2 (eqa eqb : lib-per(lib,o)) A B A' B',
+  forall ts uk lib (T T1 T2 : @CTerm o) eq1 eq2 (eqa eqb : lib-per(lib,o)) A B A' B',
     ccomputes_to_valc_ext lib T (mkc_union A' B')
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B B' (eqb lib' x))
-    -> per_union ts lib T T2 eq2
-    -> per_union ts lib T1 T eq1
-    -> per_union ts lib T1 T2 eq2.
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' B B' (eqb lib' x))
+    -> per_union ts uk lib T T2 eq2
+    -> per_union ts uk lib T1 T eq1
+    -> per_union ts uk lib T1 T2 eq2.
 Proof.
   introv comp tsa tsb pera perb.
   unfold per_union in *; exrepnd.
@@ -431,13 +431,13 @@ Proof.
 Qed.
 
 Lemma per_bar_per_union_trans1 {o} :
-  forall (ts : cts(o)) lib T T1 T2 A B A' B' (eqa eqb : lib-per(lib,o)) eq1 eq2,
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B B' (eqb lib' x))
+  forall (ts : cts(o)) uk lib T T1 T2 A B A' B' (eqa eqb : lib-per(lib,o)) eq1 eq2,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' B B' (eqb lib' x))
     -> ccomputes_to_valc_ext lib T (mkc_union A B)
-    -> per_bar (per_union ts) lib T1 T eq1
-    -> per_bar (per_union ts) lib T T2 eq2
-    -> per_bar (per_union ts) lib T1 T2 eq1.
+    -> per_bar (per_union ts) uk lib T1 T eq1
+    -> per_bar (per_union ts) uk lib T T2 eq2
+    -> per_bar (per_union ts) uk lib T1 T2 eq1.
 Proof.
   introv tsa tsb comp pera perb.
   unfold per_bar in *; exrepnd.
@@ -447,20 +447,20 @@ Proof.
   apply in_ext_ext_implies_in_open_bar_ext; introv perb1 pera1.
 
   eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsb.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsb.
 
   eapply per_union_trans1; try exact comp; eauto.
 Qed.
 
 Lemma per_bar_per_union_trans2 {o} :
-  forall (ts : cts(o)) lib T T1 T2 A B A' B' (eqa eqb : lib-per(lib,o)) eq1 eq2,
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B B' (eqb lib' x))
+  forall (ts : cts(o)) uk lib T T1 T2 A B A' B' (eqa eqb : lib-per(lib,o)) eq1 eq2,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' B B' (eqb lib' x))
     -> ccomputes_to_valc_ext lib T (mkc_union A B)
-    -> per_bar (per_union ts) lib T1 T eq1
-    -> per_bar (per_union ts) lib T T2 eq2
-    -> per_bar (per_union ts) lib T1 T2 eq2.
+    -> per_bar (per_union ts) uk lib T1 T eq1
+    -> per_bar (per_union ts) uk lib T T2 eq2
+    -> per_bar (per_union ts) uk lib T1 T2 eq2.
 Proof.
   introv tsa tsb comp pera perb.
   unfold per_bar in *; exrepnd.
@@ -470,20 +470,20 @@ Proof.
   apply in_ext_ext_implies_in_open_bar_ext; introv perb1 pera1.
 
   eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsb.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsb.
 
   eapply per_union_trans2; try exact comp; eauto.
 Qed.
 
 Lemma per_bar_per_union_trans3 {o} :
-  forall (ts : cts(o)) lib T T1 T2 A B A' B' (eqa eqb : lib-per(lib,o)) eq1 eq2,
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B B' (eqb lib' x))
+  forall (ts : cts(o)) uk lib T T1 T2 A B A' B' (eqa eqb : lib-per(lib,o)) eq1 eq2,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' B B' (eqb lib' x))
     -> ccomputes_to_valc_ext lib T (mkc_union A' B')
-    -> per_bar (per_union ts) lib T1 T eq1
-    -> per_bar (per_union ts) lib T T2 eq2
-    -> per_bar (per_union ts) lib T1 T2 eq1.
+    -> per_bar (per_union ts) uk lib T1 T eq1
+    -> per_bar (per_union ts) uk lib T T2 eq2
+    -> per_bar (per_union ts) uk lib T1 T2 eq1.
 Proof.
   introv tsa tsb comp pera perb.
   unfold per_bar in *; exrepnd.
@@ -493,20 +493,20 @@ Proof.
   apply in_ext_ext_implies_in_open_bar_ext; introv perb1 pera1.
 
   eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsb.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsb.
 
   eapply per_union_trans3; try exact comp; eauto.
 Qed.
 
 Lemma per_bar_per_union_trans4 {o} :
-  forall (ts : cts(o)) lib T T1 T2 A B A' B' (eqa eqb : lib-per(lib,o)) eq1 eq2,
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B B' (eqb lib' x))
+  forall (ts : cts(o)) uk lib T T1 T2 A B A' B' (eqa eqb : lib-per(lib,o)) eq1 eq2,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' B B' (eqb lib' x))
     -> ccomputes_to_valc_ext lib T (mkc_union A' B')
-    -> per_bar (per_union ts) lib T1 T eq1
-    -> per_bar (per_union ts) lib T T2 eq2
-    -> per_bar (per_union ts) lib T1 T2 eq2.
+    -> per_bar (per_union ts) uk lib T1 T eq1
+    -> per_bar (per_union ts) uk lib T T2 eq2
+    -> per_bar (per_union ts) uk lib T1 T2 eq2.
 Proof.
   introv tsa tsb comp pera perb.
   unfold per_bar in *; exrepnd.
@@ -516,24 +516,24 @@ Proof.
   apply in_ext_ext_implies_in_open_bar_ext; introv perb1 pera1.
 
   eapply ccomputes_to_valc_ext_monotone in comp;[|exact e].
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsb.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsb.
 
   eapply per_union_trans4; try exact comp; eauto.
 Qed.
 
 Lemma implies_type_value_respecting_trans1_per_union {o} :
-  forall ts lib T T' eq A1 A2 B1 B2 (eqa eqb : lib-per(lib,o)),
+  forall ts uk lib T T' eq A1 A2 B1 B2 (eqa eqb : lib-per(lib,o)),
     type_system ts
     -> defines_only_universes ts
     -> T ===>(lib) (mkc_union A1 B1)
     -> T' ===>( lib) (mkc_union A2 B2)
-    -> in_ext_ext lib (fun lib' x => close ts lib' A1 A2 (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A1 A2 (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => close ts lib' B1 B2 (eqb lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' B1 B2 (eqb lib' x))
+    -> in_ext_ext lib (fun lib' x => close ts uk lib' A1 A2 (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) uk lib' A1 A2 (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => close ts uk lib' B1 B2 (eqb lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) uk lib' B1 B2 (eqb lib' x))
     -> (eq <=2=> (per_union_eq_bar lib eqa eqb))
-    -> type_equality_respecting_trans1 (close ts) lib T T'.
+    -> type_equality_respecting_trans1 (close ts) uk lib T T'.
 Proof.
   introv tysys dou c1 c2 cla tsa clb tsb eqiff.
   introv h ceq cl.
@@ -589,13 +589,13 @@ Proof.
 Qed.
 
 Lemma type_value_respecting_trans_per_bar_per_union3 {o} :
-  forall lib (ts : cts(o)) T T1 T2 A B A' B' (eqa eqb : lib-per(lib,o)) eq,
-    in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' A A' (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts lib' B B' (eqb lib' x))
+  forall uk lib (ts : cts(o)) T T1 T2 A B A' B' (eqa eqb : lib-per(lib,o)) eq,
+    in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' A A' (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 ts uk lib' B B' (eqb lib' x))
     -> ccomputes_to_valc_ext lib T (mkc_union A B)
     -> ccequivc_ext lib T1 T2
-    -> per_bar (per_union ts) lib T T1 eq
-    -> per_bar (per_union ts) lib T T2 eq.
+    -> per_bar (per_union ts) uk lib T T1 eq
+    -> per_bar (per_union ts) uk lib T T2 eq.
 Proof.
   introv tsa tsb comp1 ceqa per.
   unfold per_bar in *; exrepnd.
@@ -606,8 +606,8 @@ Proof.
 
   eapply ccomputes_to_valc_ext_monotone in comp1;[|exact e].
 
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsa.
-  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ e) in tsb.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsa.
+  apply (implies_in_ext_ext_ts_raise_lib_per _ _ _ _ e) in tsb.
 
   spcast; computes_to_eqval_ext.
   apply cequivc_ext_mkc_union_right in ceq; repnd.
@@ -617,17 +617,17 @@ Proof.
 Qed.
 
 Lemma implies_type_value_respecting_trans2_per_union {o} :
-  forall ts lib T T' eq A1 A2 B1 B2 (eqa eqb : lib-per(lib,o)),
+  forall ts uk lib T T' eq A1 A2 B1 B2 (eqa eqb : lib-per(lib,o)),
     type_system ts
     -> defines_only_universes ts
     -> T ===>(lib) (mkc_union A1 B1)
     -> T' ===>( lib) (mkc_union A2 B2)
-    -> in_ext_ext lib (fun lib' x => close ts lib' A1 A2 (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A1 A2 (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => close ts lib' B1 B2 (eqb lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' B1 B2 (eqb lib' x))
+    -> in_ext_ext lib (fun lib' x => close ts uk lib' A1 A2 (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) uk lib' A1 A2 (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => close ts uk lib' B1 B2 (eqb lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) uk lib' B1 B2 (eqb lib' x))
     -> (eq <=2=> (per_union_eq_bar lib eqa eqb))
-    -> type_equality_respecting_trans2 (close ts) lib T T'.
+    -> type_equality_respecting_trans2 (close ts) uk lib T T'.
 Proof.
   introv tysys dou c1 c2 cla tsa clb tsb eqiff.
   introv h cl ceq.

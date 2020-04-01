@@ -35,8 +35,8 @@ Require Export sequents.
 
 
 Lemma hyps_functionality_ext_nil {o} :
-  forall (lib : @library o),
-    hyps_functionality_ext lib [] [].
+  forall uk (lib : @library o),
+    hyps_functionality_ext uk lib [] [].
 Proof.
   introv ext; eauto 3 with slow.
 Qed.
@@ -60,9 +60,9 @@ Hint Resolve hyps_functionality_ext_nil : slow.
  *)
 
 Lemma weak_consistency {o} :
-  forall lib (t : @NTerm o),
+  forall uk lib (t : @NTerm o),
     wf_term t
-    -> rule_true lib (mk_rule (mk_baresequent [] (mk_concl mk_false t)) [] [])
+    -> rule_true uk lib (mk_rule (mk_baresequent [] (mk_concl mk_false t)) [] [])
     -> False.
 Proof.
   introv wft rt; unfold rule_true in rt; allsimpl.

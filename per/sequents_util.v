@@ -35,13 +35,13 @@ Require Export sequents.
 
 
 Lemma hyps_functionality_ext_snoc {o} :
-  forall lib (H : @bhyps o) h s t,
+  forall uk lib (H : @bhyps o) h s t,
     in_ext lib (fun lib => forall t' s' w c c',
-       equality lib t t' (lsubstc (htyp h) w s c)
-       -> similarity lib s s' H
-       -> eqtypes lib (lvl h) (lsubstc (htyp h) w s c) (lsubstc (htyp h) w s' c'))
-    -> hyps_functionality_ext lib s H
-    -> hyps_functionality_ext lib (snoc s (hvar h, t)) (snoc H h).
+       equality uk lib t t' (lsubstc (htyp h) w s c)
+       -> similarity uk lib s s' H
+       -> eqtypes uk lib (lvl h) (lsubstc (htyp h) w s c) (lsubstc (htyp h) w s' c'))
+    -> hyps_functionality_ext uk lib s H
+    -> hyps_functionality_ext uk lib (snoc s (hvar h, t)) (snoc H h).
 Proof.
   introv imp hf ext sim.
   rw @similarity_snoc in sim; exrepnd; subst; cpx.
@@ -58,23 +58,23 @@ Proof.
 Qed.
 
 Lemma hyps_functionality_ext_snoc2 {o} :
-  forall lib (H : @bhyps o) h s t v,
+  forall uk lib (H : @bhyps o) h s t v,
     in_ext lib (fun lib => forall t' s' w c c',
-       equality lib t t' (lsubstc (htyp h) w s c)
-       -> similarity lib s s' H
-       -> eqtypes lib (lvl h) (lsubstc (htyp h) w s c) (lsubstc (htyp h) w s' c'))
-    -> hyps_functionality_ext lib s H
+       equality uk lib t t' (lsubstc (htyp h) w s c)
+       -> similarity uk lib s s' H
+       -> eqtypes uk lib (lvl h) (lsubstc (htyp h) w s c) (lsubstc (htyp h) w s' c'))
+    -> hyps_functionality_ext uk lib s H
     -> v = hvar h
-    -> hyps_functionality_ext lib (snoc s (v, t)) (snoc H h).
+    -> hyps_functionality_ext uk lib (snoc s (v, t)) (snoc H h).
 Proof.
   intros; subst.
   apply hyps_functionality_ext_snoc; sp.
 Qed.
 
 Lemma similarity_cover_vars2 {o} :
-  forall lib (hs : @bhyps o) (s1 s2 s3 s4 : CSub) (t : NTerm),
-    similarity lib s1 s2 hs
-    -> similarity lib s3 s4 hs
+  forall uk lib (hs : @bhyps o) (s1 s2 s3 s4 : CSub) (t : NTerm),
+    similarity uk lib s1 s2 hs
+    -> similarity uk lib s3 s4 hs
     -> cover_vars t s1
     -> (cover_vars t s2 # cover_vars t s3 # cover_vars t s4).
 Proof.
@@ -86,9 +86,9 @@ Proof.
 Qed.
 
 Lemma similarity_cover_vars_upto2 {o} :
-  forall lib (hs : @bhyps o) (s1 s2 s3 s4 : CSub) vs (t : NTerm),
-    similarity lib s1 s2 hs
-    -> similarity lib s3 s4 hs
+  forall uk lib (hs : @bhyps o) (s1 s2 s3 s4 : CSub) vs (t : NTerm),
+    similarity uk lib s1 s2 hs
+    -> similarity uk lib s3 s4 hs
     -> cover_vars_upto t (csub_filter s1 vs) vs
     -> (cover_vars_upto t (csub_filter s2 vs) vs
         # cover_vars_upto t (csub_filter s3 vs) vs

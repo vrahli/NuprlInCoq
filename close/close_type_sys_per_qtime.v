@@ -33,7 +33,7 @@ Require Export close_util_qtime2.
 
 
 Lemma close_type_system_qtime {o} :
-  forall lib (ts : cts(o))
+  forall uk lib (ts : cts(o))
          T T'
          (eq : per)
          A B
@@ -43,10 +43,10 @@ Lemma close_type_system_qtime {o} :
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T (mkc_qtime A)
     -> ccomputes_to_valc_ext lib T' (mkc_qtime B)
-    -> in_ext_ext lib (fun lib' x => close ts lib' A B (eqa lib' x))
-    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) lib' A B (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => close ts uk lib' A B (eqa lib' x))
+    -> in_ext_ext lib (fun lib' x => type_sys_props4 (close ts) uk lib' A B (eqa lib' x))
     -> (eq <=2=> (per_qtime_eq_bar lib eqa))
-    -> type_sys_props4 (close ts) lib T T' eq.
+    -> type_sys_props4 (close ts) uk lib T T' eq.
 Proof.
   introv tysys dou mon comp1 comp2 cla tsa eqiff.
 

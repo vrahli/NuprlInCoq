@@ -68,10 +68,10 @@ Proof.
 Qed.
 
 Lemma type_sys_props_uv {p} :
-  forall (ts : cts(p)) lib A B eq eq',
-    type_sys_props ts lib A B eq
+  forall (ts : cts(p)) uk lib A B eq eq',
+    type_sys_props ts uk lib A B eq
     -> eq_term_equals eq eq'
-    -> type_sys_props ts lib A B eq'.
+    -> type_sys_props ts uk lib A B eq'.
 Proof.
   introv tsp eqt.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
@@ -132,16 +132,16 @@ Proof.
 Qed.
 
 Lemma type_sys_props_implies_term_eq_sym {p} :
-  forall (ts : cts(p)) lib P P' eqp,
-    type_sys_props ts lib P P' eqp
+  forall (ts : cts(p)) uk lib P P' eqp,
+    type_sys_props ts uk lib P P' eqp
     -> term_equality_symmetric eqp.
 Proof.
   intros; onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1; sp.
 Qed.
 
 Lemma type_sys_props_implies_term_eq_trans {p} :
-  forall (ts : cts(p)) lib P P' eqp,
-    type_sys_props ts lib P P' eqp
+  forall (ts : cts(p)) uk lib P P' eqp,
+    type_sys_props ts uk lib P P' eqp
     -> term_equality_transitive eqp.
 Proof.
   intros; onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1; sp.

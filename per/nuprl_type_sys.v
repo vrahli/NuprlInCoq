@@ -51,9 +51,9 @@ Require Export Peano.
 
 
 Lemma implies_computes_to_uni {o} :
-  forall lib (T : @CTerm o) i,
-    ccomputes_to_valc_ext lib T (mkc_uni i)
-    -> computes_to_uni lib T.
+  forall lib (T : @CTerm o) u i,
+    ccomputes_to_valc_ext lib T (mkc_uni u i)
+    -> computes_to_uni u lib T.
 Proof.
   introv comp.
   apply in_ext_implies_in_open_bar; introv ext.
@@ -104,10 +104,10 @@ Hint Resolve defines_only_universes_univ : slow.
 *)
 
 Lemma ccequivc_ext_uni {o} :
-  forall lib (T T' : @CTerm o) i,
+  forall lib (T T' : @CTerm o) u i,
     ccequivc_ext lib T T'
-    -> ccomputes_to_valc lib T (mkc_uni i)
-    -> ccomputes_to_valc lib T' (mkc_uni i).
+    -> ccomputes_to_valc lib T (mkc_uni u i)
+    -> ccomputes_to_valc lib T' (mkc_uni u i).
 Proof.
   introv ceq comp.
   pose proof (ceq lib) as ceq'; simpl in ceq'; autodimp ceq' hyp; eauto 3 with slow; spcast.
@@ -115,9 +115,9 @@ Proof.
 Qed.
 
 Lemma per_bar_univi_uniquely_valued {o} :
-  forall i lib (T T' : @CTerm o) eq1 eq2,
-    per_bar (univi i) lib T T' eq1
-    -> per_bar (univi i) lib T T' eq2
+  forall i uk lib (T T' : @CTerm o) eq1 eq2,
+    per_bar (univi i) uk lib T T' eq1
+    -> per_bar (univi i) uk lib T T' eq2
     -> eq1 <=2=> eq2.
 Proof.
   introv u v.
@@ -132,7 +132,7 @@ Proof.
     eapply in_open_bar_ext_pres; try exact h; clear h; introv h v1 u1.
     allrw @univi_exists_iff; exrepnd; spcast.
     computes_to_eqval_ext.
-    apply ccequivc_ext_uni_uni_implies in ceq; subst.
+    apply ccequivc_ext_uni_uni_implies in ceq; repnd; subst.
     apply v2; apply u2; auto.
 
   - eapply in_open_bar_ext_comb; try exact u1; clear u1.
@@ -140,7 +140,7 @@ Proof.
     eapply in_open_bar_ext_pres; try exact h; clear h; introv h v1 u1.
     allrw @univi_exists_iff; exrepnd; spcast.
     computes_to_eqval_ext.
-    apply ccequivc_ext_uni_uni_implies in ceq; subst.
+    apply ccequivc_ext_uni_uni_implies in ceq; repnd; subst.
     apply u2; apply v2; auto.
 Qed.
 
@@ -150,7 +150,7 @@ Proof.
   introv u v.
   allrw @univi_exists_iff; exrepnd; spcast.
   computes_to_eqval_ext.
-  apply ccequivc_ext_uni_uni_implies in ceq; subst.
+  apply ccequivc_ext_uni_uni_implies in ceq; repnd; subst.
   eapply eq_term_equals_trans;[eauto|].
   apply eq_term_equals_sym; auto.
 Qed.
@@ -182,7 +182,7 @@ Proof.
   introv u v.
   allrw @univi_exists_iff; exrepnd.
   spcast; computes_to_eqval_ext.
-  apply ccequivc_ext_uni_uni_implies in ceq; subst.
+  apply ccequivc_ext_uni_uni_implies in ceq; repnd; subst.
   exists j0; dands; spcast; auto.
 Qed.
 Hint Resolve type_transitive_univi : slow.
@@ -257,11 +257,11 @@ Proof.
   eapply close_type_transitive; eauto; eauto 3 with slow.
   eapply close_type_extensionality; eauto 2 with slow.
 
-  assert (close (univi_bar j) lib' t2 t2 eqa1) as h1.
+  assert (close (univi_bar j) uk lib' t2 t2 eqa1) as h1.
   { eapply close_type_transitive; eauto; eauto 3 with slow.
     eapply close_type_symmetric; eauto; eauto 3 with slow. }
 
-  assert (close (univi_bar j) lib' t2 t2 eqa0) as h2.
+  assert (close (univi_bar j) uk lib' t2 t2 eqa0) as h2.
   { eapply close_type_transitive; eauto; eauto 3 with slow.
     eapply close_type_symmetric; eauto; eauto 3 with slow. }
 
@@ -331,11 +331,11 @@ Proof.
   eapply close_type_transitive; eauto 3 with slow.
   eapply close_type_extensionality; eauto 2 with slow.
 
-  assert (close (univi_bar j) lib t2 t2 eqa0) as h1.
+  assert (close (univi_bar j) uk lib t2 t2 eqa0) as h1.
   { eapply close_type_transitive; eauto; eauto 3 with slow.
     eapply close_type_symmetric; eauto; eauto 3 with slow. }
 
-  assert (close (univi_bar j) lib t2 t2 eqa) as h2.
+  assert (close (univi_bar j) uk lib t2 t2 eqa) as h2.
   { eapply close_type_transitive; eauto; eauto 3 with slow.
     eapply close_type_symmetric; eauto; eauto 3 with slow. }
 
@@ -374,14 +374,14 @@ Qed.
 Hint Resolve nuprli_type_system : slow.
 
 Lemma nuprli_uniquely_valued {o} :
-  forall lib i1 i2 (T T' : @CTerm o) eq eq',
-    nuprli i1 lib T T' eq
-    -> nuprli i2 lib T T' eq'
+  forall uk lib i1 i2 (T T' : @CTerm o) eq eq',
+    nuprli i1 uk lib T T' eq
+    -> nuprli i2 uk lib T T' eq'
     -> eq <=2=> eq'.
 Proof.
   sp.
-  assert (nuprli (i2 + i1) lib T T' eq) as c1 by (apply typable_in_higher_univ; auto).
-  assert (nuprli (i1 + i2) lib T T' eq') as c2 by (apply typable_in_higher_univ; auto).
+  assert (nuprli (i2 + i1) uk lib T T' eq) as c1 by (apply typable_in_higher_univ; auto).
+  assert (nuprli (i1 + i2) uk lib T T' eq') as c2 by (apply typable_in_higher_univ; auto).
   assert (i1 + i2 = i2 + i1) as e by omega.
   rww e.
   generalize (@nuprli_type_system o (i2 + i1)); intro nts.
@@ -391,14 +391,14 @@ Proof.
 Qed.
 
 Lemma nuprli_type_transitive {o} :
-  forall lib i1 i2 (T1 T2 T3 : @CTerm o) eq,
-    nuprli i1 lib T1 T2 eq
-    -> nuprli i2 lib T2 T3 eq
-    -> {i : nat & nuprli i lib T1 T3 eq # i1 <= i # i2 <= i}.
+  forall uk lib i1 i2 (T1 T2 T3 : @CTerm o) eq,
+    nuprli i1 uk lib T1 T2 eq
+    -> nuprli i2 uk lib T2 T3 eq
+    -> {i : nat & nuprli i uk lib T1 T3 eq # i1 <= i # i2 <= i}.
 Proof.
   sp.
-  assert (nuprli (i1 + i2) lib T1 T2 eq) as c1 by (apply typable_in_higher_univ_r; auto).
-  assert (nuprli (i1 + i2) lib T2 T3 eq) as c2 by (apply typable_in_higher_univ; auto).
+  assert (nuprli (i1 + i2) uk lib T1 T2 eq) as c1 by (apply typable_in_higher_univ_r; auto).
+  assert (nuprli (i1 + i2) uk lib T2 T3 eq) as c2 by (apply typable_in_higher_univ; auto).
   exists (i1 + i2); sp; try omega.
   generalize (@nuprli_type_system o (i1 + i2)); intro nts.
   destruct nts; sp.
@@ -406,14 +406,14 @@ Proof.
 Qed.
 
 Lemma univi_uniquely_valued {o} :
-  forall lib i1 i2 (T T' : @CTerm o) eq eq',
-    univi i1 lib T T' eq
-    -> univi i2 lib T T' eq'
+  forall uk lib i1 i2 (T T' : @CTerm o) eq eq',
+    univi i1 uk lib T T' eq
+    -> univi i2 uk lib T T' eq'
     -> eq <=2=> eq'.
 Proof.
   introv u v.
-  assert (univi (i2 + i1) lib T T' eq) as c1 by (apply uni_in_higher_univ; auto).
-  assert (univi (i1 + i2) lib T T' eq') as c2 by (apply uni_in_higher_univ; auto).
+  assert (univi (i2 + i1) uk lib T T' eq) as c1 by (apply uni_in_higher_univ; auto).
+  assert (univi (i1 + i2) uk lib T T' eq') as c2 by (apply uni_in_higher_univ; auto).
   assert (i1 + i2 = i2 + i1) as e by omega.
   rww e.
   eapply uniquely_valued_univi; eauto.
@@ -443,8 +443,8 @@ Lemma type_transitive_univ_ex {o} :
 Proof.
   introv u v.
   unfold univ_ex in *; exrepnd.
-  assert (univi (i + i0) lib T1 T2 eq) as c1 by (apply uni_in_higher_univ; auto).
-  assert (univi (i0 + i) lib T2 T3 eq) as c2 by (apply uni_in_higher_univ; auto).
+  assert (univi (i + i0) uk lib T1 T2 eq) as c1 by (apply uni_in_higher_univ; auto).
+  assert (univi (i0 + i) uk lib T2 T3 eq) as c2 by (apply uni_in_higher_univ; auto).
   assert (i + i0 = i0 + i) as e by omega.
   rewrite e in c1; clear e.
 
@@ -504,11 +504,11 @@ Proof.
   eapply close_type_transitive; eauto; eauto 3 with slow.
   eapply close_type_extensionality; eauto 2 with slow.
 
-  assert (close (univi_bar j) lib' t2 t2 eqa1) as h1.
+  assert (close (univi_bar j) uk lib' t2 t2 eqa1) as h1.
   { eapply close_type_transitive; eauto; eauto 3 with slow.
     eapply close_type_symmetric; eauto; eauto 3 with slow. }
 
-  assert (close (univi_bar j) lib' t2 t2 eqa0) as h2.
+  assert (close (univi_bar j) uk lib' t2 t2 eqa0) as h2.
   { eapply close_type_transitive; eauto; eauto 3 with slow.
     eapply close_type_symmetric; eauto; eauto 3 with slow. }
 
@@ -581,25 +581,25 @@ Ltac nts :=
   end.
 
 Lemma nuprl_refl {p} :
-  forall lib (t1 t2 : @CTerm p) eq,
-    nuprl lib t1 t2 eq -> nuprl lib t1 t1 eq.
+  forall uk lib (t1 t2 : @CTerm p) eq,
+    nuprl uk lib t1 t2 eq -> nuprl uk lib t1 t1 eq.
 Proof.
   intros.
   nts.
-  assert (nuprl lib t2 t1 eq); sp.
+  assert (nuprl uk lib t2 t1 eq); sp.
   use_trans t2; sp.
 Qed.
 
 Lemma nuprl_sym {p} :
-  forall lib (t1 t2 : @CTerm p) eq,
-    nuprl lib t1 t2 eq -> nuprl lib t2 t1 eq.
+  forall uk lib (t1 t2 : @CTerm p) eq,
+    nuprl uk lib t1 t2 eq -> nuprl uk lib t2 t1 eq.
 Proof.
   intros; nts; sp.
 Qed.
 
 Lemma nuprl_trans {p} :
-  forall lib (t1 t2 t3 : @CTerm p) eq1 eq2,
-    nuprl lib t1 t2 eq1 -> nuprl lib t2 t3 eq2 -> nuprl lib t1 t3 eq1.
+  forall uk lib (t1 t2 t3 : @CTerm p) eq1 eq2,
+    nuprl uk lib t1 t2 eq1 -> nuprl uk lib t2 t3 eq2 -> nuprl uk lib t1 t3 eq1.
 Proof.
   introv n1 n2; nts.
   use_trans t2; sp.
@@ -608,9 +608,9 @@ Proof.
 Qed.
 
 Lemma nuprl_uniquely_valued {p} :
-  forall lib (t : @CTerm p) eq1 eq2,
-    nuprl lib t t eq1
-    -> nuprl lib t t eq2
+  forall uk lib (t : @CTerm p) eq1 eq2,
+    nuprl uk lib t t eq1
+    -> nuprl uk lib t t eq2
     -> eq_term_equals eq1 eq2.
 Proof.
   introv n1 n2; nts.
@@ -618,34 +618,34 @@ Proof.
 Qed.
 
 Lemma nuprl_value_respecting_left {p} :
-  forall lib (t1 t2 t3 : @CTerm p) eq,
-    nuprl lib t1 t2 eq
+  forall uk lib (t1 t2 t3 : @CTerm p) eq,
+    nuprl uk lib t1 t2 eq
     -> ccequivc_ext lib t1 t3
-    -> nuprl lib t3 t2 eq.
+    -> nuprl uk lib t3 t2 eq.
 Proof.
   intros.
   nts.
-  assert (nuprl lib t1 t3 eq) as eq13
+  assert (nuprl uk lib t1 t3 eq) as eq13
     by (apply nts_tyv; auto; eapply nts_tyt; eauto).
   apply nts_tyt with (T2 := t1); auto.
 Qed.
 
 Lemma nuprl_value_respecting_right {p} :
-  forall lib t1 t2 t3 eq,
-    @nuprl p lib t1 t2 eq
+  forall uk lib t1 t2 t3 eq,
+    @nuprl p uk lib t1 t2 eq
     -> ccequivc_ext lib t2 t3
-    -> nuprl lib t1 t3 eq.
+    -> nuprl uk lib t1 t3 eq.
 Proof.
   intros.
   nts.
-  assert (nuprl lib t2 t3 eq) as eq23
+  assert (nuprl uk lib t2 t3 eq) as eq23
     by (apply nts_tyv; auto; apply nts_tyt with (T2 := t1); auto).
   apply nts_tyt with (T2 := t2); auto.
 Qed.
 
 Ltac ntsi :=
   match goal with
-    [ o : POpid , H : nuprli ?i _ _ _ _ |- _ ] =>
+    [ o : POpid , H : nuprli ?i _ _ _ _ _ |- _ ] =>
     pose proof (@nuprli_type_system o i) as nts;
     destruct nts as [ nts_uv nts ];
     destruct nts as [ nts_ext nts ];
@@ -657,36 +657,36 @@ Ltac ntsi :=
   end.
 
 Lemma nuprli_value_respecting_left {o} :
-  forall i lib (t1 t2 t3 : @CTerm o) eq,
-    nuprli i lib t1 t2 eq
+  forall i uk lib (t1 t2 t3 : @CTerm o) eq,
+    nuprli i uk lib t1 t2 eq
     -> ccequivc_ext lib t1 t3
-    -> nuprli i lib t3 t2 eq.
+    -> nuprli i uk lib t3 t2 eq.
 Proof.
   intros.
   ntsi.
-  assert (nuprli i lib t1 t3 eq) as eq13
+  assert (nuprli i uk lib t1 t3 eq) as eq13
     by (apply nts_tyv; auto; eapply nts_tyt; eauto).
   apply nts_tyt with (T2 := t1); auto.
 Qed.
 
 Lemma nuprli_value_respecting_right {o} :
-  forall i lib (t1 t2 t3 : @CTerm o) eq,
-    nuprli i lib t1 t2 eq
+  forall i uk lib (t1 t2 t3 : @CTerm o) eq,
+    nuprli i uk lib t1 t2 eq
     -> ccequivc_ext lib t2 t3
-    -> nuprli i lib t1 t3 eq.
+    -> nuprli i uk lib t1 t3 eq.
 Proof.
   intros.
   ntsi.
-  assert (nuprli i lib t2 t3 eq) as eq23
+  assert (nuprli i uk lib t2 t3 eq) as eq23
     by (apply nts_tyv; auto; apply nts_tyt with (T2 := t1); auto).
   apply nts_tyt with (T2 := t2); auto.
 Qed.
 
 Lemma in_ext_ext_nuprli_value_respecting_left {o} :
-  forall i lib (t1 t2 t3 : @CTerm o) (eq : lib-per(lib,o)),
-    in_ext_ext lib (fun lib x => nuprli i lib t1 t2 (eq lib x))
+  forall i uk lib (t1 t2 t3 : @CTerm o) (eq : lib-per(lib,o)),
+    in_ext_ext lib (fun lib x => nuprli i uk lib t1 t2 (eq lib x))
     -> ccequivc_ext lib t1 t3
-    -> in_ext_ext lib (fun lib x => nuprli i lib t3 t2 (eq lib x)).
+    -> in_ext_ext lib (fun lib x => nuprli i uk lib t3 t2 (eq lib x)).
 Proof.
   introv h ceq; introv.
   pose proof (h _ e) as h; simpl in h.
@@ -694,10 +694,10 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_nuprli_value_respecting_right {o} :
-  forall i lib (t1 t2 t3 : @CTerm o) eq,
-    in_ext_ext lib (fun lib x => nuprli i lib t1 t2 (eq lib x))
+  forall i uk lib (t1 t2 t3 : @CTerm o) eq,
+    in_ext_ext lib (fun lib x => nuprli i uk lib t1 t2 (eq lib x))
     -> ccequivc_ext lib t2 t3
-    -> in_ext_ext lib (fun lib x => nuprli i lib t1 t3 (eq lib x)).
+    -> in_ext_ext lib (fun lib x => nuprli i uk lib t1 t3 (eq lib x)).
 Proof.
   introv h ceq; introv.
   pose proof (h _ e) as h; simpl in h.
@@ -705,10 +705,10 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_fam_nuprli_value_respecting_left {o} :
-  forall i lib v1 v2 v3 (t1 : @CVTerm o [v1]) t2 t3 eqa (eq : lib-per-fam(lib,eqa,o)),
-    in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprli i lib (substc a v1 t1) (substc a' v2 t2) (eq lib x a a' e))
+  forall i uk lib v1 v2 v3 (t1 : @CVTerm o [v1]) t2 t3 eqa (eq : lib-per-fam(lib,eqa,o)),
+    in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprli i uk lib (substc a v1 t1) (substc a' v2 t2) (eq lib x a a' e))
     -> bcequivc_ext lib [v1] t1 [v3] t3
-    -> in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprli i lib (substc a v3 t3) (substc a' v2 t2) (eq lib x a a' e)).
+    -> in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprli i uk lib (substc a v3 t3) (substc a' v2 t2) (eq lib x a a' e)).
 Proof.
   introv h ceq; introv.
   pose proof (h _ e) as h; simpl in h.
@@ -716,10 +716,10 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_fam_nuprli_value_respecting_right {o} :
-  forall i lib v1 v2 v3 (t1 : @CVTerm o [v1]) t2 t3 eqa (eq : lib-per-fam(lib,eqa,o)),
-    in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprli i lib (substc a v1 t1) (substc a' v2 t2) (eq lib x a a' e))
+  forall i uk lib v1 v2 v3 (t1 : @CVTerm o [v1]) t2 t3 eqa (eq : lib-per-fam(lib,eqa,o)),
+    in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprli i uk lib (substc a v1 t1) (substc a' v2 t2) (eq lib x a a' e))
     -> bcequivc_ext lib [v2] t2 [v3] t3
-    -> in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprli i lib (substc a v1 t1) (substc a' v3 t3) (eq lib x a a' e)).
+    -> in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprli i uk lib (substc a v1 t1) (substc a' v3 t3) (eq lib x a a' e)).
 Proof.
   introv h ceq; introv.
   pose proof (h _ e) as h; simpl in h.
@@ -727,10 +727,10 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_fam_nuprl_value_respecting_left {o} :
-  forall lib v1 v2 v3 (t1 : @CVTerm o [v1]) t2 t3 eqa (eq : lib-per-fam(lib,eqa,o)),
-    in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprl lib (substc a v1 t1) (substc a' v2 t2) (eq lib x a a' e))
+  forall uk lib v1 v2 v3 (t1 : @CVTerm o [v1]) t2 t3 eqa (eq : lib-per-fam(lib,eqa,o)),
+    in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprl uk lib (substc a v1 t1) (substc a' v2 t2) (eq lib x a a' e))
     -> bcequivc_ext lib [v1] t1 [v3] t3
-    -> in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprl lib (substc a v3 t3) (substc a' v2 t2) (eq lib x a a' e)).
+    -> in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprl uk lib (substc a v3 t3) (substc a' v2 t2) (eq lib x a a' e)).
 Proof.
   introv h ceq; introv.
   pose proof (h _ e) as h; simpl in h.
@@ -738,10 +738,10 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_fam_nuprl_value_respecting_right {o} :
-  forall lib v1 v2 v3 (t1 : @CVTerm o [v1]) t2 t3 eqa (eq : lib-per-fam(lib,eqa,o)),
-    in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprl lib (substc a v1 t1) (substc a' v2 t2) (eq lib x a a' e))
+  forall uk lib v1 v2 v3 (t1 : @CVTerm o [v1]) t2 t3 eqa (eq : lib-per-fam(lib,eqa,o)),
+    in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprl uk lib (substc a v1 t1) (substc a' v2 t2) (eq lib x a a' e))
     -> bcequivc_ext lib [v2] t2 [v3] t3
-    -> in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprl lib (substc a v1 t1) (substc a' v3 t3) (eq lib x a a' e)).
+    -> in_ext_ext lib (fun lib x => forall a a' (e : eqa lib x a a'), nuprl uk lib (substc a v1 t1) (substc a' v3 t3) (eq lib x a a' e)).
 Proof.
   introv h ceq; introv.
   pose proof (h _ e) as h; simpl in h.
@@ -749,10 +749,10 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_nuprl_value_respecting_left {o} :
-  forall lib (t1 t2 t3 : @CTerm o) (eq : lib-per(lib,o)),
-    in_ext_ext lib (fun lib x => nuprl lib t1 t2 (eq lib x))
+  forall uk lib (t1 t2 t3 : @CTerm o) (eq : lib-per(lib,o)),
+    in_ext_ext lib (fun lib x => nuprl uk lib t1 t2 (eq lib x))
     -> ccequivc_ext lib t1 t3
-    -> in_ext_ext lib (fun lib x => nuprl lib t3 t2 (eq lib x)).
+    -> in_ext_ext lib (fun lib x => nuprl uk lib t3 t2 (eq lib x)).
 Proof.
   introv h ceq; introv.
   pose proof (h _ e) as h; simpl in h.
@@ -760,10 +760,10 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_nuprl_value_respecting_right {o} :
-  forall lib (t1 t2 t3 : @CTerm o) eq,
-    in_ext_ext lib (fun lib x => nuprl lib t1 t2 (eq lib x))
+  forall uk lib (t1 t2 t3 : @CTerm o) eq,
+    in_ext_ext lib (fun lib x => nuprl uk lib t1 t2 (eq lib x))
     -> ccequivc_ext lib t2 t3
-    -> in_ext_ext lib (fun lib x => nuprl lib t1 t3 (eq lib x)).
+    -> in_ext_ext lib (fun lib x => nuprl uk lib t1 t3 (eq lib x)).
 Proof.
   introv h ceq; introv.
   pose proof (h _ e) as h; simpl in h.
@@ -771,8 +771,8 @@ Proof.
 Qed.
 
 Lemma nuprl_eq_implies_eqorceq_refl {p} :
-  forall lib T1 T2 eq t1 t2,
-    @nuprl p lib T1 T2 eq
+  forall uk lib T1 T2 eq t1 t2,
+    @nuprl p uk lib T1 T2 eq
     -> eq t1 t2
     -> eqorceq lib eq t1 t1 # eqorceq lib eq t2 t2.
 Proof.
@@ -791,8 +791,8 @@ Proof.
 Qed.
 
 Lemma in_ext_ext_nuprl_implies_in_ext_ext_term_equality_respecting {o} :
-  forall lib (eqa : lib-per(lib,o)) A B,
-    in_ext_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x))
+  forall uk lib (eqa : lib-per(lib,o)) A B,
+    in_ext_ext lib (fun lib' x => nuprl uk lib' A B (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x)).
 Proof.
   introv h; introv.
@@ -803,8 +803,8 @@ Qed.
 Hint Resolve in_ext_ext_nuprl_implies_in_ext_ext_term_equality_respecting : slow.
 
 Lemma in_ext_ext_nuprl_implies_in_ext_ext_term_equality_transitive {o} :
-  forall lib (eqa : lib-per(lib,o)) A B,
-    in_ext_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x))
+  forall uk lib (eqa : lib-per(lib,o)) A B,
+    in_ext_ext lib (fun lib' x => nuprl uk lib' A B (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x)).
 Proof.
   introv h; introv.
@@ -815,8 +815,8 @@ Qed.
 Hint Resolve in_ext_ext_nuprl_implies_in_ext_ext_term_equality_transitive : slow.
 
 Lemma in_ext_ext_nuprl_implies_in_ext_ext_term_equality_symmetric {o} :
-  forall lib (eqa : lib-per(lib,o)) A B,
-    in_ext_ext lib (fun lib' x => nuprl lib' A B (eqa lib' x))
+  forall uk lib (eqa : lib-per(lib,o)) A B,
+    in_ext_ext lib (fun lib' x => nuprl uk lib' A B (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x)).
 Proof.
   introv h; introv.
@@ -827,8 +827,8 @@ Qed.
 Hint Resolve in_ext_ext_nuprl_implies_in_ext_ext_term_equality_symmetric : slow.
 
 Lemma in_ext_ext_nuprli_implies_in_ext_ext_term_equality_respecting {o} :
-  forall i lib (eqa : lib-per(lib,o)) A B,
-    in_ext_ext lib (fun lib' x => nuprli i lib' A B (eqa lib' x))
+  forall i uk lib (eqa : lib-per(lib,o)) A B,
+    in_ext_ext lib (fun lib' x => nuprli i uk lib' A B (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => term_equality_respecting lib' (eqa lib' x)).
 Proof.
   introv h; introv.
@@ -840,8 +840,8 @@ Qed.
 Hint Resolve in_ext_ext_nuprli_implies_in_ext_ext_term_equality_respecting : slow.
 
 Lemma in_ext_ext_nuprli_implies_in_ext_ext_term_equality_transitive {o} :
-  forall i lib (eqa : lib-per(lib,o)) A B,
-    in_ext_ext lib (fun lib' x => nuprli i lib' A B (eqa lib' x))
+  forall i uk lib (eqa : lib-per(lib,o)) A B,
+    in_ext_ext lib (fun lib' x => nuprli i uk lib' A B (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => term_equality_transitive (eqa lib' x)).
 Proof.
   introv h; introv.
@@ -853,8 +853,8 @@ Qed.
 Hint Resolve in_ext_ext_nuprli_implies_in_ext_ext_term_equality_transitive : slow.
 
 Lemma in_ext_ext_nuprli_implies_in_ext_ext_term_equality_symmetric {o} :
-  forall i lib (eqa : lib-per(lib,o)) A B,
-    in_ext_ext lib (fun lib' x => nuprli i lib' A B (eqa lib' x))
+  forall i uk lib (eqa : lib-per(lib,o)) A B,
+    in_ext_ext lib (fun lib' x => nuprli i uk lib' A B (eqa lib' x))
     -> in_ext_ext lib (fun lib' x => term_equality_symmetric (eqa lib' x)).
 Proof.
   introv h; introv.

@@ -290,10 +290,10 @@ Hint Rewrite @mkcv_le_substc2 : slow.
 Hint Rewrite @mkcv_less_than_substc : slow.
 
 Lemma implies_equality_in_int_implies_tequality_mkc_le {o} :
-  forall lib (a b c d : @CTerm o),
-    equality lib a b mkc_int
-    -> equality lib c d mkc_int
-    -> tequality lib (mkc_le a c) (mkc_le b d).
+  forall uk lib (a b c d : @CTerm o),
+    equality uk lib a b mkc_int
+    -> equality uk lib c d mkc_int
+    -> tequality uk lib (mkc_le a c) (mkc_le b d).
 Proof.
   introv equa equb.
   allrw @equality_in_int.
@@ -307,8 +307,8 @@ Proof.
 Qed.
 
 Lemma zero_equal_in_int {o} :
-  forall (lib : @library o),
-    equality lib mkc_zero mkc_zero mkc_int.
+  forall uk (lib : @library o),
+    equality uk lib mkc_zero mkc_zero mkc_int.
 Proof.
   introv.
   apply equality_in_int.
@@ -714,11 +714,11 @@ Qed.
 Hint Resolve local_per_bar_per_qlt_nuprl : slow.
 
 Lemma dest_nuprl_per_qlt_l {o} :
-  forall (ts : cts(o)) lib T a b T' eq,
+  forall (ts : cts(o)) uk lib T a b T' eq,
     ts = univ
     -> ccomputes_to_valc_ext lib T (mkc_qlt a b)
-    -> close ts lib T T' eq
-    -> per_bar (per_qlt (close ts)) lib T T' eq.
+    -> close ts uk lib T T' eq
+    -> per_bar (per_qlt (close ts)) uk lib T T' eq.
 Proof.
   introv equ comp cl.
   assert (type_system ts) as sys by (subst; eauto 3 with slow).
@@ -756,9 +756,9 @@ Qed.
 Hint Resolve iscvalue_mkc_qlt : slow.
 
 Lemma dest_nuprl_qlt {o} :
-  forall (lib : @library o) (a b c d : @CTerm o) eq,
-    nuprl lib (mkc_qlt a b) (mkc_qlt c d) eq
-    -> per_bar (per_qlt nuprl) lib (mkc_qlt a b) (mkc_qlt c d) eq.
+  forall uk (lib : @library o) (a b c d : @CTerm o) eq,
+    nuprl uk lib (mkc_qlt a b) (mkc_qlt c d) eq
+    -> per_bar (per_qlt nuprl) uk lib (mkc_qlt a b) (mkc_qlt c d) eq.
 Proof.
   introv cl.
   unfold nuprl in cl.
@@ -767,8 +767,8 @@ Proof.
 Qed.
 
 Lemma dest_nuprl_qlt2 {o} :
-  forall lib (eq : per(o)) a b c d,
-    nuprl lib (mkc_qlt a b) (mkc_qlt c d) eq
+  forall uk lib (eq : per(o)) a b c d,
+    nuprl uk lib (mkc_qlt a b) (mkc_qlt c d) eq
     ->
     (eq <=2=> (per_bar_eq lib (equality_of_qlt_bar_lib_per lib a b))
      # equality_of_qnat_bar lib qnat_mon_cond a c
@@ -798,8 +798,8 @@ Proof.
 Qed.
 
 Lemma tequality_mkc_qlt {o} :
-  forall (lib : @library o) a b c d,
-    tequality lib (mkc_qlt a b) (mkc_qlt c d)
+  forall uk (lib : @library o) a b c d,
+    tequality uk lib (mkc_qlt a b) (mkc_qlt c d)
     <=>
     (
       equality_of_qnat_bar lib qnat_mon_cond a c
@@ -822,8 +822,8 @@ Proof.
 Qed.
 
 Lemma equality_in_qnat_implies_ccequivc_ext_bar {o} :
-  forall lib (a b : @CTerm o) c,
-    equality lib a b (mkc_qnat c)
+  forall uk lib (a b : @CTerm o) c,
+    equality uk lib a b (mkc_qnat c)
     -> ccequivc_ext_bar lib a b.
 Proof.
   introv equ.
@@ -908,9 +908,9 @@ Qed.
 Hint Resolve equality_of_nat_bar_implies_equality_of_qnat_bar : slow.
 
 Lemma equality_mkc_qnat_implies_tequality_mkc_natk {o} :
-  forall lib (a b : @CTerm o),
-    equality lib a b mkc_mqnat
-    -> tequality lib (mkc_qnatk a) (mkc_qnatk b).
+  forall uk lib (a b : @CTerm o),
+    equality uk lib a b mkc_mqnat
+    -> tequality uk lib (mkc_qnatk a) (mkc_qnatk b).
 Proof.
   introv equ.
   repeat rewrite mkc_qnatk_eq.
@@ -927,9 +927,9 @@ Qed.
 Hint Resolve equality_mkc_qnat_implies_tequality_mkc_natk : slow.
 
 Lemma equality_in_mkc_qnatk_implies_equality_in_mkc_tnat {o} :
-  forall lib (a b : @CTerm o) n,
-    equality lib a b (mkc_qnatk n)
-    -> equality lib a b mkc_tnat.
+  forall uk lib (a b : @CTerm o) n,
+    equality uk lib a b (mkc_qnatk n)
+    -> equality uk lib a b mkc_tnat.
 Proof.
   introv equ.
   rewrite mkc_qnatk_eq in equ.
@@ -938,10 +938,10 @@ Qed.
 Hint Resolve equality_in_mkc_qnatk_implies_equality_in_mkc_tnat : slow.
 
 Lemma equality_nat2nat_to_qnatk2nat {o} :
-  forall lib (n f g : @CTerm o),
-    member lib n mkc_mqnat
-    -> equality lib f g nat2nat
-    -> equality lib f g (mkc_qnatk2nat n).
+  forall uk lib (n f g : @CTerm o),
+    member uk lib n mkc_mqnat
+    -> equality uk lib f g nat2nat
+    -> equality uk lib f g (mkc_qnatk2nat n).
 Proof.
   introv m e.
 
@@ -983,7 +983,7 @@ Qed.
 Hint Rewrite @mkcv_mqnat_substc : slow.
 
 Lemma tequality_mqnat {o} :
-  forall (lib : @library o), tequality lib mkc_mqnat mkc_mqnat.
+  forall uk (lib : @library o), tequality uk lib mkc_mqnat mkc_mqnat.
 Proof.
   introv; apply tequality_qnat.
 Qed.
@@ -1130,9 +1130,9 @@ Qed.
 Hint Resolve plus1_preserves_sat_qnat_cond : slow.
 
 Lemma plus1_preserves_equality_in_mqnat {o} :
-  forall lib (a b : @CTerm o),
-    equality lib a b mkc_mqnat
-    -> equality lib (mkc_plus1 a) (mkc_plus1 b) mkc_mqnat.
+  forall uk lib (a b : @CTerm o),
+    equality uk lib a b mkc_mqnat
+    -> equality uk lib (mkc_plus1 a) (mkc_plus1 b) mkc_mqnat.
 Proof.
   introv equ.
   unfold mkc_mqnat in *.
@@ -1213,7 +1213,7 @@ Hint Resolve sat_qnat_cond_depth : slow.
 
 (* This is true about any [qnat] *)
 Lemma equality_lib_depth_in_mqnat {o} :
-  forall (lib : @library o), equality lib mkc_lib_depth mkc_lib_depth mkc_mqnat.
+  forall uk (lib : @library o), equality uk lib mkc_lib_depth mkc_lib_depth mkc_mqnat.
 Proof.
   introv.
   apply equality_in_qnat.
@@ -1235,7 +1235,7 @@ Hint Resolve sat_qnat_cond_depth1 : slow.
 
 (* This is true about any [qnat] *)
 Lemma equality_lib_depth1_in_mqnat {o} :
-  forall (lib : @library o), equality lib mkc_lib_depth1 mkc_lib_depth1 mkc_mqnat.
+  forall uk (lib : @library o), equality uk lib mkc_lib_depth1 mkc_lib_depth1 mkc_mqnat.
 Proof.
   introv.
   apply equality_in_qnat.
@@ -1310,8 +1310,8 @@ Qed.
 Hint Resolve equality_of_qlt_implies_equality_of_qnat_right : slow.*)
 
 Lemma equality_in_mkc_qlt {o} :
-  forall (lib : @library o) t u a b,
-    equality lib t u (mkc_qlt a b)
+  forall uk (lib : @library o) t u a b,
+    equality uk lib t u (mkc_qlt a b)
     <=>
     (in_open_bar lib (fun lib => equality_of_qlt lib a b)
      # equality_of_qnat_bar lib qnat_mon_cond a a
@@ -1335,8 +1335,8 @@ Proof.
 Qed.
 
 Lemma inhabited_type_bar_implies {o} :
-  forall (lib : @library o) a n,
-    inhabited_type_bar lib (mkc_qlt a n)
+  forall uk (lib : @library o) a n,
+    inhabited_type_bar uk lib (mkc_qlt a n)
     -> in_open_bar lib (fun lib : library => equality_of_qlt lib a n).
 Proof.
   introv h.
@@ -1347,18 +1347,18 @@ Proof.
 Qed.
 
 Lemma equality_in_mkc_qnatk_implies {o} :
-  forall lib (a b : @CTerm o) n,
-    equality lib a b (mkc_qnatk n)
+  forall uk lib (a b : @CTerm o) n,
+    equality uk lib a b (mkc_qnatk n)
     -> in_open_bar lib (fun lib : library => equality_of_qlt lib a n).
 Proof.
   introv equ.
   rewrite mkc_qnatk_eq in equ.
   apply equality_in_set in equ; repnd; autorewrite with slow in *.
-  apply inhabited_type_bar_implies in equ; auto.
+  apply inhabited_type_bar_implies in equ2; auto.
 Qed.
 
 Lemma zero_in_nat {o} :
-  forall (lib : @library o), equality lib mkc_zero mkc_zero mkc_tnat.
+  forall uk (lib : @library o), equality uk lib mkc_zero mkc_zero mkc_tnat.
 Proof.
   introv.
   allrw @mkc_zero_eq; eauto 3 with slow.
@@ -1421,12 +1421,12 @@ Qed.
 Hint Resolve equality_of_qnat_bar_implies_is_qnat_bar_right : slow.
 
 Lemma tequality_mkc_qnatk {o} :
-  forall (lib : @library o) (a b : CTerm),
-    tequality lib (mkc_qnatk a) (mkc_qnatk b)
+  forall uk (lib : @library o) (a b : CTerm),
+    tequality uk lib (mkc_qnatk a) (mkc_qnatk b)
     <=> equality_of_qnat_bar lib qnat_mon_cond a b.
 Proof.
   introv; repeat rewrite mkc_qnatk_eq.
-  rw @tequality_set.
+  rw (@tequality_set o uk).
   dands; split; intro h; repnd.
 
   { pose proof (h _ (lib_extends_refl lib) mkc_zero mkc_zero) as h; cbv beta in h.
@@ -1459,8 +1459,8 @@ Proof.
 Qed.
 
 Lemma type_mkc_qnatk {o} :
-  forall (lib : @library o) (a : CTerm),
-    type lib (mkc_qnatk a)
+  forall uk (lib : @library o) (a : CTerm),
+    type uk lib (mkc_qnatk a)
     <=> is_mqnat_bar lib a.
 Proof.
   introv.
@@ -1517,20 +1517,9 @@ Proof.
   eauto 3 with slow.
 Qed.*)
 
-Lemma in_open_bar_prod {o} :
-  forall lib (F G : @library o -> Prop),
-    in_open_bar lib (fun lib => F lib # G lib)
-    <=> (in_open_bar lib F # in_open_bar lib G).
-Proof.
-  introv; split.
-  { introv h; dands; eapply in_open_bar_pres; eauto; clear h; introv ext h; tcsp. }
-  { intro h; repnd; eapply in_open_bar_comb; eauto; clear h.
-    eapply in_open_bar_pres; eauto; clear h0; introv ext h q; tcsp. }
-Qed.
-
 Lemma inhabited_type_bar_mkc_qlt {o} :
-  forall (lib : @library o) a b,
-    inhabited_type_bar lib (mkc_qlt a b)
+  forall uk (lib : @library o) a b,
+    inhabited_type_bar uk lib (mkc_qlt a b)
     <->
     (in_open_bar lib (fun lib => equality_of_qlt lib a b)
      # equality_of_qnat_bar lib qnat_mon_cond a a
@@ -1572,8 +1561,8 @@ Qed.
 Hint Resolve equality_of_nat_preserves_equality_of_qnat_right : slow.
 
 Lemma equality_in_nat_preserves_equality_of_qnat_bar_left {o} :
-  forall (lib : @library o) a b c,
-    equality lib a b mkc_tnat
+  forall uk (lib : @library o) a b c,
+    equality uk lib a b mkc_tnat
     -> equality_of_qnat_bar lib c a a.
 Proof.
   introv equ h.
@@ -1585,8 +1574,8 @@ Qed.
 Hint Resolve equality_in_nat_preserves_equality_of_qnat_bar_left : slow.
 
 Lemma equality_in_nat_preserves_equality_of_qnat_bar_right {o} :
-  forall (lib : @library o) a b c,
-    equality lib a b mkc_tnat
+  forall uk (lib : @library o) a b c,
+    equality uk lib a b mkc_tnat
     -> equality_of_qnat_bar lib c b b.
 Proof.
   introv equ h.
@@ -1598,8 +1587,8 @@ Qed.
 Hint Resolve equality_in_nat_preserves_equality_of_qnat_bar_right : slow.
 
 Lemma equality_in_nat_preserves_equality_of_qnat_bar {o} :
-  forall (lib : @library o) a b c,
-    equality lib a b mkc_tnat
+  forall uk (lib : @library o) a b c,
+    equality uk lib a b mkc_tnat
     -> equality_of_qnat_bar lib c a b.
 Proof.
   introv equ h.
@@ -1611,17 +1600,17 @@ Qed.
 Hint Resolve equality_in_nat_preserves_equality_of_qnat_bar : slow.
 
 Lemma equality_in_mkc_qnatk {o} :
-  forall lib (a b : @CTerm o) n,
-    equality lib a b (mkc_qnatk n)
+  forall uk lib (a b : @CTerm o) n,
+    equality uk lib a b (mkc_qnatk n)
     <=> (in_open_bar lib (fun lib : library => equality_of_qlt lib a n)
          # equality_of_qnat_bar lib qnat_mon_cond n n
-         # equality lib a b mkc_tnat).
+         # equality uk lib a b mkc_tnat).
 Proof.
   introv; split; intro equ; repnd; dands; eauto 3 with slow; try (eapply equality_in_mkc_qnatk_implies; eauto).
 
   { rewrite mkc_qnatk_eq in equ.
     apply equality_in_set in equ; repnd; autorewrite with slow in *.
-    apply inhabited_type_bar_mkc_qlt in equ; repnd; auto. }
+    apply inhabited_type_bar_mkc_qlt in equ2; repnd; auto. }
 
   rewrite mkc_qnatk_eq.
   apply equality_in_set; autorewrite with slow; dands; eauto 3 with slow.
@@ -1645,8 +1634,8 @@ Qed.
 Hint Resolve is_qnat_implies_are_same_qnats : slow.
 
 Lemma equality_qnatk2nat_implies {o} :
-  forall lib (f g : @CTerm o) n,
-    equality lib f g (mkc_qnatk2nat n)
+  forall uk lib (f g : @CTerm o) n,
+    equality uk lib f g (mkc_qnatk2nat n)
     -> in_open_bar lib (fun lib => {z : nat
        , ccomputes_to_valc lib n (mkc_nat z)
        # in_open_bar lib (fun lib => forall m, m < z -> {k : nat

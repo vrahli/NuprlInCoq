@@ -46,14 +46,14 @@ Require Export Permutation.
 
 
 
-Definition mk_csprop {o} (i : nat) : @NTerm o :=
-  mk_fun (mk_csname 0) (mk_uni i).
+Definition mk_csprop {o} (u i : nat) : @NTerm o :=
+  mk_fun (mk_csname 0) (mk_uni u i).
 
-Definition mkc_csprop {o} (i : nat) : @CTerm o :=
-  mkc_fun (mkc_csname 0) (mkc_uni i).
+Definition mkc_csprop {o} (u i : nat) : @CTerm o :=
+  mkc_fun (mkc_csname 0) (mkc_uni u i).
 
-Definition mkcv_csprop {o} (vs : list NVar) (i : nat) : @CVTerm o vs :=
-  mk_cv _ (mkc_fun (mkc_csname 0) (mkc_uni i)).
+Definition mkcv_csprop {o} (vs : list NVar) (u i : nat) : @CVTerm o vs :=
+  mk_cv _ (mkc_fun (mkc_csname 0) (mkc_uni u i)).
 
 Definition mkcv_free_from_defs {p} vs (A : @CVTerm p vs) (t : @CVTerm p vs) : CVTerm vs :=
   let (a,x) := A in
@@ -388,18 +388,18 @@ Qed.
 Hint Rewrite @mkcv_ffdefs_substc : slow.
 
 Lemma substc2_mkcv_csprop {o} :
-  forall x (t : @CTerm o) v i,
-    substc2 x t v (mkcv_csprop _ i)
-    = mkcv_csprop _ i.
+  forall x (t : @CTerm o) v u i,
+    substc2 x t v (mkcv_csprop _ u i)
+    = mkcv_csprop _ u i.
 Proof.
   introv; destruct_cterms; apply cvterm_eq; simpl; unfsubst.
 Qed.
 Hint Rewrite @substc2_mkcv_csprop : slow.
 
 Lemma substc_mkcv_csprop {o} :
-  forall (t : @CTerm o) v i,
-    substc t v (mkcv_csprop _ i)
-    = mkc_csprop i.
+  forall (t : @CTerm o) v u i,
+    substc t v (mkcv_csprop _ u i)
+    = mkc_csprop u i.
 Proof.
   introv; destruct_cterms; apply cterm_eq; simpl; unfsubst.
 Qed.
@@ -1286,10 +1286,10 @@ Proof.
 Qed.
 
 Lemma equality_in_mkc_csprop_implies_tequality {o} :
-  forall lib (a b c d : @CTerm o) i,
-    equality lib a b (mkc_csprop i)
-    -> equality lib c d (mkc_csname 0)
-    -> tequality lib (mkc_apply a c) (mkc_apply b d).
+  forall uk lib (a b c d : @CTerm o) i,
+    equality uk lib a b (mkc_csprop uk i)
+    -> equality uk lib c d (mkc_csname 0)
+    -> tequality uk lib (mkc_apply a c) (mkc_apply b d).
 Proof.
   introv equp equc.
   unfold mkc_csprop in equp.
@@ -1299,11 +1299,11 @@ Proof.
 Qed.
 
 Lemma equality_in_mkc_csprop_implies_tequality_cs {o} :
-  forall name lib (a b : @CTerm o) i,
+  forall name uk lib (a b : @CTerm o) i,
     compatible_choice_sequence_name 0 name
-    -> equality lib a b (mkc_csprop i)
+    -> equality uk lib a b (mkc_csprop uk i)
     -> tequality
-         lib
+         uk lib
          (mkc_apply a (mkc_choice_seq name))
          (mkc_apply b (mkc_choice_seq name)).
 Proof.
@@ -1316,10 +1316,10 @@ Proof.
 Qed.
 
 Lemma tequality_preserves_member {o} :
-  forall lib (a A B : @CTerm o),
-    tequality lib A B
-    -> member lib a A
-    -> member lib a B.
+  forall uk lib (a A B : @CTerm o),
+    tequality uk lib A B
+    -> member uk lib a A
+    -> member uk lib a B.
 Proof.
   introv teq mem; eapply tequality_preserving_equality in mem; eauto.
 Qed.
@@ -1331,11 +1331,11 @@ Ltac rev_assert T h :=
     end.
 
 Lemma equality_in_mkc_csprop_preserves_tequality {o} :
-  forall lib (a b c d : @CTerm o) i,
-    equality lib a b (mkc_csprop i)
-    -> equality lib c d (mkc_csname 0)
-    -> tequality lib (mkc_apply a c) (mkc_apply a d)
-    -> tequality lib (mkc_apply b c) (mkc_apply b d).
+  forall uk lib (a b c d : @CTerm o) i,
+    equality uk lib a b (mkc_csprop uk i)
+    -> equality uk lib c d (mkc_csname 0)
+    -> tequality uk lib (mkc_apply a c) (mkc_apply a d)
+    -> tequality uk lib (mkc_apply b c) (mkc_apply b d).
 Proof.
   introv equp equc teq.
   unfold mkc_csprop in equp.
@@ -1355,11 +1355,11 @@ Qed.
 Hint Resolve equality_in_mkc_csprop_preserves_tequality : slow.
 
 Lemma equality_in_mkc_csprop_preserves_type {o} :
-  forall lib (a b c d : @CTerm o) i,
-    equality lib a b (mkc_csprop i)
-    -> equality lib c d (mkc_csname 0)
-    -> type lib (mkc_apply a c)
-    -> type lib (mkc_apply b c).
+  forall uk lib (a b c d : @CTerm o) i,
+    equality uk lib a b (mkc_csprop uk i)
+    -> equality uk lib c d (mkc_csname 0)
+    -> type uk lib (mkc_apply a c)
+    -> type uk lib (mkc_apply b c).
 Proof.
   introv equp equc teq.
   eapply equality_in_mkc_csprop_preserves_tequality;eauto;eauto 3 with slow.
@@ -10591,45 +10591,45 @@ Ltac ccomputes_to_valc_ext_decomp :=
   end.
 
 Lemma type_system_ccequivc_ext_left {o} :
-  forall (ts : cts(o)) lib a b c eq,
+  forall (ts : cts(o)) uk lib a b c eq,
     type_system ts
     -> ccequivc_ext lib a c
-    -> ts lib a b eq
-    -> ts lib c b eq.
+    -> ts uk lib a b eq
+    -> ts uk lib c b eq.
 Proof.
   introv tysys ceq cl.
   dest_ts tysys.
-  pose proof (ts_tyv lib a c eq) as ha.
+  pose proof (ts_tyv uk lib a c eq) as ha.
   repeat (autodimp ha hyp).
   { eapply ts_tyt; eauto. }
   eapply ts_tys; eauto.
 Qed.
 
 Lemma type_system_ccequivc_ext_right {o} :
-  forall (ts : cts(o)) lib a b c eq,
+  forall (ts : cts(o)) uk lib a b c eq,
     type_system ts
     -> ccequivc_ext lib a c
-    -> ts lib b a eq
-    -> ts lib b c eq.
+    -> ts uk lib b a eq
+    -> ts uk lib b c eq.
 Proof.
   introv tysys ceq cl.
   dest_ts tysys.
-  pose proof (ts_tyv lib a c eq) as ha.
+  pose proof (ts_tyv uk lib a c eq) as ha.
   repeat (autodimp ha hyp).
   { eapply ts_tyt; eauto. }
   eapply ts_tys; eauto.
 Qed.
 
 Lemma close_type_value_respecting_left {o} :
-  forall (ts : cts(o)) lib a b c eq,
+  forall (ts : cts(o)) uk lib a b c eq,
     local_ts ts
     -> ts_implies_per_bar ts
     -> type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> ccequivc_ext lib a c
-    -> close ts lib a b eq
-    -> close ts lib c b eq.
+    -> close ts uk lib a b eq
+    -> close ts uk lib c b eq.
 Proof.
   introv loc imp tysys dou mon ceq cl.
   pose proof (close_type_system ts) as h; repeat (autodimp h hyp).
@@ -10639,15 +10639,15 @@ Proof.
 Qed.
 
 Lemma close_type_value_respecting_right {o} :
-  forall (ts : cts(o)) lib a b c eq,
+  forall (ts : cts(o)) uk lib a b c eq,
     local_ts ts
     -> ts_implies_per_bar ts
     -> type_system ts
     -> defines_only_universes ts
     -> type_monotone ts
     -> ccequivc_ext lib a c
-    -> close ts lib b a eq
-    -> close ts lib b c eq.
+    -> close ts uk lib b a eq
+    -> close ts uk lib b c eq.
 Proof.
   introv loc imp tysys dou mon ceq cl.
   pose proof (close_type_system ts) as h; repeat (autodimp h hyp).
@@ -11482,9 +11482,84 @@ Proof.
     eapply lib_per_cond; eauto. }
 Qed.
 
+Lemma swap_ccequivc_ext_bar {o} :
+  forall sw lib (a b : @CTerm o),
+    sane_swapping sw
+    -> ccequivc_ext_bar lib a b
+    -> ccequivc_ext_bar (swap_cs_lib sw lib) (swap_cs_cterm sw a) (swap_cs_cterm sw b).
+Proof.
+  introv sane ceq.
+  eapply in_open_bar_swap_cs_lib_pres;eauto.
+  clear ceq; introv ext ceq.
+  apply swap_ccequivc_ext; auto.
+Qed.
+
+Definition rev_sw (sw : cs_swap) := let (a,b) := sw in (b,a).
+
+Definition swap_swap (sw : cs_swap) (sw' : cs_swap) :=
+  let (a,b) := sw' in
+  (swap_cs sw a, swap_cs sw b).
+
+Lemma swap_cs_cterm_mkc_swap_cs {o} :
+  forall sw sw' (a : @CTerm o),
+    swap_cs_cterm sw (mkc_swap_cs sw' a)
+    = mkc_swap_cs (swap_swap sw sw') (swap_cs_cterm sw a).
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+  destruct sw as [n1 n2], sw' as [m1 m2]; simpl in *.
+  boolvar; subst; tcsp.
+Qed.
+Hint Rewrite @swap_cs_cterm_mkc_swap_cs : slow.
+
+Lemma swap_swap_same :
+  forall sw, swap_swap sw sw = rev_sw sw.
+Proof.
+  introv; destruct sw as [a b]; simpl; boolvar; subst; tcsp.
+Qed.
+Hint Rewrite swap_swap_same : slow.
+
+Lemma swap_swap_twice :
+  forall sw sw', swap_swap sw (swap_swap sw sw') = sw'.
+Proof.
+  introv; destruct sw as [a b], sw' as [u v]; simpl; boolvar; subst; tcsp.
+Qed.
+Hint Rewrite swap_swap_twice : slow.
+
+Lemma swap_rev_sw :
+  forall sw, swap_swap sw (rev_sw sw) = sw.
+Proof.
+  introv; destruct sw as [a b]; simpl; boolvar; subst; tcsp.
+Qed.
+Hint Rewrite swap_rev_sw : slow.
+
+Lemma swap_preserves_is_swap_invariant {o} :
+  forall {sw} (sane : sane_swapping sw) {lib} (eqa : lib-per(lib,o)) v B,
+    is_swap_invariant eqa v B
+    -> is_swap_invariant (swap_cs_lib_per sw sane eqa) v (swap_cs_cvterm sw B).
+Proof.
+  introv h m; simpl in *.
+  unfold swap_cs_per in *.
+  dup e as e'.
+  apply lib_extends_swap_right_to_left in e'; auto.
+  pose proof (h (swap_cs_cterm sw a) (swap_swap sw sw0) _ e') as h; simpl in h.
+  autodimp h hyp;[eapply lib_per_cond;eauto|].
+  apply (swap_ccequivc_ext_bar sw) in h; auto.
+  autorewrite with slow in h; auto.
+Qed.
+Hint Resolve swap_preserves_is_swap_invariant : slow.
+
+Lemma swap_preserves_is_swap_invariant_cond {o} :
+  forall {sw} (sane : sane_swapping sw) uk {lib} (eqa : lib-per(lib,o)) v B v' B',
+    is_swap_invariant_cond uk eqa v B v' B'
+    -> is_swap_invariant_cond uk (swap_cs_lib_per sw sane eqa) v (swap_cs_cvterm sw B) v' (swap_cs_cvterm sw B').
+Proof.
+  introv h; destruct uk; simpl in *; tcsp; repnd; dands; eauto 3 with slow.
+Qed.
+Hint Resolve swap_preserves_is_swap_invariant_cond : slow.
+
 
 Lemma implies_close_swap_cs {o} :
-  forall sw lib (u : cts(o)) (t1 t2 : @CTerm o) e,
+  forall sw uk lib (u : cts(o)) (t1 t2 : @CTerm o) e,
     sane_swapping sw
     -> type_extensionality u
     -> local_ts u
@@ -11493,14 +11568,14 @@ Lemma implies_close_swap_cs {o} :
     -> defines_only_universes u
     -> type_monotone u
     -> (forall lib t1 t2 e,
-           u lib t1 t2 e
-           -> u (swap_cs_lib sw lib)
+           u uk lib t1 t2 e
+           -> u uk (swap_cs_lib sw lib)
                 (swap_cs_cterm sw t1)
                 (swap_cs_cterm sw t2)
                 (swap_cs_per sw e))
-    -> close u lib t1 t2 e
+    -> close u uk lib t1 t2 e
     -> close
-         u
+         u uk
          (swap_cs_lib sw lib)
          (swap_cs_cterm sw t1)
          (swap_cs_cterm sw t2)
@@ -11683,7 +11758,7 @@ Proof.
 
     { unfold type_family_ext; simpl.
       eexists; eexists; eexists; eexists; eexists; eexists.
-      dands; eauto.
+      dands; eauto; eauto 2 with slow.
 
       { introv; simpl.
         pose proof (reca _ (lib_extends_swap_right_to_left sane e)) as reca; simpl in reca.
@@ -11783,7 +11858,7 @@ Proof.
 
     { unfold type_family_ext; simpl.
       eexists; eexists; eexists; eexists; eexists; eexists.
-      dands; eauto.
+      dands; eauto; eauto 2 with slow.
 
       { introv; simpl.
         pose proof (reca _ (lib_extends_swap_right_to_left sane e)) as reca; simpl in reca.
@@ -11816,7 +11891,7 @@ Proof.
 
     { unfold type_family_ext; simpl.
       eexists; eexists; eexists; eexists; eexists; eexists.
-      dands; eauto.
+      dands; eauto; eauto 2 with slow.
 
       { introv; simpl.
         pose proof (reca _ (lib_extends_swap_right_to_left sane e)) as reca; simpl in reca.
@@ -11838,23 +11913,23 @@ Proof.
     apply swap_per_product_ext_eq; auto. }
 Qed.
 
-Lemma swap_cs_cterm_mkc_uni {o} : forall sw k, @swap_cs_cterm o sw (mkc_uni k) = mkc_uni k.
+Lemma swap_cs_cterm_mkc_uni {o} : forall sw u k, @swap_cs_cterm o sw (mkc_uni u k) = mkc_uni u k.
 Proof.
   introv; apply cterm_eq; simpl; auto.
 Qed.
 Hint Rewrite @swap_cs_cterm_mkc_uni : slow.
 
 Lemma swap_univi_eq {o} :
-  forall sw i (e : per(o)) lib,
+  forall sw i (e : per(o)) uk lib,
     sane_swapping sw
     -> (forall lib t1 t2 (e : per(o)),
-           univi i lib t1 t2 e
-           -> univi i (swap_cs_lib sw lib)
+           univi i uk lib t1 t2 e
+           -> univi i uk (swap_cs_lib sw lib)
                     (swap_cs_cterm sw t1)
                     (swap_cs_cterm sw t2)
                     (swap_cs_per sw e))
-    -> (e <=2=> (univi_eq (univi_bar i) lib))
-    -> (swap_cs_per sw e) <=2=> (univi_eq (univi_bar i) (swap_cs_lib sw lib)).
+    -> (e <=2=> (univi_eq (univi_bar i) uk lib))
+    -> (swap_cs_per sw e) <=2=> (univi_eq (univi_bar i) uk (swap_cs_lib sw lib)).
 Proof.
   introv sane imp eqiff; introv; split; intro h; simpl in *.
 
@@ -11896,11 +11971,11 @@ Proof.
 Qed.
 
 Lemma implies_univi_swap_cs {o} :
-  forall sw i lib (t1 t2 : @CTerm o) e,
+  forall sw i uk lib (t1 t2 : @CTerm o) e,
     sane_swapping sw
-    -> univi i lib t1 t2 e
+    -> univi i uk lib t1 t2 e
     -> univi
-         i
+         i uk
          (swap_cs_lib sw lib)
          (swap_cs_cterm sw t1)
          (swap_cs_cterm sw t2)
@@ -11916,10 +11991,10 @@ Proof.
 Qed.
 
 Lemma implies_univ_swap_cs {o} :
-  forall sw lib (t1 t2 : @CTerm o) e,
+  forall sw uk lib (t1 t2 : @CTerm o) e,
     sane_swapping sw
-    -> univ lib t1 t2 e
-    -> univ
+    -> univ uk lib t1 t2 e
+    -> univ uk
          (swap_cs_lib sw lib)
          (swap_cs_cterm sw t1)
          (swap_cs_cterm sw t2)
@@ -11940,10 +12015,10 @@ Proof.
 Qed.
 
 Lemma implies_nuprl_swap_cs {o} :
-  forall sw lib (t1 t2 : @CTerm o) e,
+  forall sw uk lib (t1 t2 : @CTerm o) e,
     sane_swapping sw
-    -> nuprl lib t1 t2 e
-    -> nuprl
+    -> nuprl uk lib t1 t2 e
+    -> nuprl uk
          (swap_cs_lib sw lib)
          (swap_cs_cterm sw t1)
          (swap_cs_cterm sw t2)
@@ -15058,10 +15133,10 @@ Proof.
 Qed.
 
 Lemma implies_equality_swap_cs {o} :
-  forall sw (lib : @library o) T t1 t2,
+  forall sw uk (lib : @library o) T t1 t2,
     sane_swapping sw
-    -> equality lib t1 t2 T
-    -> equality (swap_cs_lib sw lib) (swap_cs_cterm sw t1) (swap_cs_cterm sw t2) (swap_cs_cterm sw T).
+    -> equality uk lib t1 t2 T
+    -> equality uk (swap_cs_lib sw lib) (swap_cs_cterm sw t1) (swap_cs_cterm sw t2) (swap_cs_cterm sw T).
 Proof.
   introv sane equ.
   unfold equality in *; exrepnd.
@@ -15072,10 +15147,10 @@ Proof.
 Qed.
 
 Lemma implies_member_swap_cs {o} :
-  forall sw (lib : @library o) T t,
+  forall sw uk (lib : @library o) T t,
     sane_swapping sw
-    -> member lib t T
-    -> member (swap_cs_lib sw lib) (swap_cs_cterm sw t) (swap_cs_cterm sw T).
+    -> member uk lib t T
+    -> member uk (swap_cs_lib sw lib) (swap_cs_cterm sw t) (swap_cs_cterm sw T).
 Proof.
   introv sane equ.
   unfold member in *; apply implies_equality_swap_cs; auto.
@@ -19017,8 +19092,50 @@ Proof.
       eapply lib_extends_preserves_perm_libs; try exact e; eauto; eauto 3 with slow. } }
 Qed.
 
+Lemma perm_lib_per_preserves_is_swap_invariant {o} :
+  forall name name' {lib lib'} (eqa : lib-per(lib,o)) v B
+         (nodup : lib_nodup lib)
+         (safe  : strong_safe_library lib)
+         (sat   : sat_lib_cond lib)
+         (swap  : swapped_css_libs name name' lib lib'),
+    is_swap_invariant eqa v B
+    -> is_swap_invariant (perm_lib_per sat safe nodup swap eqa) v B.
+Proof.
+  introv h m; simpl in *.
+  remember (proj1 (lib_extends_preserves_perm_libs
+                     (swapped_css_libs_preserves_lib_nodup swap nodup)
+                     (swapped_css_libs_preserves_sat_lib_cond swap nodup sat)
+                     (swapped_css_libs_preserves_strong_safe_library swap safe) e
+                     (swapped_css_libs_sym swap))) as w; clear Heqw; repnd.
+  pose proof (h a sw _ w) as h; simpl in h; autodimp h hyp.
+
+  destruct (in_lib_dec (entry_name_cs name) lib'0) as [d1|d1];[|rewrite swap_sames_same_not_in in h; tcsp];[].
+  destruct (in_lib_dec (entry_name_cs name') lib'0) as [d2|d2];[|rewrite swap_sames_same_not_in in h; tcsp];[].
+  destruct (choice_sequence_name_deq name' name) as [d|d];subst;[rewrite swap_names_same in h; eauto 3 with slow|];[].
+
+  eapply (in_open_bar_swapped_css_libs_pres name name'); try exact h; eauto 3 with slow.
+  { apply swapped_css_libs_swap_names; eauto 3 with slow. }
+
+  introv ext ceq.
+  eapply implies_ccequivc_ext_swap_names; eauto.
+Qed.
+Hint Resolve perm_lib_per_preserves_is_swap_invariant : slow.
+
+Lemma perm_lib_per_preserves_is_swap_invariant_cond {o} :
+  forall uk name name' {lib lib'} (eqa : lib-per(lib,o)) v B v' B'
+         (nodup : lib_nodup lib)
+         (safe  : strong_safe_library lib)
+         (sat   : sat_lib_cond lib)
+         (swap  : swapped_css_libs name name' lib lib'),
+    is_swap_invariant_cond uk eqa v B v' B'
+    -> is_swap_invariant_cond uk (perm_lib_per sat safe nodup swap eqa) v B v' B'.
+Proof.
+  introv h; destruct uk; simpl in *; tcsp; repnd; dands; eauto 2 with slow.
+Qed.
+Hint Resolve perm_lib_per_preserves_is_swap_invariant_cond : slow.
+
 Lemma close_swapped_css_libs {o} :
-  forall name name' (lib lib' : library) (u : cts(o)) (t1 t2 : @CTerm o) e,
+  forall name name' uk (lib lib' : library) (u : cts(o)) (t1 t2 : @CTerm o) e,
     local_ts u
     -> ts_implies_per_bar u
     -> type_system u
@@ -19028,15 +19145,15 @@ Lemma close_swapped_css_libs {o} :
     -> strong_safe_library lib
     -> sat_lib_cond lib
     -> swapped_css_libs name name' lib lib'
-    -> (forall (lib lib' : library) t1 t2 e,
+    -> (forall uk (lib lib' : library) t1 t2 e,
            lib_nodup lib
            -> strong_safe_library lib
            -> sat_lib_cond lib
            -> swapped_css_libs name name' lib lib'
-           -> u lib t1 t2 e
-           -> u lib' t1 t2 e)
-    -> close u lib t1 t2 e
-    -> close u lib' t1 t2 e.
+           -> u uk lib t1 t2 e
+           -> u uk lib' t1 t2 e)
+    -> close u uk lib t1 t2 e
+    -> close u uk lib' t1 t2 e.
 Proof.
   introv locts tsimp tysys dou mon; introv nodup safe sat swap imp cl.
   revert dependent lib'.
@@ -19446,19 +19563,19 @@ Proof.
 Qed.
 
 Lemma swapped_css_libs_univi_eq {o} :
-  forall i name name' (lib lib' : @library o)
+  forall i name name' uk (lib lib' : @library o)
          (nodup : lib_nodup lib)
          (sat   : sat_lib_cond lib)
          (safe  : strong_safe_library lib)
          (swap  : swapped_css_libs name name' lib lib'),
-    (forall (lib lib' : library) t1 t2 (e : per(o)),
+    (forall uk (lib lib' : library) t1 t2 (e : per(o)),
         lib_nodup lib
         -> sat_lib_cond lib
         -> strong_safe_library lib
         -> swapped_css_libs name name' lib lib'
-        -> univi i lib t1 t2 e
-        -> univi i lib' t1 t2 e)
-    -> ((univi_eq (univi_bar i) lib) <=2=> (univi_eq (univi_bar i) lib')).
+        -> univi i uk lib t1 t2 e
+        -> univi i uk lib' t1 t2 e)
+    -> ((univi_eq (univi_bar i) uk lib) <=2=> (univi_eq (univi_bar i) uk lib')).
 Proof.
   introv nodup sat safe swap imp; split; intro h.
 
@@ -19467,6 +19584,7 @@ Proof.
     eapply close_swapped_css_libs; try exact h0; eauto; eauto 3 with slow.
     clear dependent lib.
     clear dependent lib'.
+    clear dependent uk.
     introv nodup safe sat swap u.
     unfold univi_bar, per_bar in *; exrepnd.
     exists (perm_lib_per sat safe nodup swap eqa0); simpl; dands.
@@ -19513,13 +19631,13 @@ Proof.
 Qed.
 
 Lemma univi_swapped_css_libs {o} :
-  forall i name name' (lib lib' : @library o) (t1 t2 : @CTerm o) e,
+  forall i name name' uk (lib lib' : @library o) (t1 t2 : @CTerm o) e,
     lib_nodup lib
     -> strong_safe_library lib
     -> sat_lib_cond lib
     -> swapped_css_libs name name' lib lib'
-    -> univi i lib t1 t2 e
-    -> univi i lib' t1 t2 e.
+    -> univi i uk lib t1 t2 e
+    -> univi i uk lib' t1 t2 e.
 Proof.
   induction i; introv nodup safe sat swap u; simpl in *; tcsp; repndors; repnd; tcsp;
     try (complete (right; eauto)).
@@ -19531,13 +19649,13 @@ Proof.
 Qed.
 
 Lemma univ_swapped_css_libs {o} :
-  forall name name' (lib lib' : @library o) (t1 t2 : @CTerm o) e,
+  forall name name' uk (lib lib' : @library o) (t1 t2 : @CTerm o) e,
     lib_nodup lib
     -> strong_safe_library lib
     -> sat_lib_cond lib
     -> swapped_css_libs name name' lib lib'
-    -> univ lib t1 t2 e
-    -> univ lib' t1 t2 e.
+    -> univ uk lib t1 t2 e
+    -> univ uk lib' t1 t2 e.
 Proof.
   introv nodup safe sat swap u.
   unfold univ in *.
@@ -19554,7 +19672,7 @@ Proof.
                        (swapped_css_libs_preserves_strong_safe_library swap safe) y
                        (swapped_css_libs_sym swap))) as w; clear Heqw; repnd.
     revert w; rewrite swap_names_twice; eauto 3 with slow; introv.
-    apply (type_extensionality_univi _ _ _ _ (eqa lib'0 e0)); try apply lib_per_cond.
+    apply (type_extensionality_univi _ _ _ _ _ (eqa lib'0 e0)); try apply lib_per_cond.
     eapply univi_swapped_css_libs; try exact u2; eauto 3 with slow.
     eapply lib_extends_preserves_perm_libs; eauto; eauto 3 with slow. }
 
@@ -19563,13 +19681,13 @@ Proof.
 Qed.
 
 Lemma nuprl_swapped_css_libs {o} :
-  forall name name' (lib lib' : @library o) (t1 t2 : @CTerm o) e,
+  forall name name' uk (lib lib' : @library o) (t1 t2 : @CTerm o) e,
     lib_nodup lib
     -> strong_safe_library lib
     -> sat_lib_cond lib
     -> swapped_css_libs name name' lib lib'
-    -> nuprl lib t1 t2 e
-    -> nuprl lib' t1 t2 e.
+    -> nuprl uk lib t1 t2 e
+    -> nuprl uk lib' t1 t2 e.
 Proof.
   introv nodup safe sat swap n.
   unfold nuprl in *.
@@ -19581,13 +19699,13 @@ Proof.
 Qed.
 
 Lemma equality_swapped_css_libs {o} :
-  forall name name' (lib lib' : @library o) (t1 t2 : @CTerm o) T,
+  forall name name' uk (lib lib' : @library o) (t1 t2 : @CTerm o) T,
     lib_nodup lib
     -> strong_safe_library lib
     -> sat_lib_cond lib
     -> swapped_css_libs name name' lib lib'
-    -> equality lib t1 t2 T
-    -> equality lib' t1 t2 T.
+    -> equality uk lib t1 t2 T
+    -> equality uk lib' t1 t2 T.
 Proof.
   introv nodup safe sat swap e.
   unfold equality in *; exrepnd.
@@ -19596,13 +19714,13 @@ Proof.
 Qed.
 
 Lemma member_swapped_css_libs {o} :
-  forall name name' (lib lib' : @library o) (t T : @CTerm o),
+  forall name name' uk (lib lib' : @library o) (t T : @CTerm o),
     lib_nodup lib
     -> strong_safe_library lib
     -> sat_lib_cond lib
     -> swapped_css_libs name name' lib lib'
-    -> member lib t T
-    -> member lib' t T.
+    -> member uk lib t T
+    -> member uk lib' t T.
 Proof.
   introv nodup safe sat swap m.
   unfold member in *; eapply equality_swapped_css_libs; eauto.
@@ -19634,8 +19752,8 @@ Qed.
 Hint Resolve sat_lib_cond_swap_cs_lib : slow.
 
 Lemma tequality_mkc_csprop {o} :
-  forall (lib : @library o) i,
-    tequality lib (mkc_csprop i) (mkc_csprop i).
+  forall uk (lib : @library o) i,
+    tequality uk lib (mkc_csprop uk i) (mkc_csprop uk i).
 Proof.
   introv; unfold mkc_csprop.
   apply tequality_mkc_fun; dands; eauto 3 with slow.
@@ -19657,16 +19775,16 @@ Qed.
 Hint Rewrite @substc5_mkcv_squash : slow.
 
 Lemma type_mkc_csprop {o} :
-  forall (lib : @library o) i, type lib (mkc_csprop i).
+  forall uk (lib : @library o) i, type uk lib (mkc_csprop uk i).
 Proof.
   introv; unfold type; eauto 3 with slow.
 Qed.
 Hint Resolve type_mkc_csprop : slow.
 
 Lemma implies_equality_mkc_choice_seq_mkc_csname_0 {o} :
-  forall (lib : @library o) name,
+  forall uk (lib : @library o) name,
     compatible_choice_sequence_name 0 name
-    -> equality lib (mkc_choice_seq name) (mkc_choice_seq name) (mkc_csname 0).
+    -> equality uk lib (mkc_choice_seq name) (mkc_choice_seq name) (mkc_csname 0).
 Proof.
   introv comp; apply equality_in_csname_iff.
   apply in_ext_implies_in_open_bar; introv xt.
@@ -19693,9 +19811,9 @@ Proof.
 Qed.
 
 Lemma implies_type_mkc_squash {o} :
-  forall (lib : @library o) T,
-    type lib T
-    -> type lib (mkc_squash T).
+  forall uk (lib : @library o) T,
+    type uk lib T
+    -> type uk lib (mkc_squash T).
 Proof.
   introv t; apply tequality_mkc_squash; auto.
 Qed.
