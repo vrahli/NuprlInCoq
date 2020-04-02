@@ -1738,3 +1738,14 @@ Proof.
   - apply (cequivc_trans lib a b b'); auto; apply alphaeqc_implies_cequivc; auto.
 Qed.
 Hint Resolve respects_alphaeqc_cequivc : respects.
+
+(* recap of major properties*)
+
+Lemma nuprl_is_local {o} : @local_ts o nuprl.
+Proof. eauto 3 with slow. Qed.
+
+Lemma nuprl_is_monotone {o} : @type_monotone_func o nuprl.
+Proof. eauto 3 with slow. Qed.
+
+Lemma nuprl_is_type_system {o} : @type_system o nuprl.
+Proof. eauto 3 with slow. Qed.
