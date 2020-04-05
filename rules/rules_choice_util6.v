@@ -377,6 +377,77 @@ Proof.
     autorewrite with slow in *; auto. }
 Qed.
 
+Lemma mkc_swap_computes_to_valc_integer_implies {o} :
+  forall sw lib (t : @CTerm o) k,
+    computes_to_valc lib (mkc_swap_cs sw t) (mkc_integer k)
+    -> computes_to_valc lib t (mkc_integer k).
+Proof.
+  introv comp; exrepnd; spcast.
+  destruct_cterms; unfold computes_to_valc, cequivc in *; simpl in *.
+  apply swap_cs2_computes_to_value_implies in comp; auto; exrepnd; subst.
+  inversion comp1 as [xx]; subst; clear comp1.
+  destruct bs; simpl in *; ginv.
+  destruct c; simpl in *; ginv.
+Qed.
+
+Lemma mkc_swap_computes_to_valc_nat_implies {o} :
+  forall sw lib (t : @CTerm o) k,
+    computes_to_valc lib (mkc_swap_cs sw t) (mkc_nat k)
+    -> computes_to_valc lib t (mkc_nat k).
+Proof.
+  introv comp.
+  apply mkc_swap_computes_to_valc_integer_implies in comp; auto.
+Qed.
+
+Lemma are_same_qnat_mkc_swap_implies {o} :
+  forall sw lib c (t1 t2 : @CTerm o),
+    are_same_qnats lib c (mkc_swap_cs sw t1) (mkc_swap_cs sw t2)
+    <-> are_same_qnats lib c t1 t2.
+Proof.
+  introv; split; introv same ext.
+  { apply same in ext; exrepnd; spcast.
+    exists n.
+    apply mkc_swap_computes_to_valc_nat_implies in ext1.
+    apply mkc_swap_computes_to_valc_nat_implies in ext0.
+    dands; spcast; auto. }
+  { apply same in ext; exrepnd; spcast.
+    exists n.
+    apply (mkc_swap_preserves_computes_to_valc sw) in ext1.
+    apply (mkc_swap_preserves_computes_to_valc sw) in ext0.
+    autorewrite with slow in *.
+    dands; spcast; auto. }
+Qed.
+
+Lemma sat_qnat_cond_mkc_swap_implies {o} :
+  forall sw lib c (t : @CTerm o),
+    sat_qnat_cond lib c (mkc_swap_cs sw t)
+    <-> sat_qnat_cond lib c t.
+Proof.
+  introv; split; introv same h exta extb compa compb; subst.
+  { apply (mkc_swap_preserves_computes_to_valc sw) in compa.
+    apply (mkc_swap_preserves_computes_to_valc sw) in compb.
+    autorewrite with slow in *.
+    eapply same; eauto. }
+  { apply mkc_swap_computes_to_valc_nat_implies in compa.
+    apply mkc_swap_computes_to_valc_nat_implies in compb.
+    eapply same; eauto. }
+Qed.
+
+Lemma mkc_swap_equality_of_qnat_bar {o} :
+  forall sw lib (eq : per(o)) c,
+    (eq <=2=> (equality_of_qnat_bar lib c))
+    -> (mkc_swap_per sw eq) <=2=> (equality_of_qnat_bar lib c).
+Proof.
+  introv h; introv.
+  unfold mkc_swap_per; rw h; clear h; split; intro h;
+    eapply in_open_bar_pres; eauto; clear h; introv ext h;
+      unfold equality_of_qnat in *; exrepnd;
+        dands; auto;
+          allrw @are_same_qnat_mkc_swap_implies;
+          allrw @sat_qnat_cond_mkc_swap_implies;
+          auto.
+Qed.
+
 Lemma swap_cs_can_inj {o} :
   forall sw (c1 c2 : @CanonicalOp o),
     swap_cs_can sw c1 = swap_cs_can sw c2 -> c1 = c2.
@@ -910,6 +981,22 @@ Proof.
 Qed.
 Hint Rewrite @push_swap_cs_otermc_mkc_inr : slow.
 
+Lemma push_swap_cs_otermc_mkc_qnat {o} :
+  forall sw c,
+    @push_swap_cs_otermc o sw (mkc_qnat c) = mkc_qnat c.
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @push_swap_cs_otermc_mkc_qnat : slow.
+
+Lemma push_swap_cs_otermc_mkc_csname {o} :
+  forall sw n,
+    @push_swap_cs_otermc o sw (mkc_csname n) = mkc_csname n.
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @push_swap_cs_otermc_mkc_csname : slow.
+
 Lemma ccomputes_to_valc_ext_inl_implies_mkc_swap_cs {o} :
   forall sw lib (t k : @CTerm o),
     t ===>(lib) (mkc_inl k)
@@ -1013,8 +1100,72 @@ Proof.
 Qed.
 Hint Resolve in_ext_ext_tysys_implies_in_ext_ext_term_equality_symmetric : slow.
 
+Lemma cequiv_choice_seq {o} :
+  forall lib (t t' : @NTerm o) n,
+    computes_to_value lib t (mk_choice_seq n)
+    -> cequiv lib t t'
+    -> computes_to_value lib t' (mk_choice_seq n).
+Proof.
+  sp.
+  apply @cequiv_canonical_form with (t' := t') in X; sp.
+  apply lblift_cequiv0 in p; subst; auto.
+Qed.
+
+Lemma mkc_swap_ccomputes_to_valc_ext_choice_seq_implies {o} :
+  forall sw lib (t : @CTerm o) name,
+  (mkc_swap_cs sw t) ===>(lib) (mkc_choice_seq name)
+  -> t ===>(lib) (mkc_choice_seq (swap_cs sw name)).
+Proof.
+  introv comp ext; apply comp in ext; clear comp; exrepnd; spcast.
+  destruct_cterms; unfold computes_to_valc, cequivc in *; simpl in *.
+  apply swap_cs2_computes_to_value_implies in ext1; auto; exrepnd; subst.
+  eapply cequiv_choice_seq in ext0; eauto 3 with slow.
+  apply computes_to_value_if_iscan in ext0; eauto 3 with slow; subst.
+  inversion ext0; clear ext0; subst; simpl in *.
+  destruct bs; simpl in *; ginv.
+  destruct c; simpl in *; ginv.
+  destruct sw as [a b]; simpl in *.
+  boolvar; subst; tcsp; GC.
+  { exists (@mkc_choice_seq o a); dands; spcast; tcsp; eauto 3 with slow. }
+  { exists (@mkc_choice_seq o b); dands; spcast; tcsp; eauto 3 with slow. }
+  { exists (@mkc_choice_seq o a); dands; spcast; tcsp; eauto 3 with slow. }
+  { exists (@mkc_choice_seq o c); dands; spcast; tcsp; eauto 3 with slow. }
+Qed.
+
+Lemma push_swap_cs_otermc_mkc_choice_seq {o} :
+  forall sw n,
+    @push_swap_cs_otermc o sw (mkc_choice_seq n) = mkc_choice_seq (swap_cs sw n).
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+  destruct sw as [a b]; simpl.
+  unfold push_swap_cs_can; simpl; boolvar; tcsp.
+Qed.
+Hint Rewrite @push_swap_cs_otermc_mkc_choice_seq : slow.
+
+Lemma mkc_swap_equality_of_csname_bar {o} :
+  forall sw (sane : sane_swapping sw) lib (eq : per(o)) n,
+    (eq <=2=> (equality_of_csname_bar lib n))
+    -> (mkc_swap_per sw eq) <=2=> (equality_of_csname_bar lib n).
+Proof.
+  introv sane h; introv.
+  unfold mkc_swap_per; rw h; clear h; split; intro h;
+    eapply in_open_bar_pres; eauto; clear h; introv ext h;
+      unfold equality_of_csname in *; exrepnd.
+
+  { apply mkc_swap_ccomputes_to_valc_ext_choice_seq_implies in h2.
+    apply mkc_swap_ccomputes_to_valc_ext_choice_seq_implies in h0.
+    exists (swap_cs sw name); dands; auto; eauto 3 with slow.
+    apply sane_swapping_implies_compatible_choice_sequence_name; auto. }
+
+  { apply (mkc_swap_ccomputes_to_valc_ext sw) in h2.
+    apply (mkc_swap_ccomputes_to_valc_ext sw) in h0.
+    autorewrite with slow in *.
+    eexists; dands; try exact h2; auto; eauto 3 with slow.
+    apply sane_swapping_implies_compatible_choice_sequence_name; auto. }
+Qed.
+
 Lemma implies_close_mk_swap {o} :
-  forall sw uk (lib : library) (u : cts(o)) (t1 t2 : @CTerm o) e,
+  forall sw (lib : library) (u : cts(o)) (t1 t2 : @CTerm o) e,
     sane_swapping sw
     -> lib_nodup lib
     -> strong_sat_lib_cond lib
@@ -1024,16 +1175,16 @@ Lemma implies_close_mk_swap {o} :
     -> type_system u
     -> defines_only_universes u
     -> type_monotone u
-    -> (forall uk lib t1 t2 e,
-           u uk lib t1 t2 e
-           -> u uk lib
+    -> (forall lib t1 t2 e,
+           u uk1 lib t1 t2 e
+           -> u uk1 lib
                 (mkc_swap_cs sw t1)
                 (mkc_swap_cs sw t2)
                 (mkc_swap_per sw e))
-    -> close u uk lib t1 t2 e
+    -> close u uk1 lib t1 t2 e
     -> close
          u
-         uk lib
+         uk1 lib
          (mkc_swap_cs sw t1)
          (mkc_swap_cs sw t2)
          (mkc_swap_per sw e).
@@ -1072,24 +1223,22 @@ Proof.
     apply mkc_swap_equality_of_nat_bar; auto. }
 
   { Case "CL_qnat".
-admit.
-(*  apply CL_qnat.
+    apply CL_qnat.
     unfold per_qnat in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in per1; auto.
-    apply (swap_ccomputes_to_valc_ext sw) in per2; auto.
+    apply (mkc_swap_ccomputes_to_valc_ext sw) in per1; auto.
+    apply (mkc_swap_ccomputes_to_valc_ext sw) in per2; auto.
     autorewrite with slow in *.
     eexists; dands; eauto 3 with slow.
-    apply swap_equality_of_qnat_bar; auto.*) }
+    apply mkc_swap_equality_of_qnat_bar; auto. }
 
   { Case "CL_csname".
-admit.
-(*    apply CL_csname.
+    apply CL_csname.
     unfold per_csname in *; exrepnd.
-    apply (swap_ccomputes_to_valc_ext sw) in per1; auto.
-    apply (swap_ccomputes_to_valc_ext sw) in per2; auto.
+    apply (mkc_swap_ccomputes_to_valc_ext sw) in per1; auto.
+    apply (mkc_swap_ccomputes_to_valc_ext sw) in per2; auto.
     autorewrite with slow in *.
     exists n; dands; eauto 3 with slow.
-    apply swap_equality_of_csname_bar; auto.*) }
+    apply mkc_swap_equality_of_csname_bar; auto. }
 
   { Case "CL_atom".
 admit.
