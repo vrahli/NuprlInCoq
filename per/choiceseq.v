@@ -2442,6 +2442,7 @@ Proof.
   destruct_cterms; unfold cequivc, iscvalue in *; simpl in *.
   apply implies_cequiv_push_swap_cs_oterm; auto.
 Qed.
+Hint Resolve implies_cequivc_push_swap_cs_otermc : slow.
 
 Lemma push_swap_cs_otermc_int {o} :
   forall sw, @push_swap_cs_otermc o sw mkc_int = mkc_int.
@@ -2471,7 +2472,85 @@ Lemma mkc_swap_ccomputes_to_valc_ext {o} :
 Proof.
   introv comp ext; apply comp in ext; exrepnd; spcast.
   exists (push_swap_cs_otermc sw c); dands; spcast; eauto 3 with slow.
-  apply implies_cequivc_push_swap_cs_otermc; auto; eauto 2 with slow.
+Qed.
+
+Fixpoint push_swap_cs_oterm_list {o} sws (t : @NTerm o) : NTerm :=
+  match sws with
+  | [] => t
+  | sw :: sws => push_swap_cs_oterm sw (push_swap_cs_oterm_list sws t)
+  end.
+
+Lemma implies_isprog_push_swap_cs_oterm_list {o} :
+  forall sws (t : @NTerm o),
+    isprog t
+    -> isprog (push_swap_cs_oterm_list sws t).
+Proof.
+  induction sws; introv isp; simpl; auto.
+  apply implies_isprog_push_swap_cs_oterm; apply IHsws; auto.
+Qed.
+Hint Resolve implies_isprog_push_swap_cs_oterm_list : slow.
+
+Definition push_swap_cs_otermc_list {o} sws (t : @CTerm o) : CTerm :=
+  let (a,x) := t in
+  exist
+    isprog
+    (push_swap_cs_oterm_list sws a)
+    (implies_isprog_push_swap_cs_oterm_list sws a x).
+
+Lemma push_swap_cs_otermc_list_nil {o} :
+  forall (t : @CTerm o),
+    push_swap_cs_otermc_list [] t = t.
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @push_swap_cs_otermc_list_nil : slow.
+
+Lemma push_swap_cs_otermc_list_cons {o} :
+  forall sw sws (t : @CTerm o),
+    push_swap_cs_otermc_list (sw :: sws) t
+    = push_swap_cs_otermc sw (push_swap_cs_otermc_list sws t).
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @push_swap_cs_otermc_list_cons : slow.
+
+Lemma mkc_swap_preserves_computes_to_valc_list {o} :
+  forall sws lib (a b : @CTerm o),
+    computes_to_valc lib a b
+    -> computes_to_valc lib (mkc_swap_cs_list sws a) (push_swap_cs_otermc_list sws b).
+Proof.
+  induction sws; introv comp; simpl in *; autorewrite with slow; eauto 3 with slow.
+Qed.
+Hint Resolve mkc_swap_preserves_computes_to_valc_list : slow.
+
+Lemma iscvalue_push_swap_cs_otermc_list {o} :
+  forall sws (t : @CTerm o),
+    iscvalue t
+    -> iscvalue (push_swap_cs_otermc_list sws t).
+Proof.
+  induction sws; introv isc; autorewrite with slow; eauto 3 with slow.
+Qed.
+Hint Resolve iscvalue_push_swap_cs_otermc_list : slow.
+
+Lemma implies_cequivc_push_swap_cs_otermc_list {o} :
+  forall sws lib (a b : @CTerm o),
+    iscvalue a
+    -> iscvalue b
+    -> cequivc lib a b
+    -> cequivc lib (push_swap_cs_otermc_list sws a) (push_swap_cs_otermc_list sws b).
+Proof.
+  induction sws; introv isva iscb ceq; autorewrite with slow; eauto 3 with slow.
+  apply implies_cequivc_push_swap_cs_otermc; eauto 3 with slow.
+Qed.
+Hint Resolve implies_cequivc_push_swap_cs_otermc_list : slow.
+
+Lemma mkc_swap_cs_list_ccomputes_to_valc_ext {o} :
+  forall sws lib (a b : @CTerm o),
+    a ===>(lib) b
+    -> (mkc_swap_cs_list sws a) ===>(lib) (push_swap_cs_otermc_list sws b).
+Proof.
+  introv comp ext; apply comp in ext; exrepnd; spcast.
+  exists (push_swap_cs_otermc_list sws c); dands; spcast; eauto 3 with slow.
 Qed.
 
 Lemma substc_ccequivc_ext {o} :
@@ -2483,6 +2562,14 @@ Proof.
 Qed.
 Hint Resolve substc_ccequivc_ext : slow.
 
+Lemma push_swap_cs_otermc_list_mkc_nat {o} :
+  forall sws n, @push_swap_cs_otermc_list o sws (mkc_nat n) = mkc_nat n.
+Proof.
+  induction sws; introv; autorewrite with slow; auto.
+  rewrite IHsws; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @push_swap_cs_otermc_list_mkc_nat : slow.
+
 Lemma is_swap_invariant_equality_of_nat_bar_lib_per {o} :
   forall (lib : @library o) v B,
     is_swap_invariant (equality_of_nat_bar_lib_per lib) v B.
@@ -2490,7 +2577,7 @@ Proof.
   introv h; simpl in *.
   eapply in_open_bar_pres; eauto; clear h; introv ext h.
   unfold equality_of_nat in *; exrepnd; repnd.
-  apply (mkc_swap_ccomputes_to_valc_ext sw) in h1; autorewrite with slow in *.
+  apply (mkc_swap_cs_list_ccomputes_to_valc_ext sws) in h1; autorewrite with slow in *.
   apply ccomputes_to_valc_ext_implies_ccequivc_ext in h1.
   apply ccomputes_to_valc_ext_implies_ccequivc_ext in h0.
   apply substc_ccequivc_ext.

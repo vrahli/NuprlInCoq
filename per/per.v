@@ -1223,15 +1223,21 @@ Definition ccequivc_ext_bar {o} lib (t1 t2 : @CTerm o) :=
 Definition ccequivc_bar {o} lib (a b : @CTerm o) :=
   in_open_bar lib (fun lib => ccequivc lib a b).
 
+Fixpoint mkc_swap_cs_list {o} sws (a : @CTerm o) :=
+  match sws with
+  | [] => a
+  | sw :: sws => mkc_swap_cs sw (mkc_swap_cs_list sws a)
+  end.
+
 Definition is_swap_invariant {o} {lib} (eqa : lib-per(lib,o)) v (B : @CVTerm o [v]) :=
-  forall a sw,
+  forall a sws,
     in_ext_ext
       lib
       (fun lib' x =>
          eqa lib' x a a
          -> ccequivc_ext_bar
               lib'
-              (substc (mkc_swap_cs sw a) v B)
+              (substc (mkc_swap_cs_list sws a) v B)
               (substc a v B)).
 
 Definition is_swap_invariant_cond {o} (uk : ukind) {lib} (eqa : lib-per(lib,o)) v B v' B' :=

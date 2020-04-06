@@ -1164,6 +1164,178 @@ Proof.
     apply sane_swapping_implies_compatible_choice_sequence_name; auto. }
 Qed.
 
+Lemma substc_ccequivc_ext_bar {o} :
+  forall lib (a b : @CTerm o) x t,
+    ccequivc_ext_bar lib a b
+    -> ccequivc_ext_bar lib (substc a x t) (substc b x t).
+Proof.
+  introv h; eapply in_open_bar_pres; eauto; clear h; introv h q.
+  apply substc_ccequivc_ext; auto.
+Qed.
+Hint Resolve substc_ccequivc_ext_bar : slow.
+
+Lemma ccequivc_ext_bar_trans {o} lib (a b c : @CTerm o) :
+  ccequivc_ext_bar lib a b
+  -> ccequivc_ext_bar lib b c
+  -> ccequivc_ext_bar lib a c.
+Proof.
+  introv ceq1 ceq2.
+  eapply in_open_bar_comb; try exact ceq1; clear ceq1.
+  eapply in_open_bar_pres; try exact ceq2; clear ceq2.
+  introv ext ceq1 ceq2.
+  eapply ccequivc_ext_trans; eauto.
+Qed.
+Hint Resolve ccequivc_ext_bar_trans : slow.
+
+Lemma ccequivc_ext_bar_sym {o} lib (a b : @CTerm o) :
+  ccequivc_ext_bar lib a b
+  -> ccequivc_ext_bar lib b a.
+Proof.
+  introv ceq.
+  eapply in_open_bar_pres; try exact ceq; clear ceq.
+  introv ext ceq.
+  apply ccequivc_ext_sym; auto.
+Qed.
+Hint Resolve ccequivc_ext_bar_sym : slow.
+
+Lemma ccequivc_ext_bar_mkc_swap_cs_twice {o} :
+  forall lib sw (t : @CTerm o),
+    ccequivc_ext_bar lib (mkc_swap_cs sw (mkc_swap_cs sw t)) t.
+Proof.
+  introv; apply in_ext_implies_in_open_bar; introv ext.
+  apply ccequivc_ext_mkc_swap_cs_twice.
+Qed.
+Hint Resolve ccequivc_ext_bar_mkc_swap_cs_twice : slow.
+
+Lemma implies_ccequivc_ext_bar_mkc_swap {o} :
+  forall sw lib (a b : @CTerm o),
+    ccequivc_ext_bar lib a b
+    -> ccequivc_ext_bar lib (mkc_swap_cs sw a) (mkc_swap_cs sw b).
+Proof.
+  introv ceq.
+  eapply in_open_bar_pres; eauto; clear ceq; introv ext ceq xt.
+  apply ceq in xt; spcast.
+  destruct sw as [n m]; simpl in *.
+  apply implies_cequivc_swap_cs2; auto.
+Qed.
+Hint Resolve implies_ccequivc_ext_bar_mkc_swap : slow.
+
+Lemma mkc_swap_cs_list_snoc {o} :
+  forall sws sw (t : @CTerm o),
+    mkc_swap_cs_list (snoc sws sw) t
+    = mkc_swap_cs_list sws (mkc_swap_cs sw t).
+Proof.
+  induction sws; introv; simpl; auto; try congruence.
+Qed.
+Hint Rewrite @mkc_swap_cs_list_snoc : slow.
+
+Lemma implies_ccequivc_ext_bar_mkc_swap_list {o} :
+  forall sws lib (a b : @CTerm o),
+    ccequivc_ext_bar lib a b
+    -> ccequivc_ext_bar lib (mkc_swap_cs_list sws a) (mkc_swap_cs_list sws b).
+Proof.
+  induction sws; introv ceq; simpl; auto.
+  apply implies_ccequivc_ext_bar_mkc_swap; auto.
+Qed.
+Hint Resolve implies_ccequivc_ext_bar_mkc_swap_list : slow.
+
+Lemma implies_is_swap_invariant_mkc_swap {o} :
+  forall sw {lib} (eqa : lib-per(lib,o)) v B,
+    is_swap_invariant eqa v B
+    -> is_swap_invariant (mkc_swap_lib_per sw eqa) v (mkcv_swap_cs _ sw B).
+Proof.
+  introv isw h; simpl in *; autorewrite with slow.
+  apply implies_ccequivc_ext_bar_mkc_swap.
+  unfold mkc_swap_per in *.
+
+  pose proof (isw _ [sw] _ e h) as iswa; simpl in *.
+  eapply ccequivc_ext_bar_trans in iswa;
+    [|apply substc_ccequivc_ext_bar;
+      apply ccequivc_ext_bar_sym; auto;
+      apply ccequivc_ext_bar_mkc_swap_cs_twice].
+
+  pose proof (isw _ (snoc sws sw) _ e h) as iswb; simpl in *.
+  autorewrite with slow in *.
+  eapply ccequivc_ext_bar_trans;[|apply ccequivc_ext_bar_sym;exact iswa].
+  eapply ccequivc_ext_bar_trans;[|exact iswb].
+  apply substc_ccequivc_ext_bar.
+  apply implies_ccequivc_ext_bar_mkc_swap_list.
+  apply ccequivc_ext_bar_sym; apply ccequivc_ext_bar_mkc_swap_cs_twice.
+Qed.
+Hint Resolve implies_is_swap_invariant_mkc_swap : slow.
+
+
+Lemma type_system_term_mem1 {p} :
+ forall (ts : cts(p)) uk lib (T T' t1 t2 : CTerm) (eq : per),
+   type_system ts
+   -> ts uk lib T T' eq
+   -> eq t1 t2
+   -> eq t1 t1.
+Proof.
+  introv h q e.
+  eapply type_system_term_mem; eauto; unfold type_system in *; tcsp.
+Qed.
+
+Lemma type_system_term_mem2 {p} :
+ forall (ts : cts(p)) uk lib (T T' t1 t2 : CTerm) (eq : per),
+   type_system ts
+   -> ts uk lib T T' eq
+   -> eq t1 t2
+   -> eq t2 t2.
+Proof.
+  introv h q e.
+  unfold type_system in *; repnd.
+  assert (eq t2 t1) as z;[|eapply type_system_term_mem; eauto];[].
+  match goal with
+  | [ H : context[term_symmetric] |- _ ] => eapply H; eauto
+  end.
+Qed.
+
+Lemma close_type_value_respecting_left_bar {o} :
+  forall (ts : cts(o)) uk lib a b c eq,
+    local_ts ts
+    -> ts_implies_per_bar ts
+    -> type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> ccequivc_ext_bar lib a c
+    -> close ts uk lib a b eq
+    -> close ts uk lib c b eq.
+Proof.
+  introv loc imp tysys dou mon ceq cl.
+  apply close_implies_per_bar in cl; auto.
+  apply CL_bar.
+  unfold per_bar in *; exrepnd.
+  exists eqa; dands; auto.
+  eapply in_open_bar_ext_comb;[|exact cl1]; clear cl1.
+  eapply in_open_bar_ext_comb2;[|exact ceq]; clear ceq.
+  apply in_ext_ext_implies_in_open_bar_ext; introv ceq h.
+  eapply close_type_value_respecting_left; eauto.
+Qed.
+
+
+Lemma close_type_value_respecting_right_bar {o} :
+  forall (ts : cts(o)) uk lib a b c eq,
+    local_ts ts
+    -> ts_implies_per_bar ts
+    -> type_system ts
+    -> defines_only_universes ts
+    -> type_monotone ts
+    -> ccequivc_ext_bar lib a c
+    -> close ts uk lib b a eq
+    -> close ts uk lib b c eq.
+Proof.
+  introv loc imp tysys dou mon ceq cl.
+  apply close_implies_per_bar in cl; auto.
+  apply CL_bar.
+  unfold per_bar in *; exrepnd.
+  exists eqa; dands; auto.
+  eapply in_open_bar_ext_comb;[|exact cl1]; clear cl1.
+  eapply in_open_bar_ext_comb2;[|exact ceq]; clear ceq.
+  apply in_ext_ext_implies_in_open_bar_ext; introv ceq h.
+  eapply close_type_value_respecting_right; eauto.
+Qed.
+
 Lemma implies_close_mk_swap {o} :
   forall sw (lib : library) (u : cts(o)) (t1 t2 : @CTerm o) e,
     sane_swapping sw
@@ -1190,7 +1362,8 @@ Lemma implies_close_mk_swap {o} :
          (mkc_swap_per sw e).
 Proof.
   introv sane nodup sat; introv tyext locts tsimp tysys dou mon imp cl.
-  close_cases (induction cl using @close_ind') Case; introv; subst.
+  remember uk1 as uk; revert Hequk.
+  close_cases (induction cl using @close_ind') Case; introv h; subst.
 
   { Case "CL_init".
     apply CL_init.
@@ -1356,7 +1529,7 @@ admit.
     exists (mkc_swap_lib_per sw eqa) (mkc_swap_lib_per_fam sw eqb).
     dands; eauto.
 
-    { unfold type_family_ext; simpl.
+    { unfold type_family_ext; simpl in *; repnd.
       eexists; eexists; eexists; eexists; eexists; eexists.
       dands; eauto; eauto 2 with slow.
 
@@ -1369,6 +1542,36 @@ admit.
       autorewrite with slow.
       pose proof (recb _ e _ _ e0) as recb; simpl in recb.
       repeat (autodimp recb hyp); eauto 3 with slow.
+
+      assert (eqa lib' e (mkc_swap_cs sw a) (mkc_swap_cs sw a)) as eqa1.
+      { pose proof (cla _ e) as cla; simpl in *.
+        eapply type_system_term_mem1; try exact cla; eauto; eauto 3 with slow.
+        apply close_type_system; auto. }
+      assert (eqa lib' e (mkc_swap_cs sw a') (mkc_swap_cs sw a')) as eqa2.
+      { pose proof (cla _ e) as cla; simpl in *.
+        eapply type_system_term_mem2; try exact cla; eauto; eauto 3 with slow.
+        apply close_type_system; auto. }
+
+      pose proof (inv0 (mkc_swap_cs sw a) [sw] _ e eqa1) as inva; simpl in *.
+      pose proof (inv (mkc_swap_cs sw a') [sw] _ e eqa2) as invb; simpl in *.
+      eapply ccequivc_ext_bar_trans in inva;
+        [|apply substc_ccequivc_ext_bar;
+          apply ccequivc_ext_bar_sym; auto;
+          apply ccequivc_ext_bar_mkc_swap_cs_twice].
+      eapply ccequivc_ext_bar_trans in invb;
+        [|apply substc_ccequivc_ext_bar;
+          apply ccequivc_ext_bar_sym; auto;
+          apply ccequivc_ext_bar_mkc_swap_cs_twice].
+
+      eapply close_type_value_respecting_left_bar;
+        try (apply implies_ccequivc_ext_bar_mkc_swap;
+             apply ccequivc_ext_bar_sym; exact inva); auto.
+      eapply close_type_value_respecting_right_bar;
+        try (apply implies_ccequivc_ext_bar_mkc_swap;
+             apply ccequivc_ext_bar_sym; exact invb); auto. }
+
+
+
 
 (* ====> Will this only work if the domain [A] is such that [mkc_swap_cs] doesn't affect
    its members such as nat? Can I find a counterexample otherwise?

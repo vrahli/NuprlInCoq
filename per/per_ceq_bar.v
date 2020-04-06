@@ -2671,7 +2671,7 @@ Lemma bcequivc_ext_preserves_is_swap_invariant {o} :
     -> is_swap_invariant eqa v2 B2.
 Proof.
   introv ceq isw h.
-  pose proof (isw a sw _ e h) as isw; simpl in *.
+  pose proof (isw _ sws _ e h) as isw; simpl in *.
   eapply in_open_bar_pres; eauto; clear isw; introv xt q.
   eapply lib_extends_preserves_bcequivc_ext in ceq; eauto.
   eapply lib_extends_preserves_bcequivc_ext in ceq; eauto.

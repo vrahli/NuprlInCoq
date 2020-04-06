@@ -1162,6 +1162,14 @@ Proof.
 Qed.
 
 
+Lemma push_swap_cs_otermc_list_mkc_integer {o} :
+  forall sws n, @push_swap_cs_otermc_list o sws (mkc_integer n) = mkc_integer n.
+Proof.
+  induction sws; introv; autorewrite with slow; auto.
+  rewrite IHsws; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @push_swap_cs_otermc_list_mkc_integer : slow.
+
 Lemma equality_swap_invariant_int {o} :
   forall (lib : @library o) v B,
     equality_swap_invariant lib mkc_int v B.
@@ -1170,7 +1178,7 @@ Proof.
   apply equality_in_int in mem.
   eapply in_open_bar_pres; eauto; clear mem; introv xt h.
   unfold equality_of_int in *; exrepnd.
-  apply (mkc_swap_ccomputes_to_valc_ext sw) in h0; autorewrite with slow in *.
+  apply (mkc_swap_cs_list_ccomputes_to_valc_ext sws) in h0; autorewrite with slow in *.
   apply substc_ccequivc_ext.
   apply ccomputes_to_valc_ext_implies_ccequivc_ext in h1.
   apply ccomputes_to_valc_ext_implies_ccequivc_ext in h0.

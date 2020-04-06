@@ -1466,7 +1466,7 @@ Proof.
   apply equality_in_tnat in mem.
   eapply in_open_bar_pres; eauto; clear mem; introv xt h.
   unfold equality_of_nat in *; exrepnd.
-  apply (mkc_swap_ccomputes_to_valc_ext sw) in h0; autorewrite with slow in *.
+  apply (mkc_swap_cs_list_ccomputes_to_valc_ext sws) in h0; autorewrite with slow in *.
   apply substc_ccequivc_ext.
   apply ccomputes_to_valc_ext_implies_ccequivc_ext in h1.
   apply ccomputes_to_valc_ext_implies_ccequivc_ext in h0.

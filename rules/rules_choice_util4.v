@@ -11532,6 +11532,29 @@ Proof.
 Qed.
 Hint Rewrite swap_rev_sw : slow.
 
+Fixpoint swap_list (sw : cs_swap) sws :=
+  match sws with
+  | [] => sws
+  | sw' :: sws => swap_swap sw sw' :: swap_list sw sws
+  end.
+
+Lemma swap_cs_cterm_mkc_swap_cs_list {o} :
+  forall sw sws (t : @CTerm o),
+    swap_cs_cterm sw (mkc_swap_cs_list sws t)
+    = mkc_swap_cs_list (swap_list sw sws) (swap_cs_cterm sw t).
+Proof.
+  induction sws; introv; simpl; autorewrite with slow; auto.
+  rewrite IHsws; auto.
+Qed.
+Hint Rewrite @swap_cs_cterm_mkc_swap_cs_list : slow.
+
+Lemma swap_list_twice :
+  forall sw sws, swap_list sw (swap_list sw sws) = sws.
+Proof.
+  induction sws; introv; simpl; auto; allrw; autorewrite with slow; auto.
+Qed.
+Hint Rewrite swap_list_twice : slow.
+
 Lemma swap_preserves_is_swap_invariant {o} :
   forall {sw} (sane : sane_swapping sw) {lib} (eqa : lib-per(lib,o)) v B,
     is_swap_invariant eqa v B
@@ -11541,7 +11564,7 @@ Proof.
   unfold swap_cs_per in *.
   dup e as e'.
   apply lib_extends_swap_right_to_left in e'; auto.
-  pose proof (h (swap_cs_cterm sw a) (swap_swap sw sw0) _ e') as h; simpl in h.
+  pose proof (h (swap_cs_cterm sw a) (swap_list sw sws) _ e') as h; simpl in h.
   autodimp h hyp;[eapply lib_per_cond;eauto|].
   apply (swap_ccequivc_ext_bar sw) in h; auto.
   autorewrite with slow in h; auto.
@@ -19107,7 +19130,7 @@ Proof.
                      (swapped_css_libs_preserves_sat_lib_cond swap nodup sat)
                      (swapped_css_libs_preserves_strong_safe_library swap safe) e
                      (swapped_css_libs_sym swap))) as w; clear Heqw; repnd.
-  pose proof (h a sw _ w) as h; simpl in h; autodimp h hyp.
+  pose proof (h a sws _ w) as h; simpl in h; autodimp h hyp.
 
   destruct (in_lib_dec (entry_name_cs name) lib'0) as [d1|d1];[|rewrite swap_sames_same_not_in in h; tcsp];[].
   destruct (in_lib_dec (entry_name_cs name') lib'0) as [d2|d2];[|rewrite swap_sames_same_not_in in h; tcsp];[].

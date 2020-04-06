@@ -419,14 +419,14 @@ Proof.
 Qed.
 
 Definition equality_swap_invariant {o} lib (A : @CTerm o) v B :=
-  forall a sw,
+  forall a sws,
     in_ext
       lib
       (fun lib' =>
          member uk1 lib' a A
          -> ccequivc_ext_bar
               lib'
-              (substc (mkc_swap_cs sw a) v B)
+              (substc (mkc_swap_cs_list sws a) v B)
               (substc a v B)).
 
 Definition equality_swap_invariant_cond {o} uk lib (A : @CTerm o) v B v' B' :=
@@ -448,7 +448,7 @@ Proof.
   apply (lib_extends_preserves_in_open_bar_ext _ _ _ ext) in h; simpl in h.
   eapply in_open_bar_ext_pres; eauto; clear h; introv h.
   eapply member_monotone in mem; eauto.
-  pose proof (q a sw _ (lib_extends_trans e ext)) as q; simpl in q; autodimp q hyp.
+  pose proof (q a sws _ (lib_extends_trans e ext)) as q; simpl in q; autodimp q hyp.
   eapply equality_eq; eauto; apply nuprl_refl in h; auto.
 Qed.
 Hint Resolve is_swap_invariant_nuprl_imp : slow.
@@ -481,7 +481,7 @@ Lemma equality_swap_invariant_nuprl_imp {o} :
     -> is_swap_invariant eqa v B.
 Proof.
   introv h q mem.
-  pose proof (q a sw _ e) as q; simpl in q; autodimp q hyp;[].
+  pose proof (q a sws _ e) as q; simpl in q; autodimp q hyp;[].
   eapply equality_eq in mem; eauto.
   pose proof (h _ e) as h; simpl in h; apply nuprl_refl in h; auto.
 Qed.
@@ -580,14 +580,14 @@ Qed.
 Hint Resolve bcequivc_ext_implies_ccequivc_ext_bar : slow.
 
 Lemma bcequivc_ext_is_swap_invariant_implies_ccequivc_ext {o} :
-  forall sw {lib} (eqa : lib-per(lib,o)) {lib'} (x : lib_extends lib' lib) a v B v' B',
+  forall sws {lib} (eqa : lib-per(lib,o)) {lib'} (x : lib_extends lib' lib) a v B v' B',
     bcequivc_ext lib' [v] B [v'] B'
     -> is_swap_invariant eqa v' B'
     -> eqa lib' x a a
-    -> ccequivc_ext_bar lib' (substc (mkc_swap_cs sw a) v B) (substc a v B).
+    -> ccequivc_ext_bar lib' (substc (mkc_swap_cs_list sws a) v B) (substc a v B).
 Proof.
   introv bceq isw h.
-  pose proof (isw a sw _ x h) as isw; simpl in *; eauto 3 with slow.
+  pose proof (isw a sws _ x h) as isw; simpl in *; eauto 3 with slow.
 Qed.
 Hint Resolve bcequivc_ext_is_swap_invariant_implies_ccequivc_ext : slow.
 
