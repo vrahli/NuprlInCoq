@@ -1570,20 +1570,56 @@ admit.
         try (apply implies_ccequivc_ext_bar_mkc_swap;
              apply ccequivc_ext_bar_sym; exact invb); auto. }
 
+Set Nested Proofs Allowed.
+
+Lemma mkc_swap_per_func_ext_eq {o} :
+  forall sw lib (eq : per(o)) eqa eqb,
+    (eq <=2=> (per_func_ext_eq lib eqa eqb))
+    -> (mkc_swap_per sw eq) <=2=> (per_func_ext_eq lib (mkc_swap_lib_per sw eqa) (mkc_swap_lib_per_fam sw eqb)).
+Proof.
+  introv h; introv.
+  unfold mkc_swap_per; rw h; clear h; split; intro h;
+    eapply in_open_bar_ext_pres; eauto; clear h; introv h;
+      introv; simpl in *; unfold mkc_swap_per in *.
+
+  { pose proof (h _ _ e0) as h.
+
+SearchAbout mkc_swap_cs mkc_apply.
+
+Lemma xxx {o} :
+  forall a b lib (f t : @NTerm o),
+    isprog f
+    -> isprog t
+    -> approx
+         lib
+         (mk_apply (mk_swap_cs2 a b f) (mk_swap_cs2 a b t))
+         (mk_swap_cs2 a b (mk_apply f t)).
+Proof.
+  cofix ind; introv ispf ispt.
+  constructor; unfold close_comput; dands; auto;
+    repeat first [apply isprogram_apply| apply implies_isprogram_mk_swap_cs2];
+    eauto 2 with slow; introv comp;[|].
+
+  { (* VAL case *)
+
+    apply if_computes_to_value_apply in comp; eauto 4 with slow;[].
+    repndors; exrepnd.
+
+    { apply swap_cs2_computes_to_value_implies in comp0; eauto 3 with slow;[].
+      exrepnd.
+      destruct c0; simpl in *; ginv.
+      repeat (destruct bs; simpl in *; ginv).
+      destruct b1; simpl in *.
+      repeat (destruct l; simpl in *; ginv).
+      inversion comp0; subst; clear comp0; fold_terms.
+
+SearchAbout lsubst mk_swap_cs2.
+
+Qed.
 
 
+Qed.
 
-(* ====> Will this only work if the domain [A] is such that [mkc_swap_cs] doesn't affect
-   its members such as nat? Can I find a counterexample otherwise?
- *)
-
-(*
-XXXXXX
-      eapply close_extensionality; try exact recb; auto.
-      introv; unfold swap_cs_per; simpl; apply lib_per_fam_cond.*)
- admit. }
-
-admit.
     (*apply swap_per_func_ext_eq; auto.*) }
 
   { Case "CL_union".
