@@ -1868,7 +1868,7 @@ Proof.
         apply alpha_eq_bterm_preserves_osize in aeqb1; rw aeqb1.
         apply alpha_eq_bterm_preserves_osize in bl2; rw bl2.
         apply alpha_eq_preserves_osize in aeq0; rw aeq0; eauto 3 with slow. }
-      pose proof (@sub_filter_var_ren_implies p lvi lvo lvn) as vr; exrepnd.
+      pose proof (@swap.sub_filter_var_ren_implies p lvi lvo lvn) as vr; exrepnd.
       pose proof (h (lsubst (lsubst nt2n (var_ren lv lvn)) sub') vs3 vs4) as apr2.
       repeat (autodimp apr2 hyp).
       repeat (rw vr0).

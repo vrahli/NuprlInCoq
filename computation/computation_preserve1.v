@@ -463,6 +463,26 @@ Proof.
 Qed.
 Hint Rewrite @map_num_bvars_push_swap_cs_bterms : slow.
 
+Lemma wf_sub_sw_sub {o} :
+  forall a b l, @wf_sub o (sw_sub a b l).
+Proof.
+  introv i.
+  apply in_map_iff in i; exrepnd; ginv; eauto 3 with slow.
+Qed.
+Hint Resolve wf_sub_sw_sub : slow.
+
+Lemma implies_nt_wf_push_swap_cs_sub_term {o} :
+  forall a b l (t : @NTerm o),
+    nt_wf t
+    -> nt_wf (push_swap_cs_sub_term a b l t).
+Proof.
+  introv wf.
+  unfold push_swap_cs_sub_term.
+  apply lsubst_aux_preserves_wf; auto.
+  introv i; apply in_map_iff in i; exrepnd; ginv; eauto 3 with slow.
+Qed.
+Hint Resolve implies_nt_wf_push_swap_cs_sub_term : slow.
+
 Lemma implies_nt_wf_push_swap_cs_oterm {o} :
   forall n1 n2 can (bs : list (@BTerm o)),
     nt_wf (oterm (Can can) bs)
@@ -533,6 +553,68 @@ Proof.
   { exrepnd; subst.
     repeat constructor; simpl; introv i; repndors; subst; tcsp; constructor; auto. }
 Qed.
+
+Lemma sub_find_sw_sub {o} :
+  forall a b l v,
+    @sub_find o (sw_sub a b l) v
+    = if in_deq _ deq_nvar v l then Some (mk_swap_cs2 a b (mk_var v))
+      else None.
+Proof.
+  induction l; introv; simpl; auto.
+  boolvar; simpl in *; repndors; subst; tcsp.
+  { destruct n; tcsp. }
+  { rewrite IHl; boolvar; tcsp. }
+  { apply not_over_or in n0; repnd.
+    rewrite IHl; boolvar; tcsp. }
+Qed.
+
+Hint Rewrite remove_nvars_nil_r : slow.
+
+Lemma sub_filter_sw_sub {o} :
+  forall a b l k,
+    @sub_filter o (sw_sub a b l) k
+    = sw_sub a b (remove_nvars k l).
+Proof.
+  induction l; introv; simpl; autorewrite with slow; simpl; auto.
+  boolvar; simpl; tcsp; rewrite remove_nvars_cons_r; boolvar; tcsp.
+  simpl; try congruence.
+Qed.
+
+Lemma free_vars_lsubst_aux_sw_sub {o} :
+  forall a b (t : @NTerm o) l,
+    free_vars (lsubst_aux t (sw_sub a b l)) = free_vars t.
+Proof.
+  nterm_ind t as [v|op bs ind] Case; simpl; introv.
+  { rewrite sub_find_sw_sub; boolvar; simpl; auto. }
+  rewrite flat_map_map; unfold compose.
+  apply eq_flat_maps; introv i.
+  destruct x; simpl.
+  rewrite sub_filter_sw_sub.
+  erewrite ind; eauto.
+Qed.
+Hint Rewrite @free_vars_lsubst_aux_sw_sub : slow.
+
+Lemma flat_map_free_vars_range_sw_sub {o} :
+  forall a b l,
+    flat_map free_vars (range (@sw_sub o a b l)) = l.
+Proof.
+  induction l; introv; simpl; auto; try congruence.
+Qed.
+Hint Rewrite @flat_map_free_vars_range_sw_sub : slow.
+
+Hint Rewrite @free_vars_change_bvars_alpha : slow.
+
+Lemma free_vars_push_swap_cs_sub_term {o} :
+  forall a b l (t : @NTerm o),
+    free_vars (push_swap_cs_sub_term a b l t)
+    = free_vars t.
+Proof.
+  introv.
+  unfold push_swap_cs_sub_term.
+  unfold lsubst; autorewrite with slow.
+  boolvar; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @free_vars_push_swap_cs_sub_term : slow.
 
 Lemma free_vars_push_swap_cs_oterm {o} :
   forall n1 n2 can (bs : list (@BTerm o)),

@@ -105,7 +105,7 @@ Proof.
   apply in_map_iff in i1; exrepnd; subst; simpl in *.
   apply isv in i1.
   destruct a0; simpl in *.
-  allrw @bt_wf_iff; eauto 3 with slow.
+  allrw @bt_wf_iff; eauto 4 with slow.
 Qed.
 Hint Resolve implies_isvalue_can_push_swap_cs_bterms_swap : slow.
 
@@ -198,12 +198,25 @@ Proof.
 Qed.
 Hint Rewrite @push_swap_cs_otermc_base : slow.
 
+Definition push_swap_cs_sub_cvterm {o} vs (sw : cs_swap) (t : @CVTerm o vs) :=
+  let (a,p) := t in
+  exist (isprog_vars vs) (push_swap_cs_sub_term (fst sw) (snd sw) vs a) (implies_isprog_vars_push_swap_cs_sub_term vs (fst sw) (snd sw) vs a p).
+
+Lemma push_swap_cs_sub_term_nil {o} :
+  forall a b (t : @NTerm o),
+    push_swap_cs_sub_term a b [] t = t.
+Proof.
+  introv; unfold push_swap_cs_sub_term; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @push_swap_cs_sub_term_nil : slow.
+
 Lemma push_swap_cs_otermc_function {o} :
   forall sw (a : @CTerm o) v b,
     push_swap_cs_otermc sw (mkc_function a v b)
-    = mkc_function (mkc_swap_cs sw a) v (mkcv_swap_cs _ sw b).
+    = mkc_function (mkc_swap_cs sw a) v (mkcv_swap_cs _ sw (push_swap_cs_sub_cvterm _ sw b)).
 Proof.
-  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto;
+    try (unfold push_swap_cs_can; simpl; autorewrite with slow; auto).
 Qed.
 Hint Rewrite @push_swap_cs_otermc_function : slow.
 
@@ -212,7 +225,8 @@ Lemma push_swap_cs_otermc_union {o} :
     push_swap_cs_otermc sw (mkc_union a b)
     = mkc_union (mkc_swap_cs sw a) (mkc_swap_cs sw b).
 Proof.
-  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto;
+    try (unfold push_swap_cs_can; simpl; autorewrite with slow; auto).
 Qed.
 Hint Rewrite @push_swap_cs_otermc_union : slow.
 
@@ -221,7 +235,8 @@ Lemma push_swap_cs_otermc_approx {o} :
     push_swap_cs_otermc sw (mkc_approx a b)
     = mkc_approx (mkc_swap_cs sw a) (mkc_swap_cs sw b).
 Proof.
-  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto;
+    try (unfold push_swap_cs_can; simpl; autorewrite with slow; auto).
 Qed.
 Hint Rewrite @push_swap_cs_otermc_approx : slow.
 
@@ -230,7 +245,8 @@ Lemma push_swap_cs_otermc_cequiv {o} :
     push_swap_cs_otermc sw (mkc_cequiv a b)
     = mkc_cequiv (mkc_swap_cs sw a) (mkc_swap_cs sw b).
 Proof.
-  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto;
+    try (unfold push_swap_cs_can; simpl; autorewrite with slow; auto).
 Qed.
 Hint Rewrite @push_swap_cs_otermc_cequiv : slow.
 
@@ -471,6 +487,24 @@ Proof.
   exists u; dands; auto.
 Qed.
 
+Lemma lsubst_aux_eq_swap2_implies {o} :
+  forall t l k a b (u : @NTerm o),
+    disjoint k (all_vars t)
+    -> length l = length k
+    -> lsubst_aux t (var_ren l k) = mk_swap_cs2 a b u
+    -> {z : NTerm & t = mk_swap_cs2 a b z # u = lsubst_aux z (var_ren l k)}.
+Proof.
+  introv disj len h.
+  destruct t as [v|op bs]; simpl in *.
+  { rewrite sub_find_var_ren_as_option_map in h.
+    remember (renFind (mk_swapping l k) v) as x; destruct x; simpl in *; ginv. }
+  inversion h as [xx]; subst; clear h.
+  repeat (destruct bs; simpl in *; tcsp; ginv).
+  destruct b0; simpl in *.
+  destruct l0; simpl in *; unfold nobnd in *; ginv; fold_terms.
+  exists n; dands; autorewrite with slow; auto.
+Qed.
+
 Lemma lsubst_eq_swap2_implies {o} :
   forall t l k a b (u : @NTerm o),
     disjoint k (all_vars t)
@@ -481,14 +515,8 @@ Proof.
   introv disj len h.
   rewrite lsubst_lsubst_aux2 in h; auto;
     [|apply disjoint_sym; apply disjoint_app_r in disj; tcsp].
-  destruct t as [v|op bs]; simpl in *.
-  { rewrite sub_find_var_ren_as_option_map in h.
-    remember (renFind (mk_swapping l k) v) as x; destruct x; simpl in *; ginv. }
-  inversion h as [xx]; subst; clear h.
-  repeat (destruct bs; simpl in *; tcsp; ginv).
-  destruct b0; simpl in *.
-  destruct l0; simpl in *; unfold nobnd in *; ginv; fold_terms.
-  exists n; dands; autorewrite with slow; auto.
+  apply lsubst_aux_eq_swap2_implies in h; auto; exrepnd; subst.
+  eexists; dands; eauto.
   rewrite lsubst_lsubst_aux2; auto.
   apply disjoint_app_r in disj; simpl in *; autorewrite with slow in disj; repnd; eauto 3 with slow.
 Qed.
@@ -554,6 +582,270 @@ Proof.
   boolvar; auto.
 Qed.
 
+Lemma lsubst_push_swap_cs_sub_term_var_ren_as {o} :
+  forall a b (t : @NTerm o) (l k : list NVar),
+    no_repeats k
+    -> length l = length k
+    -> disjoint k (all_vars t)
+    -> lsubst (push_swap_cs_sub_term a b l t) (var_ren l k)
+       = lsubst_aux (lsubst t (var_ren l k)) (sw_sub a b k).
+Proof.
+  introv norep len disj.
+  rewrite lsubst_push_swap_cs_sub_term_var_ren_eq; auto.
+  rewrite lsubst_push_swap_cs_sub_term_var_ren_eq2; auto.
+Qed.
+
+Lemma renFind_implies_in :
+  forall l k v w,
+    renFind (mk_swapping l k) v = Some w
+    -> LIn v l.
+Proof.
+  induction l; introv h; simpl in *; ginv.
+  destruct k; simpl in *; tcsp; boolvar; subst; tcsp.
+  apply IHl in h; tcsp.
+Qed.
+
+Lemma change_bvars_alpha_norep_bterm {o} :
+  forall (b : @BTerm o) (lv : list NVar),
+    {u : BTerm $ disjoint lv (bound_vars_bterm u) # alpha_eq_bterm b u # no_repeats (bound_vars_bterm u)}.
+Proof.
+  introv.
+  pose proof (change_bvars_alpha_norep (oterm (Can NAxiom) [b]) lv) as h; exrepnd.
+  apply alpha_eq_oterm_implies_combine2 in h2; exrepnd; subst.
+  unfold alpha_eq_bterms in *; simpl in *; repnd.
+  repeat (destruct bs'; simpl in *; ginv); autorewrite with slow in *.
+  pose proof (h3 b b0) as h3; autodimp h3 hyp; eauto.
+Qed.
+
+Lemma implies_alpha_eq_bterm_push_swap_cs_bterm {o} :
+  forall a b (b1 b2 : @BTerm o),
+    alpha_eq_bterm b1 b2
+    -> alpha_eq_bterm (push_swap_cs_bterm a b b1) (push_swap_cs_bterm a b b2).
+Proof.
+  introv aeq; unfold push_swap_cs_bterm.
+  destruct b1 as [l1 t1], b2 as [l2 t2]; simpl in *.
+  inversion aeq as [? ? ? ? ? disj1 lena1 lenb1 norep1 aeq1]; subst; clear aeq.
+  econstructor; try exact lenb1; autorewrite with slow; auto.
+  repeat rewrite lsust_mk_swap_cs2_eq.
+  apply implies_alpha_eq_mk_swap_cs2.
+  repeat (rewrite lsubst_push_swap_cs_sub_term_var_ren_eq; auto;
+          try (complete (allrw disjoint_app_r; tcsp));[]).
+  repeat (rewrite <- lsubst_push_swap_cs_sub_term_var_ren_eq2; auto;
+          try (complete (allrw disjoint_app_r; tcsp));[]).
+  apply approx_star_swap.implies_alpha_eq_lsubst_aux_sw_sub; auto.
+Qed.
+
+Lemma change_bvars_to {o} :
+  forall (b : @BTerm o) l lv,
+    length l = num_bvars b
+    -> disjoint l (free_vars_bterm b)
+    -> no_repeats l
+    -> {t : NTerm
+        & alpha_eq_bterm b (bterm l t)
+        # no_repeats (bound_vars t)
+        # disjoint l (bound_vars t)
+        # disjoint lv (bound_vars t)}.
+Proof.
+  introv len disj norep.
+  pose proof (change_bvars_alpha_norep_bterm b (l ++ lv ++ free_vars_bterm b)) as q; exrepnd.
+  allrw disjoint_app_l; repnd.
+  destruct u; simpl in *.
+  applydup @alphaeqbt_numbvars in q2.
+  unfold num_bvars in *; simpl in *.
+  rewrite q5 in *.
+  allrw no_repeats_app; repnd.
+  allrw disjoint_app_r; repnd.
+  exists (lsubst_aux n (var_ren l0 l)).
+  rewrite boundvars_lsubst_aux_vars; auto;[].
+  dands; auto.
+  eapply alpha_eq_bterm_trans;[eauto|].
+  pose proof (fresh_vars (length l0) (l0 ++ l ++ all_vars n ++ all_vars (lsubst_aux n (var_ren l0 l)))) as w; exrepnd.
+  symmetry in w0.
+  econstructor; try exact w0; auto.
+  { allrw disjoint_app_r; repnd; dands; auto. }
+  repeat (rewrite lsubst_lsubst_aux;
+          [|rewrite flat_map_free_var_vars_range; allrw disjoint_app_r; repnd; eauto 2 with slow; try omega];[]).
+  rewrite lsubst_aux_nest_vars_same; auto;
+    allrw disjoint_app_l; allrw disjoint_app_r; repnd; dands; auto; try omega.
+  apply alpha_eq_bterm_preserves_free_vars in q2; simpl in *.
+  rewrite q2 in *.
+  introv i j; applydup disj in i; destruct i0; apply in_remove_nvars; dands; auto.
+Qed.
+
+Lemma num_bvars_bterm {o} :
+  forall l (t : @NTerm o),
+    num_bvars (bterm l t) = length l.
+Proof.
+  tcsp.
+Qed.
+Hint Rewrite @num_bvars_bterm : slow.
+
+Lemma num_bvars_push_swap_cs_bterm {o} :
+  forall a b (x : @BTerm o),
+    num_bvars (push_swap_cs_bterm a b x) = num_bvars x.
+Proof.
+  introv; unfold num_bvars, push_swap_cs_bterm; destruct x; simpl; auto.
+Qed.
+Hint Rewrite @num_bvars_push_swap_cs_bterm : slow.
+
+Lemma isprog_oterm_implies_disjoint_free_vars_bterm {o} :
+  forall op (bs : list (@BTerm o)) l n,
+    isprog (oterm op bs)
+    -> disjoint l (free_vars_bterm (selectbt bs n)).
+Proof.
+  introv isp i j.
+  apply isprog_ot_iff in isp; repnd.
+  destruct (lt_dec n (length bs)) as [d|d].
+  { pose proof (isp (selectbt bs n)) as isp; autodimp isp hyp.
+    { apply selectbt_in; auto. }
+    unfold isprog_bt in isp; repnd.
+    allrw @assert_nullb.
+    apply isp1 in j; auto. }
+  { unfold selectbt in *.
+    rewrite nth_overflow in j; simpl in *; tcsp; try omega. }
+Qed.
+Hint Resolve isprog_oterm_implies_disjoint_free_vars_bterm : slow.
+
+Lemma isvalue_oterm_implies_disjoint_free_vars_bterm {o} :
+  forall op (bs : list (@BTerm o)) l n,
+    isvalue (oterm op bs)
+    -> disjoint l (free_vars_bterm (selectbt bs n)).
+Proof.
+  introv isv.
+  apply (isprog_oterm_implies_disjoint_free_vars_bterm op).
+  inversion isv; subst; auto; eauto 3 with slow.
+Qed.
+Hint Resolve isvalue_oterm_implies_disjoint_free_vars_bterm : slow.
+
+Lemma lsubst_aux_cons_not_in_eq {o} :
+  forall (t : @NTerm o) v u sub,
+    disjoint (bound_vars t) (free_vars u)
+    -> disjoint (bound_vars t) (sub_free_vars sub)
+    -> !LIn v (free_vars t)
+    -> lsubst_aux t ((v, u) :: sub) = lsubst_aux t sub.
+Proof.
+  introv disja disjb ni.
+  apply eq_lsubst_aux_if_ext_eq; simpl; eauto 3 with slow; allrw disjoint_app_r;auto.
+  introv i; simpl; boolvar; tcsp; eauto 3 with slow.
+Qed.
+
+Lemma lsubst_sub_cons_r_not_in {o} :
+  forall (sub1 sub2 : @Sub o) v t,
+    !LIn v (sub_free_vars sub1)
+    -> disjoint (sub_bound_vars sub1) (free_vars t)
+    -> disjoint (sub_bound_vars sub1) (sub_free_vars sub2)
+    -> lsubst_sub sub1 ((v, t) :: sub2) = lsubst_sub sub1 sub2.
+Proof.
+  induction sub1; introv ni disja disjb; repnd; simpl in *; auto.
+  allrw in_app_iff; apply not_over_or in ni; repnd.
+  allrw disjoint_app_l; repnd.
+  rewrite IHsub1; auto.
+  f_equal; f_equal.
+  repeat (rewrite lsubst_lsubst_aux; simpl; allrw disjoint_app_r;
+          allrw <- @sub_free_vars_is_flat_map_free_vars_range; dands; auto;[]).
+  rewrite lsubst_aux_cons_not_in_eq; auto.
+Qed.
+
+Hint Rewrite @sub_bound_vars_var_ren : slow.
+
+Lemma lsubst_sub_var_ren {o} :
+  forall l1 l2 l,
+    length l1 = length l
+    -> length l2 = length l
+    -> no_repeats l
+    -> @lsubst_sub o (var_ren l1 l) (var_ren l l2) = var_ren l1 l2.
+Proof.
+  induction l1; introv lena lenb norep; simpl in *; auto.
+  destruct l; simpl in *; cpx.
+  destruct l2; simpl in *; cpx.
+  allrw no_repeats_cons; repnd.
+  repeat rewrite var_ren_cons.
+  rewrite lsubst_lsubst_aux; simpl; auto; boolvar.
+  f_equal.
+  try fold (@var_ren o l1 l).
+  rewrite lsubst_sub_cons_r_not_in; autorewrite with slow; auto.
+  rewrite computation_mark.sub_free_vars_var_ren; auto.
+Qed.
+
+Lemma lsubst_aux_app_left {o} :
+  forall (t : @NTerm o) sub1 sub2,
+    disjoint (free_vars t) (dom_sub sub2)
+    -> lsubst_aux t (sub1 ++ sub2) = lsubst_aux t sub1.
+Proof.
+  nterm_ind t as [v|op bs ind] Case; simpl; introv disj; auto.
+
+  { rewrite sub_find_app.
+    remember (sub_find sub1 v) as x; destruct x; simpl; auto.
+    allrw disjoint_singleton_l.
+    rewrite sub_find_none_if; auto. }
+
+  f_equal.
+  apply eq_maps; introv i.
+  destruct x; simpl; f_equal.
+  rewrite sub_filter_app.
+  eapply ind; eauto.
+  rewrite <- dom_sub_sub_filter.
+  eapply disjoint_flat_map_l in disj; eauto; simpl in *.
+  apply disjoint_remove_nvars_l; auto.
+Qed.
+
+Lemma disjoint_bound_vars_change_bvars_alpha {o} :
+  forall l (t : @NTerm o),
+    disjoint (bound_vars (change_bvars_alpha l t)) l.
+Proof.
+  introv.
+  pose proof (change_bvars_alpha_spec t l) as q; simpl in *; repnd; eauto 2 with slow.
+Qed.
+Hint Resolve disjoint_bound_vars_change_bvars_alpha : slow.
+
+Lemma disjoint_bound_vars_change_bvars_alpha_subset {o} :
+  forall l k (t : @NTerm o),
+    subset l k
+    -> disjoint (bound_vars (change_bvars_alpha k t)) l.
+Proof.
+  introv ss.
+  pose proof (change_bvars_alpha_spec t l) as q; simpl in *; repnd; eauto 2 with slow.
+Qed.
+Hint Resolve disjoint_bound_vars_change_bvars_alpha_subset : slow.
+
+Lemma alpha_lsubst_app_left {o} :
+  forall (t : @NTerm o) sub1 sub2,
+    disjoint (dom_sub sub2) (free_vars t)
+    -> alpha_eq (lsubst t (sub1 ++ sub2)) (lsubst t sub1).
+Proof.
+  introv disj.
+  unfold lsubst; allrw <- @sub_free_vars_is_flat_map_free_vars_range.
+  rewrite sub_free_vars_app.
+  boolvar; allrw disjoint_app_r; repnd;
+    try (complete (rewrite lsubst_aux_app_left; autorewrite with slow; eauto 2 with slow;
+                   apply lsubst_aux_alpha_congr_same_disj; eauto 3 with slow)).
+Qed.
+
+Lemma alpha_eq_bterm_ren_1side2 {o} :
+  forall (t1 t2 : @NTerm o) l1 l2,
+    alpha_eq_bterm (bterm l1 t1) (bterm l2 t2)
+    -> alpha_eq t1 (lsubst t2 (var_ren l2 l1)).
+Proof.
+  introv aeq.
+  inversion aeq as [? ? ? ? ? disj len1 len2 norep a]; subst.
+  apply (lsubst_alpha_congr2 _ _ (var_ren lv l1)) in a.
+  allrw disjoint_app_r; repnd.
+
+  eapply alpha_eq_trans in a;[|apply alpha_eq_sym;apply combine_sub_nest].
+  apply alpha_eq_sym in a.
+  eapply alpha_eq_trans in a;[|apply alpha_eq_sym;apply combine_sub_nest].
+  apply alpha_eq_sym in a.
+
+  repeat (rewrite lsubst_sub_var_ren in a; auto; try omega;[]).
+  eapply alpha_eq_trans in a;[|apply alpha_eq_sym;apply alpha_lsubst_app_left];
+    [|rewrite dom_sub_var_ren; auto];[].
+  apply alpha_eq_sym in a.
+  eapply alpha_eq_trans in a;[|apply alpha_eq_sym;apply alpha_lsubst_app_left];
+    [|rewrite dom_sub_var_ren; auto];[].
+  apply alpha_eq_sym in a.
+  eapply alpha_eq_trans in a;[|apply alpha_eq_sym;apply lsubst_trivial_alpha]; auto.
+Qed.
+
 Lemma approx_swap_cs2_implies {o} :
   forall a b lib (t1 t2 : @NTerm o),
     approx lib (mk_swap_cs2 a b t1) (mk_swap_cs2 a b t2)
@@ -589,27 +881,184 @@ Proof.
 
     unfold push_swap_cs_bterms in i0.
     repeat (rewrite selectbt_map in i0; autorewrite with slow in i0; auto; try omega).
-    unfold blift in *; exrepnd.
+    apply (blift_oliftd _ _ _ []) in i0; auto; exrepnd.
 
-    remember (bterms {[n]}) as b1.
-    remember (bs {[n]}) as b2.
-    destruct b1 as [l1 u1], b2 as [l2 u2]; simpl in *.
+    pose proof (change_bvars_alpha_norep_bterm (bterms {[n]}) lvn) as ha; destruct ha as [b1 ha]; repnd.
+    eapply alpha_eq_bterm_trans in i2;
+      [|apply implies_alpha_eq_bterm_push_swap_cs_bterm; apply alpha_eq_bterm_sym; eauto].
+    destruct b1 as [l u1].
+    applydup @alphaeqbt_numbvars in ha1; simpl in *; autorewrite with slow in *.
+    applydup @alphaeqbt_numbvars in i3; simpl in *; autorewrite with slow in *.
+    applydup @alphaeqbt_numbvars in i2; simpl in *; autorewrite with slow in *.
+    allrw no_repeats_app; repnd.
+    allrw disjoint_app_r; repnd.
+    applydup @computes_to_value_isvalue in ap3 as isv.
+
+    pose proof (change_bvars_to (bs {[n]}) l lvn) as hb.
+    repeat (autodimp hb hyp); try congruence; eauto 2 with slow;[].
+    destruct hb as [u2 hb]; repnd.
+    eapply alpha_eq_bterm_trans in i3;
+      [|apply implies_alpha_eq_bterm_push_swap_cs_bterm; apply alpha_eq_bterm_sym; eauto].
+
+    eexists; eexists; eexists; dands; try exact ha1; try exact hb0;[].
+    apply alpha_eq_bterm_sym in i3; apply alpha_eq_bterm_ren_1side2 in i3;[].
+    apply alpha_eq_bterm_sym in i2; apply alpha_eq_bterm_ren_1side2 in i2;[].
+    rewrite lsust_mk_swap_cs2_eq in i3, i2.
+
+    assert (disjoint lvn (free_vars u1)) as da.
+    { pose proof (isvalue_oterm_implies_disjoint_free_vars_bterm (Can c0) bterms lvn n) as q.
+      autodimp q hyp.
+      introv ia ib;applydup q in ia; destruct ia0.
+      eapply alphaeqbt_preserves_fvars_aux; try apply alpha_eq_bterm_sym; eauto; simpl.
+      apply in_remove_nvars; dands; auto. }
+
+    assert (disjoint lvn (free_vars u2)) as db.
+    { pose proof (isvalue_oterm_implies_disjoint_free_vars_bterm (Can c0) bs lvn n) as q.
+      autodimp q hyp.
+      introv ia ib;applydup q in ia; destruct ia0.
+      eapply alphaeqbt_preserves_fvars_aux; try apply alpha_eq_bterm_sym; eauto; simpl.
+      apply in_remove_nvars; dands; auto. }
+
+    unfold push_swap_cs_sub_term in *.
+    eapply approx_open_alpha_rw_l_aux in i0;[|exact i2].
+    eapply approx_open_alpha_rw_r_aux in i0;[|exact i3].
+    repeat (rewrite lsubst_lsubst_aux in i0;
+            [|autorewrite with slow; rewrite flat_map_free_var_vars_range; eauto 2 with slow];[]).
+    repeat (rewrite lsubst_aux_sw_sub_var_ren in i0; auto;[]).
+    apply clearbots_olift.
+    apply approx_open_simpler_equiv.
+    unfold approx_open, olift in i0; repnd.
+    apply nt_wf_mk_swap_cs2_implies in i7; apply lsubst_aux_nt_wf in i7.
+    apply nt_wf_mk_swap_cs2_implies in i8; apply lsubst_aux_nt_wf in i8.
+    unfold simpl_olift; dands; auto;[].
+    introv ps ispa ispb.
+
+(* we should now instantiate i0 with a sub that swaps again the variables *)
+
+XXXXXX
+    , b2 as [l2 u2]; simpl in *.
+
+SearchAbout alpha_eq_bterm disjoint no_repeats alpha_eq.
+
+
     inversion i2 as [? ? ? ? ? disj1 lena1 lenb1 norep1 aeq1]; subst; clear i2.
     inversion i1 as [? ? ? ? ? disj2 lena2 lenb2 norep2 aeq2]; subst; clear i1.
     autorewrite with slow in disj1, disj2.
     apply disjoint_app_r in disj1; repnd.
     apply disjoint_app_r in disj2; repnd.
+
     rewrite lsubst_mk_swap_cs2_choice_seq_var_ren in aeq1;
-      [|rewrite computation_mark.sub_free_vars_var_ren; auto].
+      [|rewrite computation_mark.sub_free_vars_var_ren; autorewrite with slow; auto];[].
     rewrite lsubst_mk_swap_cs2_choice_seq_var_ren in aeq2;
-      [|rewrite computation_mark.sub_free_vars_var_ren; auto].
+      [|rewrite computation_mark.sub_free_vars_var_ren; autorewrite with slow; auto];[].
+
+(*    rewrite lsubst_push_swap_cs_sub_term_var_ren_as in aeq1; auto;[].
+    rewrite lsubst_push_swap_cs_sub_term_var_ren_as in aeq2; auto;[].*)
 
     apply swap_cs2_alpha_eq_implies in aeq1; exrepnd.
     apply swap_cs2_alpha_eq_implies in aeq2; exrepnd.
     apply lsubst_eq_swap2_implies in aeq1; auto; exrepnd; subst; try congruence;[].
     apply lsubst_eq_swap2_implies in aeq2; auto; exrepnd; subst; try congruence;[].
     autorewrite with slow in disj1, disj2.
-    exists lv z1 z; dands; auto;
+
+
+rewrite lsubst_push_swap_cs_sub_term_var_ren_eq in aeq0; auto;[].
+rewrite lsubst_push_swap_cs_sub_term_var_ren_eq in aeq3; auto;[].
+rewrite lsubst_lsubst_aux in aeq0;
+  [|rewrite flat_map_free_var_vars_range; try omega; allrw disjoint_app_r; repnd; eauto 2 with slow];[].
+rewrite lsubst_lsubst_aux in aeq3;
+  [|rewrite flat_map_free_var_vars_range; try omega; allrw disjoint_app_r; repnd; eauto 2 with slow];[].
+
+
+
+Set Nested Proofs Allowed.
+
+
+Lemma lsubst_aux_sw_sub2_alpha_eq_lsubst_aux_var_ren_implies {o} :
+  forall a b (t u : @NTerm o) l k j,
+    disjoint l (all_vars t)
+    -> disjoint l (all_vars u)
+    -> length j = length l
+    -> length k = length l
+    -> alpha_eq (lsubst_aux t (sw_sub2 a b k l)) (lsubst_aux u (var_ren j l))
+    -> {z : NTerm
+        & u = lsubst_aux z (sw_sub a b j)
+        # alpha_eq (lsubst_aux t (var_ren k l)) (lsubst_aux z (var_ren j l))}.
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv disja disjb lena lenb aeq; simpl in *.
+
+  { rewrite sub_find_sw_sub2 in aeq.
+    rewrite sub_find_var_ren_as_option_map in aeq.
+    rewrite sub_find_var_ren_as_option_map.
+    remember (renFind (mk_swapping k l) v) as w; symmetry in Heqw; destruct w; simpl in *.
+
+    { apply swap_cs2_alpha_eq_implies in aeq; exrepnd.
+      inversion aeq0; subst; clear aeq0.
+      apply lsubst_aux_eq_swap2_implies in aeq1; auto; exrepnd; subst; simpl in *.
+      applydup @lsubst_aux_is_vterm    in aeq0; exrepnd; subst; simpl in *.
+      rewrite sub_find_var_ren_as_option_map in aeq0.
+      remember (renFind (mk_swapping j l) u) as r; symmetry in Heqr; destruct r; simpl in *; ginv.
+
+      { exists (@mk_var o u); simpl.
+        autorewrite with slow.
+        applydup renFind_implies_in in Heqr.
+        rewrite sub_find_sw_sub; boolvar; tcsp;[]; GC.
+        rewrite sub_find_var_ren_as_option_map; allrw; simpl.
+        dands; tcsp. }
+
+      unfold all_vars in *; simpl in *; allrw disjoint_singleton_r.
+      symmetry in Heqw; apply renFind_some_in_codom in Heqw; tcsp. }
+
+    inversion aeq as [? xx eqv|]; subst; clear aeq.
+    applydup @lsubst_aux_is_vterm in eqv; exrepnd; subst; simpl in *.
+    rewrite sub_find_var_ren_as_option_map in eqv.
+    remember (renFind (mk_swapping j l) u0) as r; symmetry in Heqr; destruct r; simpl in *; ginv.
+
+    { unfold all_vars in *; simpl in *; allrw disjoint_singleton_r.
+      symmetry in Heqr; apply renFind_some_in_codom in Heqr; tcsp. }
+
+    exists (@mk_var o u0); simpl.
+    repeat rewrite sub_find_var_ren_as_option_map; allrw; simpl.
+    rewrite sub_find_sw_sub; boolvar; tcsp.
+    eapply implies_renFind_Some in l0; eauto; exrepnd; rewrite l1 in *; ginv. }
+
+  destruct u as [v'|op' bs']; simpl in *.
+
+  { rewrite sub_find_var_ren_as_option_map in aeq.
+    remember (renFind (mk_swapping j l) v') as r; destruct r; inversion aeq. }
+
+  apply alpha_eq_oterm_combine2 in aeq; repnd; autorewrite with slow in *; subst; simpl in *.
+
+  assert {bs'' : list BTerm
+          $ bs' = map (fun x => lsubst_bterm_aux x (sw_sub a b j)) bs''
+          # alpha_eq_bterms
+             (map (fun b => lsubst_bterm_aux b (var_ren k l)) bs)
+             (map (fun b => lsubst_bterm_aux b (var_ren j l)) bs'')}.
+  { revert dependent bs'.
+    induction bs; introv disj len imp; simpl in *.
+    { destruct bs'; simpl in *; ginv.
+      exists ([] : list (@BTerm o)); simpl; dands; eauto 3 with slow. }
+    destruct bs'; simpl in *; cpx;[].
+    pose proof (imp (lsubst_bterm_aux a0 (sw_sub2 a b k l)) (lsubst_bterm_aux b0 (var_ren j l))) as imp'.
+    autodimp imp' hyp;[].
+    repeat (autodimp IHbs hyp).
+    { introv i; eapply ind; eauto. }
+    { unfold all_vars in *; simpl in *; allrw disjoint_app_r; repnd; dands; auto. }
+    pose proof (IHbs bs') as IHbs.
+    repeat (autodimp IHbs hyp).
+    { unfold all_vars in *; simpl in *; allrw disjoint_app_r; repnd; dands; auto. }
+    exrepnd; subst.
+    autorewrite with slow in *.
+
+    inversion imp' as [? ? ? ? ? disj' disj'' len' norep aeq' xa xb].
+    destruct a0 as [l1 t1], b0 as [l2 t2]; simpl in *; ginv.
+
+  }
+
+Qed.
+
+
+(*    exists lv z1 z; dands; auto;
       try (complete (econstructor; try exact norep1; auto; apply disjoint_app_r; auto));
       try (complete (econstructor; try exact norep2; auto; apply disjoint_app_r; auto)).
 
@@ -621,7 +1070,11 @@ Proof.
     pose proof (i0 sub) as i0; repeat (autodimp i0 hyp);
       try (apply implies_isprogram_lsust_mk_swap_cs2); auto;[].
     repeat rewrite lsust_mk_swap_cs2_eq in i0.
-    left; apply ind in i0; auto. }
+    left; apply ind in i0; auto.*)
+
+admit.
+
+ }
 
   { (* EXC case *)
 
@@ -631,7 +1084,24 @@ Proof.
     repndors; try (complete (inversion ap1)); try (complete (inversion ap2)).
     apply swap_cs2_computes_to_exc_implies in ap0; eauto 3 with slow.
     exists a' e'; dands; auto. }
-Qed.
+Admitted.
+
+(*
+Lemma approx_swap_cs2_implies {o} :
+  forall a b lib (t1 t2 : @NTerm o),
+    approx lib (mk_swap_cs2 a b t1) (mk_swap_cs2 a b t2)
+    -> approx lib t1 t2.
+Proof.
+  introv apx.
+  pose proof (change_bvars_alpha_norep t1 []) as h; exrepnd.
+  pose proof (change_bvars_alpha_norep t2 []) as q; exrepnd.
+  eapply approx_alpha_rw_l_aux;[apply alpha_eq_sym;eauto|].
+  eapply approx_alpha_rw_r_aux;[apply alpha_eq_sym;eauto|].
+  eapply approx_alpha_rw_l_aux in apx;[|apply implies_alpha_eq_mk_swap_cs2;eauto].
+  eapply approx_alpha_rw_r_aux in apx;[|apply implies_alpha_eq_mk_swap_cs2;eauto].
+
+Qed.*)
+
 
 Lemma cequiv_swap_cs2_implies {o} :
   forall a b lib (t1 t2 : @NTerm o),
@@ -755,7 +1225,7 @@ Proof.
   apply isprogram_inl_iff in isp.
   apply isprogram_eq in isp.
   exists (mk_ct n isp); dands; simpl; auto.
-  apply cterm_eq; simpl; auto.
+  apply cterm_eq; simpl; auto; autorewrite with slow; auto.
 Qed.
 
 Lemma swap_cs_computes_to_valc_inr_implies {o} :
@@ -777,7 +1247,7 @@ Proof.
   apply isprogram_inr_iff in isp.
   apply isprogram_eq in isp.
   exists (mk_ct n isp); dands; simpl; auto.
-  apply cterm_eq; simpl; auto.
+  apply cterm_eq; simpl; auto; autorewrite with slow; auto.
 Qed.
 
 Lemma ccequivc_ext_swap_cs2_implies {o} :
@@ -833,12 +1303,15 @@ Proof.
 
     remember (selectbt bs0 n) as bt; destruct bt; simpl.
     allrw @bt_wf_iff.
-    exists l (mk_swap_cs2 a b (mk_swap_cs2 a b n0)) n0; dands; auto.
+(*    exists l (mk_swap_cs2 a b (mk_swap_cs2 a b n0)) n0; dands; auto.
     unfold olift.
     dands; eauto 3 with slow;[].
     introv wfs ispa ispb; left.
     repeat rewrite lsust_mk_swap_cs2_eq.
-    apply ind; apply isprog_eq; auto. }
+    apply ind; apply isprog_eq; auto.*)
+
+admit.
+ }
 
   { (* EXC case *)
 
@@ -848,7 +1321,7 @@ Proof.
       repeat apply isprog_swap_cs2_implies; exrepnd; eauto 3 with slow;[].
     applydup @preserve_program_exc2 in comp; eauto 3 with slow; repnd.
     exists a0 e; dands; auto; left; apply approx_refl; auto. }
-Qed.
+Admitted.
 
 Lemma approx_mk_swap_cs2_twice_rev {o} :
   forall lib a b (t : @NTerm o),
@@ -877,7 +1350,7 @@ Proof.
 
     apply isprogram_ot_iff in comp0; autorewrite with slow in comp0; repnd.
 
-    remember (selectbt tl_subterms n) as bt; destruct bt; simpl.
+(*    remember (selectbt tl_subterms n) as bt; destruct bt; simpl.
     pose proof (comp0 (bterm l (mk_swap_cs2 a b (mk_swap_cs2 a b n0)))) as comp0; autodimp comp0 hyp.
     { apply in_map_iff; exists (bterm l (mk_swap_cs2 a b n0)); dands; auto.
       apply in_map_iff; exists (bterm l n0); dands; auto.
@@ -890,7 +1363,10 @@ Proof.
     dands; eauto 3 with slow;[].
     introv wfs ispa ispb; left.
     repeat rewrite lsust_mk_swap_cs2_eq.
-    apply ind; apply isprog_eq; auto. }
+    apply ind; apply isprog_eq; auto.*)
+
+admit.
+ }
 
   { (* EXC case *)
 
@@ -899,7 +1375,7 @@ Proof.
     applydup @preserve_program_exc2 in comp; repnd;
       repeat apply implies_isprogram_mk_swap_cs2; eauto 3 with slow;[].
     exists a0 e; dands; auto; left; apply approx_refl; auto. }
-Qed.
+Admitted.
 
 Lemma cequiv_mk_swap_cs2_twice {o} :
   forall lib a b (t : @NTerm o),
@@ -969,7 +1445,8 @@ Lemma push_swap_cs_otermc_mkc_inl {o} :
   forall sw (k : @CTerm o),
     push_swap_cs_otermc sw (mkc_inl k) = mkc_inl (mkc_swap_cs sw k).
 Proof.
-  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto;
+    unfold push_swap_cs_can; simpl; autorewrite with slow; auto.
 Qed.
 Hint Rewrite @push_swap_cs_otermc_mkc_inl : slow.
 
@@ -977,7 +1454,8 @@ Lemma push_swap_cs_otermc_mkc_inr {o} :
   forall sw (k : @CTerm o),
     push_swap_cs_otermc sw (mkc_inr k) = mkc_inr (mkc_swap_cs sw k).
 Proof.
-  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto;
+    unfold push_swap_cs_can; simpl; autorewrite with slow; auto.
 Qed.
 Hint Rewrite @push_swap_cs_otermc_mkc_inr : slow.
 
@@ -1336,6 +1814,36 @@ Proof.
   eapply close_type_value_respecting_right; eauto.
 Qed.
 
+Lemma lsubst_aux_lsubst_aux_sw_sub_closed {o} :
+  forall a b (t : @NTerm o) v u,
+    closed u
+    -> lsubst_aux (lsubst_aux t (sw_sub a b [v])) [(v, u)]
+       = lsubst_aux t [(v, mk_swap_cs2 a b u)].
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv cl; simpl.
+
+  { repeat (boolvar; simpl; tcsp). }
+
+  f_equal.
+  rewrite map_map; unfold compose.
+  apply eq_maps; introv i.
+  destruct x; simpl; f_equal.
+  boolvar; simpl; autorewrite with slow; auto.
+  eapply ind; eauto.
+Qed.
+
+Lemma substc_push_swap_cs_sub_cvterm {o} :
+  forall sw v (B : @CVTerm o [v]) a,
+    substc a v (push_swap_cs_sub_cvterm [v] sw B)
+    = substc (mkc_swap_cs sw a) v B.
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl.
+  unfold push_swap_cs_sub_term.
+  repeat unfsubst; eauto 4 with slow;[].
+  rewrite lsubst_aux_lsubst_aux_sw_sub_closed; eauto 2 with slow.
+Qed.
+Hint Rewrite @substc_push_swap_cs_sub_cvterm : slow.
+
 Lemma implies_close_mk_swap {o} :
   forall sw (lib : library) (u : cts(o)) (t1 t2 : @CTerm o) e,
     sane_swapping sw
@@ -1348,21 +1856,21 @@ Lemma implies_close_mk_swap {o} :
     -> defines_only_universes u
     -> type_monotone u
     -> (forall lib t1 t2 e,
-           u uk1 lib t1 t2 e
-           -> u uk1 lib
+           u uk0 lib t1 t2 e
+           -> u uk0 lib
                 (mkc_swap_cs sw t1)
                 (mkc_swap_cs sw t2)
                 (mkc_swap_per sw e))
-    -> close u uk1 lib t1 t2 e
+    -> close u uk0 lib t1 t2 e
     -> close
          u
-         uk1 lib
+         uk0 lib
          (mkc_swap_cs sw t1)
          (mkc_swap_cs sw t2)
          (mkc_swap_per sw e).
 Proof.
   introv sane nodup sat; introv tyext locts tsimp tysys dou mon imp cl.
-  remember uk1 as uk; revert Hequk.
+  remember uk0 as uk; revert Hequk.
   close_cases (induction cl using @close_ind') Case; introv h; subst.
 
   { Case "CL_init".
@@ -1533,7 +2041,7 @@ admit.
       eexists; eexists; eexists; eexists; eexists; eexists.
       dands; eauto; eauto 2 with slow.
 
-      { introv; simpl.
+      { introv; simpl in *.
         pose proof (reca _ e) as reca; simpl in reca.
         repeat (autodimp reca hyp); eauto 3 with slow. }
 
@@ -1541,34 +2049,7 @@ admit.
       unfold mkc_swap_per in e0.
       autorewrite with slow.
       pose proof (recb _ e _ _ e0) as recb; simpl in recb.
-      repeat (autodimp recb hyp); eauto 3 with slow.
-
-      assert (eqa lib' e (mkc_swap_cs sw a) (mkc_swap_cs sw a)) as eqa1.
-      { pose proof (cla _ e) as cla; simpl in *.
-        eapply type_system_term_mem1; try exact cla; eauto; eauto 3 with slow.
-        apply close_type_system; auto. }
-      assert (eqa lib' e (mkc_swap_cs sw a') (mkc_swap_cs sw a')) as eqa2.
-      { pose proof (cla _ e) as cla; simpl in *.
-        eapply type_system_term_mem2; try exact cla; eauto; eauto 3 with slow.
-        apply close_type_system; auto. }
-
-      pose proof (inv0 (mkc_swap_cs sw a) [sw] _ e eqa1) as inva; simpl in *.
-      pose proof (inv (mkc_swap_cs sw a') [sw] _ e eqa2) as invb; simpl in *.
-      eapply ccequivc_ext_bar_trans in inva;
-        [|apply substc_ccequivc_ext_bar;
-          apply ccequivc_ext_bar_sym; auto;
-          apply ccequivc_ext_bar_mkc_swap_cs_twice].
-      eapply ccequivc_ext_bar_trans in invb;
-        [|apply substc_ccequivc_ext_bar;
-          apply ccequivc_ext_bar_sym; auto;
-          apply ccequivc_ext_bar_mkc_swap_cs_twice].
-
-      eapply close_type_value_respecting_left_bar;
-        try (apply implies_ccequivc_ext_bar_mkc_swap;
-             apply ccequivc_ext_bar_sym; exact inva); auto.
-      eapply close_type_value_respecting_right_bar;
-        try (apply implies_ccequivc_ext_bar_mkc_swap;
-             apply ccequivc_ext_bar_sym; exact invb); auto. }
+      repeat (autodimp recb hyp); eauto 3 with slow. }
 
 Set Nested Proofs Allowed.
 

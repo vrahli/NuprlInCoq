@@ -1850,6 +1850,24 @@ Proof.
   apply disj in i; tcsp.
 Qed.
 
+Lemma ren_utokens_sw_sub {o} :
+  forall ren a b l,
+    @ren_utokens_sub o ren (sw_sub a b l) = sw_sub a b l.
+Proof.
+  induction l; introv; simpl; tcsp.
+  rewrite IHl; auto.
+Qed.
+Hint Rewrite @ren_utokens_sw_sub : slow.
+
+Lemma ren_utokens_push_swap_cs_sub_term {o} :
+  forall a b l ren (t : @NTerm o),
+    ren_utokens ren (push_swap_cs_sub_term a b l t)
+    = push_swap_cs_sub_term a b l (ren_utokens ren t).
+Proof.
+  introv; unfold push_swap_cs_sub_term.
+  rewrite lsubst_aux_ren_utokens; autorewrite with slow; auto.
+Qed.
+
 Lemma push_swap_cs_bterms_map_ren_utokens_b {o} :
   forall n1 n2 ren (bs : list (@BTerm o)),
     push_swap_cs_bterms n1 n2 (map (ren_utokens_b ren) bs)
@@ -1857,7 +1875,8 @@ Lemma push_swap_cs_bterms_map_ren_utokens_b {o} :
 Proof.
   introv; unfold push_swap_cs_bterms; repeat rewrite map_map; unfold compose.
   apply eq_maps; introv i.
-  destruct x; simpl; f_equal.
+  destruct x; simpl; f_equal;
+    try rewrite ren_utokens_push_swap_cs_sub_term; auto.
 Qed.
 
 Lemma swap_cs_op_ren_utok_op {o} :

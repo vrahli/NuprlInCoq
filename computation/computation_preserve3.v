@@ -992,6 +992,25 @@ Proof.
   eexists; dands; eauto.
 Qed.
 
+Lemma range_sw_sub {o} :
+  forall a b l, range (@sw_sub o a b l) = map (fun v => mk_swap_cs2 a b (mk_var v)) l.
+Proof.
+  induction l; introv; simpl; auto; try congruence.
+Qed.
+Hint Rewrite @range_sw_sub : slow.
+
+Lemma get_utokens_push_swap_cs_sub_term {o} :
+  forall a b l (t : @NTerm o),
+    get_utokens (push_swap_cs_sub_term a b l t) = get_utokens t.
+Proof.
+  introv; unfold push_swap_cs_sub_term.
+  apply get_utokens_lsubst_aux_trivial1.
+  unfold get_utokens_sub; autorewrite with slow.
+  rewrite flat_map_map; unfold compose; simpl.
+  apply implies_null_flat_map; tcsp.
+Qed.
+Hint Rewrite @get_utokens_push_swap_cs_sub_term : slow.
+
 Lemma flat_map_get_utokens_b_push_swap_cs_bterm {o} :
   forall n1 n2 (bs : list (@BTerm o)),
     flat_map get_utokens_b (push_swap_cs_bterms n1 n2 bs)
@@ -1060,6 +1079,44 @@ Proof.
   introv; unfold get_utokens_lib; autorewrite with slow; auto.
 Qed.
 Hint Rewrite @get_utokens_lib_swap_cs_term : slow.
+
+Lemma lsubst_aux_sw_sub_nr_ut_sub_swap {o} :
+  forall a b (t : @NTerm o) l sub,
+    is_utok_sub sub
+    -> disjoint l (dom_sub sub)
+    -> lsubst_aux (lsubst_aux t (sw_sub a b l)) sub
+       = lsubst_aux (lsubst_aux t sub) (sw_sub a b l).
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv nrut disj; simpl in *; tcsp.
+
+  { rewrite sub_find_sw_sub; boolvar; tcsp.
+    { applydup disj in l0; simpl; autorewrite with slow.
+      rewrite sub_find_none_if; simpl; tcsp.
+      rewrite sub_find_sw_sub; boolvar; tcsp. }
+    { simpl.
+      remember (sub_find sub v) as x; destruct x; symmetry in Heqx; simpl in *; tcsp.
+      { apply sub_find_some in Heqx; apply nrut in Heqx.
+        apply is_utok_implies in Heqx; exrepnd; subst; simpl; tcsp. }
+      { rewrite sub_find_sw_sub; boolvar;tcsp. } } }
+
+  allrw map_map; unfold compose; simpl.
+  f_equal; apply eq_maps; introv i.
+  destruct x; simpl; f_equal.
+  autorewrite with slow.
+  eapply ind; eauto; try (rewrite <- dom_sub_sub_filter); eauto 3 with slow;
+    try (complete (apply disjoint_remove_nvars_l; repeat apply disjoint_remove_nvars_weak_r; auto)).
+Qed.
+
+Lemma lsubst_aux_nr_ut_sub_push_swap_cs_sub_term {o} :
+  forall a b l (t : @NTerm o) sub,
+    is_utok_sub sub
+    -> disjoint l (dom_sub sub)
+    -> lsubst_aux (push_swap_cs_sub_term a b l t) sub
+       = push_swap_cs_sub_term a b l (lsubst_aux t sub).
+Proof.
+  introv nrut disj; unfold push_swap_cs_sub_term.
+  apply lsubst_aux_sw_sub_nr_ut_sub_swap; eauto 3 with slow.
+Qed.
 
 Lemma compute_step_subst_utoken {o} :
   forall lib (t u : @NTerm o) sub,
@@ -2542,7 +2599,9 @@ Proof.
               apply in_map_iff in i; exrepnd; ginv.
               rewrite <- map_combine in i1; apply in_map_iff in i1; exrepnd; ginv.
               apply in_combine_same in i1; repnd; subst.
-              destruct a1; simpl; apply alpha_eq_bterm_congr; fold_terms; autorewrite with slow; tcsp. }
+              destruct a1; simpl; apply alpha_eq_bterm_congr; fold_terms; autorewrite with slow; tcsp.
+              rewrite lsubst_aux_nr_ut_sub_push_swap_cs_sub_term; eauto 3 with slow;
+                try (apply disjoint_sym; apply disjoint_dom_sub_filt). }
             { eapply subset_disjoint_r; eauto.
               apply subset_get_utokens_implies_subset_get_utokens_lib; simpl; autorewrite with slow; auto. }
             { apply subset_get_utokens_implies_subset_get_utokens_lib; simpl; autorewrite with slow; auto. }
@@ -2554,7 +2613,9 @@ Proof.
             apply in_map_iff in i; exrepnd; ginv.
             rewrite <- map_combine in i1; apply in_map_iff in i1; exrepnd; ginv.
             apply in_combine_same in i1; repnd; subst.
-            destruct a1; simpl; apply alpha_eq_bterm_congr; fold_terms; autorewrite with slow; tcsp. }
+            destruct a1; simpl; apply alpha_eq_bterm_congr; fold_terms; autorewrite with slow; tcsp.
+            rewrite lsubst_aux_nr_ut_sub_push_swap_cs_sub_term; eauto 3 with slow;
+              try (apply disjoint_sym; apply disjoint_dom_sub_filt). }
 
 (*          { SSSCase "NSwapCs".
             unflsubst in comp; allsimpl.

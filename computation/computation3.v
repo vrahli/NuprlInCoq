@@ -2885,6 +2885,368 @@ Proof.
 Qed.
 Hint Rewrite @length_push_swap_cs_bterms : slow.
 
+Lemma bound_vars_lsubst_aux_sw_sub {o} :
+  forall a b (t : @NTerm o) l,
+    bound_vars (lsubst_aux t (sw_sub a b l)) = bound_vars t.
+Proof.
+  nterm_ind t as [v|op bs ind] Case; simpl; introv.
+  { rewrite sub_find_sw_sub; boolvar; simpl; auto. }
+  rewrite flat_map_map; unfold compose.
+  apply eq_flat_maps; introv i.
+  destruct x; simpl.
+  rewrite sub_filter_sw_sub.
+  erewrite ind; eauto.
+Qed.
+Hint Rewrite @bound_vars_lsubst_aux_sw_sub : slow.
+
+Lemma bound_vars_push_swap_cs_sub_term {o} :
+  forall a b l (t : @NTerm o),
+    bound_vars (push_swap_cs_sub_term a b l t)
+    = bound_vars t.
+Proof.
+  introv.
+  unfold push_swap_cs_sub_term.
+  autorewrite with slow; auto.
+Qed.
+Hint Rewrite @bound_vars_push_swap_cs_sub_term : slow.
+
+Lemma all_vars_push_swap_cs_sub_term {o} :
+  forall a b vs (t : @NTerm o),
+    all_vars (push_swap_cs_sub_term a b vs t)
+    = all_vars t.
+Proof.
+  introv; unfold all_vars; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @all_vars_push_swap_cs_sub_term : slow.
+
+Lemma flat_map_bound_vars_range_sw_sub {o} :
+  forall a b l,
+    flat_map bound_vars (range (@sw_sub o a b l)) = [].
+Proof.
+  induction l; introv; simpl; auto; try congruence.
+Qed.
+Hint Rewrite @flat_map_bound_vars_range_sw_sub : slow.
+
+Lemma dom_sub_sw_sub {o} :
+  forall a b l, @dom_sub o (sw_sub a b l) = l.
+Proof.
+  introv; unfold dom_sub, dom_lmap, sw_sub.
+  rewrite map_map; unfold compose; simpl.
+  apply map_id.
+Qed.
+Hint Rewrite @dom_sub_sw_sub : slow.
+
+Hint Rewrite @var_ren_nil_r : slow.
+Hint Rewrite combine_nil : slow.
+
+Definition sw_sub2 {o} a b l k : @Sub o :=
+  combine l (map (fun v => mk_swap_cs2 a b (mk_var v)) k).
+
+Lemma sub_find_sw_sub2 {o} :
+  forall a b l k v,
+    @sub_find o (sw_sub2 a b l k) v
+    = match sub_find (var_ren l k) v with
+      | Some w => Some (mk_swap_cs2 a b w)
+      | None => None
+      end.
+Proof.
+  induction l; introv; simpl; auto.
+  destruct k; simpl; auto; boolvar; tcsp.
+  unfold sw_sub2 in *; rewrite IHl; tcsp.
+Qed.
+
+Lemma implies_renFind_Some :
+  forall l k v,
+    length l = length k
+    -> LIn v l
+    -> {w : NVar & renFind (mk_swapping l k) v = Some w}.
+Proof.
+  induction l; introv len i; simpl in *; tcsp.
+  destruct k; simpl in *; ginv; cpx.
+  repndors; subst; tcsp; boolvar; eauto.
+Qed.
+
+Lemma sw_sub2_nil_r {o} :
+  forall a b l,
+    @sw_sub2 o a b l [] = [].
+Proof.
+  introv; unfold sw_sub2; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @sw_sub2_nil_r : slow.
+
+Lemma sub_filter_var_ren_and_sw_sub2_implies {o} :
+  forall a b vs1 vs2 l,
+    {vs3 : list NVar
+     & {vs4 : list NVar
+     & @sub_filter o (var_ren vs1 vs2) l = var_ren vs3 vs4
+     # @sub_filter o (sw_sub2 a b vs1 vs2) l = sw_sub2 a b vs3 vs4
+     # vs3 = remove_nvars l vs1
+     # subvars vs4 vs2
+     # (length vs1 = length vs2 -> length vs3 = length vs4)
+     # (no_repeats vs2 -> no_repeats vs4) }}.
+Proof.
+  induction vs1; simpl; introv;autorewrite with slow.
+  { exists ([] : list NVar) ([] : list NVar); simpl; tcsp. }
+  destruct vs2; simpl in *; autorewrite with slow in *.
+  { exists (remove_nvars l (a0 :: vs1)) ([] : list NVar); simpl;
+      autorewrite with slow; dands; auto; introv xx; ginv. }
+  boolvar; tcsp.
+  { pose proof (IHvs1 vs2 l) as k; exrepnd; subst.
+    exists (remove_nvars l (a0 :: vs1)) vs4; sp;
+      try (apply subvars_cons_r; auto);
+      try (rewrite remove_nvars_cons_r; boolvar; tcsp);
+      try (allrw no_repeats_cons; tcsp). }
+  { pose proof (IHvs1 vs2 l) as k; exrepnd; subst.
+    exists (remove_nvars l (a0 :: vs1)) (n :: vs4); simpl; dands; tcsp;
+      try rewrite remove_nvars_cons_r; boolvar; tcsp; eauto 3 with slow;
+        try (complete (unfold var_ren, sw_sub2 in *; simpl in *; try congruence));
+        try (complete (apply subvars_cons_lr; auto));
+        try (complete (introv xx; cpx)).
+    allrw no_repeats_cons; intro xx; repnd; dands; tcsp.
+    apply subvars_eq in k4; intro w; apply k4 in w; tcsp. }
+Qed.
+
+Lemma sub_filter_var_ren_implies {o} :
+  forall vs1 vs2 l,
+    {vs3 : list NVar
+     & {vs4 : list NVar
+     & @sub_filter o (var_ren vs1 vs2) l = var_ren vs3 vs4
+     # vs3 = remove_nvars l vs1
+     # subvars vs4 vs2
+     # (length vs1 = length vs2 -> length vs3 = length vs4)
+     # (no_repeats vs2 -> no_repeats vs4) }}.
+Proof.
+  induction vs1; simpl; introv;autorewrite with slow.
+  { exists ([] : list NVar) ([] : list NVar); simpl; tcsp. }
+  destruct vs2; simpl in *; autorewrite with slow in *.
+  { exists (remove_nvars l (a :: vs1)) ([] : list NVar); simpl;
+      autorewrite with slow; dands; auto; introv xx; ginv. }
+  boolvar; tcsp.
+  { pose proof (IHvs1 vs2 l) as k; exrepnd; subst.
+    exists (remove_nvars l (a :: vs1)) vs4; sp;
+      try (apply subvars_cons_r; auto);
+      try (rewrite remove_nvars_cons_r; boolvar; tcsp);
+      try (allrw no_repeats_cons; tcsp). }
+  { pose proof (IHvs1 vs2 l) as k; exrepnd; subst.
+    exists (remove_nvars l (a :: vs1)) (n :: vs4); simpl; dands; tcsp;
+      try rewrite remove_nvars_cons_r; boolvar; tcsp; eauto 3 with slow;
+        try (complete (unfold var_ren in *; simpl in *; try congruence));
+        try (complete (apply subvars_cons_lr; auto));
+        try (complete (introv xx; cpx)).
+    allrw no_repeats_cons; intro xx; repnd; dands; tcsp.
+    apply subvars_eq in k3; intro w; apply k3 in w; tcsp. }
+Qed.
+
+Lemma sub_filter_sw_sub {o} :
+  forall a b l j,
+    @sub_filter o (sw_sub a b l) j
+    = sw_sub a b (remove_nvars j l).
+Proof.
+  induction l; introv; simpl; autorewrite with slow; tcsp.
+  boolvar; simpl in *; tcsp;
+    rewrite remove_nvars_cons_r; boolvar; tcsp.
+  rewrite IHl; auto.
+Qed.
+Hint Rewrite @sub_filter_sw_sub : slow.
+
+Lemma disjoint_remove_nvars_and_app_implies_disjoint :
+  forall k l j i,
+    disjoint k (remove_nvars l i)
+    -> disjoint k (l ++ j)
+    -> disjoint k i.
+Proof.
+  introv disja disjb a b.
+  applydup disja in a.
+  applydup disjb in a.
+  allrw in_app_iff; apply not_over_or in a1; repnd.
+  allrw in_remove_nvars; tcsp.
+Qed.
+Hint Resolve disjoint_remove_nvars_and_app_implies_disjoint : slow.
+
+Lemma lsubst_aux_sw_sub_var_ren {o} :
+  forall a b (t : @NTerm o) l k,
+    length l = length k
+    -> disjoint k (free_vars t)
+    -> disjoint k (bound_vars t)
+    -> no_repeats k
+    -> lsubst_aux (lsubst_aux t (sw_sub a b l)) (var_ren l k)
+       = lsubst_aux t (sw_sub2 a b l k).
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv len disja disjb norep; simpl in *.
+  { allrw disjoint_singleton_r.
+    allrw @sub_find_sw_sub.
+    allrw @sub_find_sw_sub2.
+    boolvar; simpl in *; autorewrite with slow in *; tcsp; GC.
+    { repeat rewrite sub_find_var_ren_as_option_map.
+      remember (renFind (mk_swapping l k) v) as op.
+      symmetry in Heqop; destruct op; simpl in *; tcsp.
+      eapply implies_renFind_Some in l0; eauto; exrepnd.
+      rewrite Heqop in *; ginv. }
+    { rewrite var_ren_is_none; auto. } }
+  rewrite map_map; unfold compose.
+  f_equal; apply eq_maps; introv i.
+  destruct x; simpl; f_equal.
+  pose proof (@sub_filter_var_ren_and_sw_sub2_implies o a b l k l0) as q.
+  exrepnd; subst.
+  allrw; autorewrite with slow.
+  autodimp q1 hyp.
+  eapply ind; try exact i; tcsp.
+  { eapply subvars_disjoint_l;[eauto|].
+    allrw disjoint_flat_map_r.
+    applydup disja in i; simpl in *.
+    applydup disjb in i; simpl in *.
+    eauto 3 with slow. }
+  { eapply subvars_disjoint_l;[eauto|].
+    allrw disjoint_flat_map_r.
+    applydup disja in i; simpl in *.
+    applydup disjb in i; simpl in *.
+    eauto 3 with slow. }
+Qed.
+
+Lemma implies_eq_lsubst_aux_sw_sub {o} :
+  forall a b (t : @NTerm o) l k,
+    subset l k
+    -> (forall x, LIn x k -> LIn x (free_vars t) -> LIn x l)
+    -> lsubst_aux t (sw_sub a b l)
+       = lsubst_aux t (sw_sub a b k).
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv ss imp; simpl in *.
+  { repeat rewrite sub_find_sw_sub.
+    boolvar; tcsp.
+    { apply ss in l0; tcsp. }
+    apply imp in l0; tcsp. }
+  f_equal; apply eq_maps; introv i.
+  destruct x; simpl in *; tcsp; f_equal; autorewrite with slow.
+  eapply ind; eauto.
+  { allrw <- @subvars_eq; apply subars_remove_nvars_lr; auto. }
+  introv u v; allrw in_remove_nvars; repnd; dands; tcsp.
+  eapply imp; tcsp.
+  apply lin_flat_map; eexists; dands; eauto; simpl.
+  apply in_remove_nvars; dands; tcsp.
+Qed.
+
+Lemma lsubst_push_swap_cs_sub_term_var_ren_eq {o} :
+  forall a b (t : @NTerm o) l k,
+    no_repeats k
+    -> length l = length k
+    -> disjoint k (all_vars t)
+    -> lsubst (push_swap_cs_sub_term a b l t) (var_ren l k)
+       = lsubst_aux t (sw_sub2 a b l k).
+Proof.
+  introv norep len disj.
+  unfold push_swap_cs_sub_term.
+  unfold all_vars in *; allrw @disjoint_app_r; repnd; eauto 3 with slow;
+    repeat (rewrite lsubst_lsubst_aux; autorewrite with slow);
+    try (rewrite flat_map_free_var_vars_range; auto); eauto 3 with slow.
+  rewrite lsubst_aux_sw_sub_var_ren; auto.
+Qed.
+
+Hint Resolve deq_nvar : slow.
+Hint Resolve in_deq_t : slow.
+
+Lemma lsubst_aux_sw_sub_var_ren2 {o} :
+  forall a b (t : @NTerm o) l k,
+    length l = length k
+    -> disjoint k (free_vars t)
+    -> disjoint k (bound_vars t)
+    -> no_repeats k
+    -> lsubst_aux t (sw_sub2 a b l k)
+       = lsubst_aux (lsubst_aux t (var_ren l k)) (sw_sub a b k).
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv len disja disjb norep; simpl in *.
+  { allrw disjoint_singleton_r.
+    allrw @sub_find_sw_sub2.
+    repeat rewrite sub_find_var_ren_as_option_map.
+    remember (renFind (mk_swapping l k) v) as op.
+    symmetry in Heqop; destruct op; simpl in *; tcsp.
+    { allrw @sub_find_sw_sub; boolvar; tcsp.
+      symmetry in Heqop; apply renFind_some_in_codom in Heqop; tcsp. }
+    { allrw @sub_find_sw_sub; boolvar; tcsp; GC. } }
+  repeat rewrite map_map; unfold compose.
+  f_equal; apply eq_maps; introv i.
+  destruct x; simpl; f_equal.
+  autorewrite with slow.
+  assert (disjoint k l0) as d.
+  { allrw disjoint_flat_map_r.
+    applydup disja in i; simpl in *.
+    applydup disjb in i; simpl in *.
+    eauto 3 with slow. }
+  apply remove_nvars_unchanged in d; allrw.
+  pose proof (@sub_filter_var_ren_and_sw_sub2_implies o a b l k l0) as q.
+  exrepnd; subst.
+  autodimp q1 hyp; autodimp q5 hyp.
+  allrw.
+  erewrite ind; eauto;
+    try (complete (eapply subvars_disjoint_l;[eauto|];
+                   allrw disjoint_flat_map_r;
+                   applydup disja in i; simpl in *;
+                   applydup disjb in i; simpl in *;
+                   eauto 3 with slow)).
+
+  apply implies_eq_lsubst_aux_sw_sub; auto; allrw subvars_eq; auto.
+  introv u v.
+  apply free_vars_lsubst_aux_subset in v; autorewrite with slow in *.
+  apply in_app_iff in v.
+  rewrite dom_sub_var_ren in v; auto.
+  rewrite sub_free_vars_var_ren in v; auto.
+  repndors; tcsp.
+  allrw in_remove_nvars; repnd; tcsp.
+  apply not_over_not_lin_nvar in v.
+
+  clear v.
+  destruct (in_deq _ deq_nvar x l0) as [d0|d0].
+
+  { apply disjb in u; allrw lin_flat_map; destruct u.
+    eexists; dands; eauto; simpl; apply in_app_iff; left; auto. }
+
+  { apply disja in u; allrw lin_flat_map; destruct u.
+    eexists; dands; eauto; simpl; apply in_remove_nvars; tcsp. }
+Qed.
+
+Lemma lsubst_push_swap_cs_sub_term_var_ren_eq2 {o} :
+  forall a b (t : @NTerm o) l k,
+    no_repeats k
+    -> length l = length k
+    -> disjoint k (all_vars t)
+    -> lsubst_aux (lsubst t (var_ren l k)) (sw_sub a b k)
+       = lsubst_aux t (sw_sub2 a b l k).
+Proof.
+  introv norep len disj.
+  unfold all_vars in *; allrw @disjoint_app_r; repnd; eauto 3 with slow;
+    repeat (rewrite lsubst_lsubst_aux; autorewrite with slow);
+    try (rewrite flat_map_free_var_vars_range; auto); eauto 3 with slow.
+  rewrite lsubst_aux_sw_sub_var_ren2; auto.
+Qed.
+
+Lemma sub_free_vars_sw_sub {o} :
+  forall a b l, @sub_free_vars o (sw_sub a b l) = l.
+Proof.
+  induction l; introv; simpl; tcsp; try congruence.
+Qed.
+Hint Rewrite @sub_free_vars_sw_sub : slow.
+
+Lemma implies_alpha_eq_sw_sub {o} :
+  forall a b (t u : @NTerm o) l,
+    disjoint l (bound_vars t)
+    -> disjoint l (bound_vars u)
+    -> alpha_eq t u
+    -> alpha_eq (lsubst_aux t (sw_sub a b l)) (lsubst_aux u (sw_sub a b l)).
+Proof.
+  introv disja disjb aeq.
+  apply lsubst_aux_alpha_congr_same_disj; autorewrite with slow; auto; eauto 3 with slow.
+Qed.
+Hint Resolve implies_alpha_eq_sw_sub : slow.
+
+Lemma disjoint_all_vars_implies_disjoint_bound_vars {o} :
+  forall l (t : @NTerm o),
+    disjoint l (all_vars t)
+    -> disjoint l (bound_vars t).
+Proof.
+  introv disj.
+  apply disjoint_app_r in disj; tcsp.
+Qed.
+Hint Resolve disjoint_all_vars_implies_disjoint_bound_vars : slow.
+
 Lemma implies_alpha_eq_push_swap_cs_can {o} :
   forall n1 n2 can1 can2 (bs1 bs2 : list (@BTerm o)),
     alpha_eq (oterm (Can can1) bs1) (oterm (Can can2) bs2)
@@ -2896,13 +3258,22 @@ Proof.
   introv i; unfold push_swap_cs_bterms in i; rewrite <- map_combine in i.
   apply in_map_iff in i; exrepnd; ginv; simpl in *.
   apply aeq0 in i1.
+
   inversion i1 as [? ? ? ? ? disj lena lenb norep aeq']; subst; clear i1.
   simpl.
-  econstructor; autorewrite with slow; eauto.
+  econstructor; autorewrite with slow; try exact lenb; auto.
   rewrite lsubst_mk_swap_cs2_choice_seq_var_ren; autorewrite with slow; eauto 3 with slow;
     try (complete (rewrite sub_free_vars_var_ren; auto; allrw disjoint_app_r; repnd; eauto 3 with slow)).
   rewrite lsubst_mk_swap_cs2_choice_seq_var_ren; autorewrite with slow; eauto 3 with slow;
     try (complete (rewrite sub_free_vars_var_ren; auto; allrw disjoint_app_r; repnd; eauto 3 with slow; try omega)).
+
+  apply implies_alpha_eq_mk_swap_cs2.
+  apply disjoint_app_r in disj; repnd.
+  repeat (rewrite lsubst_push_swap_cs_sub_term_var_ren_eq; auto; try omega).
+  repeat (rewrite <- lsubst_push_swap_cs_sub_term_var_ren_eq2; auto; try omega).
+  eauto 3 with slow.
+  apply implies_alpha_eq_sw_sub; eauto 3 with slow;
+    rewrite boundvars_lsubst_vars; eauto 3 with slow; try omega.
 Qed.
 Hint Resolve implies_alpha_eq_push_swap_cs_can : slow.
 

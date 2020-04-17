@@ -136,6 +136,44 @@ Proof.
   rw @get_utokens_lsubst_aux; allrw in_app_iff; split; intro h; tcsp.
 Qed.
 
+Lemma lsubst_aux_sw_sub_cl_sub_swap {o} :
+  forall a b (t : @NTerm o) l sub,
+    cl_sub sub
+    -> disjoint l (dom_sub sub)
+    -> lsubst_aux (lsubst_aux t (sw_sub a b l)) sub
+       = lsubst_aux (lsubst_aux t sub) (sw_sub a b l).
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv cl disj; simpl in *; tcsp.
+
+  { rewrite sub_find_sw_sub; boolvar; tcsp.
+    { applydup disj in l0; simpl; autorewrite with slow.
+      rewrite sub_find_none_if; simpl; tcsp.
+      rewrite sub_find_sw_sub; boolvar; tcsp. }
+    { simpl.
+      remember (sub_find sub v) as x; destruct x; symmetry in Heqx; simpl in *; tcsp.
+      { apply sub_find_some in Heqx; apply cl in Heqx.
+        rewrite lsubst_aux_trivial_cl_term2; auto. }
+      { rewrite sub_find_sw_sub; boolvar;tcsp. } } }
+
+  allrw map_map; unfold compose; simpl.
+  f_equal; apply eq_maps; introv i.
+  destruct x; simpl; f_equal.
+  autorewrite with slow.
+  eapply ind; eauto; try (rewrite <- dom_sub_sub_filter); eauto 3 with slow;
+    try (complete (apply disjoint_remove_nvars_l; repeat apply disjoint_remove_nvars_weak_r; auto)).
+Qed.
+
+Lemma lsubst_aux_cl_sub_push_swap_cs_sub_term {o} :
+  forall a b l (t : @NTerm o) sub,
+    cl_sub sub
+    -> disjoint l (dom_sub sub)
+    -> lsubst_aux (push_swap_cs_sub_term a b l t) sub
+       = push_swap_cs_sub_term a b l (lsubst_aux t sub).
+Proof.
+  introv nrut disj; unfold push_swap_cs_sub_term.
+  apply lsubst_aux_sw_sub_cl_sub_swap; eauto 3 with slow.
+Qed.
+
 Lemma compute_step_lsubst_aux {o} :
   forall lib (t u : @NTerm o) sub,
     nt_wf t
@@ -407,7 +445,9 @@ Proof.
             rewrite <- map_combine in i; apply in_map_iff in i; exrepnd; ginv.
             rewrite <- map_combine in i1; apply in_map_iff in i1; exrepnd; ginv.
             apply in_combine_same in i1; repnd; subst.
-            destruct a1; simpl; apply alpha_eq_bterm_congr; autorewrite with slow; fold_terms; tcsp. }
+            destruct a1; simpl; apply alpha_eq_bterm_congr; autorewrite with slow; fold_terms; tcsp;
+              try rewrite lsubst_aux_cl_sub_push_swap_cs_sub_term; eauto 3 with slow;
+                try (apply disjoint_sym; apply disjoint_dom_sub_filt). }
 
           { SSSCase "NLDepth".
             csunf comp; simpl in *; ginv. }

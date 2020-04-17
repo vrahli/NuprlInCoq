@@ -10026,6 +10026,24 @@ Proof.
 Qed.
 Hint Rewrite @lib_depth_swap_cs_plib : slow.
 
+Lemma swap_cs_sub_sw_sub {o} :
+  forall sw a b l,
+    @swap_cs_sub o sw (sw_sub a b l) = sw_sub (swap_cs sw a) (swap_cs sw b) l.
+Proof.
+  induction l; introv; simpl; auto.
+  rewrite IHl; auto.
+Qed.
+Hint Rewrite @swap_cs_sub_sw_sub : slow.
+
+Lemma swap_cs_term_push_swap_cs_sub_term {o} :
+  forall sw a b l (t : @NTerm o),
+    swap_cs_term sw (push_swap_cs_sub_term a b l t)
+    = push_swap_cs_sub_term (swap_cs sw a) (swap_cs sw b) l (swap_cs_term sw t).
+Proof.
+  introv; unfold push_swap_cs_sub_term.
+  rewrite <- lsubst_aux_swap_cs_term; autorewrite with slow; auto.
+Qed.
+
 Lemma swap_compute_step {o} :
   forall sw lib (a b : @NTerm o),
     compute_step lib a = csuccess b
@@ -10067,7 +10085,8 @@ Proof.
         rewrite swap_cs_can_twice2.
         f_equal; f_equal.
         unfold push_swap_cs_bterms; repeat rewrite map_map; unfold compose.
-        apply eq_maps; introv i; destruct x, s; simpl; auto. } }
+        apply eq_maps; introv i; destruct x, s; simpl; auto;
+          try rewrite swap_cs_term_push_swap_cs_sub_term; auto. } }
 
     { apply compute_step_catch_success in comp; repndors; exrepnd; ginv; subst; simpl in *.
       csunf; simpl.

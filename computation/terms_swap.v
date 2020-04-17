@@ -196,6 +196,16 @@ Proof.
     simpl in *; dLin_hyp; allrw @bt_wf_iff; auto.
 Qed.
 
+Lemma nt_wf_push_swap_cs_sub_term_implies {o} :
+  forall a b l (t : @NTerm o),
+    nt_wf (push_swap_cs_sub_term a b l t)
+    -> nt_wf t.
+Proof.
+  introv wf.
+  unfold push_swap_cs_sub_term in *;
+    try apply lsubst_aux_nt_wf in wf; auto.
+Qed.
+
 Lemma nt_wf_push_swap_cs_can_implies {o} :
   forall c1 c2 can (bs : list (@BTerm o)),
     nt_wf (push_swap_cs_can c1 c2 can bs)
@@ -211,7 +221,19 @@ Proof.
   destruct b; simpl in *.
   allrw @bt_wf_iff.
   apply nt_wf_mk_swap_cs2_implies in wf; tcsp.
+  apply nt_wf_push_swap_cs_sub_term_implies in wf; auto.
 Qed.
+
+Lemma implies_isprog_vars_push_swap_cs_sub_term {o} :
+  forall l a b vs (t : @NTerm o),
+    isprog_vars l t
+    -> isprog_vars l (push_swap_cs_sub_term a b vs t).
+Proof.
+  introv ispa.
+  allrw @isprog_vars_eq; repnd; dands; autorewrite with slow; auto.
+  apply implies_nt_wf_push_swap_cs_sub_term; auto.
+Qed.
+Hint Resolve implies_isprog_vars_push_swap_cs_sub_term : slow.
 
 Lemma implies_isprogram_push_swap_cs_can {o} :
   forall c1 c2 can (bs : list (@BTerm o)),

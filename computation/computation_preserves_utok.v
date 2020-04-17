@@ -2056,6 +2056,24 @@ Proof.
   simpl in *; destruct ni; eauto 3 with slow.
 Qed.
 
+Lemma ren_utok_sub_sw_sub {o} :
+  forall n1 n2 l a b,
+    @ren_utok_sub o (sw_sub n1 n2 l) a b = sw_sub n1 n2 l.
+Proof.
+  induction l; introv; simpl; auto.
+  rewrite IHl; auto.
+Qed.
+Hint Rewrite @ren_utok_sub_sw_sub : slow.
+
+Lemma ren_utok_push_swap_cs_sub_term {o} :
+  forall n1 n2 a b l (t : @NTerm o),
+    ren_utok (push_swap_cs_sub_term n1 n2 l t) a b
+    = push_swap_cs_sub_term n1 n2 l (ren_utok t a b).
+Proof.
+  introv; unfold push_swap_cs_sub_term.
+  rewrite ren_utok_lsubst_aux_gen; autorewrite with slow; auto.
+Qed.
+
 Lemma compute_step_subst_utoken2 {o} :
   forall lib (t u : @NTerm o) v a b,
     nt_wf t
@@ -2824,7 +2842,8 @@ Proof.
                   simpl; autorewrite with slow; eauto 3 with slow;
                     apply subset_app_l; eauto 3 with slow;
                       apply (subsetSingleFlatMap get_utokens_b) in i; simpl in i; auto. }
-              { rewrite ren_utok_lsubst_aux_gen; simpl; unfold ren_utok_op; simpl; boolvar; GC; tcsp.
+              { try rewrite ren_utok_push_swap_cs_sub_term;
+                  rewrite ren_utok_lsubst_aux_gen; simpl; unfold ren_utok_op; simpl; boolvar; GC; tcsp.
                 erewrite not_in_get_utokens_lib_implies_ren_utok_same; tcsp.
                 eapply subset_preserves_not_in_get_utokens_lib; try exact nia;
                   simpl; autorewrite with slow; eauto 3 with slow;

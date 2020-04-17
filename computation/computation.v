@@ -267,9 +267,16 @@ Definition compute_step_last_cs {o}
   | _, _, _ => cfailure bad_args t
   end.
 
+Definition sw_sub {o} a b vs : @Sub o :=
+  map (fun v => (v,mk_swap_cs2 a b (mk_var v))) vs.
+
+Definition push_swap_cs_sub_term {o} a b vs (t : @NTerm o) : NTerm :=
+  lsubst_aux t (sw_sub a b vs).
+
 Definition push_swap_cs_bterm {o} a b (bt : @BTerm o) : BTerm :=
   match bt with
-  | bterm vs t => bterm vs (mk_swap_cs2 a b t)
+(*  | bterm vs t => bterm vs (mk_swap_cs2 a b t)*)
+  | bterm vs t => bterm vs (mk_swap_cs2 a b (push_swap_cs_sub_term a b vs t))
   end.
 
 Definition push_swap_cs_bterms {o} a b (bs : list (@BTerm o)) : list BTerm :=
