@@ -688,21 +688,31 @@ Proof.
 Qed.
 Hint Rewrite @num_bvars_push_swap_cs_bterm : slow.
 
-Lemma isprog_oterm_implies_disjoint_free_vars_bterm {o} :
-  forall op (bs : list (@BTerm o)) l n,
+Lemma isprog_oterm_implies_null_free_vars_bterm {o} :
+  forall op (bs : list (@BTerm o)) n,
     isprog (oterm op bs)
-    -> disjoint l (free_vars_bterm (selectbt bs n)).
+    -> null (free_vars_bterm (selectbt bs n)).
 Proof.
-  introv isp i j.
+  introv isp.
   apply isprog_ot_iff in isp; repnd.
   destruct (lt_dec n (length bs)) as [d|d].
   { pose proof (isp (selectbt bs n)) as isp; autodimp isp hyp.
     { apply selectbt_in; auto. }
     unfold isprog_bt in isp; repnd.
-    allrw @assert_nullb.
-    apply isp1 in j; auto. }
+    allrw @assert_nullb; tcsp. }
   { unfold selectbt in *.
-    rewrite nth_overflow in j; simpl in *; tcsp; try omega. }
+    rewrite nth_overflow; try omega; simpl; autorewrite with slow; auto. }
+Qed.
+Hint Resolve isprog_oterm_implies_null_free_vars_bterm : slow.
+
+Lemma isprog_oterm_implies_disjoint_free_vars_bterm {o} :
+  forall op (bs : list (@BTerm o)) l n,
+    isprog (oterm op bs)
+    -> disjoint l (free_vars_bterm (selectbt bs n)).
+Proof.
+  introv isp.
+  apply (isprog_oterm_implies_null_free_vars_bterm _ _ n) in isp.
+  apply null_iff_nil in isp; rewrite isp; auto.
 Qed.
 Hint Resolve isprog_oterm_implies_disjoint_free_vars_bterm : slow.
 
@@ -846,6 +856,265 @@ Proof.
   eapply alpha_eq_trans in a;[|apply alpha_eq_sym;apply lsubst_trivial_alpha]; auto.
 Qed.
 
+Definition cl_olift {o} R (t1 t2 : @NTerm o) l :=
+  nt_wf t1
+  # nt_wf t2
+  # forall ts,
+      length l = length ts
+      -> areprograms ts
+      -> R (lsubst t1 (combine l ts)) (lsubst t2 (combine l ts)).
+
+Lemma areprograms_implies_prog_sub_combine {o} :
+  forall l (ts : list (@NTerm o)),
+    areprograms ts
+    -> prog_sub (combine l ts).
+Proof.
+  induction l; introv aps; simpl in *; eauto 3 with slow.
+  destruct ts; simpl in *; eauto 3 with slow.
+  allrw @areprograms_cons; allrw @prog_sub_cons; repnd; dands; auto.
+Qed.
+Hint Resolve areprograms_implies_prog_sub_combine : slow.
+
+Lemma are_programs_implies_isprogram_lsubst_combine {o} :
+  forall (t : @NTerm o) l ts,
+    nt_wf t
+    -> areprograms ts
+    -> length l = length ts
+    -> subset (free_vars t) l
+    -> isprogram (lsubst t (combine l ts)).
+Proof.
+  introv wf aps len ss.
+  apply isprogram_lsubst_if_isprog_sub; eauto 3 with slow.
+  rewrite dom_sub_combine_le; allrw; auto.
+Qed.
+Hint Resolve are_programs_implies_isprogram_lsubst_combine : slow.
+
+Fixpoint sub2terms {o} (sub : @Sub o) d l : list NTerm :=
+  match l with
+  | [] => []
+  | v :: vs =>
+    match sub_find sub v with
+    | Some t => t :: sub2terms sub d vs
+    | None => d :: sub2terms sub d vs
+    end
+  end.
+
+Lemma length_sub2terms {o} :
+  forall (sub : @Sub o) d l,
+    length (sub2terms sub d l) = length l.
+Proof.
+  induction l; simpl; auto.
+  destruct (sub_find sub a); simpl; try congruence.
+Qed.
+Hint Rewrite @length_sub2terms : slow.
+
+Lemma sub_find_some_implies_in_range {o} :
+  forall (sub : @Sub o) v t,
+    sub_find sub v = Some t
+    -> LIn t (range sub).
+Proof.
+  induction sub; introv h; simpl in *; repnd; boolvar; simpl in *; ginv; tcsp.
+  apply IHsub in h; tcsp.
+Qed.
+
+Lemma implies_cl_sub_combine_sub2terms {o} :
+  forall (sub : @Sub o) d l,
+    closed d
+    -> cl_sub sub
+    -> cl_sub (combine l (sub2terms sub d l)).
+Proof.
+  induction l; introv cla clb; simpl in *; eauto 2 with slow.
+  remember (sub_find sub a) as sf; symmetry in Heqsf; destruct sf; simpl;
+    allrw @cl_sub_cons; dands; auto.
+  apply sub_find_some in Heqsf.
+  rw @cl_sub_eq in clb; apply clb.
+  apply in_sub_eta in Heqsf; tcsp.
+Qed.
+Hint Resolve implies_cl_sub_combine_sub2terms : slow.
+
+Lemma sub_find_combine_sub2terms {o} :
+  forall (sub : @Sub o) d l v,
+    sub_find (combine l (sub2terms sub d l)) v
+    = if in_deq _ deq_nvar v l
+      then Some (match sub_find sub v with
+                 | Some t => t
+                 | None => d
+                 end)
+      else None.
+Proof.
+  induction l; introv; simpl; auto; boolvar; repndors; subst; tcsp; GC;
+    remember (sub_find sub v) as sf; symmetry in Heqsf; destruct sf; simpl in *;
+      boolvar; subst; tcsp;
+        try (apply not_over_or in n; repnd; tcsp);
+        try (apply not_over_or in n0; repnd; tcsp);
+        try (complete (remember (sub_find sub a) as sf'; symmetry in Heqsf'; destruct sf'; simpl in *;
+                       tcsp; boolvar; subst; tcsp; allrw; boolvar; tcsp)).
+Qed.
+
+Hint Resolve areprograms_nil : slow.
+Hint Resolve lsubst_program_implies : slow.
+
+Lemma implies_areprograms_sub2terms {o} :
+  forall (sub : @Sub o) d l,
+    prog_sub sub
+    -> isprogram d
+    -> areprograms (sub2terms sub d l).
+Proof.
+  induction l; introv ps isp; simpl in *; eauto 3 with slow.
+  remember (sub_find sub a) as sf; symmetry in Heqsf; destruct sf;
+    allrw @areprograms_cons; dands; eauto 2 with slow.
+  rw <- @prog_sub_eq in ps; apply ps; eauto 3 with slow.
+  apply sub_find_some_implies_in_range in Heqsf; auto.
+Qed.
+Hint Resolve implies_areprograms_sub2terms : slow.
+
+Lemma lsubst_as_combine {o} :
+  forall (t : @NTerm o) sub l,
+    prog_sub sub
+    -> subset (free_vars t) l
+    -> subset (free_vars t) (dom_sub sub)
+    -> {ts : list NTerm
+        & length l = length ts
+        # lsubst t sub = lsubst t (combine l ts)
+        # areprograms ts
+        # ts = sub2terms sub mk_axiom l}.
+Proof.
+  introv cl ssa ssb.
+  exists (sub2terms sub mk_axiom l).
+  autorewrite with slow; dands; auto; eauto 2 with slow;[].
+  apply cl_eq_lsubst_if_ext_eq; eauto 3 with slow;[].
+  introv i.
+  remember (sub_find sub v) as sf; symmetry in Heqsf; destruct sf; simpl.
+
+  { applydup ssa in i.
+    rewrite sub_find_combine_sub2terms; allrw; boolvar; tcsp. }
+
+  { apply ssb in i.
+    apply sub_find_none2 in Heqsf; tcsp. }
+Qed.
+
+Lemma simpl_olift_as_cl_olift {o} :
+  forall R (t1 t2 : @NTerm o) l,
+    subset (free_vars t1) l
+    -> subset (free_vars t2) l
+    -> (simpl_olift R t1 t2 <=> cl_olift R t1 t2 l).
+Proof.
+  introv ssa ssb; split; introv h; unfold cl_olift, simpl_olift in *; repnd; dands; auto; introv.
+
+  { introv len aps.
+    apply h; eauto 2 with slow. }
+
+  { introv ps ispa ispb.
+    pose proof (lsubst_as_combine t1 sub l) as qa.
+    repeat (autodimp qa hyp); eauto 2 with slow; exrepnd;[].
+    pose proof (lsubst_as_combine t2 sub l) as qb.
+    repeat (autodimp qb hyp); eauto 2 with slow; exrepnd;[].
+    rewrite <- qa0 in qb0; subst ts0; clear qa0.
+    rewrite qa2, qb2 in *.
+    apply h; auto. }
+Qed.
+
+Lemma approx_open_cl_equiv {o} :
+  forall l lib (a b : @NTerm o),
+    subset (free_vars a) l
+    -> subset (free_vars b) l
+    -> cl_olift (approx lib) a b l
+    -> approx_open lib a b.
+Proof.
+  introv ssa ssb cl.
+  apply approx_open_simpler_equiv.
+  eapply simpl_olift_as_cl_olift; eauto.
+Qed.
+
+Definition sw_sub_ts {o} a b l (k : list (@NTerm o)) : @Sub o :=
+  combine l (map (mk_swap_cs2 a b) k).
+
+Lemma areprograms_implies_prog_sw_sub_ts {o} :
+  forall a b l (ts : list (@NTerm o)),
+    areprograms ts
+    -> prog_sub (sw_sub_ts a b l ts).
+Proof.
+  unfold sw_sub_ts; induction l; introv aps; simpl in *; eauto 3 with slow.
+  destruct ts; simpl in *; eauto 3 with slow.
+  allrw @areprograms_cons; repnd.
+  allrw @prog_sub_cons; dands; eauto 3 with slow.
+Qed.
+Hint Resolve areprograms_implies_prog_sw_sub_ts : slow.
+
+Lemma areprograms_implies_wf_sw_sub_ts {o} :
+  forall a b l (ts : list (@NTerm o)),
+    areprograms ts
+    -> wf_sub (sw_sub_ts a b l ts).
+Proof.
+  introv aps; eauto 3 with slow.
+Qed.
+Hint Resolve areprograms_implies_wf_sw_sub_ts : slow.
+
+Lemma wf_sw_sub2 {o} :
+  forall a b l k,
+    @wf_sub o (sw_sub2 a b l k).
+Proof.
+  introv i; unfold sw_sub2 in *.
+  apply in_combine_right_eauto in i.
+  apply in_map_iff in i; exrepnd; subst; eauto 3 with slow.
+Qed.
+Hint Resolve wf_sw_sub2 : slow.
+
+Lemma dom_sub_sw_sub2 {o} :
+  forall a b l k,
+    length l = length k
+    -> @dom_sub o (sw_sub2 a b l k) = l.
+Proof.
+  introv len.
+  unfold sw_sub2.
+  rewrite dom_sub_combine_le; autorewrite with slow; auto; try omega.
+Qed.
+
+Lemma dom_sub_sw_sub_ts {o} :
+  forall a b l k,
+    length l = length k
+    -> @dom_sub o (sw_sub_ts a b l k) = l.
+Proof.
+  introv len.
+  unfold sw_sub_ts.
+  rewrite dom_sub_combine_le; autorewrite with slow; auto; try omega.
+Qed.
+
+Lemma sub_free_vars_sw_sub2 {o} :
+  forall a b l k,
+    length l = length k
+    -> @sub_free_vars o (sw_sub2 a b l k) = k.
+Proof.
+  introv len.
+  unfold sw_sub2.
+  rewrite sub_free_vars_combine; autorewrite with slow; auto.
+  rewrite flat_map_map; unfold compose; simpl; autorewrite with slow; auto.
+Qed.
+
+Lemma isprogram_mk_swap_cs2_sw_sub2_sw_sub_ts {o} :
+  forall a b (t : @NTerm o) l k ts,
+    nt_wf t
+    -> areprograms ts
+    -> length l = length k
+    -> length k = length ts
+    -> subset (free_vars t) l
+    -> isprogram (lsubst (mk_swap_cs2 a b (lsubst_aux t (sw_sub2 a b l k))) (sw_sub_ts a b k ts)).
+Proof.
+  introv wf aps lena lenb ss.
+  apply isprogram_lsubst_if_isprog_sub; eauto 3 with slow.
+  simpl; autorewrite with slow.
+  introv i; apply free_vars_lsubst_aux_subset in i.
+  rewrite dom_sub_sw_sub2 in i; auto.
+  rewrite dom_sub_sw_sub_ts; auto.
+  apply in_app_iff in i; repndors.
+
+  { apply in_remove_nvars in i; repnd.
+    apply ss in i0; tcsp. }
+
+  rewrite sub_free_vars_sw_sub2 in i; auto.
+Qed.
+Hint Resolve isprogram_mk_swap_cs2_sw_sub2_sw_sub_ts : slow.
+
 Lemma approx_swap_cs2_implies {o} :
   forall a b lib (t1 t2 : @NTerm o),
     approx lib (mk_swap_cs2 a b t1) (mk_swap_cs2 a b t2)
@@ -905,19 +1174,20 @@ Proof.
     apply alpha_eq_bterm_sym in i2; apply alpha_eq_bterm_ren_1side2 in i2;[].
     rewrite lsust_mk_swap_cs2_eq in i3, i2.
 
-    assert (disjoint lvn (free_vars u1)) as da.
-    { pose proof (isvalue_oterm_implies_disjoint_free_vars_bterm (Can c0) bterms lvn n) as q.
-      autodimp q hyp.
-      introv ia ib;applydup q in ia; destruct ia0.
-      eapply alphaeqbt_preserves_fvars_aux; try apply alpha_eq_bterm_sym; eauto; simpl.
-      apply in_remove_nvars; dands; auto. }
+    assert (subset (free_vars u1) l) as ssa.
+    { pose proof (isprog_oterm_implies_null_free_vars_bterm (Can c0) bterms n) as q.
+      autodimp q hyp; eauto 2 with slow.
+      apply alpha_eq_bterm_preserves_free_vars in ha1; rewrite ha1 in q; simpl in q.
+      apply null_remove_nvars_subvars in q; apply subvars_eq in q; auto. }
 
-    assert (disjoint lvn (free_vars u2)) as db.
-    { pose proof (isvalue_oterm_implies_disjoint_free_vars_bterm (Can c0) bs lvn n) as q.
-      autodimp q hyp.
-      introv ia ib;applydup q in ia; destruct ia0.
-      eapply alphaeqbt_preserves_fvars_aux; try apply alpha_eq_bterm_sym; eauto; simpl.
-      apply in_remove_nvars; dands; auto. }
+    assert (subset (free_vars u2) l) as ssb.
+    { pose proof (isprog_oterm_implies_null_free_vars_bterm (Can c0) bs n) as q.
+      autodimp q hyp; eauto 3 with slow.
+      apply alpha_eq_bterm_preserves_free_vars in hb0; rewrite hb0 in q; simpl in q.
+      apply null_remove_nvars_subvars in q; apply subvars_eq in q; auto. }
+
+    assert (disjoint lvn (free_vars u1)) as da by eauto 3 with slow.
+    assert (disjoint lvn (free_vars u2)) as db by eauto 3 with slow.
 
     unfold push_swap_cs_sub_term in *.
     eapply approx_open_alpha_rw_l_aux in i0;[|exact i2].
@@ -926,14 +1196,20 @@ Proof.
             [|autorewrite with slow; rewrite flat_map_free_var_vars_range; eauto 2 with slow];[]).
     repeat (rewrite lsubst_aux_sw_sub_var_ren in i0; auto;[]).
     apply clearbots_olift.
-    apply approx_open_simpler_equiv.
     unfold approx_open, olift in i0; repnd.
     apply nt_wf_mk_swap_cs2_implies in i7; apply lsubst_aux_nt_wf in i7.
     apply nt_wf_mk_swap_cs2_implies in i8; apply lsubst_aux_nt_wf in i8.
-    unfold simpl_olift; dands; auto;[].
-    introv ps ispa ispb.
+    apply (approx_open_cl_equiv l); auto;[].
+    unfold cl_olift; dands; auto;[].
+    introv len aps.
+    pose proof (i0 (sw_sub_ts a b lvn ts)) as i0.
+    repeat (autodimp i0 hyp); eauto 2 with slow;
+      try (complete (apply isprogram_mk_swap_cs2_sw_sub2_sw_sub_ts; auto; try congruence)).
+    repeat rewrite lsust_mk_swap_cs2_eq in i0.
 
-(* we should now instantiate i0 with a sub that swaps again the variables *)
+    apply ind in i0.
+
+(* We now need to combine the substitutions and use something like [approx_mk_swap_cs2_twice] below *)
 
 XXXXXX
     , b2 as [l2 u2]; simpl in *.
