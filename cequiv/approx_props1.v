@@ -751,7 +751,7 @@ Qed.
 Hint Resolve respects_alpha_l_approx_aux : slow.
 
 Theorem approx_acc_resp {p} :
-  forall (lib : library)
+  forall (lib : plibrary)
          (l r0 : bin_rel (@NTerm p))
          (resp_l_l : respects_alpha_l l)
          (resp_r_l : respects_alpha_r l)
@@ -2335,7 +2335,7 @@ Qed.
 
 
 Theorem approx_acc {p} :
-  forall (lib : library)
+  forall (lib : plibrary)
          (l r0 : bin_rel (@NTerm p))
          (OBG: forall (r: bin_rel NTerm)
                       (INC: r0 =2> r)

@@ -1354,24 +1354,44 @@ Proof.
   introv h; apply clearbots_olift; auto.
 Qed.
 
-(* !!!!!!!!! Change library into plibrary in approx.approx_props1 *)
-Theorem approx_acc_resp {p} :
+Inductive rel_sub {o} (r : bin_rel (@NTerm o)) : Sub -> Sub -> tuniv :=
+  rel_sub_nil : rel_sub r [] []
+| rel_sub_cons :
+    forall (v : NVar) (t1 t2 : NTerm) (s1 s2 : Sub),
+      r t1 t2
+      -> rel_sub r s1 s2
+      -> rel_sub r ((v, t1) :: s1) ((v, t2) :: s2).
+
+Definition rel_open {o} (r : bin_rel (@NTerm o)) t1 t2 :=
+  forall l, cl_olift r t1 t2 l.
+
+Definition is_congr {o} (r : bin_rel (@NTerm o)) :=
+  forall t1 t2 sub1 sub2,
+    rel_sub r sub1 sub2
+    -> rel_open r t1 t2
+    -> isprogram (lsubst t1 sub1)
+    -> isprogram (lsubst t2 sub2)
+    -> r (lsubst t1 sub1) (lsubst t2 sub2).
+
+Theorem approx_acc_resp_tr {p} :
   forall (lib : plibrary)
          (l r0 : bin_rel (@NTerm p))
          (resp_l_l : respects_alpha_l l)
          (resp_r_l : respects_alpha_r l)
          (resp_l_r0 : respects_alpha_l r0)
          (resp_r_r0 : respects_alpha_r r0)
+         (trans : trans_rel (r0 \2/ l))
          (OBG : forall (r: bin_rel NTerm)
                        (INC: r0 =2> r)
                        (CIH: l =2> r)
                        (resp_r : respects_alpha_r r)
-                       (resp_l : respects_alpha_l r),
+                       (resp_l : respects_alpha_l r)
+                       (trans : trans_rel r),
                   l =2> approx_aux lib r),
     l =2> approx_aux lib r0.
 Proof.
   intros.
-  assert (SIM: approx_aux lib (r0 \2/ l) x0 x1) by eauto 6 with slow.
+  assert (SIM: approx_aux lib (r0 \2/ l) x0 x1) by (apply OBG; eauto 3 with slow).
   clear PR; revert x0 x1 SIM; cofix CIH.
   intros; destruct SIM; econstructor; eauto.
   invertsna c Hcl. repnd.
@@ -1396,27 +1416,105 @@ Proof.
     try (complete (left; apply CIH; apply OBG; tcsp; eauto 3 with slow)).
 Qed.
 
-Lemma approx_mk_swap_cs2_twice {o} :
+Theorem approx_acc_resp_cg {p} :
+  forall (lib : plibrary)
+         (l r0 : bin_rel (@NTerm p))
+         (resp_l_l : respects_alpha_l l)
+         (resp_r_l : respects_alpha_r l)
+         (resp_l_r0 : respects_alpha_l r0)
+         (resp_r_r0 : respects_alpha_r r0)
+         (congr : is_congr (r0 \2/ l))
+         (trans : trans_rel (r0 \2/ l))
+         (OBG : forall (r: bin_rel NTerm)
+                       (INC: r0 =2> r)
+                       (CIH: l =2> r)
+                       (resp_r : respects_alpha_r r)
+                       (resp_l : respects_alpha_l r)
+                       (congr : is_congr r)
+                       (trans_rel : trans_rel r),
+                  l =2> approx_aux lib r),
+    l =2> approx_aux lib r0.
+Proof.
+  intros.
+  assert (SIM: approx_aux lib (r0 \2/ l) x0 x1).
+  { apply OBG; eauto 3 with slow. }
+  clear PR; revert x0 x1 SIM; cofix CIH.
+  intros; destruct SIM; econstructor; eauto.
+  invertsna c Hcl. repnd.
+  unfold close_comput.
+  dands; eauto.
+
+  - introv Hcomp.
+    apply Hcl2 in Hcomp.
+    exrepnd. exists tr_subterms. split; eauto.
+    eapply le_lblift2; eauto.
+    apply le_olift.
+
+    unfold le_bin_rel.
+    introv Hap.
+    repndors; tcsp.
+    left.
+    apply CIH; apply OBG; eauto 3 with slow.
+
+  - introv Hcomp.
+    apply Hcl3 in Hcomp; exrepnd.
+    exists a' e'; dands; auto; repndors; auto; tcsp;
+    try (complete (left; apply CIH; apply OBG; tcsp; eauto 3 with slow)).
+Qed.
+
+Fixpoint mk_swap_cs2_N {o} n a b (t : @NTerm o) :=
+  match n with
+  | 0 => t
+  | S n => mk_swap_cs2 a b (mk_swap_cs2 a b (mk_swap_cs2_N n a b t))
+end.
+
+Lemma implies_alpha_eq_mk_swap_cs2_N {o} :
+  forall n a b (t u : @NTerm o),
+    alpha_eq t u
+    -> alpha_eq (mk_swap_cs2_N n a b t) (mk_swap_cs2_N n a b u).
+Proof.
+  induction n; introv aeq; simpl; eauto 3 with slow.
+  repeat apply implies_alpha_eq_mk_swap_cs2; auto.
+Qed.
+Hint Resolve implies_alpha_eq_mk_swap_cs2_N : slow.
+
+Lemma mk_swap_cs2_N_twice {o} :
+  forall n m a b (t : @NTerm o),
+    mk_swap_cs2_N n a b (mk_swap_cs2_N m a b t) = mk_swap_cs2_N (n + m) a b t.
+Proof.
+  induction n; introv; simpl; auto.
+  rewrite IHn; auto.
+Qed.
+Hint Rewrite @mk_swap_cs2_N_twice : slow.
+
+(*Lemma approx_mk_swap_cs2_twice {o} :
   forall lib a b (t : @NTerm o),
     isprog t
     -> approx lib (mk_swap_cs2 a b (mk_swap_cs2 a b t)) t.
 Proof.
   introv; revert t.
-  pose proof (approx_acc_resp
+  pose proof (approx_acc_resp_cg
                 lib
-                (fun t1 t2 => isprog t2 # alpha_eq t1 (mk_swap_cs2 a b (mk_swap_cs2 a b t2)))
+                (fun t1 t2 => isprog t2 # {n : nat & alpha_eq t1 (mk_swap_cs2_N n a b t2)})
                 (@bot2 o)) as h.
   simpl in h.
   introv isp.
-  apply h; auto; clear h; eauto 2 with slow.
-  { introv h q; repnd; subst; dands; eauto 3 with slow. }
-  { introv h q; repnd; subst; dands; eauto 4 with slow. }
-  introv h q  respa respb w; repnd; subst.
-  eapply respects_alpha_l_approx_aux; try apply alpha_eq_sym; try exact w; auto.
-  clear w.
+  apply h; auto; clear h; eauto 2 with slow;
+    try (complete (dands; auto; exists 1; simpl; auto)).
+  { introv h q; exrepnd; subst; dands; auto; exists n; eauto 3 with slow. }
+  { introv h q; exrepnd; subst; dands; eauto 2 with slow; exists n; eauto 3 with slow. }
+  { introv h q ispa ispb; right; allrw @isprog_eq; dands; auto.
+}
+  { introv h q; repndors; exrepnd; subst; dands; tcsp.
+    apply (implies_alpha_eq_mk_swap_cs2_N n0 a b) in q1.
+    right; dands; auto; exists (n0 + n); autorewrite with slow in *; eauto 2 with slow. }
+
+  introv h q respa respb trans w; exrepnd; subst.
+  eapply respects_alpha_l_approx_aux; try apply alpha_eq_sym; try exact w1; auto.
+  clear w1.
   clear dependent t.
   rename x1 into t; rename w0 into isp.
-  assert (forall t, isprog t -> r (mk_swap_cs2 a b (mk_swap_cs2 a b t)) t) as q' by (introv isp'; apply q; tcsp).
+  assert (forall t n, isprog t -> r (mk_swap_cs2_N n a b t) t) as q' by (introv isp'; apply q; dands; eauto).
   clear q; rename q' into ind.
   constructor; unfold close_comput; dands; auto;
     repeat apply implies_isprogram_mk_swap_cs2;
@@ -1463,7 +1561,13 @@ Proof.
     introv len aps.
     repeat rewrite lsust_mk_swap_cs2_eq.
 
-    (* in addition to alpha-respecting, we would need that r is transitive and a congruence... *)
+    unfold push_swap_cs_sub_term; simpl.
+    repeat (rewrite lsubst_sw_sub_lsust_aux_combine_eq; autorewrite with slow; eauto 2 with slow).
+    repeat (rewrite lsubst_sw_sub_lsust_aux_combine_eq2; autorewrite with slow; eauto 2 with slow).
+
+
+    (* in addition to alpha-respecting, we would need a version of approx_acc_resp
+       where r is also transitive and a congruence... *)
 
 XXXXX
 
@@ -1471,10 +1575,6 @@ XXXXX
       [apply ind; apply isprog_eq; apply isprogram_lsubst_if_isprog_sub;
        autorewrite with slow; eauto 3 with slow
       |];[].
-
-    unfold push_swap_cs_sub_term; simpl.
-    rewrite lsubst_sw_sub_lsust_aux_combine_eq; autorewrite with slow; eauto 2 with slow.
-    rewrite lsubst_sw_sub_lsust_aux_combine_eq2; autorewrite with slow; eauto 2 with slow.
 
     apply lsubst_approx_congr2; eauto 3 with slow.
     apply implies_approx_sub_combine; autorewrite with slow; auto.
@@ -1491,7 +1591,34 @@ XXXXX
       repeat apply isprog_swap_cs2_implies; exrepnd; eauto 3 with slow;[].
     applydup @preserve_program_exc2 in comp; eauto 3 with slow; repnd.
     exists a0 e; dands; auto; left; apply approx_refl; auto. }
+Qed.*)
+
+Lemma implies_prog_sub_sub_keep_first {o} :
+  forall (u : @NTerm o) sub,
+    isprogram (lsubst u sub)
+    -> prog_sub (sub_keep_first sub (free_vars u)).
+Proof.
+  introv isp i.
+  apply in_sub_keep_first in i; repnd.
+  apply isprogram_lsubst_iff in isp; repnd.
+  applydup isp in i; exrepnd.
+  rewrite i1 in *; ginv.
+  split; auto.
 Qed.
+Hint Resolve implies_prog_sub_sub_keep_first : slow.
+
+Lemma subset_dom_sub_sub_keep_first {o} :
+  forall l (sub : @Sub o),
+    subset l (dom_sub sub)
+    -> subset l (dom_sub (sub_keep_first sub l)).
+Proof.
+  introv ss i.
+  pose proof (eqvars_dom_sub_sub_keep_first sub l) as q.
+  autodimp q hyp.
+  { apply subvars_eq; auto. }
+  apply eqvars_is_eqset in q; apply q; auto.
+Qed.
+Hint Resolve subset_dom_sub_sub_keep_first : slow.
 
 Lemma approx_mk_swap_cs2_twice {o} :
   forall lib a b (t : @NTerm o),
@@ -1538,26 +1665,50 @@ Proof.
 
     assert (subset (free_vars u) l) as ssa by eauto 2 with slow.
 
-    apply implies_clearbots_olift.
-    apply (approx_open_cl_equiv l); simpl; autorewrite with slow; auto.
+(* XXXXXXXX *)
+    assert (cl_olift (approx lib)
+                     (mk_swap_cs2 a b (mk_swap_cs2 a b (push_swap_cs_sub_term a b l (push_swap_cs_sub_term a b l u))))
+                     u l) as cl.
+    2:{ unfold olift, cl_olift in *; repnd; dands; auto;[].
+        introv ps ispa ispb; left.
+        pose proof (lsubst_as_combine (mk_swap_cs2 a b (mk_swap_cs2 a b (push_swap_cs_sub_term a b l (push_swap_cs_sub_term a b l u)))) (sub_keep_first sub (free_vars u)) l) as qa.
+        repeat (autodimp qa hyp); simpl; autorewrite with slow; eauto 3 with slow; exrepnd;[].
+        pose proof (lsubst_as_combine u (sub_keep_first sub (free_vars u)) l) as qb.
+        repeat (autodimp qb hyp); eauto 3 with slow; exrepnd;[].
+        rewrite <- qa0 in qb0; subst ts0; clear qa0.
+        eapply approx_alpha_rw_l_aux;[apply alpha_eq_sym;apply lsubst_trim_alpha|].
+        eapply approx_alpha_rw_r_aux;[apply alpha_eq_sym;apply lsubst_trim_alpha|].
+        simpl; autorewrite with slow.
+        rewrite qa2, qb2 in *.
+        apply cl; auto. }
+(* XXXXXXXXXX *)
+
+(*    apply implies_clearbots_olift.
+    apply (approx_open_cl_equiv l); simpl; autorewrite with slow; auto.*)
     unfold cl_olift; dands; repeat apply implies_nt_wf_mk_swap_cs2; eauto 3 with slow;[].
     introv len aps.
     repeat rewrite lsust_mk_swap_cs2_eq.
-    eapply approx_trans;
-      [apply ind; apply isprog_eq; apply isprogram_lsubst_if_isprog_sub;
-       autorewrite with slow; eauto 3 with slow
-      |];[].
 
     unfold push_swap_cs_sub_term; simpl.
     rewrite lsubst_sw_sub_lsust_aux_combine_eq; autorewrite with slow; eauto 2 with slow.
     rewrite lsubst_sw_sub_lsust_aux_combine_eq2; autorewrite with slow; eauto 2 with slow.
 
-    apply lsubst_approx_congr2; eauto 3 with slow.
-    apply implies_approx_sub_combine; autorewrite with slow; auto.
-    introv j; rewrite <- map_combine_left in j; apply in_map_iff in j; exrepnd; ginv.
-    apply in_combine_same in j1; repnd; subst.
-    applydup aps in j0.
-    apply ind; eauto 2 with slow. }
+    repeat rewrite <- lsust_mk_swap_cs2_eq.
+    apply lsubst_approx_congr2; eauto 2 with slow;
+      [| |apply isprogram_lsubst_if_isprog_sub; simpl; autorewrite with slow; eauto 3 with slow].
+
+    { apply implies_approx_sub_combine; autorewrite with slow; auto.
+      introv j; rewrite <- map_combine_left in j; apply in_map_iff in j; exrepnd; ginv.
+      apply in_combine_same in j1; repnd; subst.
+      applydup aps in j0.
+      apply ind; eauto 2 with slow. }
+
+    apply (approx_open_cl_equiv l); simpl; autorewrite with slow; auto.
+    unfold cl_olift; dands; repeat apply implies_nt_wf_mk_swap_cs2; eauto 3 with slow;[].
+    introv len' aps'.
+    repeat rewrite lsust_mk_swap_cs2_eq.
+    apply ind.
+    apply isprog_eq; apply isprogram_lsubst_if_isprog_sub; eauto 3 with slow. }
 
   { (* EXC case *)
 
