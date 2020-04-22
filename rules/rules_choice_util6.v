@@ -3567,28 +3567,184 @@ Inductive diff_swaps_sosub {o} a b : @SOSub o -> @SOSub o -> Type :=
       -> diff_swaps_sosub a b ((v, t1) :: s1) ((v, t2) :: s2).
 Hint Constructors diff_swaps_sosub.
 
+
+Lemma sosub_find_diff_swaps_if_some {o} :
+  forall a b (s1 s2 : @SOSub o) v t,
+    diff_swaps_sosub a b s1 s2
+    -> sosub_find s1 v = Some t
+    -> {u : sosub_kind & sosub_find s2 v = Some u # diff_swaps_sosub_kind a b t u}.
+Proof.
+  introv d; induction d; introv h; simpl in *; boolvar; ginv; eauto.
+  inversion d; subst; boolvar; subst; ginv; eexists; dands; eauto.
+Qed.
+
+Lemma sosub_find_diff_swaps_if_none {o} :
+  forall a b (s1 s2 : @SOSub o) v,
+    diff_swaps_sosub a b s1 s2
+    -> sosub_find s1 v = None
+    -> sosub_find s2 v = None.
+Proof.
+  introv d; induction d; introv h; simpl in *; boolvar; ginv; eauto.
+  inversion d; subst; boolvar; subst; ginv; eexists; dands; eauto.
+Qed.
+
+Lemma implies_diff_swaps_sub_combine {o} :
+  forall a b vs (ts : list (@SOTerm o)) s1 s2,
+    length vs = length ts
+    -> diff_swaps_sosub a b s1 s2
+    -> (forall t, LIn t ts -> diff_swaps_sosub a b s1 s2 -> diff_swaps a b (sosub_aux s1 t) (sosub_aux s2 t))
+    -> diff_swaps_sub a b (combine vs (map (sosub_aux s1) ts)) (combine vs (map (sosub_aux s2) ts)).
+Proof.
+  induction vs; introv len d imp; simpl in *; eauto 3 with slow; cpxpp.
+Qed.
+Hint Resolve implies_diff_swaps_sub_combine : slow.
+
+Lemma diff_swaps_apply_list {o} :
+  forall a b (ts : list (@SOTerm o)) t u s1 s2,
+    diff_swaps_sosub a b s1 s2
+    -> diff_swaps a b t u
+    -> (forall t, LIn t ts -> diff_swaps_sosub a b s1 s2 -> diff_swaps a b (sosub_aux s1 t) (sosub_aux s2 t))
+    -> diff_swaps a b (apply_list t (map (sosub_aux s1) ts)) (apply_list u (map (sosub_aux s2) ts)).
+Proof.
+  induction ts; introv ds dt imp; simpl in *; auto.
+  apply IHts; auto.
+  apply implies_diff_swaps_mk_apply; eauto 3 with slow.
+Qed.
+
+Lemma diff_swaps_sosub_sosub_filter {o} :
+  forall a b (s1 s2 : @SOSub o) l,
+    diff_swaps_sosub a b s1 s2
+    -> diff_swaps_sosub a b (sosub_filter s1 l) (sosub_filter s2 l).
+Proof.
+  introv d; induction d; simpl in *; auto.
+  inversion d; subst; boolvar; tcsp.
+Qed.
+Hint Resolve diff_swaps_sosub_sosub_filter : slow.
+
 Lemma implies_diff_swaps_sosub_aux {o} :
-  forall a b (s1 s2 : @SOSub o) t,
+  forall a b t (s1 s2 : @SOSub o),
     diff_swaps_sosub a b s1 s2
     -> diff_swaps a b (sosub_aux s1 t) (sosub_aux s2 t).
 Proof.
   soterm_ind t as [v ts ind|op bs ind] Case; introv d; simpl.
+
+  { remember (sosub_find s1 (v, Datatypes.length ts)) as x; symmetry in Heqx; destruct x.
+    { dup d as d'; eapply sosub_find_diff_swaps_if_some in d; eauto; exrepnd; allrw.
+      inversion d0; subst; clear d0.
+      apply implies_diff_swaps_lsubst_aux; auto.
+      applydup @sosub_find_some in d1; repnd; eauto 3 with slow. }
+    erewrite sosub_find_diff_swaps_if_none; eauto.
+    apply diff_swaps_apply_list; auto. }
+
+  constructor; autorewrite with slow; auto.
+  introv i.
+  rewrite <- map_combine in i; apply in_map_iff in i; exrepnd; ginv.
+  apply in_combine_same in i1; repnd; subst.
+  destruct a0; simpl; constructor.
+  eapply ind; eauto 3 with slow.
 Qed.
+Hint Resolve implies_diff_swaps_sosub_aux : slow.
+
+Lemma diff_swaps_sosub_same_free_vars_sosub {o} :
+  forall a b (s1 s2 : @SOSub o),
+    diff_swaps_sosub a b s1 s2
+    -> free_vars_sosub s1 = free_vars_sosub s2.
+Proof.
+  introv d; induction d; simpl in *; auto.
+  inversion d as [? ? ? d']; subst; clear d; simpl in *.
+  erewrite diff_swaps_implies_same_free_vars; eauto; try congruence.
+Qed.
+
+Lemma diff_swaps_sosub_same_bound_vars_sosub {o} :
+  forall a b (s1 s2 : @SOSub o),
+    diff_swaps_sosub a b s1 s2
+    -> bound_vars_sosub s1 = bound_vars_sosub s2.
+Proof.
+  introv d; induction d; simpl in *; auto.
+  inversion d as [? ? ? d']; subst; clear d; simpl in *.
+  erewrite diff_swaps_implies_same_bound_vars; eauto; try congruence.
+Qed.
+
+Lemma diff_swaps_implies_same_allvars {o} :
+  forall a b (t u : @NTerm o),
+    diff_swaps a b t u
+    -> allvars t = allvars u.
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv d; inv_diff; simpl; autorewrite with slow; auto;
+    try (complete (eapply ind; try (left; reflexivity); auto)).
+  apply eq_flat_maps_diff; auto.
+  introv i.
+  applydup imp in i.
+  inv_diff_bterm i0; simpl.
+  f_equal.
+  apply in_combine in i; repnd.
+  eapply ind; eauto.
+Qed.
+Hint Resolve diff_swaps_implies_same_allvars : slow.
+
+Lemma diff_swaps_sosub_same_allvars_range_sosub {o} :
+  forall a b (s1 s2 : @SOSub o),
+    diff_swaps_sosub a b s1 s2
+    -> allvars_range_sosub s1 = allvars_range_sosub s2.
+Proof.
+  introv d; induction d; simpl in *; auto.
+  inversion d as [? ? ? d']; subst; clear d; simpl in *.
+  erewrite diff_swaps_implies_same_allvars; eauto; try congruence.
+Qed.
+
+Lemma diff_swaps_sosub_sosub_change_bvars_alpha {o} :
+  forall a b (s1 s2 : @SOSub o) l,
+    diff_swaps_sosub a b s1 s2
+    -> diff_swaps_sosub a b (sosub_change_bvars_alpha l s1) (sosub_change_bvars_alpha l s2).
+Proof.
+  introv d; induction d; simpl; auto.
+  constructor; eauto 3 with slow.
+  inversion d as [? ? ? d']; subst; clear d; simpl in *.
+  unfold sk_change_bvars_alpha; simpl.
+  applydup (implies_diff_swaps_change_bvars_alpha a b t0 t3 l) in d' as d''.
+  erewrite diff_swaps_implies_same_all_vars; eauto.
+  constructor; eauto 3 with slow.
+Qed.
+Hint Resolve diff_swaps_sosub_sosub_change_bvars_alpha : slow.
 
 Lemma implies_diff_swaps_sosub {o} :
   forall a b (s1 s2 : @SOSub o) t,
     diff_swaps_sosub a b s1 s2
     -> diff_swaps a b (sosub s1 t) (sosub s2 t).
 Proof.
+  introv d; unfold sosub.
+  rewrite <- (diff_swaps_sosub_same_free_vars_sosub a b s1 s2); auto.
+  rewrite <- (diff_swaps_sosub_same_bound_vars_sosub a b s1 s2); auto.
+  rewrite <- (diff_swaps_sosub_same_allvars_range_sosub a b s1 s2); auto.
+  boolvar; eauto 3 with slow.
 Qed.
+Hint Resolve implies_diff_swaps_sosub : slow.
+
+Lemma diff_swaps_sosub_mk_abs_subst {o} :
+  forall a b vs (bs1 bs2 : list (@BTerm o)),
+    length bs1 = length bs2
+    -> (forall b1 b2, LIn (b1, b2) (combine bs1 bs2) -> diff_swaps_bterm a b b1 b2)
+    -> diff_swaps_sosub a b (mk_abs_subst vs bs1) (mk_abs_subst vs bs2).
+Proof.
+  induction vs; introv lena imp; simpl in *; auto; cpxpp.
+  destruct a0; simpl in *; boolvar; subst; eauto 3 with slow.
+  destruct bs1; simpl in *; cpxpp.
+  inv_diff_bterms.
+  inv_diff_bterm imp0.
+  boolvar; subst; eauto 3 with slow.
+  constructor; eauto 3 with slow.
+Qed.
+Hint Resolve diff_swaps_sosub_mk_abs_subst : slow.
 
 Lemma diff_swaps_mk_instance {o} :
   forall a b vs (bs1 bs2 : list (@BTerm o)) t,
-    (forall b1 b2, LIn (b1,b2) (combine bs1 bs2) -> diff_swaps_bterm a b b1 b2)
+    length bs1 = length bs2
+    -> (forall b1 b2, LIn (b1,b2) (combine bs1 bs2) -> diff_swaps_bterm a b b1 b2)
     -> diff_swaps a b (mk_instance vs bs1 t) (mk_instance vs bs2 t).
 Proof.
-  introv imp; unfold mk_instance.
+  introv lena imp; unfold mk_instance; eauto 3 with slow.
 Qed.
+Hint Resolve diff_swaps_mk_instance : slow.
 
 Lemma compute_step_diff_swaps {o} :
   forall a b lib (t : @NTerm o) u z,
@@ -3883,24 +4039,128 @@ Proof.
     apply compute_step_lib_success in comp; exrepnd; subst.
     eapply compute_step_lib_success_change_bs in comp0;
       [|eapply diff_swaps_bterms_implies_eq_map_num_bvars; eauto].
-    eexists; dands; eauto; eauto 3 with slow.
-
-
-}
-
+    eexists; dands; eauto; eauto 3 with slow. }
 Qed.
 
-Lemma swap_mk_swap_cs2 {o} :
-  forall lib n1 n2 (t : @NTerm o) vs ts,
-    areprograms ts
-    -> isprog_vars vs t
-    -> length vs = length ts
-    -> cl_approx
-         lib
-         (mk_swap_cs2 n1 n2 (lsubst t (sw_sub_ts n1 n2 vs ts)))
-         (mk_swap_cs2 n2 n1 (lsubst t (sw_sub_ts n2 n1 vs ts))).
+Lemma reduces_in_atmost_k_steps_diff_swaps {o} :
+  forall a b lib k (t : @NTerm o) u z,
+    diff_swaps a b t z
+    -> reduces_in_atmost_k_steps lib t u k
+    -> {w : NTerm
+        & reduces_in_atmost_k_steps lib z w k
+        # diff_swaps a b u w}.
 Proof.
-  cofix ind; introv aps isp len.
+  induction k; introv d r; simpl in *.
+
+  { allrw @reduces_in_atmost_k_steps_0; subst.
+    exists z; allrw @reduces_in_atmost_k_steps_0; dands; auto. }
+
+  allrw @reduces_in_atmost_k_steps_S; exrepnd.
+  eapply compute_step_diff_swaps in r1; eauto; exrepnd.
+  eapply IHk in r0; eauto; exrepnd.
+  exists w0; allrw @reduces_in_atmost_k_steps_S; dands; auto.
+  exists w; dands; auto.
+Qed.
+
+Lemma reduces_to_diff_swaps {o} :
+  forall a b lib (t : @NTerm o) u z,
+    diff_swaps a b t z
+    -> reduces_to lib t u
+    -> {w : NTerm
+        & reduces_to lib z w
+        # diff_swaps a b u w}.
+Proof.
+  introv d r; unfold reduces_to in *; exrepnd.
+  eapply reduces_in_atmost_k_steps_diff_swaps in r0; eauto; exrepnd.
+  exists w; dands; auto.
+  exists k; auto.
+Qed.
+
+Lemma diff_swaps_preserves_closed {o} :
+  forall a b (t u : @NTerm o),
+    diff_swaps a b t u
+    -> closed t
+    -> closed u.
+Proof.
+  introv d isp.
+  unfold closed in *.
+  erewrite diff_swaps_implies_same_free_vars in isp; eauto.
+Qed.
+Hint Resolve diff_swaps_preserves_closed : slow.
+
+Lemma diff_swaps_preserves_nt_wf {o} :
+  forall a b (t u : @NTerm o),
+    diff_swaps a b t u
+    -> nt_wf t
+    -> nt_wf u.
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv d wf; inv_diff; simpl; autorewrite with slow; auto;
+    try (complete (eapply ind; try (left; reflexivity); auto)).
+
+  { allrw @nt_wf_oterm_iff; repnd.
+    rewrite <- wf0.
+    erewrite (diff_swaps_bterms_implies_eq_map_num_bvars a b bs bs2); eauto; dands; auto.
+    introv i.
+    dup len as j; symmetry in j; eapply implies_in_combine in j; eauto; exrepnd.
+    apply in_combine_swap in j0; auto.
+    applydup imp in j0.
+    inv_diff_bterm j1.
+    apply in_combine in j0; repnd.
+    applydup wf in j1.
+    allrw @bt_wf_iff.
+    eapply ind; eauto. }
+
+  { apply implies_nt_wf_mk_swap_cs2.
+    apply nt_wf_mk_swap_cs2_implies in wf.
+    eapply ind; try (left; reflexivity); eauto. }
+Qed.
+Hint Resolve diff_swaps_preserves_nt_wf : slow.
+
+Lemma diff_swaps_preserves_isprogram {o} :
+  forall a b (t u : @NTerm o),
+    diff_swaps a b t u
+    -> isprogram t
+    -> isprogram u.
+Proof.
+  introv d isp.
+  unfold isprogram in *; repnd; dands; eauto 2 with slow.
+Qed.
+Hint Resolve diff_swaps_preserves_isprogram : slow.
+
+Lemma diff_swaps_preserves_isvalue {o} :
+  forall a b (t u : @NTerm o),
+    diff_swaps a b t u
+    -> isvalue t
+    -> isvalue u.
+Proof.
+  introv d isv.
+  inversion isv as [? isp isc]; subst.
+  split; eauto 2 with slow.
+Qed.
+Hint Resolve diff_swaps_preserves_isvalue : slow.
+
+Lemma computes_to_value_diff_swaps {o} :
+  forall a b lib (t : @NTerm o) u z,
+    diff_swaps a b t z
+    -> computes_to_value lib t u
+    -> {w : NTerm
+        & computes_to_value lib z w
+        # diff_swaps a b u w}.
+Proof.
+  introv d r; unfold computes_to_value in *; exrepnd.
+  eapply reduces_to_diff_swaps in r0; eauto; exrepnd.
+  exists w; dands; eauto 2 with slow.
+Qed.
+
+(* use [diff_swaps] below *)
+
+Lemma swap_mk_swap_cs2 {o} :
+  forall lib a b (t u : @NTerm o),
+    isprogram t
+    -> diff_swaps a b t u
+    -> cl_approx lib t u.
+Proof.
+  cofix ind; introv isp d.
   constructor.
   unfold cl_close_comput; dands; eauto 2 with slow;[|].
 
