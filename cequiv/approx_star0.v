@@ -1208,8 +1208,8 @@ Lemma howe_lemma3 : forall (a a' b : NTerm),
   in the proof of [howe_lemma3].
 *)
 
-Definition extensional_op_ind {p} lib k :=
-  forall (u u' v : @NTerm p),
+Definition extensional_op_ind {p} k :=
+  forall lib (u u' v : @NTerm p),
     isprogram u
     -> isprogram u'
     -> isprogram v
@@ -1228,7 +1228,7 @@ Definition extensional_op {p} (o : @Opid p) :=
     (Hpt' : isprogram (oterm o lbt'))
     (Hcv : computes_to_val_like_in_max_k_steps lib (oterm o lbt) a (S k))
     (Has : lblift_sub lib o (approx_star lib) lbt lbt')
-    (Hind : @extensional_op_ind p lib k),
+    (Hind : @extensional_op_ind p k),
     approx_star lib a (oterm o lbt').
 
 (** %\noindent \\*% It is immediately clear that all the canonical [Opid]s of

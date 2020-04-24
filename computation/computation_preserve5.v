@@ -495,16 +495,6 @@ Proof.
   dopid op as [can|ncan|exc|abs] Case; unfold isvalue_like, isnoncan_like; simpl; sp.
 Qed.
 
-(* !!MOVE *)
-Lemma alphaeq_vs_implies_alphaeq {o} :
-  forall (t1 t2 : @NTerm o) l,
-    alphaeq_vs l t1 t2 -> alphaeq t1 t2.
-Proof.
-  introv aeq.
-  apply alphaeq_exists.
-  eexists; eauto.
-Qed.
-
 Lemma simple_subst_aux_subst_utokens_aux_aeq {o} :
   forall (t1 t2 : @NTerm o) a v,
     wf_term t2

@@ -804,50 +804,6 @@ Proof.
     apply subvars_app_weak_r; auto.
 Qed.
 
-Lemma reduces_to_lsubst_aux {o} :
-  forall lib (t u : @NTerm o) sub,
-    nt_wf t
-    -> prog_sub sub
-    -> subvars (free_vars t) (dom_sub sub)
-    -> reduces_to lib t u
-    -> {v : NTerm
-        & reduces_to lib (lsubst_aux t sub) v
-        # alpha_eq v (lsubst_aux u sub) }.
-Proof.
-  introv wf cl sv r.
-  unfold reduces_to in r; exrepnd.
-  revert dependent u.
-  revert dependent t.
-
-  induction k; introv wf sv r.
-
-  - rw @reduces_in_atmost_k_steps_0 in r; subst.
-    exists (lsubst_aux u sub); dands; auto.
-    exists 0; rw @reduces_in_atmost_k_steps_0; auto.
-
-  - rw @reduces_in_atmost_k_steps_S in r; exrepnd.
-    pose proof (compute_step_lsubst_aux lib t u0 sub) as h.
-    repeat (autodimp h hyp); exrepnd; eauto 3 with slow.
-
-    applydup @compute_step_preserves in r1; repnd; auto.
-    assert (subvars (free_vars u0) (dom_sub sub))
-      as sv2 by (eapply subvars_trans; eauto).
-
-    pose proof (IHk u0 r2 sv2 u r0) as j; exrepnd.
-
-    pose proof (reduces_to_alpha lib (lsubst_aux u0 sub) v v0) as x;
-      repeat (autodimp x hyp);[|apply alpha_eq_sym;auto|];
-      exrepnd;
-      eauto 3 with slow.
-    exists t2'; dands; auto.
-
-    + eapply reduces_to_trans;[|complete eauto].
-      apply reduces_to_if_step; auto.
-
-    + eapply alpha_eq_trans;[|complete eauto].
-      apply alpha_eq_sym; auto.
-Qed.
-
 (*
 Lemma approx_open_vterm_iff_reduces_to {o} :
   forall lib x (t : @NTerm o),
@@ -1424,18 +1380,6 @@ Proof.
         allrw @approx_starbts_cons; repnd; dands; eauto with slow.
 Qed.
 Hint Resolve approx_star_berms_alpha_fun_r : slow.
-
-Lemma alpha_eq_oterm_implies_combine2 {o} :
-  forall (op : Opid) (bs : list BTerm) (t : @NTerm o),
-    alpha_eq (oterm op bs) t
-    -> {bs' : list BTerm
-        $ t = oterm op bs'
-        # alpha_eq_bterms bs bs'}.
-Proof.
-  introv aeq.
-  apply alpha_eq_oterm_implies_combine in aeq.
-  auto.
-Qed.
 
 Lemma lblift_sub_eq {o} :
   forall lib (op : Opid) (R : NTrel) (bs1 bs2: list (@BTerm o)),

@@ -1898,6 +1898,41 @@ Proof.
   introv; destruct can; simpl; auto.
 Qed.
 
+Hint Rewrite @free_vars_ren_utokens : slow.
+
+Lemma ren_utok_op_swap_cs_op {o} :
+  forall ren sw (op : @Opid o),
+    ren_utok_op ren (swap_cs_op sw op)
+    = swap_cs_op sw (ren_utok_op ren op).
+Proof.
+  introv; destruct op; simpl; auto.
+  destruct c; simpl; auto.
+Qed.
+
+Lemma ren_utokens_swap_cs_term {o} :
+  forall ren sw (t : @NTerm o),
+    ren_utokens ren (swap_cs_term sw t)
+    = swap_cs_term sw (ren_utokens ren t).
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
+  rewrite ren_utok_op_swap_cs_op.
+  f_equal.
+  allrw map_map; unfold compose.
+  apply eq_maps; introv i.
+  destruct x; simpl; f_equal.
+  eapply ind; eauto.
+Qed.
+
+Lemma ren_utokens_push_swap_cs0 {o} :
+  forall ren a b (t : @NTerm o),
+    ren_utokens ren (push_swap_cs0 a b t)
+    = push_swap_cs0 a b (ren_utokens ren t).
+Proof.
+  introv; unfold push_swap_cs0, push_swap_cs_sub_term.
+  rewrite lsubst_aux_ren_utokens; autorewrite with slow.
+  rewrite ren_utokens_swap_cs_term; auto.
+Qed.
+
 Lemma compute_step_ren_utokens {o} :
   forall lib (t u : @NTerm o) ren,
     nt_wf t
@@ -2136,6 +2171,26 @@ Proof.
             rewrite push_swap_cs_bterms_map_ren_utokens_b; auto.
             f_equal; f_equal.
             destruct can2; simpl; auto. }
+
+          { SSSCase "NSwapCs0".
+            csunf comp; simpl in comp.
+            apply compute_step_swap_cs0_success in comp; repndors; exrepnd; subst.
+
+            { csunf; simpl; tcsp; rewrite ren_utokens_push_swap_cs0; auto. }
+
+            { csunf; simpl; destruct can2; simpl in *; tcsp. }
+
+            { apply nt_wf_swap_cs0_iff in wf; exrepnd.
+              repeat (destruct l; simpl in *; ginv).
+              inversion wf1; subst; clear wf1.
+              eapply ind in comp2; try (right; left); eauto; eauto 3 with slow;
+                try (complete (eapply subset_disjoint_r; eauto; apply subset_diff_same_l;
+                               apply subset_get_utokens_implies_subset_get_utokens_lib;
+                               simpl; eauto with slow));[].
+              rewrite ren_utok_match_can_eq.
+              rewrite compute_step_swap_cs0_if_isnoncan_like; eauto 3 with slow;
+                try (complete (apply (isnoncan_like_ren_utokens _ ren) in comp3; simpl in *; tcsp));[].
+              simpl in *; allrw; tcsp. } }
 
           { SSSCase "NLDepth".
             csunf comp; simpl in *; ginv. }
@@ -4726,15 +4781,6 @@ Proof.
   induction sub1; introv; allsimpl; tcsp.
   destruct a as [v t]; allsimpl; rw IHsub1; auto.
 Qed.
-
-Lemma free_vars_subset_allvars {o} :
-  forall (t : @NTerm o), subset (free_vars t) (allvars t).
-Proof.
-  introv i.
-  pose proof (allvars_eq_all_vars t) as h; rw eqvars_prop in h; apply h.
-  rw in_app_iff; sp.
-Qed.
-Hint Resolve free_vars_subset_allvars : slow.
 
 Lemma bound_vars_subset_allvars {o} :
   forall (t : @NTerm o), subset (bound_vars t) (allvars t).
