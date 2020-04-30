@@ -131,7 +131,7 @@ Proof.
     + right.
       intro r; exrepnd.
       rw r1 in Heqc; ginv.
-    + dopid op as [can|ncan|exc|abs] Case;
+    + dopid op as [can|ncan|nsw|exc|abs] Case;
       try (complete (right; intro r; exrepnd; rw r1 in Heqc; ginv)).
       repeat (destruct bs; try (complete (right; intro r; exrepnd; rw r1 in Heqc; ginv))).
       destruct b as [l1 t1].
@@ -174,7 +174,7 @@ Lemma dec_isccan {o} :
 Proof.
   introv.
   destruct t as [v|op bs]; simpl; tcsp; try (complete (right; sp)).
-  dopid op as [can|ncan|exc|abs] Case; tcsp; try (complete (right; sp)).
+  dopid op as [can|ncan|nsw|exc|abs] Case; tcsp; try (complete (right; sp)).
 Qed.
 
 Lemma dec_ex_reduces_in_atmost_k_steps_isccan {o} :

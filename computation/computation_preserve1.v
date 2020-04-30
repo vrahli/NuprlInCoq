@@ -555,7 +555,7 @@ Lemma compute_step_swap_cs2_success {o} :
   forall sw (u : @NTerm o) comp x,
     compute_step_swap_cs2 sw u comp = csuccess x
     -> {c : CanonicalOp & {l : list BTerm & u = oterm (Can c) l # x = push_swap_cs_can sw c l}}
-       [+] {l : list BTerm & u = oterm Exc l # x = oterm Exc l}
+       [+] {l : list BTerm & u = oterm Exc l # x = push_swap_cs_exc sw l}
        [+] {w : NTerm & isnoncan_like u # comp = csuccess w # x = mk_swap_cs2 sw (swap_cs_term sw w)}.
 Proof.
   introv h.
@@ -605,6 +605,19 @@ Proof.
   pose proof (wf (bterm [] t)) as wf; autodimp wf hyp.
   allrw @bt_wf_iff; auto.
 Qed.
+
+Lemma implies_nt_wf_push_swap_cs_exc {o} :
+  forall sw (l : list (@BTerm o)),
+    nt_wf (oterm Exc l)
+    -> nt_wf (push_swap_cs_exc sw l).
+Proof.
+  introv wf; unfold push_swap_cs_exc.
+  allrw @nt_wf_oterm_iff; autorewrite with slow; repnd; dands; auto.
+  introv i.
+  apply in_map_iff in i; exrepnd; subst; apply wf in i1.
+  destruct a; simpl in *; allrw @bt_wf_iff; eauto 3 with slow.
+Qed.
+Hint Resolve implies_nt_wf_push_swap_cs_exc : slow.
 
 Lemma compute_step_preserves {o} :
   forall (t u : @NTerm o) lib,

@@ -3668,6 +3668,33 @@ Proof.
   eexists; dands; try reflexivity; auto.
 Qed.
 
+Lemma implies_alpha_eq_push_swap_cs_exc {o} :
+  forall sw (l k : list (@BTerm o)),
+    alpha_eq_bterms l k
+    -> alpha_eq (push_swap_cs_exc sw l) (push_swap_cs_exc sw k).
+Proof.
+  introv aeq.
+  unfold push_swap_cs_exc.
+  apply alpha_eq_oterm_combine; autorewrite with slow.
+  unfold alpha_eq_bterms in *; repnd; dands; auto.
+  introv i.
+  unfold push_swap_cs_bterms in i.
+  rewrite <- map_combine in i.
+  apply in_map_iff in i; exrepnd; ginv.
+  apply aeq in i1; eauto 3 with slow.
+  destruct a0, a; simpl in *.
+  inversion i1 as [? ? ? ? ? disj lena lenb norep aeq']; subst; clear i1.
+  econstructor; try exact lenb; autorewrite with slow; auto.
+  apply disjoint_app_r in disj; repnd.
+  repeat (rewrite lsubst_mk_swap_cs2_choice_seq_var_ren; autorewrite with slow;
+          try rewrite sub_free_vars_var_ren; auto; try omega;[]).
+  apply implies_alpha_eq_mk_swap_cs2.
+  repeat (rewrite lsubst_push_swap_cs_sub_term_var_ren_eq; auto; try omega).
+  repeat (rewrite <- lsubst_push_swap_cs_sub_term_var_ren_eq2; auto; try omega).
+  apply implies_alpha_eq_lsubst_aux_sw_sub; auto.
+Qed.
+Hint Resolve implies_alpha_eq_push_swap_cs_exc : slow.
+
 
 (* end hide *)
 
@@ -4220,9 +4247,7 @@ Proof.
                   destruct n; simpl in *; cpx.
                   { unfold selectbt; apply alphaeqbt_nilv2; pose proof (Hal 0) as Hal; simpl in Hal; autodimp Hal hyp; try omega. }
                   destruct n; simpl in *; cpx.
-                  { apply alphaeqbt_nilv2.
-                    unfold alpha_eq_bterms in *; repnd.
-                    apply alpha_eq_oterm_combine; dands; auto. }
+                  { apply alphaeqbt_nilv2; eauto 3 with slow. }
                   { pose proof (Hal (S (S n))) as Hal; simpl in Hal; apply Hal; try omega. } }
                 { allrw @nt_wf_swap_cs2_iff; exrepnd; fold_terms; ginv.
                   eapply IHind in Hcomp2; try (right; left; reflexivity); try (apply implies_alpha_eq_swap_cs_term;eauto);
@@ -4355,9 +4380,7 @@ Proof.
                   destruct n; simpl in *; cpx.
                   { unfold selectbt; apply alphaeqbt_nilv2; pose proof (Hal 0) as Hal; simpl in Hal; autodimp Hal hyp; try omega. }
                   destruct n; simpl in *; cpx.
-                  { apply alphaeqbt_nilv2.
-                    unfold alpha_eq_bterms in *; repnd.
-                    apply alpha_eq_oterm_combine; dands; auto. } }
+                  { apply alphaeqbt_nilv2; eauto 3 with slow. } }
                 { allrw @nt_wf_swap_cs2_iff; exrepnd; fold_terms; ginv.
                   eapply IHind in Hcomp2; try (right; left; reflexivity); try (apply implies_alpha_eq_swap_cs_term;eauto);
                     exrepnd; simpl; autorewrite with slow; eauto 3 with slow.
@@ -4690,8 +4713,7 @@ Proof.
         apply implies_alpha_eq_push_swap_cs_can; auto. }
 
       { apply alpha_eq_exc_implies in Hal0; exrepnd; subst.
-        csunf; simpl; eexists; dands; eauto.
-        apply alpha_eq_oterm_combine; auto. }
+        csunf; simpl; eexists; dands; eauto; eauto 3 with slow. }
 
       { rewrite compute_step_swap_cs2_isnoncan_like_eq; eauto 3 with slow.
         eapply IHind in Hcomp2; try (left; try reflexivity);

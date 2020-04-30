@@ -162,12 +162,19 @@ Proof.
   - allrw @reduces_in_atmost_k_steps_S; exrepnd.
     csunf r1; allsimpl.
     destruct t as [v|op bs]; allsimpl; ginv.
-    dopid op as [can|ncan|exc|abs] Case; allsimpl; ginv.
+    dopid op as [can|ncan|nsw|exc|abs] Case; allsimpl; ginv.
     + apply compute_step_tuni_success in r1; exrepnd; subst; GC; fold_terms.
       exists n; dands; eauto 3 with slow.
       apply reduces_in_atmost_k_steps_if_isvalue_like in r0; eauto 3 with slow; subst.
       apply cterm_eq; simpl; auto.
     + remember (compute_step lib (oterm (NCan ncan) bs)) as c; destruct c; allsimpl; ginv.
+      symmetry in Heqc.
+      applydup @preserve_compute_step in Heqc; eauto 3 with slow.
+      apply IHk in r0; clear IHk; eauto 3 with slow; exrepnd.
+      inversion r1; subst.
+      exists k0; dands; eauto 3 with slow.
+      eapply reduces_to_if_split2; eauto.
+    + remember (compute_step lib (oterm (NSwapCs2 nsw) bs)) as c; destruct c; allsimpl; ginv.
       symmetry in Heqc.
       applydup @preserve_compute_step in Heqc; eauto 3 with slow.
       apply IHk in r0; clear IHk; eauto 3 with slow; exrepnd.

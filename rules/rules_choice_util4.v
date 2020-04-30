@@ -1468,7 +1468,7 @@ Lemma OpBindings_ren_cs_op {o} :
   forall r (op : @Opid o),
     OpBindings (ren_cs_op r op) = OpBindings op.
 Proof.
-  destruct op as [can| | |]; simpl; tcsp.
+  destruct op as [can| | | |]; simpl; tcsp.
   destruct can; simpl; auto.
 Qed.
 Hint Rewrite @OpBindings_ren_cs_op : slow.
@@ -1816,7 +1816,7 @@ Proof.
   unfold isnoncan_like in *.
   repndors;[left|right].
 
-  { apply isnoncan_implies in isn; exrepnd; subst; simpl in *; auto. }
+  { apply isnoncan_implies in isn; repndors; exrepnd; subst; simpl in *; auto. }
 
   { apply isabs_implies in isn; exrepnd; subst; simpl in *; auto. }
 Qed.
@@ -2189,8 +2189,7 @@ Proof.
   introv h.
   destruct op; simpl in *; tcsp.
   { destruct c; simpl in *; tcsp. }
-  { destruct n; simpl in *; tcsp.
-    destruct s; simpl in *; tcsp. }
+  { destruct c; simpl in *; tcsp. }
 Qed.
 
 Lemma nodefs_oterm {o} :
@@ -8550,7 +8549,7 @@ Proof.
   introv.
   destruct t as [t isp].
   destruct t as [v|op bs]; try (complete (right; intro xx; exrepnd; inversion xx0));[].
-  dopid op as [can|ncan|exc|abs] Case; try (complete (right; intro xx; exrepnd; inversion xx0));[].
+  dopid op as [can|ncan|nsw|exc|abs] Case; try (complete (right; intro xx; exrepnd; inversion xx0));[].
   destruct can; try (complete (right; intro xx; exrepnd; inversion xx0));[].
   destruct bs; try (complete (right; intro xx; exrepnd; inversion xx0));[].
   destruct (Z_lt_le_dec z 0).
@@ -9082,7 +9081,7 @@ Proof.
 
   { introv compa.
     apply (@swap_computes_to_value o sw) in compa.
-    rewrite swap_cs_term_idem, swap_cs_plib_idem in compa; simpl in compa.
+    rewrite swap_cs_term_idem, approx_star_swap.swap_cs_plib_idem in compa; simpl in compa.
     apply cv in compa; exrepnd.
     apply (@swap_computes_to_value o sw) in compa1; simpl in compa1.
     rewrite swap_cs_can_twice in compa1.
@@ -10076,10 +10075,9 @@ Proof.
   rewrite map_flat_map; unfold compose.
   rewrite flat_map_map; unfold compose.
   f_equal.
-  { dopid op as [can|ncan|exc|abs] SCase; simpl; auto.
+  { dopid op as [can|ncan|nsw|exc|abs] SCase; simpl; auto.
     { destruct can; simpl; auto. }
-    { destruct ncan; simpl; auto.
-      destruct s; simpl; auto. } }
+    { destruct nsw; simpl; auto. } }
   apply eq_flat_maps; introv i; destruct x; simpl; eauto.
 Qed.
 
@@ -10214,8 +10212,6 @@ Lemma swap_cs_cterm_mkc_swap_cs {o} :
     = mkc_swap_cs (swap_swap sw sw') (swap_cs_cterm sw a).
 Proof.
   introv; destruct_cterms; apply cterm_eq; simpl; auto.
-  destruct sw as [n1 n2], sw' as [m1 m2]; simpl in *.
-  boolvar; subst; tcsp.
 Qed.
 Hint Rewrite @swap_cs_cterm_mkc_swap_cs : slow.
 
@@ -13730,22 +13726,22 @@ Definition get_cs_c {p} (c : @CanonicalOp p) : list choice_sequence_name :=
   | _ => []
   end.
 
-Definition get_cs_nfo (nfo : SwapCsNfo) : list choice_sequence_name :=
-  match nfo with
-  | MkSwapCsNfo n1 n2 => [n1, n2]
-  end.
+Definition get_cs_swap (sw : cs_swap) : list choice_sequence_name :=
+  let (n1,n2) := sw in [n1, n2].
 
-Definition get_cs_n (n : NonCanonicalOp) : list choice_sequence_name :=
+(*Definition get_cs_n (n : NonCanonicalOp) : list choice_sequence_name :=
   match n with
   | NSwapCs2 nfo => get_cs_nfo nfo
   | _ => []
-  end.
+  end.*)
 
 Definition get_cs_o {p} (o : @Opid p) : list choice_sequence_name :=
   match o with
   | Can c => get_cs_c c
-  | NCan n => get_cs_n n
-  | _ => []
+  | NCan n => [](*get_cs_n n*)
+  | NSwapCs2 sw => get_cs_swap sw
+  | Exc => []
+  | Abs _ => []
   end.
 
 Fixpoint get_cs {p} (t : @NTerm p) : list choice_sequence_name :=
@@ -13836,7 +13832,7 @@ Proof.
   { repeat rewrite nocs0.
     apply get_cs_swap_cs_term_nil_iff. }
   { split; intro x; dup x as xx; rewrite nocs in x; pose proof (x (name,name')) as x; try congruence.
-    rewrite swap_cs_choice_seq_restr_idem in x; rewrite <- x in xx; auto. }
+    rewrite approx_star_swap.swap_cs_choice_seq_restr_idem in x; rewrite <- x in xx; auto. }
 Qed.
 
 Lemma lib_extends_replace_cs_entry_between1 {o} :
@@ -14368,8 +14364,7 @@ Proof.
   introv h.
   destruct op; simpl in *; tcsp.
   { destruct c; simpl in *; tcsp. }
-  { destruct n; simpl in *; tcsp.
-    destruct s; simpl in *; tcsp. }
+  { destruct c; simpl in *; tcsp. }
 Qed.
 
 Lemma swap_cs_soterm_trivial_if_no_cs {o} :
@@ -14491,8 +14486,7 @@ Lemma swap_cs_op_trivial_same {o} :
 Proof.
   introv; destruct op; simpl; tcsp.
   { destruct c; simpl; tcsp; boolvar; subst; tcsp. }
-  { destruct n; simpl; tcsp; boolvar; subst; tcsp.
-    destruct s; simpl; tcsp; boolvar; subst; tcsp. }
+  { destruct c; simpl; tcsp; boolvar; subst; tcsp. }
 Qed.
 Hint Rewrite @swap_cs_op_trivial_same : slow.
 
@@ -15144,7 +15138,7 @@ Proof.
   { repeat rewrite nocs0; tcsp.
     apply get_cs_swap_cs_term_nil_iff. }
   { split; intro x; dup x as xx; rewrite nocs in x; pose proof (x sw) as x; try congruence.
-    rewrite swap_cs_choice_seq_restr_idem in x; rewrite <- x in xx; auto. }
+    rewrite approx_star_swap.swap_cs_choice_seq_restr_idem in x; rewrite <- x in xx; auto. }
 Qed.
 Hint Resolve same_conds_swap_cs_lib : slow.
 
@@ -16119,8 +16113,19 @@ Proof.
   repeat rewrite (Nat.max_comm (length (cse_vals e1))); auto.
 Qed.
 
+Lemma implies_swapped_css_swap_cs_plib {o} :
+  forall sw sw' (lib lib' : @plibrary o),
+    swapped_css sw lib lib'
+    -> swapped_css (swap_cs_swap sw' sw) (swap_cs_plib sw' lib) (swap_cs_plib sw' lib').
+Proof.
+  introv swap.
+  inversion swap as [? ? ? ? ? ? ? e za zb]; subst; clear swap.
+  repeat (allrw @swap_cs_plib_app; simpl in * ).
+  econstructor; repndors; subst; auto.
+Qed.
+
 Lemma swapped_css_compute_step {o} :
-  forall {sw} {lib lib' : @plibrary o} {a b : @NTerm o},
+  forall {a b : @NTerm o} {sw} {lib lib' : @plibrary o},
     nt_wf a
     -> lib_nodup lib
     -> swapped_css sw lib lib'
@@ -16133,7 +16138,7 @@ Proof.
     csunf comp; simpl in *; ginv. }
 
   Case "oterm".
-  dopid op as [can|ncan|exc|abs] SCase.
+  dopid op as [can|ncan|nsw|exc|abs] SCase.
 
   { SCase "Can".
     csunf; simpl in *; ginv; eauto 3 with slow. }
@@ -16166,7 +16171,7 @@ Proof.
       pose proof (get_fresh_atom_prop_and_lib lib w2) as fa'; rw <- Heqa' in fa'.
       pose proof (get_fresh_atom_prop_and_lib lib' w2) as fa''; rw <- Heqa'' in fa''.
 
-      pose proof (compute_step_subst_utoken lib w2 x [(w0, mk_utoken a')]) as ch.
+      pose proof (compute_step_subst_utoken w2 x lib [(w0, mk_utoken a')]) as ch.
       allrw @nt_wf_fresh.
       repeat (autodimp ch hyp); eauto 4 with slow.
       { unfold get_utokens_sub; simpl; apply disjoint_singleton_l; tcsp. }
@@ -16184,7 +16189,7 @@ Proof.
       pose proof (ind w2 (subst w2 w0 (mk_utoken a'')) [w0]) as h; clear ind.
       repeat (autodimp h hyp).
       { rw @simple_osize_subst; eauto 3 with slow. }
-      pose proof (h s) as k; clear h.
+      pose proof (h s (sw0,sw) lib lib') as k; clear h.
       repeat (autodimp k hyp); eauto 3 with slow.
 
       exrepnd; allrw; simpl.
@@ -16242,8 +16247,12 @@ Proof.
 
     { SSSCase "NSwapCs1".
       dterms w; tcsp.
-      { apply approx_star_swap.compute_step_swap_cs1_aux_success_implies in comp; exrepnd; subst; simpl.
+      { apply compute_step_swap_cs1_aux_success_implies in comp; exrepnd; subst; simpl.
         csunf; simpl; eexists; dands; eauto. }
+      { apply on_success_csuccess in comp; exrepnd; subst.
+        eapply ind in comp1; try (right; left); eauto; eauto 3 with slow; exrepnd.
+        csunf; simpl; allrw; simpl; eexists; dands; eauto; prove_alpha_eq4;
+          intros k w; repeat (destruct k; simpl in *; tcsp); prove_alpha_eq4; auto. }
       { apply on_success_csuccess in comp; exrepnd; subst.
         eapply ind in comp1; try (right; left); eauto; eauto 3 with slow; exrepnd.
         csunf; simpl; allrw; simpl; eexists; dands; eauto; prove_alpha_eq4;
@@ -16271,6 +16280,17 @@ Proof.
         apply on_success_csuccess in comp; exrepnd; subst; simpl in *;
           eapply ind in comp1; try (right; left; eauto); eauto 3 with slow; exrepnd;
        allrw; simpl; eexists; dands; eauto; prove_alpha_eq4; intros k w; repeat (destruct k; tcsp); prove_alpha_eq4; auto. } }
+
+  { SSCase "NSwapCs2".
+    apply compute_step_NSwapCs2_success in comp; exrepnd; subst; simpl in *; fold_terms.
+    apply compute_step_swap_cs2_success in comp0; repndors; exrepnd; subst; simpl in *;
+      try (complete (csunf; simpl; eexists; dands; eauto)).
+
+    eapply ind in comp2; try (left; reflexivity); try apply implies_swapped_css_swap_cs_plib; eauto;
+      autorewrite with slow; eauto 3 with slow;[].
+    exrepnd.
+    rewrite compute_step_swap_cs2_isnoncan_like_eq; auto.
+    allrw; eexists; dands; eauto; eauto 3 with slow. }
 
   { SSCase "Exc".
     csunf comp; simpl in *; ginv; csunf; simpl; eauto. }

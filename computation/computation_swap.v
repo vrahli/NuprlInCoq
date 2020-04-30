@@ -850,27 +850,12 @@ Qed.
 
 Ltac boolvar2 := repeat (boolvar_step; GC; subst; tcsp).
 
-Lemma swap_cs_op_swap_cs_op {o} :
-  forall sw sw' (op : @Opid o),
-    swap_cs_op (swap_cs_swap sw sw') (swap_cs_op sw op)
-    = swap_cs_op sw (swap_cs_op sw' op).
+Lemma swap_cs_swap_cs :
+  forall sw sw' name,
+    swap_cs (swap_cs_swap sw sw') (swap_cs sw name)
+    = swap_cs sw (swap_cs sw' name).
 Proof.
-  introv; destruct op; simpl; auto.
-  { destruct c, sw, sw'; simpl; auto; boolvar; subst; tcsp. }
-  { destruct c, sw, sw'; simpl; auto; boolvar2. }
-Qed.
-
-Lemma swap_cs_term_swap_cs_term {o} :
-  forall sw sw' (t : @NTerm o),
-    swap_cs_term (swap_cs_swap sw sw') (swap_cs_term sw t)
-    = swap_cs_term sw (swap_cs_term sw' t).
-Proof.
-  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
-  rewrite swap_cs_op_swap_cs_op; auto.
-  f_equal.
-  allrw map_map; unfold compose; simpl; apply eq_maps; introv i.
-  destruct x; simpl; f_equal.
-  eapply ind; eauto.
+  introv; destruct sw, sw'; simpl; boolvar2.
 Qed.
 
 Lemma swap_cs_can_twice2 {o} :
@@ -884,16 +869,30 @@ Lemma swap_cs_can_twice2 {o} :
 Proof.
   introv.
   destruct c; simpl; auto.
-  destruct sw' as [n1 n2]; simpl; boolvar; subst; auto;
-    try apply swap_cs_inj in e; subst; auto; tcsp; try congruence.
+  rewrite swap_cs_swap_cs; auto.
 Qed.
 
-Lemma swap_cs_swap_cs :
-  forall sw sw' name,
-    swap_cs (swap_cs_swap sw sw') (swap_cs sw name)
-    = swap_cs sw (swap_cs sw' name).
+Lemma swap_cs_op_swap_cs_op {o} :
+  forall sw sw' (op : @Opid o),
+    swap_cs_op (swap_cs_swap sw sw') (swap_cs_op sw op)
+    = swap_cs_op sw (swap_cs_op sw' op).
 Proof.
-  introv; destruct sw, sw'; simpl; boolvar2.
+  introv; destruct op; simpl; auto.
+  { rewrite swap_cs_can_twice2; auto. }
+  { destruct c; simpl; repeat rewrite swap_cs_swap_cs; auto. }
+Qed.
+
+Lemma swap_cs_term_swap_cs_term {o} :
+  forall sw sw' (t : @NTerm o),
+    swap_cs_term (swap_cs_swap sw sw') (swap_cs_term sw t)
+    = swap_cs_term sw (swap_cs_term sw' t).
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
+  rewrite swap_cs_op_swap_cs_op; auto.
+  f_equal.
+  allrw map_map; unfold compose; simpl; apply eq_maps; introv i.
+  destruct x; simpl; f_equal.
+  eapply ind; eauto.
 Qed.
 
 Lemma swap_cs_swap_twice :
@@ -1147,7 +1146,13 @@ Proof.
       unfold push_swap_cs_sub_term.
       rewrite <- lsubst_aux_swap_cs_term; autorewrite with slow; auto. }
 
-    { csunf; simpl; auto. }
+    { csunf; simpl; auto.
+      unfold push_swap_cs_exc; simpl; f_equal; f_equal.
+      unfold push_swap_cs_bterms; allrw map_map; unfold compose.
+      apply eq_maps; introv i; destruct x; simpl; f_equal; fold_terms.
+      f_equal.
+      unfold push_swap_cs_sub_term.
+      rewrite <- lsubst_aux_swap_cs_term; autorewrite with slow; auto. }
 
     { eapply ind in comp2; try (left; reflexivity); autorewrite with slow; eauto 3 with slow.
       rewrite compute_step_swap_cs2_isnoncan_like_eq; eauto 3 with slow.

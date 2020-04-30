@@ -81,7 +81,7 @@ Proof.
     + Case "NTryCatch"; apply extensional_trycatch.
     + Case "NParallel"; apply extensional_parallel.
     + Case "NSwapCs1";  apply extensional_swap_cs1.
-    + Case "NSwapCs2";  apply extensional_swap_cs2.
+(*    + Case "NSwapCs2";  apply extensional_swap_cs2.*)
     + Case "NLDepth";   apply extensional_ldepth.
     + Case "NLastCs";   apply extensional_last_cs.
     + Case "NCompSeq1"; apply extensional_comp_seq1.
@@ -89,6 +89,7 @@ Proof.
     + Case "NCompOp";   apply extensional_ncomp.
     + Case "NArithOp";  apply extensional_arith.
     + Case "NCanTest";  apply extensional_cantest.
+  - apply extensional_swap_cs2.
   - apply nuprl_extensional_exc.
   - apply nuprl_extensional_abs.
 Qed.
@@ -112,7 +113,7 @@ Lemma howe_lemma3 {p} : forall lib (a a' b : @NTerm p),
 Proof.
   introv Hpra Hpra' Hprb Hc Hs.
   repnud Hc; exrepnd.
-  revert a a' b Hpra Hpra' Hprb Hc0 Hs.
+  revert lib a a' b Hpra Hpra' Hprb Hc0 Hs.
   induction k as [| k Hind]; introv Hpra Hpra' Hprb comp ap.
 
   - unfold computes_to_val_like_in_max_k_steps, reduces_in_atmost_k_steps in comp; repnd.
@@ -309,8 +310,8 @@ Proof.
 Qed.
 
 Lemma le_blift_sub {p} :
-  forall lib op (R1 R2 : bin_rel (@NTerm p)),
-    le_bin_rel R1 R2 -> le_bin_rel (blift_sub lib op R1) (blift_sub lib op R2).
+  forall lib op (R1 R2 : @LNTrel p),
+    le_bin_rel (R1 lib) (R2 lib) -> le_bin_rel (blift_sub op R1 lib) (blift_sub op R2 lib).
 Proof.
   unfold le_bin_rel.
   intros R1 R2 Hle a b Hrel.
@@ -323,21 +324,21 @@ Defined.
 Hint Resolve le_blift_sub : slow.
 
 Lemma le_blift_sub2 {p} :
-  forall lib op (R1 R2 : bin_rel (@NTerm p)),
-    (le_bin_rel R1 R2)
-    -> forall a b, (blift_sub lib op R1 a b) -> (blift_sub lib op R2 a b).
+  forall lib op (R1 R2 : @LNTrel p),
+    le_bin_rel (R1 lib) (R2 lib)
+    -> forall a b, (blift_sub op R1 lib a b) -> (blift_sub op R2 lib a b).
 Proof.
   introv H.
-  fold (@le_bin_rel (BTerm ) (blift_sub lib op R1) (blift_sub lib op R2)).
+  fold (@le_bin_rel (BTerm ) (blift_sub op R1 lib) (blift_sub op R2 lib)).
   apply le_blift_sub.
   auto.
 Defined.
 Hint Resolve le_blift_sub2 : slow.
 
 Lemma le_lblift_sub {p} :
-  forall lib op (R1 R2 : bin_rel (@NTerm p)),
-    (le_bin_rel R1 R2)
-    -> le_bin_rel (lblift_sub lib op R1) (lblift_sub lib op R2).
+  forall lib op (R1 R2 : @LNTrel p),
+    le_bin_rel (R1 lib) (R2 lib)
+    -> le_bin_rel (lblift_sub op R1 lib) (lblift_sub op R2 lib).
 Proof.
   unfold lblift_sub; sp.
   unfold le_bin_rel; sp.
@@ -346,18 +347,18 @@ Proof.
 Defined.
 
 Lemma le_lblift_sub2 {p} :
-  forall lib op (R1 R2 : bin_rel (@NTerm p)),
-    (le_bin_rel R1 R2)
-    -> forall a b, (lblift_sub lib op R1 a b) -> (lblift_sub lib op R2 a b).
+  forall lib op (R1 R2 : @LNTrel p),
+    le_bin_rel (R1 lib) (R2 lib)
+    -> forall a b, (lblift_sub op R1 lib a b) -> (lblift_sub op R2 lib a b).
 Proof.
   introv H.
-  fold (@le_bin_rel (list BTerm) (lblift_sub lib op R1) (lblift_sub lib op R2)).
+  fold (@le_bin_rel (list BTerm) (lblift_sub op R1 lib) (lblift_sub op R2 lib)).
   apply le_lblift_sub. auto.
 Defined.
 
 Corollary approx_open_congruence_sub {p} :
   forall lib (o : Opid) (lbt1 lbt2 : list (@BTerm p)),
-    lblift_sub lib o (approx_open lib) lbt1 lbt2
+    lblift_sub o approx_open lib lbt1 lbt2
     -> nt_wf (oterm o lbt2)
     -> approx_open lib (oterm o lbt1) (oterm o lbt2).
 Proof.
@@ -396,7 +397,7 @@ Qed.
 
 Corollary approx_congruence_sub {p} :
   forall lib o lbt1 lbt2,
-    lblift_sub lib o (approx_open lib) lbt1 lbt2
+    lblift_sub o approx_open lib lbt1 lbt2
     -> @isprogram p (oterm o lbt1)
     -> isprogram (oterm o lbt2)
     -> approx lib (oterm o lbt1) (oterm o lbt2).

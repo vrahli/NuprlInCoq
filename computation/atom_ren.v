@@ -1942,6 +1942,17 @@ Proof.
   rewrite IHl; simpl; auto.
 Qed.
 
+Lemma map_ren_utokens_b_push_swap_cs_bterms {o} :
+  forall ren sw (l : list (@BTerm o)),
+    oterm Exc (map (ren_utokens_b ren) (push_swap_cs_bterms sw l))
+    = push_swap_cs_exc sw (map (ren_utokens_b ren) l).
+Proof.
+  introv; unfold push_swap_cs_exc; f_equal.
+  unfold push_swap_cs_bterms; allrw map_map; unfold compose; simpl.
+  apply eq_maps; introv i; destruct x; simpl; f_equal; fold_terms.
+  rewrite ren_utokens_push_swap_cs_sub_term; auto.
+Qed.
+
 Lemma compute_step_ren_utokens {o} :
   forall (t u : @NTerm o) lib ren,
     nt_wf t
@@ -2662,7 +2673,8 @@ Proof.
         f_equal; f_equal.
         destruct c; simpl; auto. }
 
-      { csunf; simpl; auto. }
+      { csunf; simpl; auto.
+        rewrite map_ren_utokens_b_push_swap_cs_bterms; auto. }
 
       allrw @nt_wf_swap_cs2_iff; exrepnd; fold_terms; ginv.
       eapply ind in comp2; try (left; reflexivity); eauto; autorewrite with slow in *; eauto 3 with slow.

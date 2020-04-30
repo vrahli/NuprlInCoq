@@ -1378,6 +1378,30 @@ Proof.
 Qed.
 Hint Resolve implies_nr_ut_sub_swap_cs_plib : slow.
 
+Lemma map_lsubst_bterm_aux_push_swap_cs_bterms {o} :
+  forall sw sub (l : list (@BTerm o)),
+    is_utok_sub sub
+    -> oterm Exc (map (fun t => lsubst_bterm_aux t sub) (push_swap_cs_bterms sw l))
+       = push_swap_cs_exc sw (lsubst_bterms_aux l sub).
+Proof.
+  introv isu; unfold push_swap_cs_exc; f_equal.
+  unfold push_swap_cs_bterms, lsubst_bterms_aux.
+  allrw map_map; unfold compose.
+  apply eq_maps; introv i; destruct x; simpl; f_equal; fold_terms.
+  f_equal; autorewrite with slow.
+  rewrite lsubst_aux_nr_ut_sub_push_swap_cs_sub_term; eauto 3 with slow.
+  apply disjoint_sym; apply disjoint_dom_sub_filt.
+Qed.
+
+Lemma get_utokens_lib_push_swap_cs_exc {o} :
+  forall sw lib (l : list (@BTerm o)),
+    get_utokens_lib lib (push_swap_cs_exc sw l)
+    = get_utokens_lib lib (oterm Exc l).
+Proof.
+  introv; unfold get_utokens_lib; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @get_utokens_lib_push_swap_cs_exc : slow.
+
 Lemma compute_step_subst_utoken {o} :
   forall (t u : @NTerm o) lib sub,
     nt_wf t
@@ -4190,12 +4214,15 @@ Proof.
 
                     { eapply nr_ut_lsubst_aux_exc_implies in comp0; eauto; exrepnd; subst.
                       simpl in *; autorewrite with slow in *.
-                      exists (oterm Exc k); unflsubst; simpl.
-                      dands; eauto 3 with slow;[].
+                      exists (push_swap_cs_exc nsw k); unflsubst; simpl.
+                      rewrite map_lsubst_bterm_aux_push_swap_cs_bterms; eauto 2 with slow.
+                      dands; autorewrite with slow; eauto 3 with slow;[].
                       introv nrut' eqdoms disj'.
                       unflsubst; simpl; autorewrite with slow; fold_terms.
                       csunf; simpl; eexists; dands; eauto.
-                      unflsubst. }
+                      unflsubst.
+                      unfold push_swap_cs_exc; simpl.
+                      rewrite map_lsubst_bterm_aux_push_swap_cs_bterms; simpl; eauto 2 with slow. }
 
                     { rewrite <- lsubst_aux_swap_cs_term in comp2.
                       erewrite swap_cs_sub_if_nr_ut_sub in comp2; eauto.

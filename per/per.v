@@ -744,23 +744,22 @@ Definition get_defs_c {p} (c : @CanonicalOp p) : def_kinds :=
   | _ => []
   end.
 
-Definition get_defs_nfo (nfo : SwapCsNfo) : def_kinds :=
-  match nfo with
-  | MkSwapCsNfo n1 n2 => [defk_cs n1, defk_cs n2]
-  end.
+Definition get_defs_sw (sw : cs_swap) : def_kinds :=
+  let (n1,n2) := sw in [defk_cs n1, defk_cs n2].
 
-Definition get_defs_n (n : NonCanonicalOp) : def_kinds :=
+(*Definition get_defs_n (n : NonCanonicalOp) : def_kinds :=
   match n with
   | NSwapCs2 nfo => get_defs_nfo nfo
   | _ => []
-  end.
+  end.*)
 
 Definition get_defs_o {p} (o : @Opid p) : def_kinds :=
   match o with
   | Can c => get_defs_c c
-  | NCan n => get_defs_n n
+  | NCan n => [](*get_defs_n n*)
+  | NSwapCs2 sw => get_defs_sw sw
   | Abs a => [defk_abs a]
-  | _ => []
+  | Exc => []
   end.
 
 Fixpoint get_defs {p} (t : @NTerm p) : def_kinds :=

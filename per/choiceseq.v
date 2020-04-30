@@ -2206,35 +2206,35 @@ Proof.
 Qed.
 
 Lemma implies_isvalue_push_swap_cs_can {o} :
-  forall c1 c2 (can : @CanonicalOp o) bs,
+  forall sw (can : @CanonicalOp o) bs,
     isvalue (oterm (Can can) bs)
-    -> isvalue (push_swap_cs_can c1 c2 can bs).
+    -> isvalue (push_swap_cs_can sw can bs).
 Proof.
   introv isv; inversion isv; subst; split; eauto 3 with slow.
 Qed.
 Hint Resolve implies_isvalue_push_swap_cs_can : slow.
 
 Lemma iscan_push_swap_cs_can {o} :
-  forall a b c (bs : list (@BTerm o)),
-    iscan (push_swap_cs_can a b c bs).
+  forall sw c (bs : list (@BTerm o)),
+    iscan (push_swap_cs_can sw c bs).
 Proof.
   tcsp.
 Qed.
 Hint Resolve iscan_push_swap_cs_can : slow.
 
 Lemma swap_cs2_computes_to_value_implies {o} :
-  forall lib a b (t : @NTerm o) u,
+  forall lib sw (t : @NTerm o) u,
     isprog t
-    -> (mk_swap_cs2 a b t) =v>(lib) u
+    -> (mk_swap_cs2 sw t) =v>(lib) u
     -> {c : CanonicalOp & {bs : list BTerm
-       & (t =v>(lib) (oterm (Can c) bs))
-       # u = (push_swap_cs_can a b c bs) }}.
+       & ((swap_cs_term sw t) =v>(swap_cs_plib sw lib) (oterm (Can c) bs))
+       # u = (push_swap_cs_can sw (swap_cs_can sw c) (map (swap_cs_bterm sw) bs)) }}.
 Proof.
   introv wf comp.
   unfold computes_to_value, reduces_to in comp; exrepnd.
 
   pose proof (approx_star_swap.computes_to_val_like_in_max_k_steps_swap_cs2_implies
-                lib k (MkSwapCsNfo a b) t u) as q.
+                lib k sw t u) as q.
   repeat (autodimp q hyp); eauto 3 with slow.
   { unfold computes_to_val_like_in_max_k_steps; dands; eauto 3 with slow. }
   repndors; exrepnd; subst; simpl in *;
@@ -2264,6 +2264,8 @@ Proof.
   destruct bs; simpl in *; ginv.
   destruct c; simpl in *; ginv.
   exists (@mkc_integer o k); dands; spcast; tcsp.
+  unfold computes_to_valc; simpl.
+  apply (@swap_computes_to_value o sw) in ext3; autorewrite with slow in *; auto.
 Qed.
 
 Lemma mkc_swap_ccomputes_to_valc_ext_nat_implies {o} :
@@ -2277,7 +2279,7 @@ Qed.
 
 Definition push_swap_cs_oterm {o} sw (t : @NTerm o) : NTerm :=
   match t with
-  | oterm (Can can) bs => push_swap_cs_can (fst sw) (snd sw) can bs
+  | oterm (Can can) bs => push_swap_cs_can sw can bs
   | _ => t
   end.
 
@@ -2346,7 +2348,9 @@ Proof.
   introv comp.
   destruct_cterms; unfold computes_to_valc in *; simpl in *.
   unfold computes_to_value in *; repnd; dands; eauto 3 with slow.
-  eapply reduces_to_trans;[eapply reduces_to_prinarg; eauto|].
+  eapply reduces_to_trans;
+    [apply approx_star_swap.implies_reduces_to_mk_swap_cs2;eapply swap_reduces_to;eauto|].
+  autorewrite with slow.
   applydup @isvalue_implies_iscan in comp.
   apply iscan_implies in comp1; exrepnd; subst.
   apply reduces_to_if_step; csunf; simpl; auto.
@@ -2377,7 +2381,7 @@ Qed.
 Lemma approx_implies_approx_starbts {o} :
   forall lib op (bs1 bs2 : list (@BTerm o)),
     lblift (approx_open lib) bs1 bs2
-    -> approx_starbts lib op bs1 bs2.
+    -> approx_starbts op lib bs1 bs2.
 Proof.
   introv h.
   unfold approx_starbts, lblift_sub, lblift in *; repnd; dands; auto.

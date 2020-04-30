@@ -285,6 +285,9 @@ Definition push_swap_cs_bterms {o} sw (bs : list (@BTerm o)) : list BTerm :=
 Definition push_swap_cs_can {o} sw can (bs : list (@BTerm o)) : NTerm :=
   oterm (Can (swap_cs_can sw can)) (push_swap_cs_bterms sw bs).
 
+Definition push_swap_cs_exc {o} sw (bs : list (@BTerm o)) : NTerm :=
+  oterm Exc (push_swap_cs_bterms sw bs).
+
 Definition compute_step_swap_cs1_aux {p}
            (arg1c arg2c : @CanonicalOp p)
            (arg1bts arg2bts btsr : list (@BTerm p))
@@ -662,7 +665,7 @@ Qed.
 Definition compute_step_swap_cs2 {o} sw (u : @NTerm o) comp :=
   match u with
   | oterm (Can c) l      => csuccess (push_swap_cs_can sw c l)
-  | oterm Exc l          => csuccess (oterm Exc l)
+  | oterm Exc l          => csuccess (push_swap_cs_exc sw l)
   | oterm (NCan _) _     => on_success comp (fun w => mk_swap_cs2 sw (swap_cs_term sw w))
   | oterm (NSwapCs2 _) _ => on_success comp (fun w => mk_swap_cs2 sw (swap_cs_term sw w))
   | oterm (Abs _) _      => on_success comp (fun w => mk_swap_cs2 sw (swap_cs_term sw w))

@@ -1032,7 +1032,7 @@ Proof.
       remember (get_fresh_atom lib t) as a'.
       pose proof (get_fresh_atom_prop_and_lib lib t) as gfap; rw <- Heqa' in gfap.
 
-      pose proof (compute_step_subst_utoken lib t x0 [(v,mk_utoken a')]) as h.
+      pose proof (compute_step_subst_utoken t x0 lib [(v,mk_utoken a')]) as h.
       allrw @fold_subst.
       allrw @get_utokens_sub_cons; allrw @get_utokens_sub_nil; allrw app_nil_r.
       allsimpl; allrw disjoint_singleton_l.
@@ -2086,7 +2086,7 @@ Lemma dec_isexc {o} :
 Proof.
   introv.
   destruct t as [v|op bs]; simpl; try (complete (right; sp)).
-  dopid op as [can|ncan|exc|abs] Case; try (complete (right; sp)).
+  dopid op as [can|ncan|nsw|exc|abs] Case; try (complete (right; sp)).
   left; sp.
 Qed.
 
@@ -2284,7 +2284,7 @@ Proof.
     applydup IHk in r0; auto.
     destruct t as [x|op bs]; ginv.
 
-    dopid op as [can|ncan|exc|abs] Case.
+    dopid op as [can|ncan|nsw|exc|abs] Case.
 
     + Case "Can".
       csunf r1; allsimpl; ginv.
@@ -2292,6 +2292,10 @@ Proof.
       exists (oterm (Can can) bs); csunf; simpl; dands; auto.
 
     + Case "NCan".
+      simpl; right; dands; tcsp.
+      exists u; dands; auto.
+
+    + Case "NSwapCs2".
       simpl; right; dands; tcsp.
       exists u; dands; auto.
 

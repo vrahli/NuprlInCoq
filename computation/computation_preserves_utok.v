@@ -3749,6 +3749,8 @@ Proof.
         csunf; simpl; auto.
         apply nt_wf_Exc in wf0; exrepnd; subst; simpl in *.
         autorewrite with slow in *.
+        unfold push_swap_cs_exc; simpl; fold_terms.
+        unfold push_swap_cs_sub_term, ren_utok_op; simpl; autorewrite with slow; fold_terms.
         repeat (rewrite ren_utok_lsubst_aux; auto);
           eapply not_in_get_utokens_lib_implies_not_in_get_utokens;
           eapply subset_preserves_not_in_get_utokens_lib; try exact nia;
