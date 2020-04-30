@@ -57,7 +57,7 @@ Proof.
 
   apply no_change_after_val_like with (k2:=k) in Hcv3;auto;[].
   make_red_val_like Hcv3 hh.
-  apply (Hi _ _ t2) in hh; auto; prove_isprogram.
+  apply (Hi _ _ _ t2) in hh; auto; prove_isprogram.
 
   dorn Hcv0.
 
@@ -90,7 +90,7 @@ Proof.
     + applydup @isprogram_inl_iff in Hcv8; repnd.
       applydup @isprogram_inl_iff in hh1; repnd.
 
-      apply (Hi _ _ (subst b0 v0 dr)) in hh; auto; prove_isprogram;
+      apply (Hi _ _ _ (subst b0 v0 dr)) in hh; auto; prove_isprogram;
       try (eapply isprogram_bt_implies_isprogram_lsubst; simpl;[reflexivity|idtac|auto];[];
            introv i; repdors; cpx; auto).
 
@@ -104,7 +104,7 @@ Proof.
     + applydup @isprogram_inr_iff in Hcv8; repnd.
       applydup @isprogram_inr_iff in hh1; repnd.
 
-      apply (Hi _ _ (subst b3 v3 dr)) in hh; auto; prove_isprogram;
+      apply (Hi _ _ _ (subst b3 v3 dr)) in hh; auto; prove_isprogram;
       try (eapply isprogram_bt_implies_isprogram_lsubst; simpl;[reflexivity|idtac|auto];[];
            introv i; repdors; cpx; auto).
 
@@ -129,9 +129,3 @@ Proof.
     apply reduces_to_prinarg; auto.
     apply reduces_to_if_step; reflexivity.
 Qed.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

@@ -67,6 +67,7 @@ Proof.
     try (complete (destruct (Z.eq_dec z z0); subst; tcsp; right; intro h; ginv; tcsp));
     try (complete (destruct (get_patom_deq o g g0); subst; tcsp; right; intro h; ginv; tcsp));
     try (complete (destruct (choice_sequence_name_deq c c0); subst; tcsp; right; intro h; ginv; tcsp));
+    try (complete (destruct (choice_sequence_name_deq c c1); destruct (cs_swaps_deq c0 c2); subst; tcsp; right; intro h; ginv; tcsp));
     try (complete (right; introv h; ginv)).
 Qed.
 

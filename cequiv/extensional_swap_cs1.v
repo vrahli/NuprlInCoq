@@ -66,10 +66,10 @@ Proof.
     unfold computes_to_val_like_in_max_k_steps in Hcv1; repnd.
     apply @no_change_after_val_like with (k2:=k) in Hcv9; auto; try omega; [].
     make_red_val_like Hcv9 g.
-    apply Hi with (v := mk_swap_cs2 c1 c2 c0) in g; auto;
+    apply Hi with (v := mk_swap_cs2 (c1,c2) c0) in g; auto;
       try (complete (destruct d1; auto)); eauto 2 with slow.
 
-    apply @approx_star_open_trans with (b := mk_swap_cs2 c1 c2 c0); auto.
+    apply @approx_star_open_trans with (b := mk_swap_cs2 (c1,c2) c0); auto.
 
     apply approx_implies_approx_open.
     apply @approx_trans with (b := mk_swap_cs1 (mk_choice_seq c1) (mk_choice_seq c2) c0).

@@ -443,7 +443,7 @@ Hint Resolve approx_star_refl : slow.
 (* begin hide *)
 
 Lemma approx_starbt_refl {p} :
-  forall lib op bt, @bt_wf p bt -> approx_star_bterm lib op bt bt.
+  forall lib op bt, @bt_wf p bt -> approx_star_bterm op lib bt bt.
 Proof.
   introv hbt.
   destruct bt as [lv nt]. simpl. invertsn hbt.
@@ -804,50 +804,6 @@ Proof.
     apply subvars_app_weak_r; auto.
 Qed.
 
-Lemma reduces_to_lsubst_aux {o} :
-  forall lib (t u : @NTerm o) sub,
-    nt_wf t
-    -> prog_sub sub
-    -> subvars (free_vars t) (dom_sub sub)
-    -> reduces_to lib t u
-    -> {v : NTerm
-        & reduces_to lib (lsubst_aux t sub) v
-        # alpha_eq v (lsubst_aux u sub) }.
-Proof.
-  introv wf cl sv r.
-  unfold reduces_to in r; exrepnd.
-  revert dependent u.
-  revert dependent t.
-
-  induction k; introv wf sv r.
-
-  - rw @reduces_in_atmost_k_steps_0 in r; subst.
-    exists (lsubst_aux u sub); dands; auto.
-    exists 0; rw @reduces_in_atmost_k_steps_0; auto.
-
-  - rw @reduces_in_atmost_k_steps_S in r; exrepnd.
-    pose proof (compute_step_lsubst_aux lib t u0 sub) as h.
-    repeat (autodimp h hyp); exrepnd; eauto 3 with slow.
-
-    applydup @compute_step_preserves in r1; repnd; auto.
-    assert (subvars (free_vars u0) (dom_sub sub))
-      as sv2 by (eapply subvars_trans; eauto).
-
-    pose proof (IHk u0 r2 sv2 u r0) as j; exrepnd.
-
-    pose proof (reduces_to_alpha lib (lsubst_aux u0 sub) v v0) as x;
-      repeat (autodimp x hyp);[|apply alpha_eq_sym;auto|];
-      exrepnd;
-      eauto 3 with slow.
-    exists t2'; dands; auto.
-
-    + eapply reduces_to_trans;[|complete eauto].
-      apply reduces_to_if_step; auto.
-
-    + eapply alpha_eq_trans;[|complete eauto].
-      apply alpha_eq_sym; auto.
-Qed.
-
 (*
 Lemma approx_open_vterm_iff_reduces_to {o} :
   forall lib x (t : @NTerm o),
@@ -1111,7 +1067,7 @@ Qed.
 
 Lemma approx_star_congruence {p} :
   forall lib (o: Opid) (lbt1 lbt2 : list (@BTerm p)),
-    approx_starbts lib o lbt1 lbt2
+    approx_starbts o lib lbt1 lbt2
     -> map num_bvars lbt2 = OpBindings o
     -> approx_star lib (oterm o lbt1) (oterm o lbt2).
 Proof.
@@ -1129,7 +1085,7 @@ Qed.
 
 Theorem approx_star_congruence2 {o} :
   forall lib op (lbt1 lbt2 : list (@BTerm o)),
-    approx_starbts lib op lbt1 lbt2
+    approx_starbts op lib lbt1 lbt2
     -> nt_wf (oterm op lbt2)
     -> approx_star lib (oterm op lbt1) (oterm op lbt2).
 Proof.
@@ -1299,7 +1255,7 @@ Lemma approx_ot_change {p} :
     approx_star lib (oterm o lbt) b
     -> {lbtcv : list BTerm
         $ disjoint lva (bound_vars (oterm o lbtcv))
-        # approx_starbts lib o lbt lbtcv
+        # approx_starbts o lib lbt lbtcv
         # length lbt = length lbtcv
         # approx_open lib (oterm o lbtcv) b}.
 Proof.
@@ -1425,24 +1381,12 @@ Proof.
 Qed.
 Hint Resolve approx_star_berms_alpha_fun_r : slow.
 
-Lemma alpha_eq_oterm_implies_combine2 {o} :
-  forall (op : Opid) (bs : list BTerm) (t : @NTerm o),
-    alpha_eq (oterm op bs) t
-    -> {bs' : list BTerm
-        $ t = oterm op bs'
-        # alpha_eq_bterms bs bs'}.
-Proof.
-  introv aeq.
-  apply alpha_eq_oterm_implies_combine in aeq.
-  auto.
-Qed.
-
 Lemma lblift_sub_eq {o} :
-  forall lib (op : Opid) (R : NTrel) (bs1 bs2: list (@BTerm o)),
-    lblift_sub lib op R bs1 bs2
+  forall lib (op : Opid) (R : LNTrel) (bs1 bs2: list (@BTerm o)),
+    lblift_sub op R lib bs1 bs2
     <=>
     (length bs1 = length bs2
-     # forall b1 b2, LIn (b1,b2) (combine bs1 bs2) -> blift_sub lib op R b1 b2).
+     # forall b1 b2, LIn (b1,b2) (combine bs1 bs2) -> blift_sub op R lib b1 b2).
 Proof.
   introv.
   unfold lblift_sub; split; introv k; repnd; dands; auto; introv i.
@@ -1927,7 +1871,7 @@ Qed.
 Lemma approx_star_btermd {p} :
   forall lib op bt1 bt2 lva,
     op <> NCan NFresh
-    -> approx_star_bterm lib op bt1 bt2
+    -> approx_star_bterm op lib bt1 bt2
     -> {lvn : list NVar
         & {nt1',nt2' : @NTerm p
           $ approx_star lib nt1' nt2'
@@ -1958,7 +1902,7 @@ Qed.
 Lemma approx_star_samevar {p} :
   forall lib op a b lv,
     op <> NCan NFresh
-    -> approx_star_bterm lib op (bterm lv a) (@bterm p lv b)
+    -> approx_star_bterm op lib (bterm lv a) (@bterm p lv b)
     -> approx_star lib a b.
 Proof.
   introv d Has.
@@ -2009,7 +1953,7 @@ Proof.
 Qed.
 
 Lemma approx_star_bterm_nobnd {p} : forall lib op a bt,
-  approx_star_bterm lib op (bterm [] a) bt
+  approx_star_bterm op lib (bterm [] a) bt
   -> {b : @NTerm p
       $ bt = (bterm [] b)
       # approx_star lib a b}.
@@ -2030,11 +1974,11 @@ Qed.
 
 Lemma approx_star_btermd_1var {p} :
   forall lib op v a bt,
-    approx_star_bterm lib op (bterm [v] a) bt
+    approx_star_bterm op lib (bterm [v] a) bt
     -> {vr : NVar
         $ {b : @NTerm p
         $ bt = (bterm [vr] b)
-        # approx_star_bterm lib op (bterm [v] a) (bterm [vr] b)}}.
+        # approx_star_bterm op lib (bterm [v] a) (bterm [vr] b)}}.
 Proof.
   introv Hab.
   destruct bt as [lvb b].

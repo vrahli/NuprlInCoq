@@ -57,7 +57,7 @@ Proof.
 
   apply no_change_after_val_like with (k2:=k) in Hcv3; auto; [].
   make_red_val_like Hcv3 h1.
-  apply (Hi _ _ a2) in h1; auto; prove_isprogram;[].
+  apply (Hi _ _ _ a2) in h1; auto; prove_isprogram;[].
 
   extensional_ind XX0 k hh.
 
@@ -66,7 +66,7 @@ Proof.
   - apply iscan_implies in Hcv0; repndors; exrepnd; subst;
     csunf XX1; allsimpl; ginv.
 
-    { apply (Hi _ _ (if canonical_form_test_for a c1 then b0 else c0)) in hh;
+    { apply (Hi _ _ _ (if canonical_form_test_for a c1 then b0 else c0)) in hh;
         auto; prove_isprogram;
         try (complete (destruct (canonical_form_test_for a c1); auto));
         eauto 2 with slow.

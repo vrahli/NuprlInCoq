@@ -154,7 +154,7 @@ Proof.
       destruct arg1nt as [v89|arg1o arg1bts];[inverts Hcomp|];[].
 
       left.
-      dopid arg1o as [arg1c | arg1nc | arg1exc | arg1abs] SSSSCase.
+      dopid arg1o as [arg1c | arg1nc | arg1nsw | arg1exc | arg1abs] SSSSCase.
 
       + SSSSCase "Can".
         exists (oterm (Can arg1c) arg1bts) lbt (oterm (Can arg1c) arg1bts) 0.
@@ -163,6 +163,13 @@ Proof.
       + SSSSCase "NCan".
         rw @compute_step_ncan_ncan in Hcomp.
         remember (compute_step lib (oterm (NCan arg1nc) arg1bts)).
+        destruct c; spc; inverts Hcomp.
+        provefalse.
+        unfold isvalue_like in Hcv; allsimpl; sp.
+
+      + SSSSCase "NSwapCs2".
+        rw @compute_step_ncan_nswap in Hcomp.
+        remember (compute_step lib (oterm (NSwapCs2 arg1nsw) arg1bts)).
         destruct c; spc; inverts Hcomp.
         provefalse.
         unfold isvalue_like in Hcv; allsimpl; sp.
@@ -229,7 +236,7 @@ Proof.
     { SSSCase "nilcase".
       destruct arg1nt as [v89|arg1o arg1bts]; [inverts Hcomp|];[].
 
-      dopid arg1o as [arg1c | arg1nc | arg1exc | arg1abs] SSSSCase.
+      dopid arg1o as [arg1c | arg1nc | arg1nsw | arg1exc | arg1abs] SSSSCase.
 
       + SSSSCase "Can".
         left.
@@ -252,6 +259,24 @@ Proof.
           rw <- HeqHc; eexists; dands; eauto. }
         { rw @reduces_in_atmost_k_steps_S.
           rw @compute_step_ncan_ncan; rw <- HeqHc.
+          eexists; dands; eauto. }
+
+      + SSSSCase "NSwapCs2".
+        rw @compute_step_ncan_nswap in Hcomp.
+        remember (compute_step lib (oterm (NSwapCs2 arg1nsw) arg1bts)) as Hc.
+        destruct Hc; ginv.
+
+        make_and Hcv1 Hcv.
+        applydup Hind in Hcv1Hcv;
+          [| eauto with slow; fail].
+        clear Hind; repndors; exrepnd; cpx.
+
+        left.
+        exists (oterm (NSwapCs2 arg1nsw) arg1bts) lbtt t (S m); dands; auto; try omega.
+        { rw @reduces_in_atmost_k_steps_S.
+          rw <- HeqHc; eexists; dands; eauto. }
+        { rw @reduces_in_atmost_k_steps_S.
+          rw @compute_step_ncan_nswap; rw <- HeqHc.
           eexists; dands; eauto. }
 
       + SSSSCase "Exc".
@@ -316,7 +341,7 @@ Proof.
           applydup @isprog_ntwf_eauto in Hpr as wf.
           allrw @nt_wf_fresh.
 
-          pose proof (compute_step_subst_utoken lib arg1nt x [(v,mk_utoken ua)]) as h.
+          pose proof (compute_step_subst_utoken arg1nt x lib [(v,mk_utoken ua)]) as h.
           repeat (autodimp h hyp); eauto 3 with slow.
           { unfold get_utokens_sub; simpl; rw disjoint_singleton_l; tcsp. }
           exrepnd.
@@ -492,17 +517,7 @@ Proof.
   introv.
   destruct t as [v|op bs]; simpl; tcsp; eauto 3 with slow.
   right.
-  dopid op as [can|ncan|exc|abs] Case; unfold isvalue_like, isnoncan_like; simpl; sp.
-Qed.
-
-(* !!MOVE *)
-Lemma alphaeq_vs_implies_alphaeq {o} :
-  forall (t1 t2 : @NTerm o) l,
-    alphaeq_vs l t1 t2 -> alphaeq t1 t2.
-Proof.
-  introv aeq.
-  apply alphaeq_exists.
-  eexists; eauto.
+  dopid op as [can|ncan|nsw|exc|abs] Case; unfold isvalue_like, isnoncan_like; simpl; sp.
 Qed.
 
 Lemma simple_subst_aux_subst_utokens_aux_aeq {o} :

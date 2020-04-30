@@ -84,7 +84,7 @@ Proof.
             [ |- approx_star _ _ (oterm (NCan ?no) _)] =>
             let T := type of Has0 in
             match T with
-              | lblift_sub _ _ (approx_star _) _ (_::?tr) =>
+              | lblift_sub _ approx_star _ _ (_::?tr) =>
                 apply reduces_to_prinarg
                 with (lbt:= tr) (op:=no) in h1
             end
@@ -124,7 +124,7 @@ Proof.
             [ |- approx_star _ _ (oterm (NCan ?no) _)] =>
             let T := type of Has0 in
             match T with
-              | lblift_sub _ _ (approx_star _) _ (_::?tr) =>
+              | lblift_sub _ approx_star _ _ (_::?tr) =>
                 apply reduces_to_prinarg
                 with (lbt:= tr) (op:=no) in h1
             end
@@ -136,7 +136,7 @@ Proof.
 
         allrw <- @isprogram_apply_iff; repnd.
 
-        pose proof (Hi (mk_eapply (mk_choice_seq n) arg) c (mk_eapply (mk_choice_seq n) argr)) as q.
+        pose proof (Hi lib (mk_eapply (mk_choice_seq n) arg) c (mk_eapply (mk_choice_seq n) argr)) as q.
         repeat (autodimp q hyp); try (apply isprogram_eapply); auto.
         { apply approx_star_congruence3; try (apply isprogram_eapply); auto.
           repeat (apply approx_starbts_cons; dands; eauto 3 with slow).

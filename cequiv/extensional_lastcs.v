@@ -107,7 +107,7 @@ Proof.
         [ |- approx_star _ _ (oterm (NCan ?no) _)] =>
         let T := type of Has0 in
         match T with
-        | lblift_sub _ _ (approx_star _) _ (_::?tr) =>
+        | lblift_sub _ approx_star _ _ (_::?tr) =>
           apply reduces_to_prinarg
             with (lbt:= tr) (op:=no) in h1
         end
@@ -118,7 +118,7 @@ Proof.
       make_red_val_like XX0 hh.
       applydup @isprogram_last_cs_implies in Hprt'; repnd.
 
-      pose proof (Hi (find_last_entry_default lib name d)
+      pose proof (Hi lib (find_last_entry_default lib name d)
                      c
                      (find_last_entry_default lib name dr)) as q.
       repeat (autodimp q hyp); eauto 2 with slow;[].

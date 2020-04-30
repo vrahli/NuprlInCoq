@@ -77,7 +77,7 @@ Proof.
           [ |- approx_star _ _ (oterm (NCan ?no) _)] =>
           let T := type of Has0 in
           match T with
-          | lblift_sub _ _ (approx_star _) _ (_::?tr) =>
+          | lblift_sub _ approx_star _ _ (_::?tr) =>
             apply reduces_to_prinarg
               with (lbt:= tr) (op:=no) in h1
           end
@@ -109,7 +109,7 @@ Proof.
           [ |- approx_star _ _ (oterm (NCan ?no) _)] =>
           let T := type of Has0 in
           match T with
-          | lblift_sub _ _ (approx_star _) _ (_::?tr) =>
+          | lblift_sub _ approx_star _ _ (_::?tr) =>
             apply reduces_to_prinarg
               with (lbt:= tr) (op:=no) in h1
           end
@@ -120,7 +120,7 @@ Proof.
         make_red_val_like XX0 hh.
         applydup @isprogram_comp_seq1_implies in Hprt'; repnd.
 
-        pose proof (Hi (mk_comp_seq2 a0 [] i (mk_apply f mk_zero) f)
+        pose proof (Hi lib (mk_comp_seq2 a0 [] i (mk_apply f mk_zero) f)
                        c
                        (mk_comp_seq2 a0 [] i (mk_apply fr mk_zero) fr)) as q.
         repeat (autodimp q hyp); eauto 2 with slow;

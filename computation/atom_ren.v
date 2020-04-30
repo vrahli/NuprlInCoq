@@ -757,7 +757,7 @@ Proof.
   introv.
   remember (get_utok op) as guo; symmetry in Heqguo; destruct guo; allsimpl;
   allapply @get_utok_some; subst; allsimpl; auto.
-  destruct op as [can|ncan|exc|abs]; tcsp.
+  destruct op as [can|ncan|nsw|exc|abs]; tcsp.
   destruct can; tcsp; allsimpl; ginv.
 Qed.
 
@@ -1338,7 +1338,7 @@ Lemma isnoncan_like_ren_utokens {o} :
 Proof.
   introv isv.
   allunfold @isnoncan_like; repndors.
-  - apply isnoncan_implies in isv; exrepnd; subst; allsimpl; tcsp.
+  - apply isnoncan_implies in isv; repndors;exrepnd; subst; allsimpl; tcsp.
   - apply isabs_implies in isv; exrepnd; subst; allsimpl; tcsp.
 Qed.
 Hint Resolve isnoncan_like_ren_utokens : slow.
@@ -1851,8 +1851,8 @@ Proof.
 Qed.
 
 Lemma ren_utokens_sw_sub {o} :
-  forall ren a b l,
-    @ren_utokens_sub o ren (sw_sub a b l) = sw_sub a b l.
+  forall ren sw l,
+    @ren_utokens_sub o ren (sw_sub sw l) = sw_sub sw l.
 Proof.
   induction l; introv; simpl; tcsp.
   rewrite IHl; auto.
@@ -1860,18 +1860,18 @@ Qed.
 Hint Rewrite @ren_utokens_sw_sub : slow.
 
 Lemma ren_utokens_push_swap_cs_sub_term {o} :
-  forall a b l ren (t : @NTerm o),
-    ren_utokens ren (push_swap_cs_sub_term a b l t)
-    = push_swap_cs_sub_term a b l (ren_utokens ren t).
+  forall sw l ren (t : @NTerm o),
+    ren_utokens ren (push_swap_cs_sub_term sw l t)
+    = push_swap_cs_sub_term sw l (ren_utokens ren t).
 Proof.
   introv; unfold push_swap_cs_sub_term.
   rewrite lsubst_aux_ren_utokens; autorewrite with slow; auto.
 Qed.
 
 Lemma push_swap_cs_bterms_map_ren_utokens_b {o} :
-  forall n1 n2 ren (bs : list (@BTerm o)),
-    push_swap_cs_bterms n1 n2 (map (ren_utokens_b ren) bs)
-    = map (ren_utokens_b ren) (push_swap_cs_bterms n1 n2 bs).
+  forall sw ren (bs : list (@BTerm o)),
+    push_swap_cs_bterms sw (map (ren_utokens_b ren) bs)
+    = map (ren_utokens_b ren) (push_swap_cs_bterms sw bs).
 Proof.
   introv; unfold push_swap_cs_bterms; repeat rewrite map_map; unfold compose.
   apply eq_maps; introv i.
@@ -1898,8 +1898,52 @@ Proof.
   introv; destruct can; simpl; auto.
 Qed.
 
+Hint Rewrite @free_vars_ren_utokens : slow.
+
+Lemma ren_utok_op_swap_cs_op {o} :
+  forall ren sw (op : @Opid o),
+    ren_utok_op ren (swap_cs_op sw op)
+    = swap_cs_op sw (ren_utok_op ren op).
+Proof.
+  introv; destruct op; simpl; auto.
+  destruct c; simpl; auto.
+Qed.
+
+Lemma ren_utokens_swap_cs_term {o} :
+  forall ren sw (t : @NTerm o),
+    ren_utokens ren (swap_cs_term sw t)
+    = swap_cs_term sw (ren_utokens ren t).
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
+  rewrite ren_utok_op_swap_cs_op.
+  f_equal.
+  allrw map_map; unfold compose.
+  apply eq_maps; introv i.
+  destruct x; simpl; f_equal.
+  eapply ind; eauto.
+Qed.
+
+Lemma ren_utokens_push_swap_cs0 {o} :
+  forall ren sw (t : @NTerm o),
+    ren_utokens ren (push_swap_cs0 sw t)
+    = push_swap_cs0 sw (ren_utokens ren t).
+Proof.
+  introv; unfold push_swap_cs0, push_swap_cs_sub_term.
+  rewrite lsubst_aux_ren_utokens; autorewrite with slow.
+  rewrite ren_utokens_swap_cs_term; auto.
+Qed.
+
+Lemma ren_utokens_apply_swaps {o} :
+  forall ren l (t : @NTerm o),
+    ren_utokens ren (apply_swaps l t)
+    = apply_swaps l (ren_utokens ren t).
+Proof.
+  induction l; introv; simpl; auto.
+  rewrite IHl; simpl; auto.
+Qed.
+
 Lemma compute_step_ren_utokens {o} :
-  forall lib (t u : @NTerm o) ren,
+  forall (t u : @NTerm o) lib ren,
     nt_wf t
     -> no_repeats (range_utok_ren ren)
     -> disjoint (get_utokens_library lib) (dom_utok_ren ren)
@@ -1913,7 +1957,7 @@ Proof.
     allsimpl; ginv.
 
   - Case "oterm".
-    dopid op as [can|ncan|exc|abs] SCase.
+    dopid op as [can|ncan|nsw|exc|abs] SCase.
 
     + SCase "Can".
       csunf comp; simpl in comp; ginv.
@@ -1931,7 +1975,7 @@ Proof.
 
       { destruct t as [v|op bts]; try (complete (allsimpl; ginv)).
 
-        dopid op as [can2|ncan2|exc2|abs2] SSCase.
+        dopid op as [can2|ncan2|nsw2|exc2|abs2] SSCase.
 
         * SSCase "Can".
           dopid_noncan ncan SSSCase.
@@ -1986,7 +2030,7 @@ Proof.
               allrw @diff_app_r.
               allrw disjoint_app_r; repnd.
 
-              pose proof (h x ren) as ih; clear h.
+              pose proof (h x lib ren) as ih; clear h.
               repeat (autodimp ih hyp);[|].
 
               {
@@ -2127,7 +2171,7 @@ Proof.
                 try (complete (apply (isnoncan_like_ren_utokens _ ren) in comp3; simpl in *; tcsp));[].
               simpl in *; allrw; tcsp. } }
 
-          { SSSCase "NSwapCs2".
+(*          { SSSCase "NSwapCs2".
             csunf comp; simpl in comp.
             apply compute_step_swap_cs2_success in comp; repndors; exrepnd; subst.
             csunf; simpl.
@@ -2135,7 +2179,27 @@ Proof.
             repeat rewrite ren_utok_match_can_eq; auto.
             rewrite push_swap_cs_bterms_map_ren_utokens_b; auto.
             f_equal; f_equal.
-            destruct can2; simpl; auto. }
+            destruct can2; simpl; auto. }*)
+
+(*          { SSSCase "NSwapCs0".
+            csunf comp; simpl in comp.
+            apply compute_step_swap_cs0_success in comp; repndors; exrepnd; subst.
+
+            { csunf; simpl; tcsp; rewrite ren_utokens_push_swap_cs0; auto. }
+
+            { csunf; simpl; destruct can2; simpl in *; tcsp. }
+
+            { apply nt_wf_swap_cs0_iff in wf; exrepnd.
+              repeat (destruct l; simpl in *; ginv).
+              inversion wf1; subst; clear wf1.
+              eapply ind in comp2; try (right; left); eauto; eauto 3 with slow;
+                try (complete (eapply subset_disjoint_r; eauto; apply subset_diff_same_l;
+                               apply subset_get_utokens_implies_subset_get_utokens_lib;
+                               simpl; eauto with slow));[].
+              rewrite ren_utok_match_can_eq.
+              rewrite compute_step_swap_cs0_if_isnoncan_like; eauto 3 with slow;
+                try (complete (apply (isnoncan_like_ren_utokens _ ren) in comp3; simpl in *; tcsp));[].
+              simpl in *; allrw; tcsp. } }*)
 
           { SSSCase "NLDepth".
             csunf comp; simpl in *; ginv. }
@@ -2172,7 +2236,7 @@ Proof.
             destruct b as [l t].
             destruct l; destruct t as [v|op bs2]; try (complete (csunf comp; allsimpl; dcwf h));[].
 
-            dopid op as [can3|ncan3|exc3|abs3] SSSSCase.
+            dopid op as [can3|ncan3|nsw3|exc3|abs3] SSSSCase.
 
             - SSSSCase "Can".
               csunf comp; csunf; simpl in comp; boolvar; tcsp; ginv.
@@ -2241,6 +2305,29 @@ Proof.
               allunfold @co_wf_def; exrepnd; subst; exists (PKa (ren_atom ren g)); allsimpl;
               ginv; dands; tcsp; repndors; exrepnd; subst; ginv.
 
+            - SSSSCase "NSwapCs2".
+              rw @compute_step_ncompop_nswap2 in comp; boolvar; tcsp; ginv;[].
+              dcwf h;[].
+              remember (compute_step lib (oterm (NSwapCs2 nsw3) bs2)) as comp1;
+                symmetry in Heqcomp1; destruct comp1; ginv.
+              simphyps.
+              allrw diff_app_r; allrw disjoint_app_r; repnd.
+              applydup @nt_wf_oterm_snd in wf as w2.
+              eapply ind in Heqcomp1; eauto; simphyps; eauto 3 with slow;
+                [|eapply subset_disjoint_r;[eauto|];
+                  apply subset_diff_same_l;
+                  apply subset_get_utokens_implies_subset_get_utokens_lib; simpl;
+                  autorewrite with slow; eauto 3 with slow];[].
+
+              repeat rw_ren_utok.
+              csunf; simpl; dcwf h;
+              remember (get_utok_c can2) as gu; symmetry in Heqgu; destruct gu; simpl; auto;
+              try (rw Heqcomp1); allsimpl; auto;
+              allapply @get_utok_c_some; subst; allrw @co_wf_map;
+              apply co_wf_false_implies_not in Heqh0; destruct Heqh0; tcsp.
+              allunfold @co_wf_def; exrepnd; subst; exists (PKa (ren_atom ren g)); allsimpl;
+              ginv; dands; tcsp; repndors; exrepnd; subst; ginv.
+
             - SSSSCase "Exc".
               csunf comp; csunf; simphyps; ginv; dcwf h;[]; ginv.
               repeat rw_ren_utok.
@@ -2267,17 +2354,18 @@ Proof.
                 destruct x as [l t]; simpl; unfold num_bvars; auto. }
 
               unfold correct_abs in correct; repnd; allsimpl; dcwf q;
-              remember (get_utok_c can2) as gu; symmetry in Heqgu; destruct gu;
-              allsimpl; tcsp; allapply @get_utok_c_some; subst;
-              try (csunf; allsimpl; rw h); simpl; auto;
-              allrw @ren_utokens_mk_instance; auto;
-              allrw @co_wf_map;
-              apply co_wf_false_implies_not in Heqq; destruct Heqq;
-              allunfold @co_wf_def; exrepnd; subst; allsimpl; ginv;
-              allrw @get_param_from_cop_some; subst;
-              allrw @get_param_from_cop_pk2can;
-              eexists; dands; eauto;
-              repndors; exrepnd; subst; ginv; tcsp.
+                remember (get_utok_c can2) as gu; symmetry in Heqgu; destruct gu;
+                  allsimpl; tcsp; allapply @get_utok_c_some; subst;
+                    try (csunf; allsimpl; rw h); simpl; auto;
+                      allrw @ren_utokens_apply_swaps;
+                      allrw @ren_utokens_mk_instance; auto;
+                        allrw @co_wf_map;
+                        apply co_wf_false_implies_not in Heqq; destruct Heqq;
+                          allunfold @co_wf_def; exrepnd; subst; allsimpl; ginv;
+                            allrw @get_param_from_cop_some; subst;
+                              allrw @get_param_from_cop_pk2can;
+                              eexists; dands; eauto;
+                                repndors; exrepnd; subst; ginv; tcsp.
           }
 
           { SSSCase "NArithOp".
@@ -2286,7 +2374,7 @@ Proof.
             destruct b as [l t].
             destruct l; destruct t as [v|op bs2]; try (complete (csunf comp; allsimpl; dcwf h));[].
 
-            dopid op as [can3|ncan3|exc3|abs3] SSSSCase.
+            dopid op as [can3|ncan3|nsw3|exc3|abs3] SSSSCase.
 
             - SSSSCase "Can".
               csunf comp; csunf; simphyps; dcwf h;[].
@@ -2298,6 +2386,28 @@ Proof.
               allrw @compute_step_narithop_ncan2.
               dcwf h.
               remember (compute_step lib (oterm (NCan ncan3) bs2)) as comp1;
+                symmetry in Heqcomp1; destruct comp1; ginv.
+              simphyps.
+              allrw diff_app_r; allrw disjoint_app_r; repnd.
+              applydup @nt_wf_oterm_snd in wf as w2.
+              eapply ind in Heqcomp1; eauto; simphyps; eauto 3 with slow;[|];
+                [|eapply subset_disjoint_r;[eauto|];
+                  apply subset_diff_same_l;
+                  apply subset_get_utokens_implies_subset_get_utokens_lib; simpl;
+                  autorewrite with slow; eauto 3 with slow];[].
+
+              csunf.
+              repeat rw_ren_utok; allsimpl; dcwf h;
+              remember (get_utok_c can2) as gu; symmetry in Heqgu; destruct gu; simpl; auto;
+              try (rw Heqcomp1); simpl; tcsp;
+              allapply @get_utok_c_some; subst; allrw @ca_wf_map;
+              apply ca_wf_false_implies_not in Heqh0; destruct Heqh0; tcsp.
+              allunfold @ca_wf_def; exrepnd; subst; ginv.
+
+            - SSSSCase "NSwapCs2".
+              allrw @compute_step_narithop_nswap2.
+              dcwf h.
+              remember (compute_step lib (oterm (NSwapCs2 nsw3) bs2)) as comp1;
                 symmetry in Heqcomp1; destruct comp1; ginv.
               simphyps.
               allrw diff_app_r; allrw disjoint_app_r; repnd.
@@ -2339,14 +2449,15 @@ Proof.
                             vars rhs correct) as h.
               repeat (autodimp h hyp).
               { allrw map_map; unfold compose; apply eq_maps; introv i;
-                destruct x as [l t]; simpl; unfold num_bvars; auto. }
+                  destruct x as [l t]; simpl; unfold num_bvars; auto. }
               unfold correct_abs in correct; repnd.
               remember (get_utok_c can2) as gu; symmetry in Heqgu; destruct gu; simpl; auto;
-              allapply @get_utok_c_some; subst;
-              csunf; simpl; csunf; simpl; rw h; simpl; tcsp;
-              dcwf q;
-              rw @ren_utokens_mk_instance; auto;
-              allrw @ca_wf_map.
+                allapply @get_utok_c_some; subst;
+                  csunf; simpl; csunf; simpl; rw h; simpl; tcsp;
+                    dcwf q;
+                    try rw @ren_utokens_apply_swaps;
+                    rw @ren_utokens_mk_instance; auto;
+                      allrw @ca_wf_map.
               apply ca_wf_false_implies_not in Heqq; destruct Heqq; tcsp.
               allunfold @ca_wf_def; exrepnd; subst; ginv.
           }
@@ -2370,6 +2481,22 @@ Proof.
           remember (compute_step lib (oterm (NCan ncan2) bts)) as cs;
             symmetry in Heqcs; destruct cs; ginv.
           pose proof (ind (oterm (NCan ncan2) bts) (oterm (NCan ncan2) bts) []) as h;
+            repeat (autodimp h hyp); eauto 3 with slow.
+          allrw diff_app_r; allrw disjoint_app_r; repnd.
+          applydup @nt_wf_oterm_fst in wf as w1.
+          eapply h in Heqcs; eauto; exrepnd; clear h; allsimpl;[|];
+                [|eapply subset_disjoint_r;[eauto|];
+                  apply subset_diff_same_l;
+                  apply subset_get_utokens_implies_subset_get_utokens_lib; simpl;
+                  autorewrite with slow; eauto 3 with slow];[].
+          rw Heqcs; auto.
+
+        * SSCase "NSwapCs2".
+          allsimpl.
+          allrw @compute_step_ncan_nswap.
+          remember (compute_step lib (oterm (NSwapCs2 nsw2) bts)) as cs;
+            symmetry in Heqcs; destruct cs; ginv.
+          pose proof (ind (oterm (NSwapCs2 nsw2) bts) (oterm (NSwapCs2 nsw2) bts) []) as h;
             repeat (autodimp h hyp); eauto 3 with slow.
           allrw diff_app_r; allrw disjoint_app_r; repnd.
           applydup @nt_wf_oterm_fst in wf as w1.
@@ -2411,6 +2538,7 @@ Proof.
             | ].
           rw h; clear h.
           unfold correct_abs in correct; repnd.
+          try rw @ren_utokens_apply_swaps.
           rw @ren_utokens_mk_instance; auto.
       }
 
@@ -2445,7 +2573,7 @@ Proof.
           pose proof (ind t (subst t n (mk_utoken a)) [n]) as ih.
           repeat (autodimp ih hyp); eauto 3 with slow.
           { rw @simple_osize_subst; eauto 3 with slow. }
-          pose proof (ih x [(a,a')]) as h; clear ih.
+          pose proof (ih x lib [(a,a')]) as h; clear ih.
           allrw @nt_wf_fresh.
           repeat (autodimp h hyp); allsimpl; eauto 3 with slow.
 
@@ -2464,7 +2592,7 @@ Proof.
           pose proof (ind t (subst t n (mk_utoken a')) [n]) as ih.
           repeat (autodimp ih hyp).
           { rw @simple_osize_subst; eauto 3 with slow. }
-          pose proof (ih (ren_utokens [(a,a')] x) ren) as ch; clear ih.
+          pose proof (ih (ren_utokens [(a,a')] x) lib ren) as ch; clear ih.
           repeat (autodimp ch hyp); allsimpl; eauto 3 with slow.
           { allrw <- disjoint_diff_l.
             eapply disjoint_eqset_r;[apply eqset_sym;apply get_utokens_lib_subst|].
@@ -2481,7 +2609,7 @@ Proof.
           repeat (autodimp ih hyp); eauto 3 with slow.
           { rw @simple_osize_subst; eauto 3 with slow.
             rw @osize_ren_utokens; eauto 3 with slow. }
-          pose proof (ih (ren_utokens ren (ren_utokens [(a,a')] x)) [(a',a'')]) as ch'; clear ih.
+          pose proof (ih (ren_utokens ren (ren_utokens [(a,a')] x)) lib [(a',a'')]) as ch'; clear ih.
           repeat (autodimp ch' hyp); allsimpl; eauto 3 with slow.
 
           { allrw disjoint_singleton_r; auto. }
@@ -2523,6 +2651,26 @@ Proof.
             rewrite j; tcsp. }
       }
 
+    + SCase "NSwapCs2".
+      apply compute_step_NSwapCs2_success in comp; exrepnd; subst; simpl in *.
+      apply compute_step_swap_cs2_success in comp0; repndors; exrepnd; subst.
+
+      { repeat rw_ren_utok.
+        csunf; simpl; auto.
+        unfold push_swap_cs_can.
+        rewrite push_swap_cs_bterms_map_ren_utokens_b.
+        f_equal; f_equal.
+        destruct c; simpl; auto. }
+
+      { csunf; simpl; auto. }
+
+      allrw @nt_wf_swap_cs2_iff; exrepnd; fold_terms; ginv.
+      eapply ind in comp2; try (left; reflexivity); eauto; autorewrite with slow in *; eauto 3 with slow.
+      rewrite ren_utokens_swap_cs_term in comp2.
+      rewrite compute_step_swap_cs2_isnoncan_like_eq; eauto 3 with slow; allrw.
+      simpl; fold_terms.
+      rewrite ren_utokens_swap_cs_term; auto.
+
     + SCase "Exc".
       csunf comp; csunf; allsimpl; ginv.
       eexists; dands; eauto.
@@ -2545,6 +2693,7 @@ Proof.
         | ].
       rw h; clear h.
       unfold correct_abs in correct; repnd.
+      try rw @ren_utokens_apply_swaps.
       rw @ren_utokens_mk_instance; auto.
 Qed.
 
@@ -2560,7 +2709,7 @@ Proof.
   induction k; introv wf norep disjlib disj r.
   - allrw @reduces_in_atmost_k_steps_0; subst; auto.
   - allrw @reduces_in_atmost_k_steps_S; exrepnd.
-    applydup (compute_step_ren_utokens lib t u0 ren) in r1; auto.
+    applydup (compute_step_ren_utokens t u0 lib ren) in r1; auto.
     applydup @preserve_nt_wf_compute_step in r1; auto.
     apply (IHk _ _ ren) in r0; auto;[|].
     + eexists; dands; eauto.
@@ -3253,7 +3402,7 @@ Proof.
     apply isvalue_iff; dands; auto.
     split; auto.
 
-  - dopid op as [can|ncan|exc|abs] Case; tcsp; GC;
+  - dopid op as [can|ncan|nsw|exc|abs] Case; tcsp; GC;
     try (complete (unfold lsubst in isv0; allsimpl; boolvar; inversion isv0)).
     left; dands; auto.
     introv i; apply isv in i; exrepnd.
@@ -4726,15 +4875,6 @@ Proof.
   induction sub1; introv; allsimpl; tcsp.
   destruct a as [v t]; allsimpl; rw IHsub1; auto.
 Qed.
-
-Lemma free_vars_subset_allvars {o} :
-  forall (t : @NTerm o), subset (free_vars t) (allvars t).
-Proof.
-  introv i.
-  pose proof (allvars_eq_all_vars t) as h; rw eqvars_prop in h; apply h.
-  rw in_app_iff; sp.
-Qed.
-Hint Resolve free_vars_subset_allvars : slow.
 
 Lemma bound_vars_subset_allvars {o} :
   forall (t : @NTerm o), subset (bound_vars t) (allvars t).

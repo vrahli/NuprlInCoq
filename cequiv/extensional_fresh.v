@@ -131,7 +131,7 @@ Proof.
     apply isvalue_like_subst; auto. }
 
   make_red_val_like comp5 h.
-  pose proof (Hi (subst t v (mk_utoken ua')) s (subst tr vr (mk_utoken ua'))) as h'.
+  pose proof (Hi lib (subst t v (mk_utoken ua')) s (subst tr vr (mk_utoken ua'))) as h'.
   repeat (autodimp h' hyp).
   { apply isprogram_subst_if_bt; eauto with slow. }
   { apply isprogram_subst_if_bt; eauto with slow. }

@@ -37,12 +37,12 @@ Lemma nuprl_extensional_abs {p} :
   forall x : opabs, @extensional_op p (Abs x).
 Proof.
   introv Hpra Hprt Hprt' Hcv Has Hi.
-  allfold (approx_starbts lib).
+  allfold @approx_starbts.
   apply computes_to_val_like_in_max_k_steps_S in Hcv; exrepnd.
   csunf Hcv1; allsimpl.
   apply compute_step_lib_success in Hcv1; exrepnd; subst.
   dup Hcv2 as fe1.
-  pose proof (approx_starbts_numvars lib (Abs x) lbt lbt' Has) as eqnum.
+  pose proof (approx_starbts_numvars (Abs x) lib lbt lbt' Has) as eqnum.
   apply @found_entry_change_bs with (bs2 := lbt') in Hcv2; auto.
   rename Hcv2 into fe2.
 

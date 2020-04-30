@@ -58,7 +58,7 @@ Proof.
 
   - apply no_change_after_val_like with (k2:=k) in Hcv3; try splr.
     make_red_val_like Hcv3 h.
-    apply (Hi _ _ t2) in h; auto.
+    apply (Hi _ _ _ t2) in h; auto.
     applydup @howe_lemma2_implies_iscan in h; auto; exrepnd.
     allunfold @computes_to_value; repnd.
     fold_terms.
@@ -66,7 +66,7 @@ Proof.
 
     apply no_change_after_val_like with (k2 := k) in XX0; auto.
     make_red_val_like XX0 hh.
-    apply (Hi _ _ (mk_atom_eq a1 a1 v1 mk_bot)) in hh;
+    apply (Hi _ _ _ (mk_atom_eq a1 a1 v1 mk_bot)) in hh;
       auto; prove_isprogram;
       try (apply isprogram_mk_atom_eq; dands; auto);
       eauto 2 with slow;
@@ -145,9 +145,3 @@ Proof.
           apply @preserve_program_exc2 in h1; sp.
     }
 Qed.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

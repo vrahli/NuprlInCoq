@@ -204,6 +204,25 @@ Inductive qnat_cond :=
 | qnat_mon_cond
 | qnat_no_cond.
 
+
+(* swaps fst and snd *)
+Definition cs_swap : Set := choice_sequence_name * choice_sequence_name.
+Definition cs_swaps := list cs_swap.
+
+Definition cs_swap_deq : Deq cs_swap.
+Proof.
+  introv.
+  destruct x as [a b], y as [c d].
+  destruct (choice_sequence_name_deq a c) as [x|x]; subst;
+    destruct (choice_sequence_name_deq b d) as [y|y]; subst; tcsp;
+      right; intro xx; inversion xx; subst; tcsp.
+Defined.
+
+Definition cs_swaps_deq : Deq cs_swaps.
+Proof.
+  apply deq_list; apply cs_swap_deq.
+Defined.
+
 (* ------ operators ------ *)
 (** Here are the Canonical [Opid]s of Nuprl:
 
@@ -451,13 +470,6 @@ Record CompSeqNfo2 :=
       comp_seq_nfo2_to   : nat;
     }.
 
-Record SwapCsNfo :=
-  MkSwapCsNfo
-    {
-      swap_cs_nfo_name1 : choice_sequence_name;
-      swap_cs_nfo_name2 : choice_sequence_name;
-    }.
-
 Inductive NonCanonicalOp : Set :=
  | NApply     : NonCanonicalOp
  | NEApply    : NonCanonicalOp
@@ -474,7 +486,7 @@ Inductive NonCanonicalOp : Set :=
  | NTryCatch  : NonCanonicalOp (* named try/catch *)
  | NParallel  : NonCanonicalOp
  | NSwapCs1   : NonCanonicalOp
- | NSwapCs2   : SwapCsNfo -> NonCanonicalOp
+(* | NSwapCs0   : NonCanonicalOp*)
 (* | NSwapCs    : NonCanonicalOp*)
  | NLDepth    : NonCanonicalOp
  | NLastCs    : NonCanonicalOp
@@ -507,7 +519,7 @@ Definition OpBindingsNCan (nc : NonCanonicalOp) : opsign :=
   | NTryCatch    => [0,0,1] (* 1: try part; 2: name; 3: catch part*)
   | NParallel    => [0,0]
   | NSwapCs1     => [0,0,0]
-  | NSwapCs2 _   => [0]
+(*  | NSwapCs0     => [0,0,0]*)
 (*  | NSwapCs      => [0,0,0]*)
   | NLDepth      => []
   | NLastCs      => [0,0]
@@ -562,22 +574,20 @@ Inductive parameter : tuniv :=
 Definition opname := String.string.
 
 Record opabs :=
-  {
-    opabs_name : opname;
-    opabs_params : list parameter;
-    opabs_sign : opsign
-  }.
+  mk_opabs
+    {
+      opabs_name   : opname;
+      opabs_params : list parameter;
+      opabs_sign   : opsign;
+(*      opabs_swaps  : cs_swaps*)
+    }.
 
-Definition dum_opabs : opabs :=
-  {|
-    opabs_name := "" ;
-    opabs_params := [] ;
-    opabs_sign := []
-  |}.
+Definition dum_opabs : opabs := mk_opabs "" [] [].
 
 Inductive Opid {p} : tuniv :=
 | Can  : @CanonicalOp p -> Opid
 | NCan : NonCanonicalOp -> Opid
+| NSwapCs2 : cs_swap -> Opid
 | Exc  : Opid
 | Abs  : opabs -> Opid.
 
@@ -590,10 +600,11 @@ Inductive Opid {p} : tuniv :=
 *)
 Definition OpBindings {p} (op : @Opid p) : opsign :=
   match op with
-    | Can c     => OpBindingsCan c
-    | NCan nc   => OpBindingsNCan nc
-    | Exc       => [0,0] (* 1: name; 2: value *)
-    | Abs opabs => opabs_sign opabs
+    | Can c      => OpBindingsCan c
+    | NCan nc    => OpBindingsNCan nc
+    | NSwapCs2 _ => [0]
+    | Exc        => [0,0] (* 1: name; 2: value *)
+    | Abs opabs  => opabs_sign opabs
   end.
 
 (* begin hide *)
@@ -608,6 +619,7 @@ Tactic Notation "dopid" ident(o) "as" simple_intropattern(I) ident(c) :=
   destruct o as I;
   [ Case_aux c "Can"
   | Case_aux c "NCan"
+  | Case_aux c "NSwapCs2"
   | Case_aux c "Exc"
   | Case_aux c "Abs"
   ].
@@ -630,7 +642,7 @@ Tactic Notation "dopid_noncan" ident(onc) ident(c) :=
   | Case_aux c "NTryCatch"
   | Case_aux c "NParallel"
   | Case_aux c "NSwapCs1"
-  | Case_aux c "NSwapCs2"
+(*  | Case_aux c "NSwapCs0"*)
 (*  | Case_aux c "NSwapCs"*)
   | Case_aux c "NLDepth"
   | Case_aux c "NLastCs"
@@ -703,8 +715,8 @@ Proof.
   - destruct (Z_noteq_dec z z0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
 
-  - destruct (choice_sequence_name_deq c c0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
+  - destruct (choice_sequence_name_deq c c0) as [d|d]; subst; tcsp;
+      right; intro k; ginv; tcsp.
 
   - destruct (String.string_dec s s0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
@@ -784,17 +796,6 @@ Proof.
   left; tcsp.
 Defined.
 
-Lemma swap_cs_nfo_dec : Deq SwapCsNfo.
-Proof.
-  introv.
-  destruct x as [n l a], y as [m k b].
-  destruct (choice_sequence_name_deq n m); subst;
-    try (complete (right; introv xx; inversion xx; subst; tcsp)).
-  destruct (choice_sequence_name_deq l k); subst;
-    try (complete (right; introv xx; inversion xx; subst; tcsp)).
-  left; tcsp.
-Defined.
-
 Lemma opid_dec {o} :
   dec_consts o
   -> forall x y : @Opid o,
@@ -803,8 +804,8 @@ Lemma opid_dec {o} :
 Proof.
   introv dc ns.
   introv.
-  dopid x as [can1|ncan1|exc1|abs1] Case;
-  dopid y as [can2|ncan2|exc2|abs2] SCase;
+  dopid x as [can1|ncan1|nsw1|exc1|abs1] Case;
+  dopid y as [can2|ncan2|nsw2|exc2|abs2] SCase;
   try (left; auto; fail);
   try (right; sp; inversion H; fail).
 
@@ -816,8 +817,6 @@ Proof.
   - destruct ncan1; destruct ncan2;
       try (left; auto; fail);
       try (right; sp; inversion H; fail).
-    + destruct (swap_cs_nfo_dec s s0); subst; tcsp;
-        try (complete (right; introv xx; inversion xx; subst; tcsp)).
     + destruct (comp_seq_nfo1_dec c c0); subst; tcsp;
         try (complete (right; introv xx; inversion xx; subst; tcsp)).
     + destruct (comp_seq_nfo2_dec c c0); subst; tcsp;
@@ -832,13 +831,16 @@ Proof.
       try (left; auto; fail);
       try (right; sp; inversion H; fail).
 
+  -  destruct (cs_swap_deq nsw1 nsw2); subst; tcsp;
+       try (complete (right; introv xx; inversion xx; subst; tcsp)).
+
   - destruct abs1, abs2.
-    pose proof (String.string_dec opabs_name0 opabs_name1) as h.
-    dorn h; subst; tcsp; try (complete (right; intro x; inversion x; sp)).
-    pose proof (parameters_dec opabs_params0 opabs_params1) as h.
-    dorn h; subst; tcsp; try (complete (right; intro x; inversion x; sp)).
-    pose proof (opsign_dec opabs_sign0 opabs_sign1) as h.
-    dorn h; subst; tcsp; try (complete (right; intro x; inversion x; sp)).
+    destruct (String.string_dec opabs_name0 opabs_name1);
+      subst; tcsp; try (complete (right; intro x; inversion x; sp));[].
+    destruct (parameters_dec opabs_params0 opabs_params1);
+      subst; tcsp; try (complete (right; intro x; inversion x; sp));[].
+    destruct (opsign_dec opabs_sign0 opabs_sign1);
+      subst; tcsp; try (complete (right; intro x; inversion x; sp)).
 Qed.
 
 (* begin hide *)
@@ -874,8 +876,8 @@ Proof.
   - destruct (Z_noteq_dec z z0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
 
-  - destruct (choice_sequence_name_deq c c0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
+  - destruct (choice_sequence_name_deq c c0) as [d|d]; subst; tcsp;
+      try (complete (right; intro k; ginv; tcsp)).
 
   - destruct (String.string_dec s s0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
@@ -901,8 +903,8 @@ Lemma opid_dec_no_const {p} :
     -> {x = y} + {x <> y}.
 Proof.
   introv nc ns.
-  dopid x as [can1|ncan1|exc1|abs1] Case;
-  dopid y as [can2|ncan2|exc2|abs2] SCase;
+  dopid x as [can1|ncan1|nsw1|exc1|abs1] Case;
+  dopid y as [can2|ncan2|nsw2|exc2|abs2] SCase;
   try (left; auto; fail);
   try (right; sp; inversion H; fail).
 
@@ -913,8 +915,6 @@ Proof.
   - destruct ncan1; destruct ncan2;
       try (left; auto; fail);
       try (right; sp; inversion H; fail).
-    + destruct (swap_cs_nfo_dec s s0); subst; tcsp;
-        try (complete (right; introv xx; inversion xx; subst; tcsp)).
     + destruct (comp_seq_nfo1_dec c c0); subst; tcsp;
         try (complete (right; introv xx; inversion xx; subst; tcsp)).
     + destruct (comp_seq_nfo2_dec c c0); subst; tcsp;
@@ -929,13 +929,14 @@ Proof.
       try (left; auto; fail);
       try (right; sp; inversion H; fail).
 
+  - destruct (cs_swap_deq nsw1 nsw2); subst; tcsp;
+      try (complete (right; introv xx; inversion xx; subst; tcsp)).
+
   - destruct abs1, abs2.
-    pose proof (String.string_dec opabs_name0 opabs_name1) as h.
-    dorn h; subst; tcsp; try (complete (right; intro x; inversion x; sp)).
-    pose proof (parameters_dec opabs_params0 opabs_params1) as h.
-    dorn h; subst; tcsp; try (complete (right; intro x; inversion x; sp)).
-    pose proof (opsign_dec opabs_sign0 opabs_sign1) as h.
-    dorn h; subst; tcsp; try (complete (right; intro x; inversion x; sp)).
+    destruct (String.string_dec opabs_name0 opabs_name1);  subst; tcsp; try (complete (right; intro x; inversion x; sp)).
+    destruct (parameters_dec opabs_params0 opabs_params1); subst; tcsp; try (complete (right; intro x; inversion x; sp)).
+    destruct (opsign_dec opabs_sign0 opabs_sign1);         subst; tcsp; try (complete (right; intro x; inversion x; sp)).
+(*    destruct (cs_swaps_deq opabs_swaps0 opabs_swaps1);     subst; tcsp; try (complete (right; intro x; inversion x; sp)).*)
 Qed.
 
 Lemma decidable_eq_opabs_name :

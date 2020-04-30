@@ -148,9 +148,8 @@ Lemma reduces_to_if_split3 {p} :
   -> reduces_to lib t v.
 Proof.
   introv c r.
-  inversion c; subst; clear c.
-  - eapply reduces_to_if_split2; eauto.
-  - eapply reduces_to_if_split2; eauto.
+  inversion c; subst; clear c;
+    eapply reduces_to_if_split2; eauto.
 Qed.
 
 (*

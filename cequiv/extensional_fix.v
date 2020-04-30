@@ -62,7 +62,7 @@ Proof.
     apply iscan_implies in Hcv0; repndors; exrepnd; subst.
 
     { simpl in XX1; inversion XX1; subst; GC.
-      apply (Hi _ _ f0) in h; auto.
+      apply (Hi _ _ _ f0) in h; auto.
 
       apply howe_lemma2 in h; exrepnd; auto.
       repnud h0.
@@ -80,7 +80,7 @@ Proof.
 
       apply no_change_after_val_like with (k2:=k) in XX0; auto.
       make_red_val_like XX0 h.
-      apply (Hi _ _ (mk_apply (oterm (Can c) lbt')
+      apply (Hi _ _ _ (mk_apply (oterm (Can c) lbt')
                               (oterm (NCan NFix) [bterm [] (oterm (Can c) lbt')])))
         in h; auto; prove_isprogram.
 

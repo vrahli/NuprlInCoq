@@ -37,9 +37,9 @@ Require Export computation10.
 
 Lemma eq_opabs_implies :
   forall x y : opabs,
-    x = y -> (opabs_name x = opabs_name y
+    x = y -> (opabs_name     x = opabs_name y
               # opabs_params x = opabs_params y
-              # opabs_sign x = opabs_sign y).
+              # opabs_sign   x = opabs_sign y).
 Proof.
   introv xx; subst; auto.
 Qed.
@@ -1101,7 +1101,7 @@ Proof.
     apply isotrue_oband; dands.
 
     + apply isotrue_bool2obool_iff.
-      dopid op as [can|ncan|exc|abs] SCase; allsimpl; auto.
+      dopid op as [can|ncan|nsw|exc|abs] SCase; allsimpl; auto.
       SCase "Abs".
       apply h.
       apply in_olist_oapp; left; eauto.

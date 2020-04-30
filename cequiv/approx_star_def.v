@@ -31,6 +31,7 @@
 *)
 
 
+Require Export computation_swap.
 Require Export approx_props1.
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
@@ -39,32 +40,51 @@ Require Export approx_props1.
 
 (* begin hide *)
 
+Definition LNTrel {o} := @plibrary o -> @NTerm o -> @NTerm o -> [univ].
+
+Definition not_swap {o} (op : @Opid o) :=
+  match op with
+  | NSwapCs2 _ => False
+  | _ => True
+  end.
+
+Definition not_swap_or_fresh {o} (op : @Opid o) :=
+  match op with
+  | NSwapCs2 _ => False
+  | NCan NFresh => False
+  | _ => True
+  end.
+
 Definition blift_sub {o}
-           lib
            (op : @Opid o)
-           (R : NTrel)
+           (R : LNTrel)
+           (lib : plibrary)
            (b1 b2: @BTerm o) : [univ] :=
   {lv : list NVar
    $ {nt1,nt2 : NTerm
    $ (
-      (op <> NCan NFresh # R nt1 nt2)
+      (op <> NCan NFresh (*not_swap_or_fresh op*) # R lib nt1 nt2)
       [+]
       {sub : Sub
        & op = NCan NFresh
-       # R (lsubst nt1 sub) (lsubst nt2 sub)
+       # R lib (lsubst nt1 sub) (lsubst nt2 sub)
        # nrut_sub (get_utokens_lib lib nt1 ++ get_utokens_lib lib nt2) sub
        # lv = dom_sub sub}
+(*      [+]
+      {sw : cs_swap
+       & op = NSwapCs2 sw
+       # R (swap_cs_plib sw lib) (swap_cs_term sw nt1) (swap_cs_term sw nt2)}*)
      )
    # alpha_eq_bterm b1 (bterm lv nt1)
    # alpha_eq_bterm b2 (bterm lv nt2) }}.
 
 Definition lblift_sub {o}
-           lib
            (op : Opid)
-           (R : NTrel)
+           (R : LNTrel)
+           (lib : plibrary)
            (tls trs: list (@BTerm o)) : [univ] :=
   length tls = length trs
-  # forall n : nat, n < length tls -> blift_sub lib op R (tls{[n]}) (trs{[n]}).
+  # forall n : nat, n < length tls -> blift_sub op R lib (tls{[n]}) (trs{[n]}).
 
 (* end hide *)
 
@@ -93,20 +113,20 @@ Definition lblift_sub {o}
 
 Inductive approx_star {p} :
   @plibrary p -> @NTerm p -> @NTerm p -> [univ] :=
-| apsv: forall lib v t2,
-          (approx_open lib (vterm v) t2)
-          -> (approx_star lib (vterm v) t2)
-| apso: forall lib
-               (op : Opid)
-               (t2: NTerm)
-               (lbt1 lbt1' : list BTerm),
-          length lbt1 = length lbt1'
-          -> lblift_sub lib op (approx_star lib) lbt1 lbt1'
-          -> approx_open lib (oterm op lbt1') t2
-          -> approx_star lib (oterm op lbt1) t2.
+| apsv:
+    forall lib v t2,
+      approx_open lib (vterm v) t2
+      -> approx_star lib (vterm v) t2
+| apso:
+    forall lib
+           (op : Opid)
+           (t2: NTerm)
+           (lbt1 lbt1' : list BTerm),
+      length lbt1 = length lbt1'
+      -> lblift_sub op approx_star lib lbt1 lbt1'
+      -> approx_open lib (oterm op lbt1') t2
+      -> approx_star lib (oterm op lbt1) t2.
 Hint Constructors approx_star : slow.
 
-Definition approx_star_bterm {o} (lib : @plibrary o) op :=
-  blift_sub lib op (approx_star lib).
-Definition approx_starbts {o} (lib : @plibrary o) op :=
-  lblift_sub lib op (approx_star lib).
+Definition approx_star_bterm {o} (op : @Opid o) := blift_sub op approx_star.
+Definition approx_starbts {o} (op : @Opid o) := lblift_sub op approx_star.

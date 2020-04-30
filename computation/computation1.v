@@ -951,12 +951,18 @@ Record ComputationContext {o} :=
   }.
 *)
 
+Fixpoint apply_swaps {o} (s : cs_swaps) (t : @NTerm o) : NTerm :=
+  match s with
+  | [] => t
+  | sw :: sws => apply_swaps sws (mk_swap_cs2 sw t)
+  end.
+
 Definition compute_step_lib {o}
            (lib : @plibrary o)
            (opabs : opabs)
            (bs : list (@BTerm o)) :=
   match unfold_abs lib opabs bs with
-    | Some u => csuccess u
+    | Some u => csuccess ((*apply_swaps (opabs_swaps opabs)*) u)
     | None => cfailure compute_step_error_abs (oterm (Abs opabs) bs)
   end.
 
@@ -1361,6 +1367,7 @@ Definition compute_step_fresh {o}
         | oterm Exc _ => csuccess (pushdown_fresh v u)
         | oterm (Abs  _) _ => on_success comp (fun r => mk_fresh v (subst_utokens r [(a,mk_var v)]))
         | oterm (NCan _) _ => on_success comp (fun r => mk_fresh v (subst_utokens r [(a,mk_var v)]))
+        | oterm (NSwapCs2 _) _ => on_success comp (fun r => mk_fresh v (subst_utokens r [(a,mk_var v)]))
       end
     | _,_,_ => cfailure "check 1st arg" t
   end.

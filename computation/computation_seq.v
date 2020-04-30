@@ -110,11 +110,15 @@ Proof.
 
     + csunf comp1; allsimpl; ginv.
 
-    + dopid op as [can|ncan|exc|abs] Case.
+    + dopid op as [can|ncan|nsw|exc|abs] Case.
 
       * Case "Can".
         csunf comp1; allsimpl; ginv.
         apply reduces_in_atmost_k_steps_if_isvalue_like in comp0; ginv; eauto 3 with slow.
+
+      * eapply reduces_to_if_split2;[|exact comp2].
+        unfold mk_eapply; rw @compute_step_eapply_iscan_isnoncan_like; simpl; eauto 3 with slow.
+        rw comp1; auto.
 
       * eapply reduces_to_if_split2;[|exact comp2].
         unfold mk_eapply; rw @compute_step_eapply_iscan_isnoncan_like; simpl; eauto 3 with slow.
@@ -150,11 +154,14 @@ Proof.
 
     + csunf comp1; allsimpl; ginv.
 
-    + dopid op as [can|ncan|exc|abs] Case.
+    + dopid op as [can|ncan|nsw|exc|abs] Case.
 
       * Case "Can".
         csunf comp1; allsimpl; ginv.
         apply reduces_in_atmost_k_steps_if_isvalue_like in comp0; ginv; eauto 3 with slow.
+
+      * eapply reduces_to_if_split2;[|exact comp3].
+        csunf; simpl; rw comp1; simpl; auto.
 
       * eapply reduces_to_if_split2;[|exact comp3].
         csunf; simpl; rw comp1; simpl; auto.

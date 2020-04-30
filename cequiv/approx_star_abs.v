@@ -1172,7 +1172,7 @@ Lemma sosub_aux_approx_star_congr_al {p} :
     -> cover_so_vars t1 sub1
     -> cover_so_vars t2 sub2
     -> opr <> NCan NFresh
-    -> approx_star_sosub lib opr sub1 sub2
+    -> approx_star_sosub opr lib sub1 sub2
     -> approx_star lib (sosub_aux sub1 t1) (sosub_aux sub2 t2).
 Proof.
   soterm_ind1s t1 as [v ts ind|op lbt ind] Case; simpl;
@@ -1482,7 +1482,7 @@ Lemma sosub_approx_star_congr {p} :
     -> cover_so_vars t sub1
     -> cover_so_vars t sub2
     -> opr <> NCan NFresh
-    -> approx_star_sosub lib opr sub1 sub2
+    -> approx_star_sosub opr lib sub1 sub2
     -> approx_star lib (sosub sub1 t) (sosub sub2 t).
 Proof.
   introv wf len cov1 cov2 d ap.
@@ -1530,7 +1530,7 @@ Lemma mk_instance_approx_star_congr {p} :
     -> matching_bterms vars bs1
     -> matching_bterms vars bs2
     -> opr <> NCan NFresh
-    -> approx_starbts lib opr bs1 bs2
+    -> approx_starbts opr lib bs1 bs2
     -> approx_star lib (mk_instance vars bs1 t) (mk_instance vars bs2 t).
 Proof.
   introv wf cov m1 m2 d ap.

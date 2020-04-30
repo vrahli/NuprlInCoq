@@ -138,10 +138,3 @@ Proof.
       fold_terms; eauto 3 with slow.
     }
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

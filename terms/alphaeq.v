@@ -3488,10 +3488,8 @@ Lemma alpha_noncan {p} :
     -> isnoncan t2.
 Proof.
   introns Hc.
-  d_isnoncan Hc0.
-  duplicate Hc as Hcc.
-  invertsn Hc.
-  constructor.
+Locate d_isnoncan.
+  d_isnoncan Hc0; duplicate Hc as Hcc; invertsn Hc; constructor.
 Qed.
 
 Lemma noncan_lsubst {p} : forall e vx t1 t2,

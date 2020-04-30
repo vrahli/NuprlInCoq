@@ -57,7 +57,7 @@ Proof.
     allapply @approx_star_bterm_nobnd2.
     apply no_change_after_value_ra with (k2:=k) in Hcv3; auto; [].
     make_red_val_like Hcv3 h.
-    apply (Hi _ _ t2) in h; auto; prove_isprogram;[].
+    apply (Hi _ _ _ t2) in h; auto; prove_isprogram;[].
     applydup @howe_lemma2_implies_iscan in h; auto; exrepnd.
 
     apply apply_bterm_approx_star_congr
@@ -70,7 +70,7 @@ Proof.
 
     apply no_change_after_val_like with (k2 := k) in XX0; auto.
     make_red_val_like XX0 hh.
-    apply (Hi _ _ (subst b0 v0 v1)) in hh; auto; prove_isprogram;
+    apply (Hi _ _ _ (subst b0 v0 v1)) in hh; auto; prove_isprogram;
     try (try (apply isprogram_subst_if_bt);
          try (apply isprogram_bt_implies);
          try (apply implies_isprogram_bt_lam);

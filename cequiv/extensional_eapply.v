@@ -58,7 +58,7 @@ Proof.
     unfold lblift_sub in Has; repnd; allsimpl; cpx.
     repeat(approxrelbtd); show_hyps.
     make_red_val_like Hcv3 h.
-    pose proof (Hi la f lar) as q.
+    pose proof (Hi lib la f lar) as q.
     repeat (autodimp q hyp); prove_isprogram.
     allrw <- @isprogram_eapply_iff; repnd.
 
@@ -93,6 +93,7 @@ Proof.
           apply no_change_after_val_like with (k2 := k) in XX0; auto.
           make_red_val_like XX0 w.
           pose proof (Hi
+                        lib
                         (apply_bterm (bterm [v] t) [arg2])
                         a
                         (apply_bterm (bterm [vr] tr) [v0])) as z.
@@ -131,7 +132,7 @@ Proof.
             { rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto. }
             apply no_change_after_val_like with (k2:=k) in ra2; eauto 2 with slow; try omega;[].
             make_red_val_like ra2 cck.
-            pose proof (Hi arg2 c a0r) as z.
+            pose proof (Hi lib arg2 c a0r) as z.
             repeat (autodimp z hyp); eauto 2 with slow;[].
             applydup @howe_lemma2_implies_iscan in z; auto; exrepnd.
 
@@ -146,7 +147,7 @@ Proof.
               try (complete (intro xx; ginv));[].
             allunfold @apply_bterm; allsimpl; allrw @fold_subst.
 
-            pose proof (Hi (subst t v c) a (subst tr vr v0)) as w.
+            pose proof (Hi lib (subst t v c) a (subst tr vr v0)) as w.
             repeat (autodimp w hyp); prove_isprogram;
             try (try (apply isprogram_subst_if_bt);
                  try (apply isprogram_bt_implies);
@@ -166,7 +167,7 @@ Proof.
 
             apply no_change_after_val_like with (k2:=k) in ra2; try splr; try omega.
             make_red_val_like ra2 ca0.
-            pose proof (Hi arg2 (mk_exception a0 e) a0r) as z.
+            pose proof (Hi lib arg2 (mk_exception a0 e) a0r) as z.
             repeat (autodimp z hyp); eauto 2 with slow;[].
             apply howe_lemma2_exc in z; exrepnd; auto; prove_isprogram.
 
@@ -221,7 +222,7 @@ Proof.
 
             apply no_change_after_val_like with (k2:=k) in ra2; eauto 2 with slow; try omega;[].
             make_red_val_like ra2 cck.
-            pose proof (Hi arg2 (mk_nat n0) a0r) as z.
+            pose proof (Hi lib arg2 (mk_nat n0) a0r) as z.
             repeat (autodimp z hyp); eauto 2 with slow;[].
             apply approx_star_nat in z; eauto 2 with slow;[].
 
@@ -241,7 +242,7 @@ Proof.
 
             apply no_change_after_val_like with (k2:=k) in ra2; try splr; try omega.
             make_red_val_like ra2 ca0.
-            pose proof (Hi arg2 (mk_exception a0 e) a0r) as z.
+            pose proof (Hi lib arg2 (mk_exception a0 e) a0r) as z.
             repeat (autodimp z hyp); eauto 2 with slow;[].
             apply howe_lemma2_exc in z; exrepnd; auto; prove_isprogram.
 

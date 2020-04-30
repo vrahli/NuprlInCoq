@@ -9615,8 +9615,7 @@ Lemma noncan_not_value {p} :
 Proof.
   introv Hisnc Hisv.
   destruct e as [|o lbt]; allsimpl; cpx.
-  destruct o; cpx.
-  inverts Hisv; allsimpl; tcsp.
+  destruct o; cpx; inverts Hisv; allsimpl; tcsp.
 Qed.
 
 Theorem isprogram_ot_if_eauto2 {p} :

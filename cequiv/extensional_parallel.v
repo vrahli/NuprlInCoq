@@ -56,7 +56,7 @@ Proof.
   applydup isp1 in Hprt'2.
   applydup isp2 in Hprt2.
 
-  pose proof (Hi a0 x nt2) as q.
+  pose proof (Hi lib a0 x nt2) as q.
   repeat (autodimp q hyp).
   { eauto 3 with slow. }
 

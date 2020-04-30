@@ -191,8 +191,11 @@ Definition absolute_value {o} (t : @NTerm o) :=
 Definition mk_swap_cs1 {o} (a b c : @NTerm o) :=
   oterm (NCan NSwapCs1) [nobnd a, nobnd b, nobnd c].
 
-Definition mk_swap_cs2 {o} a b (c : @NTerm o) :=
-  oterm (NCan (NSwapCs2 (MkSwapCsNfo a b))) [nobnd c].
+Definition mk_swap_cs2 {o} sw (c : @NTerm o) :=
+  oterm (NSwapCs2 sw) [nobnd c].
+
+(*Definition mk_swap_cs0 {o} (a b c : @NTerm o) :=
+  oterm (NCan NSwapCs0) [nobnd a, nobnd b, nobnd c].*)
 
 (*Definition mk_swap_cs {o} (a b c : @NTerm o) :=
   oterm (NCan NSwapCs) [nobnd a, nobnd b, nobnd c].*)
@@ -240,7 +243,8 @@ Ltac fold_terms_step :=
     | [ |- context[oterm (NCan NFresh) [bterm [?v] ?b]] ] => fold (mk_fresh v b)
     | [ |- context[oterm (NCan (NCompOp CompOpLess)) [nobnd ?a, nobnd ?b, nobnd ?c, nobnd ?d]] ] => fold (mk_less a b c d)
     | [ |- context[oterm (NCan NSwapCs1) [nobnd ?a, nobnd ?b, nobnd ?c]] ] => fold (mk_swap_cs1 a b c)
-    | [ |- context[oterm (NCan (NSwapCs2 (MkSwapCsNfo ?a ?b))) [nobnd ?c]] ] => fold (mk_swap_cs2 b a c)
+    | [ |- context[oterm (NSwapCs2 ?sw) [nobnd ?c]] ] => fold (mk_swap_cs2 sw c)
+(*    | [ |- context[oterm (NCan NSwapCs0) [nobnd ?a, nobnd ?b, nobnd ?c]] ] => fold (mk_swap_cs0 a b c)*)
 (*    | [ |- context[oterm (NCan NSwapCs) [nobnd ?a, nobnd ?b, nobnd ?c]] ] => fold (mk_swap_cs a b c)*)
     | [ |- context[@oterm ?p (NCan NLDepth) [] ] ] => fold (@mk_lib_depth p)
     | [ |- context[oterm Exc [nobnd ?a, nobnd ?x]] ] => fold (mk_exception a x)
@@ -297,7 +301,8 @@ Ltac fold_terms_step :=
     | [ H : context[oterm (NCan NFresh) [bterm [?v] ?b]] |- _ ] => fold (mk_fresh v b) in H
     | [ H : context[oterm (NCan (NCompOp CompOpLess)) [nobnd ?a, nobnd ?b, nobnd ?c, nobnd ?d]] |- _ ] => fold (mk_less a b c d) in H
     | [ H : context[oterm (NCan NSwapCs1) [nobnd ?a, nobnd ?b, nobnd ?c]] |- _ ] => fold (mk_swap_cs1 a b c) in H
-    | [ H : context[oterm (NCan (NSwapCs2 (MkSwapCsNfo ?a ?b))) [nobnd ?c]] |- _ ] => fold (mk_swap_cs2 a b c) in H
+    | [ H : context[oterm (NSwapCs2 ?sw) [nobnd ?c]] |- _ ] => fold (mk_swap_cs2 sw c) in H
+(*    | [ H : context[oterm (NCan NSwapCs0) [nobnd ?a, nobnd ?b, nobnd ?c]] |- _ ] => fold (mk_swap_cs0 a b c) in H*)
 (*    | [ H : context[oterm (NCan NSwapCs) [nobnd ?a, nobnd ?b, nobnd ?c]] |- _ ] => fold (mk_swap_cs a b c) in H*)
     | [ H : context[@oterm ?p (NCan NLDepth) [] ] |- _ ] => fold (@mk_lib_depth p) in H
     | [ H : context[oterm Exc [nobnd ?a, nobnd ?x]] |- _ ] => fold (mk_exception a x) in H

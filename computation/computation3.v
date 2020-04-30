@@ -484,17 +484,14 @@ Proof.
     applydup IHk in comp1; tcsp; exrepnd.
     destruct t as [x|op bs].
     { csunf comp2; ginv. }
-    dopid op as [c|nc|exc|abs] Case.
+    dopid op as [c|nc|nsw|exc|abs] Case;
+      try (complete (exists (S k0); allrw @reduces_in_atmost_k_steps_S;
+                            rw @compute_step_eq_unfold; simpl; rw comp2; simpl;
+                            eexists; dands; eauto)).
 
     + Case "Can".
       rw @compute_step_eq_unfold in comp2; allsimpl; ginv.
       exists k0; auto.
-
-    + Case "NCan".
-      exists (S k0); allrw @reduces_in_atmost_k_steps_S.
-      rw @compute_step_eq_unfold; simpl.
-      rw comp2; simpl.
-      eexists; dands; eauto.
 
     + Case "Exc".
       provefalse.
@@ -506,12 +503,6 @@ Proof.
         repeat (autodimp ee hyp); sp; try (exists k; auto).
       subst.
       allapply @isvalue_mk_exception; sp.
-
-    + Case "Abs".
-      exists (S k0); allrw @reduces_in_atmost_k_steps_S.
-      rw @compute_step_eq_unfold; simpl.
-      rw comp2; simpl.
-      eexists; dands; eauto.
 Qed.
 
 Lemma isvalue_ncan {o} :
@@ -535,6 +526,15 @@ Qed.
 Lemma isvalue_abs {o} :
   forall a (bs : list (@BTerm o)),
     isvalue (oterm (Abs a) bs) -> False.
+Proof.
+  introv isv.
+  inversion isv as [? isp isc]; subst.
+  apply iscan_implies in isc; repndors; exrepnd; ginv.
+Qed.
+
+Lemma isvalue_NSwapCs2 {o} :
+  forall sw (bs : list (@BTerm o)),
+    isvalue (oterm (NSwapCs2 sw) bs) -> False.
 Proof.
   introv isv.
   inversion isv as [? isp isc]; subst.
@@ -565,10 +565,11 @@ Proof.
     destruct x as [x|op bs].
     { allapply @isprog_vterm; sp. }
 
-    dopid op as [c|nc|exc|abs] Case; tcsp;
-    try (apply isvalue_ncan in comp; sp);
-    try (apply isvalue_exc in comp; sp);
-    try (apply isvalue_abs in comp; sp).
+    dopid op as [c|nc|nsw|exc|abs] Case; tcsp;
+      try (apply isvalue_ncan in comp; sp);
+      try (apply isvalue_exc in comp; sp);
+      try (apply isvalue_abs in comp; sp);
+      try (apply isvalue_NSwapCs2 in comp; sp);[].
 
     unfold apply_bterm; simpl.
     eexists; dands; eauto.
@@ -583,16 +584,14 @@ Proof.
     destruct t as [z|op bs].
     { allapply @isprog_vterm; sp. }
 
-    dopid op as [c|nc|exc|abs] Case.
+    dopid op as [c|nc|nsw|exc|abs] Case;
+      try (complete (exists (S k0); allrw @reduces_in_atmost_k_steps_S;
+                            rw @compute_step_eq_unfold; simpl; rw e1; simpl;
+                            eexists; dands; eauto)).
 
     + Case "Can".
       rw @compute_step_eq_unfold in e1; allsimpl; ginv.
       exists k0; sp.
-
-    + Case "NCan".
-      exists (S k0); allrw @reduces_in_atmost_k_steps_S.
-      rw @compute_step_eq_unfold; simpl; rw e1; simpl.
-      eexists; dands; eauto.
 
     + Case "Exc".
       provefalse.
@@ -604,11 +603,17 @@ Proof.
         repeat (autodimp ee hyp); sp; try (exists k; auto).
       subst.
       allapply @isvalue_mk_exception; sp.
+Qed.
 
-    + Case "Abs".
-      exists (S k0); allrw @reduces_in_atmost_k_steps_S.
-      rw @compute_step_eq_unfold; simpl; rw e1; simpl.
-      eexists; dands; eauto.
+Lemma compute_step_ncan_nswap {o} :
+  forall lib nc sw (l : list (@BTerm o)) bs,
+    compute_step lib (oterm (NCan nc) (bterm [] (oterm (NSwapCs2 sw) l) :: bs))
+    = match compute_step lib (oterm (NSwapCs2 sw) l) with
+      | csuccess f => csuccess (oterm (NCan nc) (bterm [] f :: bs))
+      | cfailure str ts => cfailure str ts
+      end.
+Proof.
+  introv; csunf; simpl; auto.
 Qed.
 
 Lemma if_hasvalue_cbv0 {p} :
@@ -628,7 +633,7 @@ Proof.
   - destruct t as [x|op bs].
     { allapply @isprog_vterm; sp. }
 
-    dopid op as [c|nc|exc|abs] Case.
+    dopid op as [c|nc|nsw|exc|abs] Case.
 
     + Case "Can".
       exists (oterm (Can c) bs); sp.
@@ -641,6 +646,21 @@ Proof.
       rw @compute_step_ncan_ncan in comp.
       remember (compute_step lib (oterm (NCan nc) bs)); symmetry in Heqc; destruct c;
       try (complete (inversion comp)).
+
+      allrw @fold_nobnd; allrw @fold_cbv.
+      assert (isprog n) as in0 by (apply preserve_compute_step in Heqc; sp; allrw @isprogram_eq; sp).
+      applydup IHk in in0; sp.
+      exists t'0; sp.
+      exists (S k0).
+      allrewrite @compute_at_most_k_steps_eq_f.
+      rewrite compute_at_most_k_stepsf_S.
+      rewrite Heqc; sp.
+
+    + Case "NSwapCs2".
+      unfold mk_cbv, nobnd in comp.
+      rw @compute_step_ncan_nswap in comp.
+      remember (compute_step lib (oterm (NSwapCs2 nsw) bs)); symmetry in Heqc; destruct c;
+        try (complete (inversion comp)).
 
       allrw @fold_nobnd; allrw @fold_cbv.
       assert (isprog n) as in0 by (apply preserve_compute_step in Heqc; sp; allrw @isprogram_eq; sp).
@@ -677,7 +697,7 @@ Proof.
        apply @isprogram_eq in isp.
        apply isprogram_ot_iff in isp; repnd; auto. }
 
-     apply IHk in comp; auto; exrepnd.
+     apply IHk in comp; auto; exrepnd; eauto 4 with slow;[].
 
      exists t'0; dands; auto.
      exists (S k0).
@@ -714,7 +734,7 @@ Proof.
 
     { allapply @isprog_vterm; sp. }
 
-    dopid op as [c|nc|exc|abs] Case.
+    dopid op as [c|nc|nsw|exc|abs] Case.
 
     + Case "Can".
       exists (oterm (Can c) bs); dands; eauto 3 with slow.
@@ -728,6 +748,26 @@ Proof.
       unfold mk_cbv, nobnd in e.
       rw @compute_step_ncan_ncan in e.
       remember (compute_step lib (oterm (NCan nc) bs)); symmetry in Heqc; destruct c;
+      try (complete (inversion e)).
+
+      allrewrite @fold_cbv.
+      assert (isprog n) as in0 by (apply preserve_compute_step in Heqc; sp; allrw @isprogram_eq; sp).
+      applydup IHk in in0; exrepd; auto.
+
+      exists x; sp.
+
+      exists (S k1).
+      allrewrite @compute_at_most_k_steps_eq_f.
+      rewrite compute_at_most_k_stepsf_S.
+      rewrite Heqc; sp.
+
+      exists t'0; sp.
+      exists k0; sp.
+
+    + Case "NSwapCs2".
+      unfold mk_cbv, nobnd in e.
+      rw @compute_step_ncan_nswap in e.
+      remember (compute_step lib (oterm (NSwapCs2 nsw) bs)); symmetry in Heqc; destruct c;
       try (complete (inversion e)).
 
       allrewrite @fold_cbv.
@@ -771,7 +811,7 @@ Proof.
         apply @isprogram_eq in pt.
         apply isprogram_ot_iff in pt; repnd; auto. }
 
-      apply IHk in e; auto; exrepnd.
+      apply IHk in e; auto; exrepnd; eauto 4 with slow;[].
 
       exists x; dands; auto.
       exists (S k1).
@@ -813,7 +853,7 @@ Proof.
     rw @compute_step_eq_unfold in comp1; allsimpl.
     destruct f as [v|op bs]; ginv.
 
-    dopid op as [c|nc|exc|abs] Case.
+    dopid op as [c|nc|nsw|exc|abs] Case.
 
     + Case "Can".
       apply compute_step_apply_success in comp1.
@@ -829,6 +869,29 @@ Proof.
 
     + Case "NCan".
       remember (compute_step lib (oterm (NCan nc) bs)); symmetry in Heqc; destruct c; allsimpl; ginv.
+      fold_terms.
+      assert (isprog n) as in0 by (apply preserve_compute_step in Heqc; sp; allrw @isprogram_eq; sp).
+      applydup IHk in comp0; auto; repndors;
+        [left|right];
+        exrepd; auto.
+
+      * exists v b; sp.
+
+        exists (S k1).
+
+        { rw @reduces_in_atmost_k_steps_S; exists n; dands; auto. }
+
+        { exists t'0; sp.
+          exists k0; sp. }
+
+      * exists n0; dands; eauto 3 with slow.
+        { exists (S k1).
+          allrw @reduces_in_atmost_k_steps_S.
+          eexists; dands; eauto. }
+        { eexists; dands;[eexists;exact r|]; auto. }
+
+    + Case "NSwapCs2".
+      remember (compute_step lib (oterm (NSwapCs2 nsw) bs)); symmetry in Heqc; destruct c; allsimpl; ginv.
       fold_terms.
       assert (isprog n) as in0 by (apply preserve_compute_step in Heqc; sp; allrw @isprogram_eq; sp).
       applydup IHk in comp0; auto; repndors;
@@ -874,7 +937,7 @@ Proof.
         apply @isprogram_eq in isp.
         apply isprogram_ot_iff in isp; repnd; auto. }
 
-      apply IHk in comp0; auto; repndors;
+      apply IHk in comp0; auto; repndors; eauto 4 with slow;
         [left|right]; exrepnd.
 
       * exists v b; dands; auto.
@@ -919,7 +982,7 @@ Proof.
     { allapply @isprog_vterm; sp. }
 
     allrw @reduces_in_atmost_k_steps_S; exrepnd.
-    dopid op as [c|nc|exc|abs] Case.
+    dopid op as [c|nc|nsw|exc|abs] Case.
 
     + Case "Can".
       csunf comp1; allsimpl.
@@ -939,6 +1002,28 @@ Proof.
       unfold mk_apply, nobnd in comp1.
       rw @compute_step_ncan_ncan in comp1.
       remember (compute_step lib (oterm (NCan nc) bs)); symmetry in Heqc; destruct c; allsimpl; ginv.
+      fold_terms.
+      assert (isprog n) as in0 by (apply preserve_compute_step in Heqc; sp; allrw @isprogram_eq; sp).
+      applydup IHk in in0; auto; repndors;
+        [left|right]; exrepd; auto.
+
+      * exists v b; sp.
+
+        { exists (S k1).
+          rw @reduces_in_atmost_k_steps_S.
+          exists n; dands; auto. }
+
+        exists k0; sp.
+
+      * exists n0; dands; eauto 3 with slow.
+        { exists (S k1).
+          allrw @reduces_in_atmost_k_steps_S.
+          eexists; dands; eauto. }
+
+    + Case "NSwapCs2".
+      unfold mk_apply, nobnd in comp1.
+      rw @compute_step_ncan_nswap in comp1.
+      remember (compute_step lib (oterm (NSwapCs2 nsw) bs)); symmetry in Heqc; destruct c; allsimpl; ginv.
       fold_terms.
       assert (isprog n) as in0 by (apply preserve_compute_step in Heqc; sp; allrw @isprogram_eq; sp).
       applydup IHk in in0; auto; repndors;
@@ -982,7 +1067,7 @@ Proof.
         apply @isprogram_eq in isp.
         apply isprogram_ot_iff in isp; repnd; auto. }
 
-      apply IHk in comp0; auto; repndors;
+      apply IHk in comp0; auto; repndors; eauto 4 with slow;
         [left|right]; exrepnd.
 
       * exists v b; dands; auto.
@@ -1066,7 +1151,7 @@ Proof.
 
     + csunf r1; simpl in r1; ginv.
 
-    + dopid op as [c|nc|exc|abs] Case.
+    + dopid op as [c|nc|nsw|exc|abs] Case.
 
       * Case "Can".
         csunf r1; simpl in r1; ginv.
@@ -1081,6 +1166,17 @@ Proof.
 
         { unfold mk_apply, nobnd.
           rw @compute_step_ncan_ncan.
+          rw r1; auto. }
+
+        simpl; rw @reduces_in_atmost_k_steps_S.
+        exists u0; sp.
+
+      * Case "NSwapCs2".
+        pose proof (IHk0 u) as h; repeat (autodimp h hyp); exrepnd.
+        exists (mk_apply u a); dands; tcsp.
+
+        { unfold mk_apply, nobnd.
+          rw @compute_step_ncan_nswap.
           rw r1; auto. }
 
         simpl; rw @reduces_in_atmost_k_steps_S.
@@ -1126,7 +1222,7 @@ Proof.
 
     + csunf r1; simpl in r1; ginv.
 
-    + dopid op as [c|nc|exc|abs] Case.
+    + dopid op as [c|nc|nsw|exc|abs] Case.
 
       * Case "Can".
         csunf r1; simpl in r1; ginv.
@@ -1141,6 +1237,17 @@ Proof.
 
         { unfold mk_decide, nobnd.
           rw @compute_step_ncan_ncan.
+          rw r1; auto. }
+
+        simpl; rw @reduces_in_atmost_k_steps_S.
+        exists u0; sp.
+
+      * Case "NSwapCs2".
+        pose proof (IHk0 u) as h; repeat (autodimp h hyp); exrepnd.
+        exists (mk_decide u x f y g); dands; tcsp.
+
+        { unfold mk_decide, nobnd.
+          rw @compute_step_ncan_nswap.
           rw r1; auto. }
 
         simpl; rw @reduces_in_atmost_k_steps_S.
@@ -1185,7 +1292,7 @@ Proof.
 
     + csunf r1; simpl in r1; ginv.
 
-    + dopid op as [c|nc|exc|abs] Case.
+    + dopid op as [c|nc|nsw|exc|abs] Case.
 
       * Case "Can".
         csunf r1; simpl in r1; ginv.
@@ -1200,6 +1307,17 @@ Proof.
 
         { unfold mk_decide, nobnd.
           rw @compute_step_ncan_ncan.
+          rw r1; auto. }
+
+        simpl; rw @reduces_in_atmost_k_steps_S.
+        exists u0; sp.
+
+      * Case "NSwapCs2".
+        pose proof (IHk0 u) as h; repeat (autodimp h hyp); exrepnd.
+        exists (mk_decide u x f y g); dands; tcsp.
+
+        { unfold mk_decide, nobnd.
+          rw @compute_step_ncan_nswap.
           rw r1; auto. }
 
         simpl; rw @reduces_in_atmost_k_steps_S.
@@ -1271,7 +1389,7 @@ Proof.
       allrw @pk2term_eq.
       destruct b as [x|op bs];[csunf compk1;allsimpl;ginv|].
 
-      dopid op as [can|ncan|exc|abs] Case.
+      dopid op as [can|ncan|nsw|exc|abs] Case.
 
       * Case "Can".
         csunf compk1; allsimpl; ginv.
@@ -1284,6 +1402,12 @@ Proof.
         eapply no_change_after_value2; eauto; try omega.
 
       * Case "NCan".
+        rw compk1; simpl.
+        dcwf h; allsimpl;
+        [|unfold co_wf in Heqh; allsimpl;allrw @get_param_from_cop_pk2can; complete ginv].
+        eexists; dands; eauto.
+
+      * Case "NSwapCs2".
         rw compk1; simpl.
         dcwf h; allsimpl;
         [|unfold co_wf in Heqh; allsimpl;allrw @get_param_from_cop_pk2can; complete ginv].
@@ -1304,7 +1428,7 @@ Proof.
     applydup IHk1 in compk0; clear IHk1; allsimpl.
     destruct a as [x|op bs];[csunf compk1;allsimpl;ginv|].
 
-    dopid op as [can|ncan|exc|abs] Case.
+    dopid op as [can|ncan|nsw|exc|abs] Case.
 
     + Case "Can".
       csunf compk1; allsimpl; ginv.
@@ -1313,6 +1437,12 @@ Proof.
       eapply no_change_after_value2; eauto; try omega.
 
     + Case "NCan".
+      rw @reduces_in_atmost_k_steps_S.
+      csunf; simpl.
+      rw compk1; simpl.
+      eexists; dands; eauto.
+
+    + Case "NSwapCs2".
       rw @reduces_in_atmost_k_steps_S.
       csunf; simpl.
       rw compk1; simpl.
@@ -1349,6 +1479,17 @@ Proof.
 Qed.
 Hint Resolve reduces_in_atmost_k_steps_implies_computes_to_value : slow.
 
+Lemma compute_step_try_nswap {p} :
+  forall lib a sw (bts : list (@BTerm p)) v b,
+    compute_step lib (mk_try (oterm (NSwapCs2 sw) bts) a v b)
+    = match compute_step lib (oterm (NSwapCs2 sw) bts) with
+        | csuccess f => csuccess (mk_try f a v b)
+        | cfailure str ts => cfailure str ts
+      end.
+Proof.
+  introv; csunf; simpl; auto.
+Qed.
+
 Lemma implies_computes_to_value_trycatch {p} :
   forall lib a (t : @NTerm p) v pk x b,
     computes_to_value lib t v
@@ -1379,7 +1520,7 @@ Proof.
   - allrw @reduces_in_atmost_k_steps_S; exrepnd.
     destruct t as [|op bs];[csunf comp1; allsimpl; complete ginv|].
 
-    dopid op as [c|nc|exc|abs] Case; try (complete (allsimpl; auto)).
+    dopid op as [c|nc|nsw|exc|abs] Case; try (complete (allsimpl; auto)).
 
     + Case "Can".
       csunf comp1; simpl in comp1; ginv.
@@ -1401,6 +1542,14 @@ Proof.
       exists (S k1).
       rw @reduces_in_atmost_k_steps_S.
       rw @compute_step_try_ncan.
+      rw comp1.
+      eexists; dands; eauto.
+
+    + Case "NSwapCs2".
+      apply IHk0 in comp0; clear IHk0; exrepnd.
+      exists (S k1).
+      rw @reduces_in_atmost_k_steps_S.
+      rw @compute_step_try_nswap.
       rw comp1.
       eexists; dands; eauto.
 
@@ -1645,7 +1794,6 @@ Ltac destructbtdeep bt Hcomp :=
   destruct btlv as [| btlv1]; inverts Hcomp as Hcomp;
   try(destruct btlv as [| btlv2]; inverts Hcomp as Hcomp);
   try(destruct btlv as [| btlv3]; inverts Hcomp as Hcomp).
-
 
 Lemma compute_step_lib_success_change_bs {o} :
   forall (lib : @plibrary o) oa1 oa2 bs1 bs2 vars rhs correct,
@@ -1930,10 +2078,8 @@ Lemma alphaeq_preserves_isnoncan_like {o} :
 Proof.
   introv aeq isn.
   allunfold @isnoncan_like; repndors.
-  - apply isnoncan_implies in isn; exrepnd; subst.
-    inversion aeq; subst; tcsp.
-  - apply isabs_implies in isn; exrepnd; subst.
-    inversion aeq; subst; tcsp.
+  - apply isnoncan_implies in isn; repndors; exrepnd; subst; inversion aeq; subst; eauto 3 with slow; left; tcsp.
+  - apply isabs_implies in isn; exrepnd; subst; inversion aeq; subst; tcsp.
 Qed.
 
 Lemma isnoncan_like_subst_aux_axiom_implies {o} :
@@ -2408,12 +2554,10 @@ Proof.
   introv ew isn.
   unfold isnoncan_like in isn.
   unfold eapply_wf_def in ew; repndors; exrepnd; subst;
-    try (complete (apply isnoncan_implies in isn; exrepnd; subst;
-                   csunf; simpl;
-                   remember (compute_step lib (oterm (NCan c) bterms)) as comp;
-                   destruct comp; simpl; auto));
-    try (complete (apply isabs_implies in isn; exrepnd; subst;
-                   csunf; simpl;
+    try (complete (apply isnoncan_implies in isn; repndors; exrepnd; subst; csunf; simpl;
+                   try (complete (remember (compute_step lib (oterm (NCan c) bterms)) as comp; destruct comp; simpl; auto));
+                   try (complete (remember (compute_step lib (oterm (NSwapCs2 sw) bs0)) as comp; destruct comp; simpl; auto))));
+    try (complete (apply isabs_implies in isn; exrepnd; subst; csunf; simpl;
                    remember (compute_step lib (oterm (Abs abs) bterms)) as comp;
                    destruct comp; simpl; auto;
                    try (complete (unfold compute_step_eapply; dcwf h)))).
@@ -2790,6 +2934,22 @@ Proof.
   destruct op; simpl in *; tcsp.
 Qed.
 
+(*Lemma compute_step_swap_cs0_if_isnoncan_like {o} :
+  forall lib c bs (t : @NTerm o) l,
+    isnoncan_like t
+    -> compute_step lib (oterm (NCan NSwapCs0) (bterm [] (oterm (Can c) bs) :: bterm [] t :: l))
+       = match compute_step lib t with
+         | csuccess u => csuccess (oterm (NCan NSwapCs0) (bterm [] (oterm (Can c) bs) :: bterm [] u :: l))
+         | x => x
+         end.
+Proof.
+  introv isn.
+  csunf; simpl.
+  unfold isnoncan_like in *.
+  destruct t as [|op bs']; simpl in *; tcsp.
+  destruct op; simpl in *; tcsp.
+Qed.*)
+
 (*Lemma compute_step_swap_cs_if_isnoncan_like {o} :
   forall lib c bs (t : @NTerm o) l,
     isnoncan_like t
@@ -2814,8 +2974,8 @@ Qed.
 Hint Rewrite @all_vars_mk_choice_seq : slow.
 
 Lemma all_vars_mk_swap_cs2 {o} :
-  forall n1 n2 (t : @NTerm o),
-    all_vars (mk_swap_cs2 n1 n2 t)
+  forall sw (t : @NTerm o),
+    all_vars (mk_swap_cs2 sw t)
     = all_vars t.
 Proof.
   introv; unfold all_vars; simpl; autorewrite with slow; auto.
@@ -2842,10 +3002,10 @@ Qed.
 Hint Rewrite @lsubst_aux_nil : slow.
 
 Lemma lsubst_mk_swap_cs2_choice_seq_var_ren {o} :
-  forall sub a b (c : @NTerm o),
+  forall sub sw (c : @NTerm o),
     disjoint (sub_free_vars sub) (all_vars c)
-    -> lsubst (mk_swap_cs2 a b c) sub
-       = mk_swap_cs2 a b (lsubst c sub).
+    -> lsubst (mk_swap_cs2 sw c) sub
+       = mk_swap_cs2 sw (lsubst c sub).
 Proof.
   introv disjc.
   unfold lsubst; simpl; autorewrite with slow.
@@ -2867,9 +3027,9 @@ Qed.
 Hint Resolve implies_alpha_eq_mk_swap_cs1 : slow.
 
 Lemma implies_alpha_eq_mk_swap_cs2 {o} :
-  forall a b (c d : @NTerm o),
+  forall sw (c d : @NTerm o),
     alpha_eq c d
-    -> alpha_eq (mk_swap_cs2 a b c) (mk_swap_cs2 a b d).
+    -> alpha_eq (mk_swap_cs2 sw c) (mk_swap_cs2 sw d).
 Proof.
   introv aeqa.
   apply alpha_eq_oterm_combine; simpl; dands; tcsp.
@@ -2878,16 +3038,16 @@ Qed.
 Hint Resolve implies_alpha_eq_mk_swap_cs2 : slow.
 
 Lemma length_push_swap_cs_bterms {o} :
-  forall n1 n2 (bs : list (@BTerm o)),
-    length (push_swap_cs_bterms n1 n2 bs) = length bs.
+  forall sw (bs : list (@BTerm o)),
+    length (push_swap_cs_bterms sw bs) = length bs.
 Proof.
   introv; unfold push_swap_cs_bterms; autorewrite with slow; auto.
 Qed.
 Hint Rewrite @length_push_swap_cs_bterms : slow.
 
 Lemma bound_vars_lsubst_aux_sw_sub {o} :
-  forall a b (t : @NTerm o) l,
-    bound_vars (lsubst_aux t (sw_sub a b l)) = bound_vars t.
+  forall sw (t : @NTerm o) l,
+    bound_vars (lsubst_aux t (sw_sub sw l)) = bound_vars t.
 Proof.
   nterm_ind t as [v|op bs ind] Case; simpl; introv.
   { rewrite sub_find_sw_sub; boolvar; simpl; auto. }
@@ -2900,8 +3060,8 @@ Qed.
 Hint Rewrite @bound_vars_lsubst_aux_sw_sub : slow.
 
 Lemma bound_vars_push_swap_cs_sub_term {o} :
-  forall a b l (t : @NTerm o),
-    bound_vars (push_swap_cs_sub_term a b l t)
+  forall sw l (t : @NTerm o),
+    bound_vars (push_swap_cs_sub_term sw l t)
     = bound_vars t.
 Proof.
   introv.
@@ -2911,8 +3071,8 @@ Qed.
 Hint Rewrite @bound_vars_push_swap_cs_sub_term : slow.
 
 Lemma all_vars_push_swap_cs_sub_term {o} :
-  forall a b vs (t : @NTerm o),
-    all_vars (push_swap_cs_sub_term a b vs t)
+  forall sw vs (t : @NTerm o),
+    all_vars (push_swap_cs_sub_term sw vs t)
     = all_vars t.
 Proof.
   introv; unfold all_vars; autorewrite with slow; auto.
@@ -2920,15 +3080,15 @@ Qed.
 Hint Rewrite @all_vars_push_swap_cs_sub_term : slow.
 
 Lemma flat_map_bound_vars_range_sw_sub {o} :
-  forall a b l,
-    flat_map bound_vars (range (@sw_sub o a b l)) = [].
+  forall sw l,
+    flat_map bound_vars (range (@sw_sub o sw l)) = [].
 Proof.
   induction l; introv; simpl; auto; try congruence.
 Qed.
 Hint Rewrite @flat_map_bound_vars_range_sw_sub : slow.
 
 Lemma dom_sub_sw_sub {o} :
-  forall a b l, @dom_sub o (sw_sub a b l) = l.
+  forall sw l, @dom_sub o (sw_sub sw l) = l.
 Proof.
   introv; unfold dom_sub, dom_lmap, sw_sub.
   rewrite map_map; unfold compose; simpl.
@@ -2939,14 +3099,14 @@ Hint Rewrite @dom_sub_sw_sub : slow.
 Hint Rewrite @var_ren_nil_r : slow.
 Hint Rewrite combine_nil : slow.
 
-Definition sw_sub2 {o} a b l k : @Sub o :=
-  combine l (map (fun v => mk_swap_cs2 a b (mk_var v)) k).
+Definition sw_sub2 {o} sw l k : @Sub o :=
+  combine l (map (fun v => mk_swap_cs2 sw (mk_var v)) k).
 
 Lemma sub_find_sw_sub2 {o} :
-  forall a b l k v,
-    @sub_find o (sw_sub2 a b l k) v
+  forall sw l k v,
+    @sub_find o (sw_sub2 sw l k) v
     = match sub_find (var_ren l k) v with
-      | Some w => Some (mk_swap_cs2 a b w)
+      | Some w => Some (mk_swap_cs2 sw w)
       | None => None
       end.
 Proof.
@@ -2967,19 +3127,19 @@ Proof.
 Qed.
 
 Lemma sw_sub2_nil_r {o} :
-  forall a b l,
-    @sw_sub2 o a b l [] = [].
+  forall sw l,
+    @sw_sub2 o sw l [] = [].
 Proof.
   introv; unfold sw_sub2; simpl; autorewrite with slow; auto.
 Qed.
 Hint Rewrite @sw_sub2_nil_r : slow.
 
 Lemma sub_filter_var_ren_and_sw_sub2_implies {o} :
-  forall a b vs1 vs2 l,
+  forall sw vs1 vs2 l,
     {vs3 : list NVar
      & {vs4 : list NVar
      & @sub_filter o (var_ren vs1 vs2) l = var_ren vs3 vs4
-     # @sub_filter o (sw_sub2 a b vs1 vs2) l = sw_sub2 a b vs3 vs4
+     # @sub_filter o (sw_sub2 sw vs1 vs2) l = sw_sub2 sw vs3 vs4
      # vs3 = remove_nvars l vs1
      # subvars vs4 vs2
      # (length vs1 = length vs2 -> length vs3 = length vs4)
@@ -2988,16 +3148,16 @@ Proof.
   induction vs1; simpl; introv;autorewrite with slow.
   { exists ([] : list NVar) ([] : list NVar); simpl; tcsp. }
   destruct vs2; simpl in *; autorewrite with slow in *.
-  { exists (remove_nvars l (a0 :: vs1)) ([] : list NVar); simpl;
+  { exists (remove_nvars l (a :: vs1)) ([] : list NVar); simpl;
       autorewrite with slow; dands; auto; introv xx; ginv. }
   boolvar; tcsp.
   { pose proof (IHvs1 vs2 l) as k; exrepnd; subst.
-    exists (remove_nvars l (a0 :: vs1)) vs4; sp;
+    exists (remove_nvars l (a :: vs1)) vs4; sp;
       try (apply subvars_cons_r; auto);
       try (rewrite remove_nvars_cons_r; boolvar; tcsp);
       try (allrw no_repeats_cons; tcsp). }
   { pose proof (IHvs1 vs2 l) as k; exrepnd; subst.
-    exists (remove_nvars l (a0 :: vs1)) (n :: vs4); simpl; dands; tcsp;
+    exists (remove_nvars l (a :: vs1)) (n :: vs4); simpl; dands; tcsp;
       try rewrite remove_nvars_cons_r; boolvar; tcsp; eauto 3 with slow;
         try (complete (unfold var_ren, sw_sub2 in *; simpl in *; try congruence));
         try (complete (apply subvars_cons_lr; auto));
@@ -3038,9 +3198,9 @@ Proof.
 Qed.
 
 Lemma sub_filter_sw_sub {o} :
-  forall a b l j,
-    @sub_filter o (sw_sub a b l) j
-    = sw_sub a b (remove_nvars j l).
+  forall sw l j,
+    @sub_filter o (sw_sub sw l) j
+    = sw_sub sw (remove_nvars j l).
 Proof.
   induction l; introv; simpl; autorewrite with slow; tcsp.
   boolvar; simpl in *; tcsp;
@@ -3064,13 +3224,13 @@ Qed.
 Hint Resolve disjoint_remove_nvars_and_app_implies_disjoint : slow.
 
 Lemma lsubst_aux_sw_sub_var_ren {o} :
-  forall a b (t : @NTerm o) l k,
+  forall sw (t : @NTerm o) l k,
     length l = length k
     -> disjoint k (free_vars t)
     -> disjoint k (bound_vars t)
     -> no_repeats k
-    -> lsubst_aux (lsubst_aux t (sw_sub a b l)) (var_ren l k)
-       = lsubst_aux t (sw_sub2 a b l k).
+    -> lsubst_aux (lsubst_aux t (sw_sub sw l)) (var_ren l k)
+       = lsubst_aux t (sw_sub2 sw l k).
 Proof.
   nterm_ind t as [v|op bs ind] Case; introv len disja disjb norep; simpl in *.
   { allrw disjoint_singleton_r.
@@ -3086,7 +3246,7 @@ Proof.
   rewrite map_map; unfold compose.
   f_equal; apply eq_maps; introv i.
   destruct x; simpl; f_equal.
-  pose proof (@sub_filter_var_ren_and_sw_sub2_implies o a b l k l0) as q.
+  pose proof (@sub_filter_var_ren_and_sw_sub2_implies o sw l k l0) as q.
   exrepnd; subst.
   allrw; autorewrite with slow.
   autodimp q1 hyp.
@@ -3104,11 +3264,11 @@ Proof.
 Qed.
 
 Lemma implies_eq_lsubst_aux_sw_sub {o} :
-  forall a b (t : @NTerm o) l k,
+  forall sw (t : @NTerm o) l k,
     subset l k
     -> (forall x, LIn x k -> LIn x (free_vars t) -> LIn x l)
-    -> lsubst_aux t (sw_sub a b l)
-       = lsubst_aux t (sw_sub a b k).
+    -> lsubst_aux t (sw_sub sw l)
+       = lsubst_aux t (sw_sub sw k).
 Proof.
   nterm_ind t as [v|op bs ind] Case; introv ss imp; simpl in *.
   { repeat rewrite sub_find_sw_sub.
@@ -3126,12 +3286,12 @@ Proof.
 Qed.
 
 Lemma lsubst_push_swap_cs_sub_term_var_ren_eq {o} :
-  forall a b (t : @NTerm o) l k,
+  forall sw (t : @NTerm o) l k,
     no_repeats k
     -> length l = length k
     -> disjoint k (all_vars t)
-    -> lsubst (push_swap_cs_sub_term a b l t) (var_ren l k)
-       = lsubst_aux t (sw_sub2 a b l k).
+    -> lsubst (push_swap_cs_sub_term sw l t) (var_ren l k)
+       = lsubst_aux t (sw_sub2 sw l k).
 Proof.
   introv norep len disj.
   unfold push_swap_cs_sub_term.
@@ -3145,13 +3305,13 @@ Hint Resolve deq_nvar : slow.
 Hint Resolve in_deq_t : slow.
 
 Lemma lsubst_aux_sw_sub_var_ren2 {o} :
-  forall a b (t : @NTerm o) l k,
+  forall sw (t : @NTerm o) l k,
     length l = length k
     -> disjoint k (free_vars t)
     -> disjoint k (bound_vars t)
     -> no_repeats k
-    -> lsubst_aux t (sw_sub2 a b l k)
-       = lsubst_aux (lsubst_aux t (var_ren l k)) (sw_sub a b k).
+    -> lsubst_aux t (sw_sub2 sw l k)
+       = lsubst_aux (lsubst_aux t (var_ren l k)) (sw_sub sw k).
 Proof.
   nterm_ind t as [v|op bs ind] Case; introv len disja disjb norep; simpl in *.
   { allrw disjoint_singleton_r.
@@ -3172,7 +3332,7 @@ Proof.
     applydup disjb in i; simpl in *.
     eauto 3 with slow. }
   apply remove_nvars_unchanged in d; allrw.
-  pose proof (@sub_filter_var_ren_and_sw_sub2_implies o a b l k l0) as q.
+  pose proof (@sub_filter_var_ren_and_sw_sub2_implies o sw l k l0) as q.
   exrepnd; subst.
   autodimp q1 hyp; autodimp q5 hyp.
   allrw.
@@ -3204,12 +3364,12 @@ Proof.
 Qed.
 
 Lemma lsubst_push_swap_cs_sub_term_var_ren_eq2 {o} :
-  forall a b (t : @NTerm o) l k,
+  forall sw (t : @NTerm o) l k,
     no_repeats k
     -> length l = length k
     -> disjoint k (all_vars t)
-    -> lsubst_aux (lsubst t (var_ren l k)) (sw_sub a b k)
-       = lsubst_aux t (sw_sub2 a b l k).
+    -> lsubst_aux (lsubst t (var_ren l k)) (sw_sub sw k)
+       = lsubst_aux t (sw_sub2 sw l k).
 Proof.
   introv norep len disj.
   unfold all_vars in *; allrw @disjoint_app_r; repnd; eauto 3 with slow;
@@ -3219,18 +3379,18 @@ Proof.
 Qed.
 
 Lemma sub_free_vars_sw_sub {o} :
-  forall a b l, @sub_free_vars o (sw_sub a b l) = l.
+  forall sw l, @sub_free_vars o (sw_sub sw l) = l.
 Proof.
   induction l; introv; simpl; tcsp; try congruence.
 Qed.
 Hint Rewrite @sub_free_vars_sw_sub : slow.
 
 Lemma implies_alpha_eq_sw_sub {o} :
-  forall a b (t u : @NTerm o) l,
+  forall sw (t u : @NTerm o) l,
     disjoint l (bound_vars t)
     -> disjoint l (bound_vars u)
     -> alpha_eq t u
-    -> alpha_eq (lsubst_aux t (sw_sub a b l)) (lsubst_aux u (sw_sub a b l)).
+    -> alpha_eq (lsubst_aux t (sw_sub sw l)) (lsubst_aux u (sw_sub sw l)).
 Proof.
   introv disja disjb aeq.
   apply lsubst_aux_alpha_congr_same_disj; autorewrite with slow; auto; eauto 3 with slow.
@@ -3248,9 +3408,9 @@ Qed.
 Hint Resolve disjoint_all_vars_implies_disjoint_bound_vars : slow.
 
 Lemma implies_alpha_eq_push_swap_cs_can {o} :
-  forall n1 n2 can1 can2 (bs1 bs2 : list (@BTerm o)),
+  forall sw can1 can2 (bs1 bs2 : list (@BTerm o)),
     alpha_eq (oterm (Can can1) bs1) (oterm (Can can2) bs2)
-    -> alpha_eq (push_swap_cs_can n1 n2 can1 bs1) (push_swap_cs_can n1 n2 can2 bs2).
+    -> alpha_eq (push_swap_cs_can sw can1 bs1) (push_swap_cs_can sw can2 bs2).
 Proof.
   introv aeq.
   apply alpha_eq_oterm_implies_combine in aeq; exrepnd; ginv; simpl in *.
@@ -3286,12 +3446,234 @@ Proof.
   inversion aeq; subst; simpl in *; cpx.
 Qed.
 
+Lemma alpha_eq_oterm_implies_combine2 {o} :
+  forall (op : Opid) (bs : list BTerm) (t : @NTerm o),
+    alpha_eq (oterm op bs) t
+    -> {bs' : list BTerm
+        $ t = oterm op bs'
+        # alpha_eq_bterms bs bs'}.
+Proof.
+  introv aeq.
+  apply alpha_eq_oterm_implies_combine in aeq.
+  auto.
+Qed.
+
+Lemma flat_map_allvars_range_sw_sub {o} :
+  forall sw l,
+    flat_map allvars (range (@sw_sub o sw l)) = l.
+Proof.
+  induction l; simpl; auto; try congruence.
+Qed.
+Hint Rewrite @flat_map_allvars_range_sw_sub : slow.
+
+Lemma free_vars_subset_allvars {o} :
+  forall (t : @NTerm o), subset (free_vars t) (allvars t).
+Proof.
+  introv i.
+  pose proof (allvars_eq_all_vars t) as h; rw eqvars_prop in h; apply h.
+  rw in_app_iff; sp.
+Qed.
+Hint Resolve free_vars_subset_allvars : slow.
+
+(* !!MOVE *)
+Lemma alphaeq_vs_implies_alphaeq {o} :
+  forall (t1 t2 : @NTerm o) l,
+    alphaeq_vs l t1 t2 -> alphaeq t1 t2.
+Proof.
+  introv aeq.
+  apply alphaeq_exists.
+  eexists; eauto.
+Qed.
+
+Lemma cswap_sub_disj {o} :
+  forall sw l k j,
+    disjoint j l
+    -> disjoint j k
+    -> @cswap_sub o (mk_swapping l k) (sw_sub sw j) = sw_sub sw j.
+Proof.
+  introv disja disjb.
+  unfold cswap_sub, sw_sub; rewrite map_map; unfold compose.
+  apply eq_maps; introv i; simpl.
+  applydup disja in i.
+  applydup disjb in i.
+  rewrite swapvar_not_in; tcsp.
+Qed.
+
+Hint Resolve disjoint_remove_nvars : slow.
+Hint Rewrite @osize_cswap : slow.
+
+Lemma implies_alpha_eq_lsubst_aux_sw_sub {o} :
+  forall sw (t u : @NTerm o) l,
+    alpha_eq t u
+    -> alpha_eq (lsubst_aux t (sw_sub sw l)) (lsubst_aux u (sw_sub sw l)).
+Proof.
+  nterm_ind1s t as [v|op bs ind] Case; introv aeq.
+  { inversion aeq; subst; simpl in *; tcsp. }
+  apply alpha_eq_oterm_implies_combine2 in aeq; exrepnd; subst; simpl in *.
+  unfold alpha_eq_bterms in *; repnd.
+
+  apply alpha_eq_oterm_combine; autorewrite with slow; dands; auto.
+  introv i.
+  rewrite <- map_combine in i.
+  apply in_map_iff in i; exrepnd; ginv.
+  destruct a0, a; simpl in *.
+  applydup aeq0 in i1.
+
+  apply alphaeqbt_eq in i0.
+  apply alphaeqbt_eq; apply alphaeqbt_all; introv.
+  rw @alphaeqbt_all in i0; pose proof (i0 (l ++ l2)) as i0.
+  inversion i0 as [? ? ? ? ? disj lena lenb norep aeq']; subst; clear i0.
+  apply (aeqbt _ vs); auto.
+
+  { allrw disjoint_app_r; repnd; dands; auto;
+      apply disjoint_allvars_lsubst_aux; auto; autorewrite with slow; eauto 3 with slow. }
+
+  assert (disjoint vs l0) as disj0.
+  { allrw disjoint_app_r; repnd; auto. }
+
+  assert (disjoint vs l1) as disj1.
+  { allrw disjoint_app_r; repnd; auto. }
+
+  assert (disjoint vs l) as disj2.
+  { allrw disjoint_app_r; repnd; auto. }
+
+  assert (disjoint vs (free_vars n)) as disj3.
+  { allrw disjoint_app_r; repnd; auto; introv i j.
+    apply free_vars_subset_allvars in j; apply lenb3 in j; tcsp. }
+
+  assert (disjoint vs (free_vars n0)) as disj4.
+  { allrw disjoint_app_r; repnd; auto; introv i j.
+    apply free_vars_subset_allvars in j; apply lenb in j; tcsp. }
+
+  repeat (rewrite lsubst_aux_cswap_cswap; auto; eauto 2 with slow).
+  autorewrite with slow.
+  apply alphaeq_vs_implies_alphaeq in aeq'; apply alphaeq_eq in aeq'.
+  apply alphaeq_implies_alphaeq_vs; apply alphaeq_eq.
+  repeat (rewrite cswap_sub_disj; eauto 3 with slow).
+
+  assert (subset (remove_nvars l0 l) l) as ssa by (introv i; apply in_remove_nvars in i; tcsp).
+  assert (subset (remove_nvars l1 l) l) as ssb by (introv i; apply in_remove_nvars in i; tcsp).
+  assert (subset (free_vars (cswap (mk_swapping l0 vs) n)) (remove_nvars l0 (free_vars n) ++ vs)) as ssc.
+  { introv i; rewrite free_vars_cswap in i; auto; eauto 2 with slow.
+    apply in_swapbvars in i; exrepnd; subst.
+    apply in_app_iff.
+    destruct (in_deq _ deq_nvar v' l0) as [d|d].
+    { right; apply swapvar_in; auto; eauto 2 with slow.
+      introv xx; apply disj3 in xx; tcsp. }
+    { rewrite swapvar_not_in; tcsp; try (complete (introv xx; apply disj3 in xx; tcsp)).
+      left; apply in_remove_nvars; tcsp. } }
+  assert (subset (free_vars (cswap (mk_swapping l1 vs) n0)) (remove_nvars l1 (free_vars n0) ++ vs)) as ssd.
+  { introv i; rewrite free_vars_cswap in i; auto; eauto 2 with slow.
+    apply in_swapbvars in i; exrepnd; subst.
+    apply in_app_iff.
+    destruct (in_deq _ deq_nvar v' l1) as [d|d].
+    { right; apply swapvar_in; auto; eauto 2 with slow.
+      introv xx; apply disj4 in xx; tcsp. }
+    { rewrite swapvar_not_in; tcsp; try (complete (introv xx; apply disj4 in xx; tcsp)).
+      left; apply in_remove_nvars; tcsp. } }
+
+  erewrite (implies_eq_lsubst_aux_sw_sub _ _ (remove_nvars l0 l)); eauto;
+    [|introv i j; apply ssc in j; apply in_remove_nvars; apply in_app_iff in j; dands; auto;
+      allrw in_remove_nvars; repndors; repnd; tcsp; apply disj0 in j; tcsp].
+
+  erewrite (implies_eq_lsubst_aux_sw_sub _ _ (remove_nvars l1 l)); eauto;
+    [|introv i j; apply ssd in j; apply in_remove_nvars; apply in_app_iff in j; dands; auto;
+      allrw in_remove_nvars; repndors; repnd; tcsp; apply disj1 in j; tcsp].
+
+  apply in_combine_left_eauto in i1.
+  eapply ind; eauto; autorewrite with slow; eauto 3 with slow.
+Qed.
+Hint Resolve implies_alpha_eq_lsubst_aux_sw_sub : slow.
+
+Lemma implies_alpha_eq_push_swap_cs0 {o} :
+  forall sw (t u : @NTerm o),
+    alpha_eq t u
+    -> alpha_eq (push_swap_cs0 sw t) (push_swap_cs0 sw u).
+Proof.
+  introv aeq; unfold push_swap_cs0; eauto 3 with slow.
+  unfold push_swap_cs_sub_term.
+  erewrite alphaeq_preserves_free_vars; eauto; eauto 3 with slow.
+Qed.
+Hint Resolve implies_alpha_eq_push_swap_cs0 : slow.
+
+Lemma implies_alpha_eq_apply_swaps {o} :
+  forall l (t u : @NTerm o),
+    alpha_eq t u
+    -> alpha_eq (apply_swaps l t) (apply_swaps l u).
+Proof.
+  induction l; introv aeq; simpl in *; auto.
+  apply IHl; eauto 3 with slow.
+Qed.
+Hint Resolve implies_alpha_eq_apply_swaps : slow.
+
+Lemma alpha_eq_mk_swap_cs2_implies {o} :
+  forall sw (u v : @NTerm o),
+    alpha_eq (mk_swap_cs2 sw u) (mk_swap_cs2 sw v)
+    -> alpha_eq u v.
+Proof.
+  introv aeq.
+  apply alpha_eq_oterm_combine in aeq; simpl in *; repnd; GC.
+  pose proof (aeq (nobnd u) (nobnd v)) as aeq; autodimp aeq hyp.
+  apply alpha_eq_bterm_nobnd in aeq; exrepnd; ginv; auto.
+Qed.
+
+Lemma alpha_eq_oterm_implies_bt_nil_hd {o} :
+  forall op (u v : @NTerm o) bs1 bs2,
+    alpha_eq (oterm op (bterm [] u :: bs1)) (oterm op (bterm [] v :: bs2))
+    -> alpha_eq u v.
+Proof.
+  introv aeq.
+  apply alpha_eq_oterm_combine in aeq; simpl in *; repnd; GC.
+  pose proof (aeq (nobnd u) (nobnd v)) as aeq; autodimp aeq hyp.
+  apply alpha_eq_bterm_nobnd in aeq; exrepnd; ginv; auto.
+Qed.
+
+Lemma map_swap_cs_bterm_twice {o} :
+  forall sw (bs : list (@BTerm o)),
+    map (swap_cs_bterm sw) (map (swap_cs_bterm sw) bs) = bs.
+Proof.
+  introv; allrw map_map; unfold compose.
+  apply eq_map_l; introv i; destruct x; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @map_swap_cs_bterm_twice : slow.
+
+Lemma compute_step_swap_cs2_isnoncan_like_eq {o} :
+  forall lib sw (t : @NTerm o),
+    isnoncan_like t
+    -> compute_step lib (mk_swap_cs2 sw t)
+       = match compute_step (swap_cs_plib sw lib) (swap_cs_term sw t) with
+         | csuccess u => csuccess (mk_swap_cs2 sw (swap_cs_term sw u))
+         | cfailure s u => cfailure s u (*cfailure bad_args (oterm (NSwapCs2 sw) [nobnd u])*)
+         end.
+Proof.
+  introv isn.
+  csunf; simpl.
+  destruct t as [v|op bs]; simpl; auto.
+  destruct op as [can|ncan|nsw|exc|abs]; simpl; autorewrite with slow; auto;
+    try (complete (unfold isnoncan_like in *; simpl in *; tcsp)).
+Qed.
+
+Hint Resolve alphaeq_preserves_isnoncan_like : slow.
+
+Lemma alpha_eq_mk_swap_cs2_left_implies {o} :
+  forall (sw : cs_swap) (u v : @NTerm o),
+    alpha_eq (mk_swap_cs2 sw u) v
+    -> {w : NTerm & v = mk_swap_cs2 sw w # alpha_eq u w}.
+Proof.
+  introv aeq.
+  apply alpha_eq_oterm_implies_combine2 in aeq; exrepnd; subst.
+  unfold alpha_eq_bterms in *; simpl in *; repnd; cpx; simpl in *.
+  pose proof (aeq0 (nobnd u) x) as aeq0; autodimp aeq0 hyp.
+  apply alpha_eq_bterm_nobnd in aeq0; exrepnd; subst.
+  eexists; dands; try reflexivity; auto.
+Qed.
+
 
 (* end hide *)
 
 
 Theorem compute_step_alpha {p} :
-  forall lib t1 t2 t1',
+  forall t1 lib t2 t1',
     nt_wf t1
     -> alpha_eq t1 t2
     -> compute_step lib t1 = csuccess t1'
@@ -3307,7 +3689,7 @@ Proof.
   | ].
 
   - Case "oterm".
-    dopid o1 as [c1 | nc1 | exc1 | abs1] SCase.
+    dopid o1 as [c1 | nc1 | nsw1 | exc1 | abs1] SCase.
 
     + SCase "Can".
       inverts Hcomp; auto; exists t2; split; auto;[]; inverts Hal; refl.
@@ -3341,7 +3723,7 @@ Proof.
           destruct H1al1.
           duplicate H1al0 as Halarg1.
           invertsna Halarg1 H1alarg. rename lbt3 into t2arg1bts.
-          dopid arg1o as [arg1c | arg1nc | arg1exc | arg1abs] SSSSCase.
+          dopid arg1o as [arg1c | arg1nc | arg1nsw | arg1exc | arg1abs] SSSSCase.
 
           { SSSSCase "Can". GC.
             dopid_noncan nc1 SSSSSCase.
@@ -3425,7 +3807,7 @@ Proof.
 
                 pose proof (IHind b b []) as h;
                   repeat (autodimp h hyp); clear IHind; eauto 3 with slow.
-                pose proof (h u x) as ih; clear h; repeat (autodimp ih hyp); exrepnd.
+                pose proof (h lib u x) as ih; clear h; repeat (autodimp ih hyp); exrepnd.
                 rw ih1.
                 eexists; dands; eauto.
                 apply alpha_eq_oterm_combine; simpl; dands; auto.
@@ -3623,12 +4005,46 @@ Proof.
                 apply alpha_eq_oterm_combine; simpl; dands; auto.
                 introv comb; repndors; ginv; tcsp; apply alphaeqbt_nilv2; auto. }
 
-            - SSSSSCase "NSwapCs2".
+(*            - SSSSSCase "NSwapCs2".
               csunf Hcomp; simpl in *.
               apply compute_step_swap_cs2_success in Hcomp; simpl; repndors; exrepnd; subst; simpl in *;
                 allrw @nt_wf_swap_cs2_iff; exrepnd; try inversion wf1; subst; simpl in *; ginv.
               repeat (destruct lbt2 in *; ginv; try omega).
-              csunf; simpl; eexists; dands; eauto; eauto 3 with slow.
+              csunf; simpl; eexists; dands; eauto; eauto 3 with slow.*)
+
+(*            - SSSSSCase "NSwapCs0".
+              csunf Hcomp; simpl in *.
+              apply compute_step_swap_cs0_success in Hcomp; simpl; repndors; exrepnd; subst; simpl in *;
+                allrw @nt_wf_swap_cs0_iff; exrepnd; try inversion wf1; subst; simpl in *; ginv.
+              { repeat (destruct lbt2 in *; ginv; try omega).
+                repeat (destruct t2arg1bts in *; ginv; try omega).
+                pose proof (Hal 1) as ha; autodimp ha hyp.
+                pose proof (Hal 2) as hb; autodimp hb hyp.
+                clear Hal; unfold selectbt in *; simpl in *.
+                apply alphaeqbt_nilv in ha; exrepnd; subst.
+                apply alphaeqbt_nilv in hb; exrepnd; subst.
+                apply alpha_eq_choice_seq_implies in ha0; subst; simpl in *; GC.
+                csunf; simpl; eexists; dands; eauto; eauto 3 with slow. }
+              { repeat (destruct lbt2 in *; ginv; try omega).
+                pose proof (Hal 1) as ha; autodimp ha hyp.
+                pose proof (Hal 2) as hb; autodimp hb hyp.
+                clear Hal; unfold selectbt in *; simpl in *.
+                apply alphaeqbt_nilv in ha; exrepnd; subst.
+                apply alphaeqbt_nilv in hb; exrepnd; subst.
+                applydup @alpha_eq_exc_implies in ha0; exrepnd; subst.
+                csunf; simpl; eexists; dands; eauto; eauto 3 with slow. }
+              { repeat (destruct lbt2 in *; ginv; try omega).
+                pose proof (Hal 1) as ha; autodimp ha hyp.
+                pose proof (Hal 2) as hb; autodimp hb hyp.
+                clear Hal; unfold selectbt in *; simpl in *.
+                apply alphaeqbt_nilv in ha; exrepnd; subst.
+                apply alphaeqbt_nilv in hb; exrepnd; subst.
+                applydup @alphaeq_preserves_isnoncan_like in ha0; auto.
+                rewrite compute_step_swap_cs0_if_isnoncan_like; auto.
+                eapply IHind in Hcomp2; try (right; left; eauto); eauto; eauto 3 with slow; exrepnd.
+                allrw; eexists; dands; eauto.
+                apply alpha_eq_oterm_combine; simpl; dands; auto.
+                introv comb; repndors; ginv; tcsp; apply alphaeqbt_nilv2; auto. }*)
 
 (*            - SSSSSCase "NSwapCs".
               csunf Hcomp; simpl in *.
@@ -3732,7 +4148,7 @@ Proof.
               invertsna Hal1bt0 Halarg2. rename lbt3 into t2arg2bts.
               boolvar; ginv.
 
-              dopid arg2o as [arg2c| arg2nc | arg2exc | arg2abs] SSSSSSCase.
+              dopid arg2o as [arg2c| arg2nc | arg2nsw | arg2exc | arg2abs] SSSSSSCase.
 
               + SSSSSSCase "Can".
                 dcwf h.
@@ -3770,6 +4186,54 @@ Proof.
                 split; [refl|].
                 prove_alpha_eq2.
 
+              + SSSSSSCase "NSwapCs2".
+                dcwf h; allsimpl.
+                apply on_success_csuccess in Hcomp; exrepnd; subst; simpl in *.
+                csunf; simpl; dcwf h.
+                apply compute_step_NSwapCs2_success in Hcomp1; exrepnd; subst; simpl in *; cpx.
+                pose proof (Halarg0 0) as Halarg0; autodimp Halarg0 hyp; simpl in *.
+                unfold selectbt in Halarg0; simpl in *.
+                destruct x0; apply alphaeqbt_nilv3 in Halarg0; repnd; subst; simpl in *.
+
+                allrw @nt_wf_NCompOp; exrepnd; allunfold @nobnd; allsimpl; ginv.
+                allsimpl; cpx.
+
+                apply compute_step_swap_cs2_success in Hcomp0; repndors; exrepnd; subst; simpl in *.
+                { apply alpha_eq_oterm_implies_combine2 in Halarg0; exrepnd; subst; simpl in *.
+                  eexists; dands; eauto.
+                  constructor; simpl; dands; auto.
+                  introv i.
+                  destruct n; simpl in *; cpx.
+                  { unfold selectbt; apply alphaeqbt_nilv2; pose proof (Hal 0) as Hal; simpl in Hal; autodimp Hal hyp; try omega. }
+                  destruct n; simpl in *; cpx.
+                  { apply alphaeqbt_nilv2.
+                    apply implies_alpha_eq_push_swap_cs_can.
+                    pose proof (Hal 1) as Hal; simpl in Hal; autodimp Hal hyp; try omega.
+                    unfold selectbt in Hal; simpl in *.
+                    apply alphaeqbt_nilv2 in Hal.
+                    apply alpha_eq_oterm_implies_bt_nil_hd in Hal; auto. }
+                  { pose proof (Hal (S (S n))) as Hal; simpl in Hal; apply Hal; try omega. } }
+                { apply alpha_eq_exc_implies in Halarg0; exrepnd; subst; simpl.
+                  eexists; dands; eauto.
+                  constructor; simpl; dands; auto.
+                  introv i.
+                  destruct n; simpl in *; cpx.
+                  { unfold selectbt; apply alphaeqbt_nilv2; pose proof (Hal 0) as Hal; simpl in Hal; autodimp Hal hyp; try omega. }
+                  destruct n; simpl in *; cpx.
+                  { apply alphaeqbt_nilv2.
+                    unfold alpha_eq_bterms in *; repnd.
+                    apply alpha_eq_oterm_combine; dands; auto. }
+                  { pose proof (Hal (S (S n))) as Hal; simpl in Hal; apply Hal; try omega. } }
+                { allrw @nt_wf_swap_cs2_iff; exrepnd; fold_terms; ginv.
+                  eapply IHind in Hcomp2; try (right; left; reflexivity); try (apply implies_alpha_eq_swap_cs_term;eauto);
+                    exrepnd; simpl; autorewrite with slow; eauto 3 with slow.
+                  rewrite compute_step_swap_cs2_isnoncan_like_eq; eauto 3 with slow;[].
+                  allrw; simpl; eexists; dands; eauto.
+                  pose proof (Hal 2) as ha; autodimp ha hyp; unfold selectbt in ha; simpl in *.
+                  pose proof (Hal 3) as hb; autodimp hb hyp; unfold selectbt in hb; simpl in *.
+                  apply alpha_eq_oterm_combine; simpl; dands; tcsp.
+                  introv i; repndors; ginv; tcsp; apply alphaeqbt_nilv2; eauto 3 with slow. }
+
               + SSSSSSCase "Exc".
                 dcwf h; ginv; subst; GC; allsimpl.
                 csunf; simpl.
@@ -3805,6 +4269,7 @@ Proof.
                 destruct n; unfold selectbt; simpl; cpx;[|destruct n].
                 * apply alpha_eq_bterm_congr; auto.
                 * apply alpha_eq_bterm_congr.
+                  try apply implies_alpha_eq_apply_swaps.
                   eapply alpha_eq_lsubst_mk_abs_subst; eauto.
                 * pose proof (Hal (S (S n))) as x.
                   autodimp x hyp; omega.
@@ -3827,7 +4292,7 @@ Proof.
               invertsna Hal1bt0 Halarg2. rename lbt3 into t2arg2bts.
               boolvar; ginv.
 
-              dopid arg2o as [arg2c | arg2nc | arg2exc | arg2abs] SSSSSSCase.
+              dopid arg2o as [arg2c | arg2nc | arg2nsw | arg2exc | arg2abs] SSSSSSCase.
 
               + SSSSSSCase "Can".
                 apply compute_step_arithop_success_can_can in Hcomp; exrepnd; subst.
@@ -3857,6 +4322,49 @@ Proof.
                 dcwf h;[].
                 rw Heqrec1; dands; auto.
                 prove_alpha_eq3.
+
+              + SSSSSSCase "NSwapCs2".
+                apply on_success_csuccess in Hcomp; exrepnd; subst; simpl in *.
+                csunf; simpl; dcwf h.
+                apply compute_step_NSwapCs2_success in Hcomp1; exrepnd; subst; simpl in *; cpx.
+                pose proof (Halarg0 0) as Halarg0; autodimp Halarg0 hyp; simpl in *.
+                unfold selectbt in Halarg0; simpl in *.
+                destruct x0; apply alphaeqbt_nilv3 in Halarg0; repnd; subst; simpl in *.
+
+                allrw @nt_wf_NArithOp; exrepnd; allunfold @nobnd; allsimpl; ginv.
+                allsimpl; cpx.
+
+                apply compute_step_swap_cs2_success in Hcomp0; repndors; exrepnd; subst; simpl in *.
+                { apply alpha_eq_oterm_implies_combine2 in Halarg0; exrepnd; subst; simpl in *.
+                  eexists; dands; eauto.
+                  constructor; simpl; dands; auto.
+                  introv i.
+                  destruct n; simpl in *; cpx.
+                  { unfold selectbt; apply alphaeqbt_nilv2; pose proof (Hal 0) as Hal; simpl in Hal; autodimp Hal hyp; try omega. }
+                  destruct n; simpl in *; cpx.
+                  { apply alphaeqbt_nilv2.
+                    apply implies_alpha_eq_push_swap_cs_can.
+                    pose proof (Hal 1) as Hal; simpl in Hal; autodimp Hal hyp; try omega.
+                    unfold selectbt in Hal; simpl in *.
+                    apply alphaeqbt_nilv2 in Hal.
+                    apply alpha_eq_oterm_implies_bt_nil_hd in Hal; auto. } }
+                { apply alpha_eq_exc_implies in Halarg0; exrepnd; subst; simpl.
+                  eexists; dands; eauto.
+                  constructor; simpl; dands; auto.
+                  introv i.
+                  destruct n; simpl in *; cpx.
+                  { unfold selectbt; apply alphaeqbt_nilv2; pose proof (Hal 0) as Hal; simpl in Hal; autodimp Hal hyp; try omega. }
+                  destruct n; simpl in *; cpx.
+                  { apply alphaeqbt_nilv2.
+                    unfold alpha_eq_bterms in *; repnd.
+                    apply alpha_eq_oterm_combine; dands; auto. } }
+                { allrw @nt_wf_swap_cs2_iff; exrepnd; fold_terms; ginv.
+                  eapply IHind in Hcomp2; try (right; left; reflexivity); try (apply implies_alpha_eq_swap_cs_term;eauto);
+                    exrepnd; simpl; autorewrite with slow; eauto 3 with slow.
+                  rewrite compute_step_swap_cs2_isnoncan_like_eq; eauto 3 with slow;[].
+                  allrw; simpl; eexists; dands; eauto.
+                  apply alpha_eq_oterm_combine; simpl; dands; tcsp.
+                  introv i; repndors; ginv; tcsp; apply alphaeqbt_nilv2; eauto 3 with slow. }
 
               + SSSSSSCase "Exc".
                 ginv.
@@ -3891,6 +4399,7 @@ Proof.
                 destruct n; unfold selectbt; simpl; cpx;[|destruct n].
                 * apply alpha_eq_bterm_congr; auto.
                 * apply alpha_eq_bterm_congr.
+                  try apply implies_alpha_eq_apply_swaps.
                   eapply alpha_eq_lsubst_mk_abs_subst; eauto.
                 * pose proof (Hal (S (S n))) as x.
                   autodimp x hyp; omega.
@@ -3935,6 +4444,25 @@ Proof.
             destruct n; auto;[].
             apply alphaeqbt_nilv2; trivial.
           }
+
+          { SSSSCase "NSwapCs2".
+
+            rw @compute_step_ncan_nswap in Hcomp.
+            remember (compute_step lib (oterm (NSwapCs2 arg1nsw) arg1bts)) as crt2s.
+            symmetry in Heqcrt2s.
+            destruct crt2s as [csucct2s | cfail]; ginv.
+
+            rw @compute_step_ncan_nswap.
+            apply nt_wf_oterm_iff in wf; repnd; allsimpl.
+            pose proof (wf (bterm [] (oterm (NSwapCs2 arg1nsw) arg1bts))) as w1; autodimp w1 hyp.
+            allrw @bt_wf_iff.
+            eapply IHind with (lv:=[]) in Heqcrt2s; eauto 3 with slow; try(simpl; left; auto); exrepnd.
+            allrw; eexists; dands; eauto.
+            constructor; auto.
+            simpl; introv Hlt.
+            destruct n; allunfold @selectbt; simpl in *; cpx.
+            { apply alphaeqbt_nilv2; auto. }
+            pose proof (Hal (S n)) as Hal; simpl in *; apply Hal; try omega. }
 
           { SSSSCase "Exc".
 
@@ -4004,6 +4532,7 @@ Proof.
             introv h.
             destruct n; unfold selectbt; simpl; cpx.
             + apply alpha_eq_bterm_congr.
+              try apply implies_alpha_eq_apply_swaps.
               eapply alpha_eq_lsubst_mk_abs_subst; eauto.
             + pose proof (Hal (S n)) as x.
               autodimp x hyp; omega.
@@ -4057,7 +4586,7 @@ Proof.
             pose proof (wf (bterm [arg1v1] arg1nt)) as w1; autodimp w1 hyp.
             allrw @bt_wf_iff.
 
-            pose proof (h (subst a' v' (mk_utoken a)) x) as k; clear h.
+            pose proof (h lib (subst a' v' (mk_utoken a)) x) as k; clear h.
             repeat (autodimp k hyp).
             { apply nt_wf_subst; eauto 3 with slow. }
             exrepnd.
@@ -4109,8 +4638,8 @@ Proof.
             assert (!LIn arg1v1 (free_vars x)) as ni1.
             { introv i.
               pose proof (compute_step_preserves
-                            lib (subst arg1nt arg1v1 (mk_utoken a))
-                            x) as hhh; repnd.
+                            (subst arg1nt arg1v1 (mk_utoken a))
+                            x lib) as hhh; repnd.
               repeat (autodimp hhh hyp); repnd.
               { apply nt_wf_subst; eauto 3 with slow. }
               rw subvars_prop in hhh0.
@@ -4126,8 +4655,8 @@ Proof.
             assert (!LIn v' (free_vars t2')) as ni2.
             { introv i.
               pose proof (compute_step_preserves
-                            lib (subst a' v' (mk_utoken a))
-                            t2') as hhh; repnd.
+                            (subst a' v' (mk_utoken a))
+                            t2' lib) as hhh; repnd.
               repeat (autodimp hhh hyp); repnd.
               { apply nt_wf_subst; eauto 3 with slow. }
               rw subvars_prop in hhh0.
@@ -4149,6 +4678,27 @@ Proof.
             eapply alpha_eq_trans;[exact k0|]; eauto with slow.
         }
 
+    + SCase "NSwapCs2".
+      apply compute_step_NSwapCs2_success in Hcomp; exrepnd; subst.
+      allrw @nt_wf_swap_cs2_iff; exrepnd; fold_terms; ginv.
+      apply alpha_eq_mk_swap_cs2_left_implies in Hal; exrepnd; subst.
+      apply compute_step_swap_cs2_success in Hcomp0; repndors; exrepnd; subst; simpl in *.
+
+      { apply alpha_eq_oterm_implies_combine2 in Hal0; exrepnd; subst.
+        csunf; simpl; eexists; dands; eauto.
+        apply alpha_eq_mk_swap_cs2_implies in backup.
+        apply implies_alpha_eq_push_swap_cs_can; auto. }
+
+      { apply alpha_eq_exc_implies in Hal0; exrepnd; subst.
+        csunf; simpl; eexists; dands; eauto.
+        apply alpha_eq_oterm_combine; auto. }
+
+      { rewrite compute_step_swap_cs2_isnoncan_like_eq; eauto 3 with slow.
+        eapply IHind in Hcomp2; try (left; try reflexivity);
+          try apply implies_alpha_eq_swap_cs_term; eauto;
+            autorewrite with slow; eauto 3 with slow; exrepnd.
+        allrw; eexists; dands; eauto; eauto 3 with slow. }
+
     + SCase "Exc".
       csunf Hcomp; allsimpl; ginv.
       apply alpha_eq_oterm_implies_combine in Hal; exrepnd; subst.
@@ -4168,6 +4718,7 @@ Proof.
                     lib abs1 oa2 lbt1 lbt2 vars rhs correct e h0) as k.
 
       exists (mk_instance vars lbt2 rhs); dands; auto.
+      try apply implies_alpha_eq_apply_swaps.
       eapply alpha_eq_lsubst_mk_abs_subst; eauto.
 Qed.
 
@@ -4262,11 +4813,16 @@ Proof.
   symmetry in HeqHdeq. applydup IHn in HeqHdeq.
   exrepnd.
   destruct ss;[inverts Hc|];[].
-  dopid o as [c|nc|exc|abs] Case.
+  dopid o as [c|nc|nsw|exc|abs] Case.
   - Case "Can".
     csunf Hc; allsimpl; ginv.
     exists m. allsimpl. split; spc.
   - Case "NCan".
+    exists (S m).
+    split; spc; [omega|]. simpl.
+    rw HeqHdeq1.
+    apply compute_step_exact_implies_atmost in HeqHdeq1; auto.
+  - Case "NSwapCs2".
     exists (S m).
     split; spc; [omega|]. simpl.
     rw HeqHdeq1.
@@ -4333,7 +4889,7 @@ Proof.
 
     { csunf comp1; allsimpl; ginv. }
 
-    dopid op as [can|ncan|exc|abs] Case.
+    dopid op as [can|ncan|nsw|exc|abs] Case.
 
     + Case "Can".
       csunf comp1; allsimpl; ginv.
@@ -4344,6 +4900,13 @@ Proof.
       rw @reduces_in_atmost_k_steps_S.
       unfold mk_try, nobnd.
       rw @compute_step_ncan_ncan; rw comp1.
+      eexists; dands; eauto.
+
+    + Case "NSwapCs2".
+      exists (S k0).
+      rw @reduces_in_atmost_k_steps_S.
+      unfold mk_try, nobnd.
+      rw @compute_step_ncan_nswap; rw comp1.
       eexists; dands; eauto.
 
     + Case "Exc".
@@ -5215,8 +5778,7 @@ Lemma isnoncan_like_lsubst_aux {o} :
 Proof.
   introv isv.
   unfold isnoncan_like in isv; repndors.
-  - apply isnoncan_implies in isv; exrepnd; subst.
-    simpl; eauto with slow.
+  - apply isnoncan_implies in isv; repndors; exrepnd; subst; simpl; eauto with slow.
   - apply isabs_implies in isv; exrepnd; subst.
     simpl; eauto with slow.
 Qed.
@@ -5251,8 +5813,7 @@ Proof.
   introv aeq iv.
   unfold isnoncan_like in iv.
   repndors.
-  - apply isnoncan_implies in iv; exrepnd; subst.
-    inversion aeq; subst; left; sp.
+  - apply isnoncan_implies in iv; repndors; exrepnd; subst; inversion aeq; subst; left; sp.
   - apply isabs_implies in iv; exrepnd; subst.
     inversion aeq; subst; right; sp.
 Qed.
@@ -5317,7 +5878,7 @@ Lemma compute_step_ncan_vterm_success {o} :
          {t1 : NTerm
           & {bs1 : list BTerm
           & bs = nobnd t1 :: bs1
-          # ncan = NSwapCs1
+          # (ncan = NSwapCs1 (*[+] ncan = NSwapCs0*))
           # (
               {x : NTerm
                & compute_step lib t1 = csuccess x
@@ -5326,11 +5887,11 @@ Lemma compute_step_ncan_vterm_success {o} :
               [+]
               (isexc t1 # u = t1)
             )}}
-         [+]
-         {nfo : SwapCsNfo
+(*         [+]
+         {nfo : cs_swap
           & ncan = NSwapCs2 nfo
           # bs = []
-          # u = mk_utoken a}
+          # u = mk_utoken a}*)
 (*         [+]
          {t1 : NTerm
           & {bs1 : list BTerm
@@ -5383,14 +5944,19 @@ Proof.
       right; right; right; right; right; left;
         eexists; eexists; dands; try reflexivity; tcsp; eauto.
 
-  - Case "NSwapCs2".
+(*  - Case "NSwapCs2".
     apply compute_step_swap_cs2_success in comp; repnd; subst;
       right; right; right; right; right; right; left;
-        eexists; dands; eauto.
+        eexists; dands; eauto.*)
 
 (*  - Case "NSwapCs".
     apply compute_step_swap_cs_success in comp; repndors; exrepnd; subst; GC; tcsp; ginv;
       right; right; right; right; right; right; right; left;
+        eexists; eexists; dands; try reflexivity; tcsp; eauto.*)
+
+(*  - Case "NSwapCs0".
+    apply compute_step_swap_cs0_success in comp; repndors; exrepnd; subst; GC; tcsp; ginv;
+      right; right; right; right; right; left;
         eexists; eexists; dands; try reflexivity; tcsp; eauto.*)
 
   - Case "NCompSeq1".
@@ -5412,7 +5978,7 @@ Proof.
     dcwf h.
     allunfold @co_wf_def; exrepnd; allsimpl; ginv; GC.
     repndors; exrepnd; subst; ginv;[].
-    dopid op1 as [can1|ncan1|exc1|abs1] SCase.
+    dopid op1 as [can1|ncan1|nsw1|exc1|abs1] SCase.
 
     + SCase "Can".
       apply compute_step_compop_success_can_can in comp; exrepnd; subst; GC.
@@ -5431,6 +5997,13 @@ Proof.
       right; left.
       exists n; dands; auto.
 
+    + SCase "NSwapCs2".
+      remember (compute_step lib (oterm (NSwapCs2 nsw1) bs1)) as c1; ginv.
+      destruct c1; allsimpl; ginv.
+      exists (oterm (NSwapCs2 nsw1) bs1) bs; dands; auto.
+      right; left.
+      exists n; dands; eauto 3 with slow.
+
     + SCase "Exc".
       ginv.
       exists (oterm Exc bs1) bs; dands; auto.
@@ -5443,7 +6016,7 @@ Proof.
       exists n; dands; auto.
 
   - Case "NCanTest".
-    right; right; right; right; right; right; right(*; right*).
+    right; right; right; right; right; right(*; right*)(*; right*).
     apply compute_step_can_test_success in comp; exrepnd; subst.
     exists arg2nt arg3nt c; dands; auto.
     destruct c; allsimpl; tcsp;
@@ -5581,7 +6154,7 @@ Proof.
   destruct b as [l t].
   destruct l as [|v vs]; ginv;[].
   destruct t as [v|op bs1]; ginv;[].
-  dopid op as [can1|ncan1|exc1|abs1] Case; ginv.
+  dopid op as [can1|ncan1|nsw1|exc1|abs1] Case; ginv.
   - Case "Can".
     dup comp as comp'.
     apply compute_step_compop_success_can_can in comp; exrepnd; subst.
@@ -5591,6 +6164,11 @@ Proof.
     symmetry in Heqnc; destruct nc; allsimpl; ginv.
     right; left.
     exists (oterm (NCan ncan1) bs1) n bs; dands; auto.
+  - Case "NSwapCs2".
+    remember (compute_step lib (oterm (NSwapCs2 nsw1) bs1)) as nc.
+    symmetry in Heqnc; destruct nc; allsimpl; ginv.
+    right; left.
+    exists (oterm (NSwapCs2 nsw1) bs1) n bs; dands; eauto 3 with slow.
   - Case "Exc".
     right; right.
     exists (oterm Exc bs1) bs; simpl; sp.
@@ -5636,7 +6214,7 @@ Proof.
   destruct b as [l t];[].
   destruct l as [|v vs]; ginv;[].
   destruct t as [v|op bs1]; ginv;[].
-  dopid op as [can1|ncan1|exc1|abs1] Case; ginv.
+  dopid op as [can1|ncan1|nsw1|exc1|abs1] Case; ginv.
   - Case "Can".
     apply compute_step_arithop_success_can_can in comp; exrepnd; subst.
     allapply @get_param_from_cop_pki; subst; allsimpl.
@@ -5646,6 +6224,11 @@ Proof.
     symmetry in Heqnc; destruct nc; allsimpl; ginv.
     right; left.
     exists (oterm (NCan ncan1) bs1) n bs; dands; auto.
+  - Case "NSwapCs2".
+    remember (compute_step lib (oterm (NSwapCs2 nsw1) bs1)) as nc.
+    symmetry in Heqnc; destruct nc; allsimpl; ginv.
+    right; left.
+    exists (oterm (NSwapCs2 nsw1) bs1) n bs; dands; eauto 3 with slow.
   - Case "Exc".
     right; right.
     exists (oterm Exc bs1) bs; simpl; sp.
@@ -5706,8 +6289,7 @@ Lemma compute_step_narithop_ncanlike2 {p} :
 Proof.
   introv isn.
   unfold isnoncan_like in isn; repndors.
-  - apply isnoncan_implies in isn; exrepnd; subst.
-    rw @compute_step_eq_unfold; sp.
+  - apply isnoncan_implies in isn; repndors; exrepnd; subst; rw @compute_step_eq_unfold; sp.
   - apply isabs_implies in isn; exrepnd; subst.
     rw @compute_step_eq_unfold; sp.
 Qed.
@@ -5788,7 +6370,7 @@ Proof.
   destruct vs; auto.
   destruct bs; auto.
   unfold isnoncan_like in isn; repndors.
-  - apply isnoncan_implies in isn; exrepnd; subst; auto.
+  - apply isnoncan_implies in isn; repndors; exrepnd; subst; auto.
   - apply isabs_implies in isn; exrepnd; subst; auto.
 Qed.
 
@@ -6145,7 +6727,7 @@ Lemma is_utok_implies {o} :
 Proof.
   introv i.
   destruct t as [v|op bs]; allsimpl; tcsp.
-  destruct op as [c|nc|e|a]; allsimpl; tcsp.
+  destruct op as [c|nc|nsw|e|a]; allsimpl; tcsp.
   destruct c; allsimpl; tcsp.
   destruct bs; allsimpl; tcsp.
   exists g; sp.

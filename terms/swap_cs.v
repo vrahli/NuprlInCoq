@@ -33,9 +33,6 @@ Require Export sovar_alpha.
 
 
 
-(* swaps fst and snd *)
-Definition cs_swap : Type := choice_sequence_name * choice_sequence_name.
-
 Definition swap_cs (r : cs_swap) (n : choice_sequence_name) : choice_sequence_name :=
   let (n1,n2) := r in
   if choice_sequence_name_deq n n1 then n2
@@ -48,10 +45,8 @@ Definition swap_cs_can {o} (r : cs_swap) (can : @CanonicalOp o) : CanonicalOp :=
   | _ => can
   end.
 
-Definition swap_cs_nfo (sw : cs_swap) (nfo : SwapCsNfo) : SwapCsNfo :=
-  match nfo with
-  | MkSwapCsNfo n1 n2 => MkSwapCsNfo (swap_cs sw n1) (swap_cs sw n2)
-  end.
+Definition swap_cs_swap (sw : cs_swap) (s : cs_swap) : cs_swap :=
+  let (a,b) := s in (swap_cs sw a,swap_cs sw b).
 
 (*Definition swap_cs_comp_seq_nfo1 (sw : cs_swap) (nfo : CompSeqNfo1) : CompSeqNfo1 :=
   match nfo with
@@ -63,19 +58,23 @@ Definition swap_cs_comp_seq_nfo2 (sw : cs_swap) (nfo : CompSeqNfo2) : CompSeqNfo
   | MkCompSeqNfo2 n l k => MkCompSeqNfo2 (swap_cs sw (MkChoiceSequenceName n (cs_kind_seq l))) l k
   end.*)
 
+(*
 Definition swap_cs_ncan (r : cs_swap) (ncan : NonCanonicalOp) : NonCanonicalOp :=
   match ncan with
-  | NSwapCs2 nfo => NSwapCs2 (swap_cs_nfo r nfo)
+  | NSwapCs2 nfo => NSwapCs2 (swap_cs_swap r nfo)
 (*  | NCompSeq1 nfo => NCompSeq1 (swap_cs_comp_seq_nfo1 r nfo)
   | NCompSeq2 nfo => NCompSeq2 (swap_cs_comp_seq_nfo2 r nfo)*)
   | _ => ncan
   end.
+*)
 
 Definition swap_cs_op {o} (r : cs_swap) (op : @Opid o) : Opid :=
   match op with
   | Can can => Can (swap_cs_can r can)
-  | NCan ncan => NCan (swap_cs_ncan r ncan)
-  | _ => op
+  | NCan ncan => NCan ncan (*(swap_cs_ncan r ncan)*)
+  | NSwapCs2 nfo => NSwapCs2 (swap_cs_swap r nfo)
+  | Exc => Exc
+  | Abs abs => Abs abs
   end.
 
 Fixpoint swap_cs_term {o} (r : cs_swap) (t : @NTerm o) : NTerm :=
@@ -118,19 +117,27 @@ Proof.
 Qed.
 Hint Rewrite @OpBindingsCan_swap_cs_can : slow.
 
-Lemma OpBindingsNCan_swap_cs_ncan :
+(*Lemma OpBindingsNCan_swap_cs_ncan :
   forall r (ncan : NonCanonicalOp),
     OpBindingsNCan (swap_cs_ncan r ncan) = OpBindingsNCan ncan.
 Proof.
   destruct ncan; simpl; auto.
 Qed.
-Hint Rewrite @OpBindingsNCan_swap_cs_ncan : slow.
+Hint Rewrite @OpBindingsNCan_swap_cs_ncan : slow.*)
+
+(*Lemma opabs_sign_swap_cs_abs :
+  forall r (abs : opabs),
+    opabs_sign (swap_cs_abs r abs) = opabs_sign abs.
+Proof.
+  destruct abs; simpl; auto.
+Qed.
+Hint Rewrite @opabs_sign_swap_cs_abs : slow.*)
 
 Lemma OpBindings_swap_cs_op {o} :
   forall r (op : @Opid o),
     OpBindings (swap_cs_op r op) = OpBindings op.
 Proof.
-  destruct op as [can| | |]; simpl; tcsp; autorewrite with slow; auto.
+  destruct op as [can| | | |]; simpl; tcsp; autorewrite with slow; auto.
 Qed.
 Hint Rewrite @OpBindings_swap_cs_op : slow.
 
@@ -340,49 +347,14 @@ Proof.
 Qed.
 Hint Rewrite swap_cs_idem : slow.
 
-Lemma swap_cs_nfo_idem :
+Lemma swap_cs_swap_idem :
   forall (r   : cs_swap)
-         (nfo : SwapCsNfo),
-    swap_cs_nfo r (swap_cs_nfo r nfo) = nfo.
+         (nfo : cs_swap),
+    swap_cs_swap r (swap_cs_swap r nfo) = nfo.
 Proof.
   introv; destruct nfo; simpl; autorewrite with slow; auto.
 Qed.
-Hint Rewrite swap_cs_nfo_idem : slow.
-
-Lemma swap_cs_op_idem {o} :
-  forall (r  : cs_swap)
-         (op : @Opid o),
-    swap_cs_op r (swap_cs_op r op) = op.
-Proof.
-  destruct op; simpl; auto;
-    try destruct c; try destruct n; simpl; auto; autorewrite with slow; auto.
-Qed.
-Hint Rewrite @swap_cs_op_idem : slow.
-
-Lemma swap_cs_term_idem {o} :
-  forall (r : cs_swap)
-         (t : @NTerm o),
-    swap_cs_term r (swap_cs_term r t) = t.
-Proof.
-  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
-  autorewrite with slow.
-  f_equal.
-  allrw map_map; unfold compose.
-  apply eq_map_l; introv i.
-  destruct x; apply ind in i.
-  simpl; f_equal; auto.
-Qed.
-Hint Rewrite @swap_cs_term_idem : slow.
-
-Lemma swap_cs_cterm_idem {o} :
-  forall (r : cs_swap)
-         (t : @CTerm o),
-    swap_cs_cterm r (swap_cs_cterm r t) = t.
-Proof.
-  introv; destruct_cterms; apply cterm_eq; simpl.
-  autorewrite with slow; auto.
-Qed.
-Hint Rewrite @swap_cs_cterm_idem : slow.
+Hint Rewrite swap_cs_swap_idem : slow.
 
 Lemma lsubst_swap_cs_term {o} :
   forall r (t : @NTerm o) sub,
@@ -470,3 +442,67 @@ Proof.
   destruct c; simpl; tcsp.
 Qed.
 Hint Rewrite @get_utokens_o_swap_cs_op : slow.
+
+Lemma swap_cs_inj :
+  forall (sw : cs_swap) (name1 name2 : choice_sequence_name),
+    swap_cs sw name1 = swap_cs sw name2
+    -> name1 = name2.
+Proof.
+  introv h.
+  destruct sw; simpl in *; boolvar; subst; auto; tcsp.
+Qed.
+
+Lemma swap_cs_can_twice {o} :
+  forall sw (c : @CanonicalOp o),
+    swap_cs_can sw (swap_cs_can sw c) = c.
+Proof.
+  introv; destruct c; simpl; auto; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @swap_cs_can_twice : slow.
+
+Lemma swap_cs_op_idem {o} :
+  forall (r  : cs_swap)
+         (op : @Opid o),
+    swap_cs_op r (swap_cs_op r op) = op.
+Proof.
+  destruct op; simpl; auto; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @swap_cs_op_idem : slow.
+
+Lemma swap_cs_term_idem {o} :
+  forall (r : cs_swap)
+         (t : @NTerm o),
+    swap_cs_term r (swap_cs_term r t) = t.
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
+  autorewrite with slow.
+  f_equal.
+  allrw map_map; unfold compose.
+  apply eq_map_l; introv i.
+  destruct x; apply ind in i.
+  simpl; f_equal; auto.
+Qed.
+Hint Rewrite @swap_cs_term_idem : slow.
+
+Lemma swap_cs_cterm_idem {o} :
+  forall (r : cs_swap)
+         (t : @CTerm o),
+    swap_cs_cterm r (swap_cs_cterm r t) = t.
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl.
+  autorewrite with slow; auto.
+Qed.
+Hint Rewrite @swap_cs_cterm_idem : slow.
+
+Lemma size_swap_cs_term {o} :
+  forall (r : cs_swap)
+         (t : @NTerm o),
+    size (swap_cs_term r t) = size t.
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
+  allrw map_map; unfold compose.
+  f_equal; f_equal.
+  apply eq_maps; introv i; destruct x; simpl in *.
+  erewrite ind; eauto.
+Qed.
+Hint Rewrite @size_swap_cs_term : slow.

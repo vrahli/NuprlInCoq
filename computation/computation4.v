@@ -1094,7 +1094,7 @@ Proof.
     simpl in comp1.
     destruct f; try (complete (inversion comp1)).
 
-    dopid o as [can|ncan|exc|abs] Case; try (complete (inversion comp1)).
+    dopid o as [can|ncan|nsw|exc|abs] Case; try (complete (inversion comp1)).
 
     + Case "Can".
       csunf comp1; allsimpl.
@@ -1111,6 +1111,30 @@ Proof.
       unfold mk_apply, nobnd in comp1.
       rw @compute_step_ncan_ncan in comp1.
       remember (compute_step lib (oterm (NCan ncan) l)); destruct c; inversion comp1; subst; GC.
+      symmetry in Heqc.
+      applydup @preserve_compute_step in Heqc; auto.
+      apply IHk in comp0; auto.
+      repndors; exrepnd.
+
+      * left.
+        exists v b (S k0).
+        rw @reduces_in_atmost_k_steps_S.
+        exists n; sp.
+
+      * right; left.
+        exists n0 (S k0).
+        rw @reduces_in_atmost_k_steps_S.
+        exists n; sp.
+
+      * right; right.
+        exists (S k0).
+        rw @reduces_in_atmost_k_steps_S.
+        exists n; sp.
+
+    + Case "NSwapCs2".
+      unfold mk_apply, nobnd in comp1.
+      rw @compute_step_ncan_nswap in comp1.
+      remember (compute_step lib (oterm (NSwapCs2 nsw) l)); destruct c; inversion comp1; subst; GC.
       symmetry in Heqc.
       applydup @preserve_compute_step in Heqc; auto.
       apply IHk in comp0; auto.
@@ -1219,7 +1243,7 @@ Proof.
     simpl in r1.
     destruct t; try (complete (inversion r1)).
 
-    dopid o as [can|ncan|exc|abs] Case; try (complete (inversion r1)).
+    dopid o as [can|ncan|nsw|exc|abs] Case; try (complete (inversion r1)).
 
     + Case "Can".
       inversion r1; subst; GC.
@@ -1234,6 +1258,29 @@ Proof.
       unfold mk_cbv, nobnd in r1.
       rw @compute_step_ncan_ncan in r1.
       remember (compute_step lib (oterm (NCan ncan) l)); destruct c.
+
+      * inversion r1; subst; GC; allrw @fold_cbv.
+        symmetry in Heqc.
+        applydup @preserve_compute_step in Heqc; auto.
+        apply IHk in r0; auto.
+        destruct r0 as [r|r]; exrepnd.
+
+        left.
+        exists (S k0).
+        rw @reduces_in_atmost_k_steps_S.
+        exists n; auto.
+
+        right.
+        exists x; sp.
+        apply computes_to_value_step with (t2 := n); auto.
+        exists k0; auto.
+
+      * inversion r1.
+
+    + Case "NSwapCs2".
+      unfold mk_cbv, nobnd in r1.
+      rw @compute_step_ncan_nswap in r1.
+      remember (compute_step lib (oterm (NSwapCs2 nsw) l)); destruct c.
 
       * inversion r1; subst; GC; allrw @fold_cbv.
         symmetry in Heqc.
@@ -1307,7 +1354,7 @@ Lemma iscan_compute_step {o} :
 Proof.
   introv isc.
   destruct t as [v|op bs]; allsimpl; tcsp.
-  dopid op as [can|ncan|exc|abs] Case; allsimpl; tcsp.
+  dopid op as [can|ncan|nsw|exc|abs] Case; allsimpl; tcsp.
 Qed.
 
 Lemma iscancan_doesnt_raise_an_exception {o} :
@@ -1339,6 +1386,17 @@ Lemma compute_step_cbv_ncan {p} :
   forall lib nc bterms v u,
     compute_step lib (mk_cbv (oterm (@NCan p nc) bterms) v u)
     = match compute_step lib (oterm (NCan nc) bterms) with
+        | csuccess t => csuccess (mk_cbv t v u)
+        | cfailure m t => cfailure m t
+      end.
+Proof.
+  introv; csunf; simpl; auto.
+Qed.
+
+Lemma compute_step_cbv_nswap {p} :
+  forall lib nsw bterms v u,
+    compute_step lib (mk_cbv (oterm (@NSwapCs2 p nsw) bterms) v u)
+    = match compute_step lib (oterm (NSwapCs2 nsw) bterms) with
         | csuccess t => csuccess (mk_cbv t v u)
         | cfailure m t => cfailure m t
       end.
@@ -1382,7 +1440,7 @@ Proof.
 
     destruct t; try (complete (inversion comp1)).
 
-    dopid o as [can|ncan|exc|abs] Case; try (complete (inversion comp1)).
+    dopid o as [can|ncan|nsw|exc|abs] Case; try (complete (inversion comp1)).
 
     + Case "Can".
       simpl in comp1; inversion comp1; subst; GC.
@@ -1393,6 +1451,13 @@ Proof.
       rw @reduces_in_atmost_k_steps_S.
       exists (mk_cbv u0 v u); dands; auto.
       rw @compute_step_cbv_ncan.
+      rw comp1; auto.
+
+    + Case "NSwapCs2".
+      exists (S k0).
+      rw @reduces_in_atmost_k_steps_S.
+      exists (mk_cbv u0 v u); dands; auto.
+      rw @compute_step_cbv_nswap.
       rw comp1; auto.
 
     + Case "Exc".
@@ -1691,6 +1756,17 @@ Proof.
   introv; csunf; simpl; sp.
 Qed.
 
+Lemma computes_step_sleep_nswap {p} :
+  forall lib s l,
+    compute_step lib (mk_sleep (oterm (@NSwapCs2 p s) l))
+    = match compute_step lib (oterm (NSwapCs2 s) l) with
+        | csuccess t => csuccess (mk_sleep t)
+        | cfailure m t => cfailure m t
+      end.
+Proof.
+  introv; csunf; simpl; sp.
+Qed.
+
 Lemma computes_step_sleep_abs {p} :
   forall lib o l,
     compute_step lib (mk_sleep (oterm (@Abs p o) l))
@@ -1737,7 +1813,7 @@ Proof.
 
   - rw @computes_to_val_or_exc_in_max_k_steps_S in comp; exrepnd.
     destruct t; try (complete (inversion comp1)).
-    dopid o as [can|ncan|exc|abs] Case; try (complete (inversion comp1)).
+    dopid o as [can|ncan|nsw|exc|abs] Case; try (complete (inversion comp1)).
 
     + Case "Can".
       destruct l; try (complete (inversion comp1)).
@@ -1750,6 +1826,14 @@ Proof.
     + Case "NCan".
       rw @computes_step_sleep_ncan in comp1.
       remember (compute_step lib (oterm (NCan ncan) l)); destruct c; inversion comp1; subst; GC.
+      apply IHk in comp0; clear IHk; exrepnd; subst.
+      exists x (S m); dands; auto.
+      rw @computes_to_val_or_exc_in_max_k_steps_S.
+      exists n; auto.
+
+    + Case "NSwapCs2".
+      rw @computes_step_sleep_nswap in comp1.
+      remember (compute_step lib (oterm (NSwapCs2 nsw) l)); destruct c; inversion comp1; subst; GC.
       apply IHk in comp0; clear IHk; exrepnd; subst.
       exists x (S m); dands; auto.
       rw @computes_to_val_or_exc_in_max_k_steps_S.
@@ -1774,6 +1858,17 @@ Lemma computes_step_tuni_ncan {p} :
   forall lib n l,
     compute_step lib (mk_tuni (oterm (@NCan p n) l))
     = match compute_step lib (oterm (NCan n) l) with
+        | csuccess t => csuccess (mk_tuni t)
+        | cfailure m t => cfailure m t
+      end.
+Proof.
+  introv; csunf; simpl; sp.
+Qed.
+
+Lemma computes_step_tuni_nswap {p} :
+  forall lib s l,
+    compute_step lib (mk_tuni (oterm (@NSwapCs2 p s) l))
+    = match compute_step lib (oterm (NSwapCs2 s) l) with
         | csuccess t => csuccess (mk_tuni t)
         | cfailure m t => cfailure m t
       end.
@@ -1811,7 +1906,7 @@ Proof.
 
   - rw @computes_to_val_or_exc_in_max_k_steps_S in comp; exrepnd.
     destruct t; try (complete (inversion comp1)).
-    dopid o as [can|ncan|exc|abs] Case; try (complete (inversion comp1)).
+    dopid o as [can|ncan|nsw|exc|abs] Case; try (complete (inversion comp1)).
 
     + Case "Can".
       destruct l; try (complete (inversion comp1)).
@@ -1828,6 +1923,14 @@ Proof.
     + Case "NCan".
       rw @computes_step_tuni_ncan in comp1.
       remember (compute_step lib (oterm (NCan ncan) l)); destruct c; inversion comp1; subst; GC.
+      apply IHk in comp0; clear IHk; exrepnd; subst.
+      exists x (S m); dands; auto.
+      rw @computes_to_val_or_exc_in_max_k_steps_S.
+      exists n; auto.
+
+    + Case "NSwapCs2".
+      rw @computes_step_tuni_nswap in comp1.
+      remember (compute_step lib (oterm (NSwapCs2 nsw) l)); destruct c; inversion comp1; subst; GC.
       apply IHk in comp0; clear IHk; exrepnd; subst.
       exists x (S m); dands; auto.
       rw @computes_to_val_or_exc_in_max_k_steps_S.
@@ -2004,11 +2107,11 @@ Proof.
   - apply computes_to_val_like_in_max_k_steps_S in comp; exrepnd.
 
     destruct n1; try (complete (inversion comp1)).
-    dopid o as [can1|ncan1|exc1|abs1] Case.
+    dopid o as [can1|ncan1|nsw1|exc1|abs1] Case.
 
     + Case "Can".
       destruct n2; try (complete (csunf comp1; allsimpl; dcwf h));[].
-      dopid o as [can2|ncan2|exc2|abs2] SCase.
+      dopid o as [can2|ncan2|nsw2|exc2|abs2] SCase.
 
       * SCase "Can".
         csunf comp1; simpl in comp1.
@@ -2055,6 +2158,43 @@ Proof.
           exists (oterm (NCan (NArithOp a))
                         [bterm [] (oterm (Can can1) l), bterm [] n]); dands; auto.
           rw @compute_step_narithop_ncan2.
+          dcwf h;[].
+          rw Heqc; auto. }
+
+      * SCase "NSwapCs2".
+        rw @compute_step_narithop_nswap2 in comp1.
+        dcwf h;[].
+        remember (compute_step lib (oterm (NSwapCs2 nsw2) l0));
+          destruct c; inversion comp1; subst; GC.
+        symmetry in Heqc.
+        applydup @compute_step_preserves_wf in Heqc; auto.
+        apply IHk in comp0; auto.
+
+        repndors; exrepnd; subst.
+
+        { left.
+          exists nv1 nv2 k1 (S k2); dands; auto; try omega.
+          rw @computes_to_value_in_max_k_steps_S.
+          exists n; sp.
+          rw <- plus_n_Sm.
+          rw @reduces_in_atmost_k_steps_S.
+          exists (oterm (NCan (NArithOp a))
+                        [bterm [] (oterm (Can can1) l), bterm [] n]); dands; auto.
+          rw @compute_step_narithop_nswap2.
+          dcwf h;[].
+          rw Heqc; auto. }
+
+        { apply computes_to_exception_in_max_k_steps_can in comp3; sp. }
+
+        { right; right.
+          exists en e z k1 (S k2); dands; auto; try omega.
+          rw @computes_to_exception_in_max_k_steps_S.
+          exists n; sp.
+          rw <- plus_n_Sm.
+          rw @reduces_in_atmost_k_steps_S.
+          exists (oterm (NCan (NArithOp a))
+                        [bterm [] (oterm (Can can1) l), bterm [] n]); dands; auto.
+          rw @compute_step_narithop_nswap2.
           dcwf h;[].
           rw Heqc; auto. }
 
@@ -2141,6 +2281,40 @@ Proof.
         rw @reduces_in_atmost_k_steps_S.
         exists (oterm (NCan (NArithOp a)) [bterm [] n, bterm [] n2]); dands; auto.
         rw @compute_step_narithop_ncan1; rw Heqc; auto.
+
+    + Case "NSwapCs2".
+      rw @compute_step_narithop_nswap1 in comp1.
+      remember (compute_step lib (oterm (NSwapCs2 nsw1) l));
+        destruct c; inversion comp1; subst; GC.
+      symmetry in Heqc.
+      applydup @compute_step_preserves_wf in Heqc; auto.
+      apply IHk in comp0; auto.
+
+      repndors; exrepnd; subst.
+
+      * left.
+        exists nv1 nv2 (S k1) k2; dands; simpl; auto; try omega.
+        rw @computes_to_value_in_max_k_steps_S.
+        exists n; sp.
+        rw @reduces_in_atmost_k_steps_S.
+        exists (oterm (NCan (NArithOp a)) [bterm [] n, bterm [] n2]); sp.
+        rw @compute_step_narithop_nswap1; rw Heqc; auto.
+
+      * right; left.
+        exists en e (S k1); simpl; dands; auto; try omega.
+        rw @computes_to_exception_in_max_k_steps_S.
+        exists n; sp.
+        rw @reduces_in_atmost_k_steps_S.
+        exists (oterm (NCan (NArithOp a)) [bterm [] n, bterm [] n2]).
+        rw @compute_step_narithop_nswap1; rw Heqc; auto.
+
+      * right; right.
+        exists en e z (S k1) k2; dands; simpl; auto; try omega.
+        rw @computes_to_value_in_max_k_steps_S.
+        exists n; sp.
+        rw @reduces_in_atmost_k_steps_S.
+        exists (oterm (NCan (NArithOp a)) [bterm [] n, bterm [] n2]); dands; auto.
+        rw @compute_step_narithop_nswap1; rw Heqc; auto.
 
     + Case "Exc".
       csunf comp1; simpl in comp1.
@@ -2267,11 +2441,11 @@ Proof.
   - apply computes_to_val_like_in_max_k_steps_S in comp; exrepnd.
 
     destruct n1; try (complete (inversion comp1));[].
-    dopid o as [can1|ncan1|exc1|abs1] Case.
+    dopid o as [can1|ncan1|nsw1|exc1|abs1] Case.
 
     + Case "Can".
       destruct n2; try (complete (csunf comp1; allsimpl; dcwf h));[].
-      dopid o as [can2|ncan2|exc2|abs2] SCase.
+      dopid o as [can2|ncan2|nsw2|exc2|abs2] SCase.
 
       * SCase "Can".
         csunf comp1; simpl in comp1.
@@ -2341,6 +2515,48 @@ Proof.
                         [bterm [] (oterm (Can can1) l),nobnd n,nobnd n3,nobnd n4]); dands; auto.
           unfold nobnd.
           rw @compute_step_ncompop_ncan2.
+          dcwf h;[].
+          rw Heqc; auto. }
+
+      * SCase "NSwapCs2".
+        unfold nobnd in comp1.
+        rw @compute_step_ncompop_nswap2 in comp1.
+        dcwf h;allsimpl;[].
+        remember (compute_step lib (oterm (NSwapCs2 nsw2) l0));
+          destruct c; inversion comp1; subst; GC.
+        symmetry in Heqc.
+        applydup @compute_step_preserves_wf in Heqc; auto;[].
+        apply IHk in comp0; auto.
+
+        repndors; exrepnd; subst.
+
+        { left.
+          exists pk1 pk2 k1 (S k2) d; dands; auto; try omega.
+          - rw @computes_to_can_in_max_k_steps_S.
+            exists n; sp.
+          - rw <- plus_n_Sm.
+            rw @reduces_in_atmost_k_steps_S.
+            exists (oterm (NCan (NCompOp a))
+                          [bterm [] (oterm (Can can1) l),nobnd n,nobnd n3,nobnd n4]); dands; auto.
+            unfold nobnd.
+            rw @compute_step_ncompop_nswap2.
+            dcwf h;[].
+            rw Heqc; auto.
+          - assert (k1 + S k2 + 1 = S (k1 + k2 + 1)) as e by omega.
+            rw e; auto. }
+
+        { apply computes_to_exception_in_max_k_steps_can in comp3; sp. }
+
+        { right; right.
+          exists en e pk k1 (S k2); dands; auto; try omega.
+          rw @computes_to_exception_in_max_k_steps_S.
+          exists n; sp.
+          rw <- plus_n_Sm.
+          rw @reduces_in_atmost_k_steps_S.
+          exists (oterm (NCan (NCompOp a))
+                        [bterm [] (oterm (Can can1) l),nobnd n,nobnd n3,nobnd n4]); dands; auto.
+          unfold nobnd.
+          rw @compute_step_ncompop_nswap2.
           dcwf h;[].
           rw Heqc; auto. }
 
@@ -2439,6 +2655,45 @@ Proof.
         exists (oterm (NCan (NCompOp a)) [nobnd n,nobnd n2,nobnd n3,nobnd n4]); dands; auto.
         unfold nobnd.
         rw @compute_step_ncompop_ncan1; rw Heqc; auto.
+
+    + Case "NSwapCs2".
+      unfold nobnd in comp1.
+      rw @compute_step_ncompop_nswap1 in comp1.
+      remember (compute_step lib (oterm (NSwapCs2 nsw1) l));
+        destruct c; inversion comp1; subst; GC.
+      symmetry in Heqc.
+      applydup @compute_step_preserves_wf in Heqc; auto.
+      apply IHk in comp0; auto.
+
+      repndors; exrepnd; subst.
+
+      * left.
+        exists pk1 pk2 (S k1) k2 d; dands; simpl; auto; try omega.
+        rw @computes_to_can_in_max_k_steps_S.
+        exists n; sp.
+        rw @reduces_in_atmost_k_steps_S.
+        exists (oterm (NCan (NCompOp a)) [nobnd n,nobnd n2,nobnd n3,nobnd n4]).
+        dands; auto.
+        unfold nobnd.
+        rw @compute_step_ncompop_nswap1; rw Heqc; auto.
+
+      * right; left.
+        exists en e (S k1); simpl; dands; auto; try omega.
+        rw @computes_to_exception_in_max_k_steps_S.
+        exists n; sp.
+        rw @reduces_in_atmost_k_steps_S.
+        exists (oterm (NCan (NCompOp a)) [nobnd n,nobnd n2,nobnd n3,nobnd n4]).
+        unfold nobnd.
+        rw @compute_step_ncompop_nswap1; rw Heqc; auto.
+
+      * right; right.
+        exists en e pk (S k1) k2; dands; simpl; auto; try omega.
+        rw @computes_to_can_in_max_k_steps_S.
+        exists n; sp.
+        rw @reduces_in_atmost_k_steps_S.
+        exists (oterm (NCan (NCompOp a)) [nobnd n,nobnd n2,nobnd n3,nobnd n4]); dands; auto.
+        unfold nobnd.
+        rw @compute_step_ncompop_nswap1; rw Heqc; auto.
 
     + Case "Exc".
       csunf comp1; simpl in comp1.

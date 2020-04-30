@@ -77,7 +77,7 @@ Lemma dec_iscan {o} :
 Proof.
   introv.
   destruct t as [v|op bs]; simpl; tcsp; try (complete (right; sp)).
-  dopid op as [can|ncan|exc|abs] Case; tcsp; try (complete (right; sp)).
+  dopid op as [can|ncan|nsw|exc|abs] Case; tcsp; try (complete (right; sp)).
 Qed.
 
 Lemma dec_iscanc {o} :

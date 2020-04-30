@@ -78,7 +78,7 @@ Qed.
 Lemma approx_star_btermd_fr {p} :
   forall lib op bt1 bt2 lva,
     op = NCan NFresh
-    -> approx_star_bterm lib op bt1 bt2
+    -> approx_star_bterm op lib bt1 bt2
     -> {lvn : list NVar
         & {nt1',nt2' : @NTerm p
         $ {sub : Sub

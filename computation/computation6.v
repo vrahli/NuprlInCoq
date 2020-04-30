@@ -144,7 +144,7 @@ Proof.
 
   - rw @computes_to_val_like_in_max_k_steps_S in comp; exrepnd.
     destruct t; ginv.
-    dopid o as [can|ncan|exc|abs] Case; try (complete (inversion comp1)).
+    dopid o as [can|ncan|nsw|exc|abs] Case; try (complete (inversion comp1)).
 
     + Case "Can".
       destruct l; try (complete (inversion comp1)).
@@ -157,6 +157,14 @@ Proof.
     + Case "NCan".
       rw @computes_step_sleep_ncan in comp1.
       remember (compute_step lib (oterm (NCan ncan) l)); destruct c; inversion comp1; subst; GC.
+      apply IHk in comp0; clear IHk; exrepnd; subst.
+      exists x (S m); dands; auto.
+      rw @computes_to_val_like_in_max_k_steps_S.
+      exists n; auto.
+
+    + Case "NSwapCs2".
+      rw @computes_step_sleep_nswap in comp1.
+      remember (compute_step lib (oterm (NSwapCs2 nsw) l)); destruct c; inversion comp1; subst; GC.
       apply IHk in comp0; clear IHk; exrepnd; subst.
       exists x (S m); dands; auto.
       rw @computes_to_val_like_in_max_k_steps_S.
@@ -196,7 +204,7 @@ Proof.
 
   - rw @computes_to_val_like_in_max_k_steps_S in comp; exrepnd.
     destruct t; ginv.
-    dopid o as [can|ncan|exc|abs] Case; try (complete (inversion comp1)).
+    dopid o as [can|ncan|nsw|exc|abs] Case; try (complete (inversion comp1)).
 
     + Case "Can".
       destruct l; try (complete (inversion comp1)).
@@ -213,6 +221,14 @@ Proof.
     + Case "NCan".
       rw @computes_step_tuni_ncan in comp1.
       remember (compute_step lib (oterm (NCan ncan) l)); destruct c; inversion comp1; subst; GC.
+      apply IHk in comp0; clear IHk; exrepnd; subst.
+      exists x (S m); dands; auto.
+      rw @computes_to_val_like_in_max_k_steps_S.
+      exists n; auto.
+
+    + Case "NSwapCs2".
+      rw @computes_step_tuni_nswap in comp1.
+      remember (compute_step lib (oterm (NSwapCs2 nsw) l)); destruct c; inversion comp1; subst; GC.
       apply IHk in comp0; clear IHk; exrepnd; subst.
       exists x (S m); dands; auto.
       rw @computes_to_val_like_in_max_k_steps_S.
@@ -254,6 +270,17 @@ Proof.
   introv; csunf; simpl; auto.
 Qed.
 
+Lemma computes_step_minus_nswap {p} :
+  forall lib s l,
+    compute_step lib (mk_minus (oterm (@NSwapCs2 p s) l))
+    = match compute_step lib (oterm (NSwapCs2 s) l) with
+        | csuccess t => csuccess (mk_minus t)
+        | cfailure m t => cfailure m t
+      end.
+Proof.
+  introv; csunf; simpl; auto.
+Qed.
+
 Lemma computes_step_minus_abs {p} :
   forall lib o l,
     compute_step lib (mk_minus (oterm (@Abs p o) l))
@@ -282,7 +309,7 @@ Proof.
 
   - rw @computes_to_val_like_in_max_k_steps_S in comp; exrepnd.
     destruct t; ginv.
-    dopid o as [can|ncan|exc|abs] Case; try (complete (inversion comp1)).
+    dopid o as [can|ncan|nsw|exc|abs] Case; try (complete (inversion comp1)).
 
     + Case "Can".
       destruct l; try (complete (inversion comp1)).
@@ -297,6 +324,14 @@ Proof.
     + Case "NCan".
       rw @computes_step_minus_ncan in comp1.
       remember (compute_step lib (oterm (NCan ncan) l)); destruct c; inversion comp1; subst; GC.
+      apply IHk in comp0; clear IHk; exrepnd; subst.
+      exists x (S m); dands; auto.
+      rw @computes_to_val_like_in_max_k_steps_S.
+      exists n; auto.
+
+    + Case "NSwapCs2".
+      rw @computes_step_minus_nswap in comp1.
+      remember (compute_step lib (oterm (NSwapCs2 nsw) l)); destruct c; inversion comp1; subst; GC.
       apply IHk in comp0; clear IHk; exrepnd; subst.
       exists x (S m); dands; auto.
       rw @computes_to_val_like_in_max_k_steps_S.
@@ -342,7 +377,7 @@ Proof.
     destruct b as [l t].
     destruct l; ginv.
     destruct t as [z|op bts]; ginv;[].
-    dopid op as [can|ncan|exc|abs] Case; ginv.
+    dopid op as [can|ncan|nsw|exc|abs] Case; ginv.
 
     + Case "Can".
       apply compute_step_parallel_success in comp1; subst.
@@ -354,6 +389,13 @@ Proof.
       remember (compute_step lib (oterm (NCan ncan) bts)) as comp'; destruct comp'; ginv.
       apply IHk in comp0; clear IHk; exrepnd; subst; allunfold @nobnd; ginv.
       exists x (oterm (NCan ncan) bts) bs' (S m); dands; auto.
+      rw @computes_to_val_like_in_max_k_steps_S.
+      exists u; auto.
+
+    + Case "NSwapCs2".
+      remember (compute_step lib (oterm (NSwapCs2 nsw) bts)) as comp'; destruct comp'; ginv.
+      apply IHk in comp0; clear IHk; exrepnd; subst; allunfold @nobnd; ginv.
+      exists x (oterm (NSwapCs2 nsw) bts) bs' (S m); dands; auto.
       rw @computes_to_val_like_in_max_k_steps_S.
       exists u; auto.
 
@@ -456,12 +498,21 @@ Proof.
     unfold isvalue_like in r; allsimpl; sp.
   - allrw @has_value_like_S; exrepnd.
     destruct t as [v|op bs1]; try (complete (csunf r1; allsimpl; dcwf h)).
-    dopid op as [can2|ncan2|exc2|abs2] Case.
+    dopid op as [can2|ncan2|nsw2|exc2|abs2] Case.
     + exists 0; dands; try omega.
       rw @has_value_like_0; dands; eauto 3 with slow.
     + rw @compute_step_ncompop_ncan2 in r1.
       dcwf h.
       remember (compute_step lib (oterm (NCan ncan2) bs1)) as comp1.
+      symmetry in Heqcomp1.
+      destruct comp1; ginv.
+      apply IHk in r0; exrepnd.
+      exists (S j); dands; try omega.
+      rw @has_value_like_S.
+      exists n; tcsp.
+    + rw @compute_step_ncompop_nswap2 in r1.
+      dcwf h.
+      remember (compute_step lib (oterm (NSwapCs2 nsw2) bs1)) as comp1.
       symmetry in Heqcomp1.
       destruct comp1; ginv.
       apply IHk in r0; exrepnd.
@@ -498,12 +549,21 @@ Proof.
     unfold isvalue_like in r; allsimpl; sp.
   - allrw @has_value_like_S; exrepnd.
     destruct t as [v|op bs1]; try (complete (csunf r1; allsimpl; dcwf h)).
-    dopid op as [can2|ncan2|exc2|abs2] Case.
+    dopid op as [can2|ncan2|nsw2|exc2|abs2] Case.
     + exists 0; dands; try omega.
       rw @has_value_like_0; dands; eauto 3 with slow.
     + rw @compute_step_narithop_ncan2 in r1.
       dcwf h.
       remember (compute_step lib (oterm (NCan ncan2) bs1)) as comp1.
+      symmetry in Heqcomp1.
+      destruct comp1; ginv.
+      apply IHk in r0; exrepnd.
+      exists (S j); dands; try omega.
+      rw @has_value_like_S.
+      exists n; tcsp.
+    + rw @compute_step_narithop_nswap2 in r1.
+      dcwf h.
+      remember (compute_step lib (oterm (NSwapCs2 nsw2) bs1)) as comp1.
       symmetry in Heqcomp1.
       destruct comp1; ginv.
       apply IHk in r0; exrepnd.
@@ -567,7 +627,7 @@ Proof.
 
     { simpl in r1; ginv. }
 
-    dopid op as [can1|ncan1|exc1|abs1] Case.
+    dopid op as [can1|ncan1|nsw2|exc1|abs1] Case.
 
     + Case "Can".
       exists 0; dands; try omega.
@@ -576,6 +636,14 @@ Proof.
     + Case "NCan".
       rw @compute_step_ncan_ncan in r1.
       remember (compute_step lib (oterm (NCan ncan1) l)) as comp.
+      symmetry in Heqcomp; destruct comp; ginv.
+      apply IHk in r0; exrepnd.
+      exists (S j); dands; try omega.
+      rw @has_value_like_S; exists n; sp.
+
+    + Case "NSwapCs2".
+      rw @compute_step_ncan_nswap in r1.
+      remember (compute_step lib (oterm (NSwapCs2 nsw2) l)) as comp.
       symmetry in Heqcomp; destruct comp; ginv.
       apply IHk in r0; exrepnd.
       exists (S j); dands; try omega.
@@ -627,7 +695,7 @@ Proof.
 
     { simpl in r1; ginv. }
 
-    dopid op as [can1|ncan1|exc1|abs1] Case.
+    dopid op as [can1|ncan1|nsw1|exc1|abs1] Case.
 
     + Case "Can".
       exists 0; dands; try omega.
@@ -636,6 +704,15 @@ Proof.
     + Case "NCan".
       rw @compute_step_ncan_ncan in r1.
       remember (compute_step lib (oterm (NCan ncan1) l)) as comp.
+      symmetry in Heqcomp; destruct comp; ginv.
+      apply IHk in r0; exrepnd; auto.
+      exists (S j); dands; try omega.
+      rw @has_value_like_S.
+      exists n; sp.
+
+    + Case "NSwapCs2".
+      rw @compute_step_ncan_nswap in r1.
+      remember (compute_step lib (oterm (NSwapCs2 nsw1) l)) as comp.
       symmetry in Heqcomp; destruct comp; ginv.
       apply IHk in r0; exrepnd; auto.
       exists (S j); dands; try omega.
@@ -768,7 +845,7 @@ Proof.
       exists (subst t v (mk_utoken a)); dands; eauto 4 with slow.
       apply reduces_in_atmost_k_steps_refl; eauto with slow.
     + repnd; subst.
-      pose proof (compute_step_subst_utoken lib t x [(v,mk_utoken (get_fresh_atom lib t))]) as h.
+      pose proof (compute_step_subst_utoken t x lib [(v,mk_utoken (get_fresh_atom lib t))]) as h.
       allrw @get_utokens_sub_cons; allrw @get_utokens_sub_nil; allsimpl.
       allrw disjoint_singleton_l.
       repeat (autodimp h hyp); try (apply get_fresh_atom_prop_and_lib); eauto 3 with slow.

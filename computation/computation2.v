@@ -41,6 +41,7 @@ Require Export list_tacs.
 Require Export substc_more.
 Require Export subst_props2.
 Require Export terms5.
+Require Export terms_swap.
 (*Require Export tactics. (* WTF!! *)*)
 
 (** printing #  $\times$ #×# *)
@@ -192,13 +193,6 @@ Definition computes_to_exception {p} lib a (t1 t2 : @NTerm p) :=
 
 (* reductions to markers *)
 
-(* !!MOVE to opid *)
-Definition mk_opabs (n : opname) (ps : list parameter) (s : opsign) : opabs :=
-  {| opabs_name   := n;
-     opabs_params := ps;
-     opabs_sign   := s
-  |}.
-
 Definition abs_marker (m : marker) : opabs := mk_opabs m [] [].
 
 Definition mk_marker {o} (m : marker) :=
@@ -268,6 +262,7 @@ Definition compute_1_step {p} lib (t : @NTerm p) :=
     | oterm Exc _ => cfailure "term is already a exception" t
     | vterm _ => compute_step lib t
     | oterm (NCan _) _ => compute_step lib t
+    | oterm (NSwapCs2 _) _ => compute_step lib t
     | oterm (Abs _) _ => compute_step lib t
   end.
 
@@ -1379,8 +1374,8 @@ Lemma compute_step_try_catch {p} :
 Proof.
   introv.
   destruct e as [x|op bs]; auto.
-  dopid op as [can|ncan|exc|abs] Case; simpl; auto.
-  csunf; simpl; auto.
+  dopid op as [can|ncan|nsw|exc|abs] Case; simpl; auto;
+    csunf; simpl; auto.
 Qed.
 
 Lemma compute_step_try_success {p} :
@@ -1688,6 +1683,15 @@ Proof.
     destruct (matching_entry_deq oa1 opabs vars0 bs); repnd; inversion Heqh; dands; auto.
 Qed.
 
+Lemma implies_isprogram_apply_swaps {o} :
+  forall l (t : @NTerm o),
+    isprogram t
+    -> isprogram (apply_swaps l t).
+Proof.
+  induction l; introv isp; simpl; eauto 3 with slow.
+Qed.
+Hint Resolve implies_isprogram_apply_swaps : slow.
+
 Lemma isprogram_compute_step_lib {o} :
   forall (lib : @plibrary o) x bs t,
     isprogram (oterm (Abs x) bs)
@@ -1696,6 +1700,7 @@ Lemma isprogram_compute_step_lib {o} :
 Proof.
   introv isp comp.
   apply compute_step_lib_success in comp; exrepnd; subst.
+  try apply implies_isprogram_apply_swaps.
   apply isprogram_subst_lib in comp0; auto.
   introv i.
   apply isprogram_ot_iff in isp; repnd; sp.
@@ -1751,6 +1756,15 @@ Ltac dest_find_atom a e :=
   end;
   allunfold (@found_atom).
 
+Lemma isnoncan_like_NSwapCs2 {o} :
+  forall sw (bs : list (@BTerm o)),
+    isnoncan_like (oterm (NSwapCs2 sw) bs).
+Proof.
+  introv; unfold isnoncan_like; simpl; tcsp.
+Qed.
+Hint Resolve isnoncan_like_NSwapCs2 : slow.
+
+
 Lemma compute_step_fresh_success {o} :
   forall lib nc x v vs (t : @NTerm o) bs comp a u,
     compute_step_fresh lib nc x v vs t bs comp a
@@ -1777,13 +1791,17 @@ Proof.
   dands; auto.
   destruct t as [v1|op1 bs1]; ginv; allsimpl; auto.
   - boolvar; ginv; tcsp.
-  - dopid op1 as [can1|ncan1|exc1|abs1] Case; ginv.
+  - dopid op1 as [can1|ncan1|nsw1|exc1|abs1] Case; ginv.
     + Case "Can".
       right; left; dands; eauto with slow.
     + Case "NCan".
       right; right.
       destruct comp; allsimpl; ginv.
       exists n; dands; tcsp.
+    + case "NSwapCs2".
+      intros; right; right.
+      destruct comp; simpl in *; ginv.
+      eexists; dands; eauto; eauto 3 with slow.
     + Case "Exc".
       right; left; dands; eauto with slow.
     + Case "Abs".
@@ -2866,24 +2884,6 @@ Proof.
 Qed.
 *)
 
-Definition free_vars_bterms {o} (bs : list (@BTerm o)) :=
-  flat_map free_vars_bterm bs.
-
-Lemma bterm_in_implies_subvars_free_vars {o} :
-  forall l (t : @NTerm o) bs,
-    LIn (bterm l t) bs
-    -> subvars (free_vars t) (l ++ free_vars_bterms bs).
-Proof.
-  introv i.
-  rw subvars_prop; introv j.
-  rw in_app_iff.
-  destruct (in_deq _ deq_nvar x l); tcsp.
-  right.
-  rw lin_flat_map.
-  eexists; dands; eauto; simpl.
-  rw in_remove_nvars; sp.
-Qed.
-
 Definition get_utok {o} (op : @Opid o) :=
   match op with
     | Can (NUTok a) => Some a
@@ -2896,7 +2896,7 @@ Lemma get_utok_some {o} :
     -> op = Can (NUTok a).
 Proof.
   introv e.
-  dopid op as [can|ncan|exc|abs] Case; try (complete (allsimpl; sp)).
+  dopid op as [can|ncan|nsw1|exc|abs] Case; try (complete (allsimpl; sp)).
   destruct can; allsimpl; ginv; auto.
 Qed.
 
@@ -2909,7 +2909,7 @@ Lemma subst_utokens_aux_oterm {o} :
       end.
 Proof.
   introv.
-  dopid op as [can|ncan|exc|abs] Case; tcsp.
+  dopid op as [can|ncan|nsw|exc|abs] Case; tcsp.
   destruct can; simpl; auto.
 Qed.
 
@@ -3188,12 +3188,12 @@ Proof. sp. Qed.
 Lemma isnoncan_implies {p} :
   forall t : @NTerm p,
     isnoncan t
-    -> {c : NonCanonicalOp & {bterms : list BTerm & t = oterm (NCan c) bterms}}.
+    -> {c : NonCanonicalOp & {bterms : list BTerm & t = oterm (NCan c) bterms}}
+         [+] {sw : cs_swap & {bs : list BTerm & t = oterm (NSwapCs2 sw) bs}}.
 Proof.
   introv isc.
   destruct t; try (complete (inversion isc)).
-  destruct o; try (complete (inversion isc)).
-  exists n l; sp.
+  destruct o; try (complete (inversion isc)); eauto.
 Qed.
 
 (* !!MOVE to terms2 *)
@@ -3232,8 +3232,8 @@ Lemma compute_step_ncompop_ncanlike2 {p} :
 Proof.
   introv isn.
   unfold isnoncan_like in isn; repndors.
-  - apply isnoncan_implies in isn; exrepnd; subst.
-    rw @compute_step_eq_unfold; sp.
+  - apply isnoncan_implies in isn; repndors; exrepnd; subst;
+      rw @compute_step_eq_unfold; sp.
   - apply isabs_implies in isn; exrepnd; subst.
     rw @compute_step_eq_unfold; sp.
 Qed.
@@ -3246,9 +3246,8 @@ Lemma isnoncan_like_cl_lsubst {o} :
 Proof.
   introv cl isn.
   unfold isnoncan_like in isn; repndors.
-  - apply isnoncan_implies in isn; exrepnd; subst.
-    left.
-    rw @lsubst_oterm_cl_sub; auto.
+  - apply isnoncan_implies in isn; repndors; exrepnd; subst;
+      left; rw @lsubst_oterm_cl_sub; auto; tcsp.
   - apply isabs_implies in isn; exrepnd; subst.
     right.
     rw @lsubst_oterm_cl_sub; auto.
@@ -5121,8 +5120,8 @@ Lemma compute_step_fresh_if_isnoncan_like {o} :
 Proof.
   introv isc.
   unfold isnoncan_like in isc; repndors.
-  - apply isnoncan_implies in isc; exrepnd; subst; auto.
-    rw @compute_step_eq_unfold; auto.
+  - apply isnoncan_implies in isc; repndors; exrepnd; subst; auto;
+      rw @compute_step_eq_unfold; auto.
   - apply isabs_implies in isc; exrepnd; subst; auto.
     rw @compute_step_eq_unfold; auto.
 Qed.
@@ -5135,7 +5134,7 @@ Proof.
   introv isv.
   unfold subst_aux.
   unfold isnoncan_like in isv; repndors.
-  - apply isnoncan_implies in isv; exrepnd; subst; simpl; tcsp.
+  - apply isnoncan_implies in isv; repndors;exrepnd; subst; simpl; eauto 3 with slow.
   - apply isabs_implies in isv; exrepnd; subst; simpl; tcsp.
 Qed.
 Hint Resolve implies_isnoncan_like_subst_aux : slow.
@@ -5977,7 +5976,7 @@ Lemma compute_step_fresh_if_isnoncan_like0 {o} :
 Proof.
   introv isc.
   unfold isnoncan_like in isc; repndors.
-  - apply isnoncan_implies in isc; exrepnd; subst; auto.
+  - apply isnoncan_implies in isc; repndors; exrepnd; subst; auto.
   - apply isabs_implies in isc; exrepnd; subst; auto.
 Qed.
 
@@ -7352,7 +7351,7 @@ Lemma get_utok_none {o} :
     -> get_utokens_o op = [].
 Proof.
   introv e.
-  dopid op as [can|ncan|exc|abs] Case; allsimpl; auto.
+  dopid op as [can|ncan|nsw|exc|abs] Case; allsimpl; auto.
   destruct can; auto; ginv.
 Qed.
 
@@ -8683,14 +8682,10 @@ Proof.
   destruct vs; ginv.
   exists arg2 l; dands; auto.
   destruct arg2 as [|op bs2]; ginv.
-  - dopid op as [can|ncan|exc|abs] Case; allsimpl; ginv.
-    + right; right.
-      destruct cstep; allsimpl; ginv.
-      eexists; dands; eauto.
-    + right; left; dands; auto.
-    + right; right.
-      destruct cstep; allsimpl; ginv.
-      eexists; dands; eauto.
+  - dopid op as [can|ncan|nsw|exc|abs] Case; allsimpl; ginv;
+      try (complete (right; right; destruct cstep; allsimpl; ginv;
+                     eexists; dands; eauto 3 with slow));
+      try (complete (right; left; dands; auto)).
 Qed.
 
 Ltac dcwf_aux1 h :=
@@ -8801,7 +8796,7 @@ Proof.
   dands; auto;[].
   destruct arg1 as [|op1 bs1]; allsimpl; ginv;[].
 
-  destruct op1 as [can1|ncan1|exc1|abs1]; allsimpl; ginv;[].
+  destruct op1 as [can1|ncan1|nsw1|exc1|abs1]; allsimpl; ginv;[].
     destruct can1; allsimpl; ginv;[|].
 
     { destruct bs1 as [|b bs1]; allsimpl; ginv;[].
@@ -8814,7 +8809,7 @@ Proof.
 
     { destruct bs1 as [|b bs1]; allsimpl; ginv;[].
       destruct arg2 as [v|op bs]; allsimpl; ginv;[].
-      dopid op as [can|ncan|exc|abs] Case; allsimpl; ginv;[].
+      dopid op as [can|ncan|nsw|exc|abs] Case; allsimpl; ginv;[].
       destruct can; allsimpl; ginv;[].
       destruct bs; allsimpl; ginv.
       boolvar; ginv.

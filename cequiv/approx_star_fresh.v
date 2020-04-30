@@ -127,7 +127,7 @@ Inductive same_value_like {o} : @NTerm o -> @NTerm o -> Type :=
 Hint Constructors same_value_like.
 
 Lemma approx_starbts_nil {o} :
-  forall lib (op : @Opid o), approx_starbts lib op [] [].
+  forall lib (op : @Opid o), approx_starbts op lib [] [].
 Proof.
   introv; unfold approx_starbts, lblift_sub; simpl; dands; tcsp.
 Qed.
@@ -141,7 +141,7 @@ Lemma howe_lemma2_implies_same_value_like {o} :
     -> approx_star lib t u
     -> {v : NTerm
         & same_value_like t v
-        # approx_starbts lib (get_op t) (get_bterms t) (get_bterms v)
+        # approx_starbts (get_op t) lib (get_bterms t) (get_bterms v)
         # reduces_to lib u v}.
 Proof.
   introv ispt ispu isv ap.
@@ -354,7 +354,7 @@ Qed.
 
 Lemma blift_sub_diff {o} :
   forall vs lib op (b1 b2 : @BTerm o),
-    blift_sub lib op (approx_star lib) b1 b2
+    blift_sub op approx_star lib b1 b2
     -> {lv : list NVar
         $ {nt1,nt2 : NTerm
         $ (
@@ -1215,7 +1215,7 @@ Lemma approx_star_pushdown_fresh_if_subst {o} :
     -> isprog_vars [v1] t1
     -> isprog_vars [v2] t2
     -> same_value_like (subst t1 v1 (mk_utoken a)) (subst t2 v2 (mk_utoken a))
-    -> approx_starbts lib (get_op t1) (get_bterms (subst t1 v1 (mk_utoken a))) (get_bterms (subst t2 v2 (mk_utoken a)))
+    -> approx_starbts (get_op t1) lib (get_bterms (subst t1 v1 (mk_utoken a))) (get_bterms (subst t2 v2 (mk_utoken a)))
     -> approx_star lib (pushdown_fresh v1 t1) (pushdown_fresh v2 t2).
 Proof.
   introv ni1 ni2 isp1 isp2 svl ap.

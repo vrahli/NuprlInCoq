@@ -67,10 +67,22 @@ Proof.
     pose proof (Hind _ csk H1c H1v eq_refl) as XX. exrepnd.
     destruct csk as [sckv| csko csklbt]; [inverts Hck; fail|].
 
-    dopid csko as [cskoc| cskon | cskexc | cskabs] Case.
+    dopid csko as [cskoc| cskon | csknsw | cskexc | cskabs] Case.
     + Case "Can".
       simpl in Hck. inverts Hck. exists j; sp. omega.
     + Case "NCan".
+      exists (S j). dands;[|omega].
+      allsimpl.
+      rw XX1.
+      unfold iswfpk in H1v; destruct a.
+      * unfold isinteger in H1v; exrepnd; subst.
+        csunf; simpl.
+        rw Hck;sp.
+      * unfold ispk in H1v; exrepnd; subst.
+        csunf; simpl; allrw @pk2term_eq; dcwf h; allsimpl;
+        try (rw Hck;sp);[].
+        unfold co_wf in Heqh; allrw @get_param_from_cop_pk2can; ginv.
+    + Case "NSwapCs2".
       exists (S j). dands;[|omega].
       allsimpl.
       rw XX1.
@@ -153,10 +165,16 @@ Proof.
     unfold isinteger in H1v; exrepnd; subst.
     destruct csk as [sckv|csko csklbt]; [inverts Hck; fail|].
 
-    dopid csko as [cskoc| cskon | cskexc | cskabs] Case.
+    dopid csko as [cskoc| cskon | csknsw | cskexc | cskabs] Case.
     + Case "Can".
       simpl in Hck. inverts Hck. exists j; sp. omega.
     + Case "NCan".
+      exists (S j). dands;[|omega].
+      simpl.
+      rw XX1.
+      csunf; simpl.
+      rw Hck;sp.
+    + Case "NSwapCs2".
       exists (S j). dands;[|omega].
       simpl.
       rw XX1.

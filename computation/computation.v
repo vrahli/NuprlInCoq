@@ -35,7 +35,7 @@ Require Export substitution.
 Require Export computation1.
 
 Require Export fresh_cs.
-Require Export swap_cs.
+Require Export computation_swap0.
 
 
 (** printing #  $\times$ #×# *)
@@ -267,36 +267,30 @@ Definition compute_step_last_cs {o}
   | _, _, _ => cfailure bad_args t
   end.
 
-Definition sw_sub {o} a b vs : @Sub o :=
-  map (fun v => (v,mk_swap_cs2 a b (mk_var v))) vs.
+Definition sw_sub {o} sw vs : @Sub o :=
+  map (fun v => (v,mk_swap_cs2 sw (mk_var v))) vs.
 
-Definition push_swap_cs_sub_term {o} a b vs (t : @NTerm o) : NTerm :=
-  lsubst_aux t (sw_sub a b vs).
+Definition push_swap_cs_sub_term {o} sw vs (t : @NTerm o) : NTerm :=
+  lsubst_aux t (sw_sub sw vs).
 
-Definition push_swap_cs_bterm {o} a b (bt : @BTerm o) : BTerm :=
+Definition push_swap_cs_bterm {o} sw (bt : @BTerm o) : BTerm :=
   match bt with
 (*  | bterm vs t => bterm vs (mk_swap_cs2 a b t)*)
-  | bterm vs t => bterm vs (mk_swap_cs2 a b (push_swap_cs_sub_term a b vs t))
+  | bterm vs t => bterm vs (mk_swap_cs2 sw (push_swap_cs_sub_term sw vs t))
   end.
 
-Definition push_swap_cs_bterms {o} a b (bs : list (@BTerm o)) : list BTerm :=
-  map (push_swap_cs_bterm a b) bs.
+Definition push_swap_cs_bterms {o} sw (bs : list (@BTerm o)) : list BTerm :=
+  map (push_swap_cs_bterm sw) bs.
 
-Definition push_swap_cs_can {o} a b can (bs : list (@BTerm o)) : NTerm :=
-  oterm (Can (swap_cs_can (a,b) can)) (push_swap_cs_bterms a b bs).
-
-Definition compute_step_swap_cs2 {o} nfo arg1c arg1bts (btsr : list (@BTerm o)) (t : @NTerm o) :=
-  match btsr with
-  | [] => csuccess (push_swap_cs_can (swap_cs_nfo_name1 nfo) (swap_cs_nfo_name2 nfo) arg1c arg1bts)
-  | _ => cfailure bad_args t
-  end.
+Definition push_swap_cs_can {o} sw can (bs : list (@BTerm o)) : NTerm :=
+  oterm (Can (swap_cs_can sw can)) (push_swap_cs_bterms sw bs).
 
 Definition compute_step_swap_cs1_aux {p}
            (arg1c arg2c : @CanonicalOp p)
            (arg1bts arg2bts btsr : list (@BTerm p))
            (t : NTerm) :=
   match arg1c, arg2c, arg1bts, arg2bts, btsr with
-  | Ncseq n1, Ncseq n2, [], [], [bterm [] t] => csuccess (mk_swap_cs2 n1 n2 t)
+  | Ncseq n1, Ncseq n2, [], [], [bterm [] t] => csuccess (mk_swap_cs2 (n1,n2) t)
   | _, _, _, _, _ => cfailure bad_args t
   end.
 
@@ -307,6 +301,39 @@ Definition compute_step_swap_cs1 {o} btsr (t : @NTerm o) arg1c arg1bts cstep arg
     | bterm [] (vterm v) :: btsr3 => cfailure bad_args t
     | bterm [] (oterm (Can arg2c) arg2bts) :: btsr3 =>
       compute_step_swap_cs1_aux arg1c arg2c arg1bts arg2bts btsr3 t
+    | bterm [] (oterm Exc _ as arg2nt) :: _ => csuccess arg2nt
+    | bterm [] (oterm _ _) :: btsr3 => (* ncan/abs *)
+      on_success cstep (fun f => oterm (NCan ncr) (bterm [] arg1::bterm [] f::btsr3))
+  end.
+
+(*
+(* We don't really need to reduce the argument here but it does not hurt *)
+Definition compute_step_swap_csb {o} nfo arg1c arg1bts (btsr : list (@BTerm o)) (t : @NTerm o) :=
+  match btsr with
+  | [] => csuccess (swap_cs_term nfo (oterm (Can arg1c) arg1bts))
+  | _ => cfailure bad_args t
+  end.
+*)
+
+Definition push_swap_cs0 {o} sw (t : @NTerm o) : NTerm :=
+  push_swap_cs_sub_term sw (free_vars t) (swap_cs_term sw t).
+
+Definition compute_step_swap_cs0_aux {p}
+           (arg1c arg2c : @CanonicalOp p)
+           (arg1bts arg2bts btsr : list (@BTerm p))
+           (t : NTerm) :=
+  match arg1c, arg2c, arg1bts, arg2bts, btsr with
+  | Ncseq n1, Ncseq n2, [], [], [bterm [] t] => csuccess (push_swap_cs0 (n1,n2) t)
+  | _, _, _, _, _ => cfailure bad_args t
+  end.
+
+Definition compute_step_swap_cs0 {o} btsr (t : @NTerm o) arg1c arg1bts cstep arg1 ncr :=
+  match btsr with
+    | [] => cfailure bad_args t
+    | bterm (_ :: _) _ :: _ => cfailure bad_args t
+    | bterm [] (vterm v) :: btsr3 => cfailure bad_args t
+    | bterm [] (oterm (Can arg2c) arg2bts) :: btsr3 =>
+      compute_step_swap_cs0_aux arg1c arg2c arg1bts arg2bts btsr3 t
     | bterm [] (oterm Exc _ as arg2nt) :: _ => csuccess arg2nt
     | bterm [] (oterm _ _) :: btsr3 => (* ncan/abs *)
       on_success cstep (fun f => oterm (NCan ncr) (bterm [] arg1::bterm [] f::btsr3))
@@ -361,7 +388,7 @@ Definition compute_step_can {o}
     | NCompSeq1  nfo => compute_step_comp_seq1 lib nfo arg1c t arg1bts btsr
     | NCompSeq2  nfo => compute_step_comp_seq2 lib nfo arg1c t arg1bts btsr
     | NSwapCs1       => compute_step_swap_cs1 btsr t arg1c arg1bts comp arg1 ncr
-    | NSwapCs2   nfo => compute_step_swap_cs2 nfo arg1c arg1bts btsr t
+(*    | NSwapCs0       => compute_step_swap_cs0 btsr t arg1c arg1bts comp arg1 ncr*)
 (*    | NSwapCs        => compute_step_swap_cs btsr t arg1c arg1bts comp arg1 ncr*)
     | NLDepth        => cfailure "LDepth has no arguments" t
     | NCompOp    op  => co btsr t arg1bts arg1c op comp arg1 ncr
@@ -578,6 +605,8 @@ SearchAbout Fix_F_sub.
 Abort.
 *)
 
+Definition sizep {o} (p : @plibrary o # @NTerm o) := size (snd p).
+
 (** Let's now do that by hand using [Fix] *)
 Lemma compute_step'_size1 {o} :
   forall ncan v vs (u : @NTerm o) bs a,
@@ -588,10 +617,10 @@ Proof.
 Qed.
 
 Lemma compute_step'_size2 {o} :
-  forall ncr arg1c (arg1bts : list (@BTerm o)) l x bs,
-    size x < size (oterm (NCan ncr) (bterm [] (oterm (Can arg1c) arg1bts) :: bterm l x :: bs)).
+  forall lib ncr arg1c (arg1bts : list (@BTerm o)) l x bs,
+    sizep (lib,x) < sizep (lib,oterm (NCan ncr) (bterm [] (oterm (Can arg1c) arg1bts) :: bterm l x :: bs)).
 Proof.
-  introv; simpl; omega.
+  unfold sizep; introv; simpl; omega.
 Qed.
 
 Lemma compute_step'_size3 {o} :
@@ -619,44 +648,72 @@ Definition compute_step_ncan_nil {o} (lib : @plibrary o) ncan (t : @NTerm o) : C
   | _ => cfailure bad_args t
   end.
 
+Lemma compute_step'_size_cs {o} :
+  forall sw (u : @NTerm o),
+    size (swap_cs_term sw u) < size (oterm (NSwapCs2 sw) [bterm [] u]).
+Proof.
+  introv.
+  simpl; autorewrite with slow; try omega.
+Qed.
+
+(*
+  [x] is the initial term
+ *)
+Definition compute_step_swap_cs2 {o} sw (u : @NTerm o) comp :=
+  match u with
+  | oterm (Can c) l      => csuccess (push_swap_cs_can sw c l)
+  | oterm Exc l          => csuccess (oterm Exc l)
+  | oterm (NCan _) _     => on_success comp (fun w => mk_swap_cs2 sw (swap_cs_term sw w))
+  | oterm (NSwapCs2 _) _ => on_success comp (fun w => mk_swap_cs2 sw (swap_cs_term sw w))
+  | oterm (Abs _) _      => on_success comp (fun w => mk_swap_cs2 sw (swap_cs_term sw w))
+  | vterm _ => cfailure compute_step_error_not_closed u
+  end.
+
 Definition compute_step {o}
            (lib : @plibrary o)
            (t   : @NTerm o) : Comput_Result :=
-  @Fix NTerm
-       (fun a b => lt (size a) (size b))
-       (measure_wf lt_wf size)
+  @Fix (plibrary # NTerm)
+       (fun a b => lt (sizep a) (sizep b))
+       (measure_wf lt_wf sizep)
        (fun _ => Comput_Result)
-       (fun t =>
-          match t with
-            | vterm v => fun _ => cfailure compute_step_error_not_closed t
-            | oterm (Can _) _ => fun _ => csuccess t
-            | oterm Exc _ => fun _ => csuccess t
-            | oterm (NCan ncan) [] => fun _ => compute_step_ncan_nil lib ncan t
-            | oterm (NCan nc) (bterm [] (vterm v) :: bs) => fun _ => cfailure compute_step_error_not_closed t
-            | oterm (NCan ncan) (bterm (v::vs) u :: bs) =>
+       (fun libterm =>
+          match libterm with
+            | (lib,vterm v as t) => fun _ => cfailure compute_step_error_not_closed t
+            | (lib,oterm (Can _) _ as t) => fun _ => csuccess t
+            | (lib,oterm Exc _ as t) => fun _ => csuccess t
+            | (lib,oterm (NCan ncan) [] as t) => fun _ => compute_step_ncan_nil lib ncan t
+            | (lib,oterm (NCan nc) (bterm [] (vterm v) :: bs) as t) => fun _ => cfailure compute_step_error_not_closed t
+            | (lib,oterm (NCan ncan) (bterm (v::vs) u :: bs) as t) =>
               fun F =>
                 let a := get_fresh_atom lib u in
                 compute_step_fresh
                   lib ncan t v vs u bs
-                  (F (subst u v (mk_utoken a))
+                  (F (lib,subst u v (mk_utoken a))
                      (compute_step'_size1 ncan v vs u bs a))
                   a
-            | oterm (NCan ncr) (bterm [] (oterm (Can arg1c) arg1bts as arg1) :: btsr) =>
+            | (lib,oterm (NCan ncr) (bterm [] (oterm (Can arg1c) arg1bts as arg1) :: btsr) as t) =>
               fun F => compute_step_can lib t ncr arg1c arg1bts arg1 btsr
                                         ((match btsr with
-                                            | bterm l x :: bs => fun F => F x (compute_step'_size2 ncr arg1c arg1bts l x bs)
+                                            | bterm l x :: bs => fun F => F (lib,x) (compute_step'_size2 lib ncr arg1c arg1bts l x bs)
                                             | _ => fun _ => cfailure bad_args t
                                           end) F)
             (* assuming qst arg is always principal *)
             (* if the principal argument is an exception, we raise the exception *)
-            | oterm (NCan ncr) ((bterm [] (oterm Exc arg1bts))::btsr) =>
+            | (lib,oterm (NCan ncr) ((bterm [] (oterm Exc arg1bts))::btsr) as t) =>
               fun _ => compute_step_catch ncr t arg1bts btsr
             (* if the principal argument is non-canonical or an abstraction then we compute on that term *)
-            | oterm (NCan ncr) ((bterm [] (oterm _ _ as arg1nt))::btsr) =>
-              fun F => on_success (F arg1nt (compute_step'_size3 ncr arg1nt btsr)) (fun f => oterm (NCan ncr) (bterm [] f :: btsr))
-            | oterm (Abs opabs) bs => fun F => compute_step_lib lib opabs bs
+            | (lib,oterm (NCan ncr) ((bterm [] (oterm _ _ as arg1nt))::btsr) as t) =>
+              fun F => on_success
+                         (F (lib,arg1nt) (compute_step'_size3 ncr arg1nt btsr))
+                         (fun f => oterm (NCan ncr) (bterm [] f :: btsr))
+            | (lib,oterm (NSwapCs2 sw) [bterm [] u] as t) =>
+              fun F => compute_step_swap_cs2
+                         sw u
+                         (F (swap_cs_plib sw lib,swap_cs_term sw u) (compute_step'_size_cs sw u))
+            | (lib,oterm (NSwapCs2 sw) _ as t) => fun _ => cfailure bad_args t
+            | (lib,oterm (Abs opabs) bs as t) => fun F => compute_step_lib lib opabs bs
           end)
-       t.
+       (lib,t).
 
 Definition compute_step_unfold {o}
          (lib : @plibrary o)
@@ -685,68 +742,108 @@ Definition compute_step_unfold {o}
     (* if the principal argument is non-canonical or an abstraction then we compute on that term *)
     | oterm (NCan ncr) ((bterm [] arg1nt)::btsr) =>
       on_success (compute_step lib arg1nt) (fun f => oterm (NCan ncr) (bterm [] f :: btsr))
+    | oterm (NSwapCs2 sw) [bterm [] u] =>
+      compute_step_swap_cs2 sw u (compute_step (swap_cs_plib sw lib) (swap_cs_term sw u))
+    | oterm (NSwapCs2 sw) _ => cfailure bad_args t
     | oterm (Abs opabs) bs => compute_step_lib lib opabs bs
   end.
 
+
+Ltac dterm name :=
+  match goal with
+  (* ** on conclusion ** *)
+  | [ |- context[ match ?c with | [] => _ | _ :: _ => _ end ] ] =>
+    let name0 := fresh name in
+    let name1 := fresh name in
+    let name2 := fresh name in
+    remember c as name0; destruct name0 as [|name1 name2]
+  | [ |- context[ match ?c with | vterm _ => _ | oterm _ _ => _ end ] ] =>
+    let name0 := fresh name in
+    let name1 := fresh name in
+    let name2 := fresh name in
+    remember c as name0; destruct name0 as [|name1 name2]
+  | [ |- context[ match ?c with | Can _ => _ | NCan _ => _ | NSwapCs2 _ => _ | Exc => _ | Abs _ => _ end ] ] =>
+    let name0 := fresh name in
+    let name1 := fresh name in
+    remember c as name0; destruct name0 as [name1|name1|name1|name1|name1]
+  | [ |- context[ match ?c with | bterm _ _ => _ end ] ] =>
+    let name0 := fresh name in
+    let name1 := fresh name in
+    let name2 := fresh name in
+    remember c as name0; destruct name0 as [name1 name2]
+  | [ |- context[ match (match ?c with | csuccess _ => _ | cfailure _ _ => _ end) with _ => _ end ] ] =>
+    let name0 := fresh name in
+    let name1 := fresh name in
+    let name2 := fresh name in
+    remember c as name0; destruct name0 as [name1|name1 name2]
+  | [ |- context[ match ?c with | csuccess _ => _ | cfailure _ _ => _ end ] ] =>
+    let name0 := fresh name in
+    let name1 := fresh name in
+    let name2 := fresh name in
+    remember c as name0; destruct name0 as [name1|name1 name2]
+  | [ |- context[ match ?c with _ => _ end ] ] =>
+    match type of c with
+    | CanonicalOp =>
+      let name0 := fresh name in
+      remember c as name0; destruct name0
+    | NonCanonicalOp =>
+      let name0 := fresh name in
+      remember c as name0; destruct name0
+    end
+
+  (* ** on hypotheses ** *)
+  | [ H : context[ match ?c with | [] => _ | _ :: _ => _ end ] |- _ ] =>
+    let name0 := fresh name in
+    let name1 := fresh name in
+    let name2 := fresh name in
+    remember c as name0; destruct name0 as [|name1 name2]
+  | [ H : context[ match ?c with | vterm _ => _ | oterm _ _ => _ end ] |- _ ] =>
+    let name0 := fresh name in
+    let name1 := fresh name in
+    let name2 := fresh name in
+    remember c as name0; destruct name0 as [|name1 name2]
+  | [ H : context[ match ?c with | Can _ => _ | NCan _ => _ | NSwapCs2 _ => _ | Exc => _ | Abs _ => _ end ] |- _ ] =>
+    let name0 := fresh name in
+    let name1 := fresh name in
+    remember c as name0; destruct name0 as [name1|name1|name1|name1|name1]
+  | [ H : context[ match ?c with | bterm _ _ => _ end ] |- _ ] =>
+    let name0 := fresh name in
+    let name1 := fresh name in
+    let name2 := fresh name in
+    remember c as name0; destruct name0 as [name1 name2]
+  | [ H : context[ match (match ?c with | csuccess _ => _ | cfailure _ _ => _ end) with _ => _ end ] |- _ ] =>
+    let name0 := fresh name in
+    let name1 := fresh name in
+    let name2 := fresh name in
+    remember c as name0; destruct name0 as [name1|name1 name2]
+  | [ H : context[ match ?c with | csuccess _ => _ | cfailure _ _ => _ end ] |- _ ] =>
+    let name0 := fresh name in
+    let name1 := fresh name in
+    let name2 := fresh name in
+    remember c as name0; destruct name0 as [name1|name1 name2]
+  | [ H : context[ match ?c with _ => _ end ] |- _ ] =>
+    match type of c with
+    | CanonicalOp =>
+      let name0 := fresh name in
+      remember c as name0; destruct name0
+    | NonCanonicalOp =>
+      let name0 := fresh name in
+      remember c as name0; destruct name0
+    end
+  end.
+
+Ltac dterms name :=
+  repeat (dterm name; subst; simpl in *; ginv; eauto 2 with slow).
 
 Lemma compute_step_eq_unfold {o} :
   forall lib (t : @NTerm o),
     compute_step lib t = compute_step_unfold lib t.
 Proof.
   destruct t as [v|op bs]; simpl; try reflexivity.
-  dopid op as [can|ncan|exc|abs] Case; try reflexivity.
-  destruct bs as [|b bs]; try reflexivity.
-  destruct b as [l t].
-  destruct l as [|v vs]; try reflexivity.
-  - destruct t as [v1|op1 bs1]; try reflexivity;[].
-    dopid op1 as [can1|ncan1|exc1|abs2] SCase; try reflexivity.
-    + unfold compute_step at 1.
-      destruct bs; try reflexivity.
-      destruct b.
-      rw Fix_eq; simpl.
-      * f_equal.
-      * introv F.
-        destruct x as [v'|op bs']; auto.
-        destruct op; auto.
-        destruct bs'; auto.
-        destruct b;[].
-        destruct l0; auto;[|].
-        { destruct n1; auto;[].
-          destruct o0; auto; try (complete (f_equal; tcsp)).
-          destruct bs'; auto.
-          destruct b; auto.
-          apply f_equal; tcsp. }
-        { f_equal; tcsp. }
-    + unfold compute_step at 1.
-      rw Fix_eq; simpl.
-      * f_equal.
-      * introv F.
-        destruct x as [v'|op bs']; auto.
-        destruct op; auto.
-        destruct bs'; auto.
-        destruct b;[].
-        destruct l; auto.
-        { destruct n0; auto.
-          destruct o0; auto; try (complete (f_equal; tcsp)).
-          destruct bs'; auto.
-          destruct b; auto.
-          apply f_equal; tcsp. }
-        { f_equal; tcsp. }
-  - unfold compute_step at 1.
-    rw Fix_eq; simpl.
-    + f_equal.
-    + introv F.
-      destruct x as [v'|op bs']; auto.
-      destruct op; auto.
-      destruct bs'; auto.
-      destruct b;[].
-      destruct l; auto.
-      { destruct n0; auto.
-        destruct o0; auto; try (complete (f_equal; tcsp)).
-        destruct bs'; auto.
-        destruct b; auto.
-        apply f_equal; tcsp. }
-      { f_equal; tcsp. }
+  dopid op as [can|ncan|nsw|exc|abs] Case; try reflexivity; dterms w; try reflexivity;
+    try (complete (unfold compute_step at 1;
+                   rw Fix_eq; simpl; auto;[];
+                   introv F; repnd; simpl in *; dterms w; try rewrite F; auto)).
 Qed.
 
 (*

@@ -421,9 +421,9 @@ Qed.
 Lemma approx_star_bterm_lsubst_congr {p} :
   forall lib (bt1 bt2 : BTerm) sub op,
     @prog_sub p sub
-    -> approx_star_bterm lib op bt1 bt2
+    -> approx_star_bterm op lib bt1 bt2
     -> approx_star_bterm
-         lib op
+         op lib
          (lsubst_bterm_aux bt1 sub)
          (lsubst_bterm_aux bt2 sub).
 Proof.
@@ -611,7 +611,7 @@ Qed.
 Lemma approx_starbt_change {p} :
   forall lib op bt1 bt2 (lvn : list NVar),
     op <> NCan NFresh
-    -> approx_star_bterm lib op bt1 bt2
+    -> approx_star_bterm op lib bt1 bt2
     -> no_repeats lvn
     -> length lvn = num_bvars bt1
     -> disjoint lvn (free_vars_bterm bt1  ++ free_vars_bterm bt2)
@@ -816,7 +816,7 @@ Qed.
 Lemma approx_starbt_change_fr {p} :
   forall lib op bt1 bt2 (lvn : list NVar),
     op = NCan NFresh
-    -> approx_star_bterm lib op bt1 bt2
+    -> approx_star_bterm op lib bt1 bt2
     -> no_repeats lvn
     -> length lvn = num_bvars bt1
     -> disjoint lvn (free_vars_bterm bt1  ++ free_vars_bterm bt2)
@@ -883,9 +883,9 @@ Qed.
 
 Lemma approx_star_open_bt_trans {pp} :
   forall lib op (a b c : @BTerm pp),
-  approx_star_bterm lib op a b
+  approx_star_bterm op lib a b
   -> approx_open_bterm lib b c
-  -> approx_star_bterm lib op a c.
+  -> approx_star_bterm op lib a c.
 Proof.
   introv Has Hao.
   applydup @blift_sub_numbvars in Has.
@@ -985,7 +985,7 @@ Lemma approx_star_otd {p} : forall lib o lbt b,
   -> {lbt' : (list (@BTerm p))  $  isprogram (oterm o lbt') 
         # approx_open lib (oterm o lbt') b
         # length lbt = length lbt'
-        # approx_starbts lib o lbt lbt'}.
+        # approx_starbts o lib lbt lbt'}.
 Proof.
   introv Has Hisp Hispo.
   invertsna Has Hapb.
@@ -1049,7 +1049,7 @@ Lemma howe_lemma2 {p} :
     -> isprogram b
     -> approx_star lib t b
     -> {lbt' : (list BTerm)
-        & approx_starbts lib (Can c) lbt lbt'
+        & approx_starbts (Can c) lib lbt lbt'
         # computes_to_value lib b (oterm (Can c) lbt')}.
 Proof.
   introv Hprt Hprb Hap.
@@ -1208,8 +1208,8 @@ Lemma howe_lemma3 : forall (a a' b : NTerm),
   in the proof of [howe_lemma3].
 *)
 
-Definition extensional_op_ind {p} lib k :=
-  forall (u u' v : @NTerm p),
+Definition extensional_op_ind {p} k :=
+  forall lib (u u' v : @NTerm p),
     isprogram u
     -> isprogram u'
     -> isprogram v
@@ -1227,8 +1227,8 @@ Definition extensional_op {p} (o : @Opid p) :=
     (Hpt : isprogram (oterm o lbt))
     (Hpt' : isprogram (oterm o lbt'))
     (Hcv : computes_to_val_like_in_max_k_steps lib (oterm o lbt) a (S k))
-    (Has : lblift_sub lib o (approx_star lib) lbt lbt')
-    (Hind : @extensional_op_ind p lib k),
+    (Has : lblift_sub o approx_star lib lbt lbt')
+    (Hind : @extensional_op_ind p k),
     approx_star lib a (oterm o lbt').
 
 (** %\noindent \\*% It is immediately clear that all the canonical [Opid]s of
@@ -1268,7 +1268,7 @@ Definition extensional_opc {p} (o : @Opid p) :=
          (k:nat),
     programs [a,(oterm o lbt),(oterm o lbt')]
     -> computes_to_value_in_max_k_steps lib (S k) (oterm o lbt) a
-    -> lblift_sub lib o (approx_star lib) lbt lbt'
+    -> lblift_sub o approx_star lib lbt lbt'
     -> (forall (u u' v : @NTerm p),
           programs [u,u',v]
           -> computes_to_value_in_max_k_steps lib k u u'
@@ -1280,7 +1280,7 @@ Definition extensional_opc {p} (o : @Opid p) :=
 
 Lemma approx_star_bterm_nobnd2 {p} :
   forall lib op a b,
-    approx_star_bterm lib op (bterm [] a) (@bterm p [] b)
+    approx_star_bterm op lib (bterm [] a) (@bterm p [] b)
     -> approx_star lib a b.
 Proof.
   introv Has.
@@ -1419,7 +1419,7 @@ Ltac lsubst_nest_tac :=
 Lemma apply_bterm_approx_star_congr {p} :
   forall lib op bt1 bt2 lnt1 lnt2,
     op <> NCan NFresh
-    -> approx_star_bterm lib op bt1 bt2
+    -> approx_star_bterm op lib bt1 bt2
     -> bin_rel_nterm (@approx_star p lib) lnt1 lnt2 (*enforces that the lengths are equal*)
     -> length lnt1 = num_bvars bt1 (*only required for simplicity*)
     -> length lnt1 = length lnt2 (*only required for simplicity*)
@@ -1478,8 +1478,8 @@ Qed.
 
 Lemma blift_sub_nobnd_congr {o} :
   forall lib R op (t1 t2 : @NTerm o),
-  R t1 t2
-  -> blift_sub lib op R (bterm [] t1) (bterm [] t2).
+  R lib t1 t2
+  -> blift_sub op R lib (bterm [] t1) (bterm [] t2).
 Proof.
   introv Ht.
   exists (@nil NVar) t1 t2; dands; eauto with slow.
@@ -1491,7 +1491,7 @@ Hint Unfold lblift lblift_sub : slow.
 Hint Resolve approx_star_congruence2 blift_nobnd_congr blift_sub_nobnd_congr : slow.
 
 Theorem approx_star_congruence3 {p} : forall lib o lbt1 lbt2,
-  approx_starbts lib o lbt1 lbt2
+  approx_starbts o lib lbt1 lbt2
   -> @isprogram p (oterm o lbt2)
   -> approx_star lib (oterm o lbt1) (oterm o lbt2).
 Proof.
@@ -1518,7 +1518,7 @@ match goal with
   ))
 | [  |- approx_star_bterm _ _ (bterm [] ?t1) (bterm [] ?t2)] =>
   apply blift_sub_nobnd_congr
-| [  |- blift_sub _ _ (approx_star _) (bterm [] ?t1) (bterm [] ?t2)] =>
+| [  |- blift_sub _ approx_star _ (bterm [] ?t1) (bterm [] ?t2)] =>
   apply blift_sub_nobnd_congr
 end.
 
@@ -1533,14 +1533,14 @@ Ltac duplicateas H newname :=
 
 
 Ltac approxrelbtd :=
-  match goal with 
+  match goal with
   | [H: 0 = length _ |- _ ] => symmetry in H; apply length0 in H; subst
   | [H: 1 = length _ |- _ ] => symmetry in H; apply length1 in H; exrepnd; subst
   | [H: 2 = length _ |- _ ] => symmetry in H; apply length2 in H; exrepnd; subst
   | [H: 3 = length _ |- _ ] => symmetry in H; apply length3 in H; exrepnd; subst
   | [H: 4 = length _ |- _ ] => symmetry in H; apply length4 in H; exrepnd; subst
   | [H: _ = S (length _) |- _ ] =>  inverts H as H
-  | [H: (forall _:nat, (_< ?m) -> blift_sub _ _ _ _ _)  |- _ ] => 
+  | [H: (forall _:nat, (_< ?m) -> blift_sub _ _ _ _ _)  |- _ ] =>
     fail_if_not_number m;
     (let XXX:= fresh H "0bt" in
       assert (0<m) as XXX by omega; apply H in XXX; 
@@ -1555,17 +1555,17 @@ Ltac approxrelbtd :=
       assert (3<m) as XXX by omega; apply H in XXX; 
       unfold selectbt in XXX; simpl in XXX); clear H
   | [H: approx_star_bterm _ _ (bterm [] _) (bterm [] _) |- _] => hide_hyp H
-  | [H: blift_sub _ _ (approx_star _) (bterm [] _) (bterm [] _) |- _] => hide_hyp H
+  | [H: blift_sub _ approx_star _ (bterm [] _) (bterm [] _) |- _] => hide_hyp H
   | [H: approx_star_bterm _ _ (bterm [_] _) (bterm [_] _) |- _] => hide_hyp H
-  | [H: blift_sub _ _ (approx_star _) (bterm [_] _) (bterm [_] _) |- _] => hide_hyp H
+  | [H: blift_sub _ approx_star _ (bterm [_] _) (bterm [_] _) |- _] => hide_hyp H
   | [H: approx_star_bterm _ _ (bterm [_,_] _) (bterm [_,_] _) |- _] => hide_hyp H
-  | [H: blift_sub _ _ (approx_star _) (bterm [_,_] _) (bterm [_,_] _) |- _] => hide_hyp H
+  | [H: blift_sub _ approx_star _ (bterm [_,_] _) (bterm [_,_] _) |- _] => hide_hyp H
   | [H: approx_star_bterm _ _ (bterm [] ?nt) _ |- _] =>
     apply approx_star_bterm_nobnd in H;
       let ntr := fresh nt "r" in
       (destruct H as [ntr H]);
         repnd; subst
-  | [H: blift_sub _ _ (approx_star _) (bterm [] ?nt) _ |- _] =>
+  | [H: blift_sub _ approx_star _ (bterm [] ?nt) _ |- _] =>
     apply approx_star_bterm_nobnd in H;
       let ntr := fresh nt "r" in
       (destruct H as [ntr H]);
@@ -1576,7 +1576,7 @@ Ltac approxrelbtd :=
       let ntr := fresh nt "r" in
       (destruct H as [vr H]; destruct H as [ntr H]);
         repnd; subst
-  | [H: blift_sub _ _ (approx_star _) (bterm [?v] ?nt) _ |- _] =>
+  | [H: blift_sub _ approx_star _ (bterm [?v] ?nt) _ |- _] =>
     apply approx_star_btermd_1var in H;
       let vr := fresh v "r" in
       let ntr := fresh nt "r" in
@@ -1589,7 +1589,7 @@ Ltac approxrelbtd :=
       let ntr := fresh nt "r" in
       (destruct H as [v1r H]; destruct H as [v2r H]; destruct H as [ntr H]);
         repnd; subst
-  | [H: blift_sub _ _ (approx_star _) (bterm [?v1, ?v2] ?nt) _ |- _] =>
+  | [H: blift_sub _ approx_star _ (bterm [?v1, ?v2] ?nt) _ |- _] =>
     apply approx_star_btermd_2var in H;
       let v1r := fresh v1 "r" in
       let v2r := fresh v2 "r" in
@@ -2237,7 +2237,7 @@ Proof.
     destruct b as [l t].
     destruct l; ginv.
     destruct t as [z|op bts]; ginv;[].
-    dopid op as [can|ncan|exc|abs] Case; ginv.
+    dopid op as [can|ncan|nsw|exc|abs] Case; ginv.
 
     + Case "Can".
       apply compute_step_parallel_success in comp1; subst.
@@ -2250,6 +2250,13 @@ Proof.
       remember (compute_step lib (oterm (NCan ncan) bts)) as comp'; destruct comp'; ginv.
       apply IHk in comp0; clear IHk; exrepnd; subst; allunfold @nobnd; ginv.
       exists x (oterm (NCan ncan) bts) bs' (S m); dands; auto.
+      rw @computes_to_val_like_in_max_k_steps_S.
+      exists u; auto.
+
+    + Case "NSwapCs2".
+      remember (compute_step lib (oterm (NSwapCs2 nsw) bts)) as comp'; destruct comp'; ginv.
+      apply IHk in comp0; clear IHk; exrepnd; subst; allunfold @nobnd; ginv.
+      exists x (oterm (NSwapCs2 nsw) bts) bs' (S m); dands; auto.
       rw @computes_to_val_like_in_max_k_steps_S.
       exists u; auto.
 
@@ -2373,7 +2380,7 @@ Hint Resolve implies_isprogram_mk_comp_seq2 : slow.
 
 Lemma approx_star_bterm_nobnd_iff {o} :
   forall lib (op : Opid) (a b : @NTerm o),
-    approx_star_bterm lib op (bterm [] a) (bterm [] b) <=> approx_star lib a b.
+    approx_star_bterm op lib (bterm [] a) (bterm [] b) <=> approx_star lib a b.
 Proof.
   introv; split; intro h.
   - eapply approx_star_bterm_nobnd2; eauto.
@@ -2385,7 +2392,7 @@ Proof.
 Qed.
 
 Lemma approx_starbts_nil {o} :
-  forall (lib : @plibrary o) nc, approx_starbts lib nc [] [].
+  forall (lib : @plibrary o) nc, approx_starbts nc lib [] [].
 Proof.
   introv; unfold approx_starbts, lblift_sub; simpl; dands; tcsp.
 Qed.

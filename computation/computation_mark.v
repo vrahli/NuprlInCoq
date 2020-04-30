@@ -1179,8 +1179,9 @@ Proof.
   repndors; exrepnd; subst.
   - exists (Can can') ([] : list (@BTerm o)) [nobnd t1, nobnd t2]; auto.
   - unfold isnoncan_like in c3; repndors.
-    + apply isnoncan_implies in c3; exrepnd; subst.
-      exists (@NCan o c) bterms bs'; auto.
+    + apply isnoncan_implies in c3; repndors; exrepnd; subst.
+      { exists (@NCan o c) bterms bs'; auto. }
+      { exists (@NSwapCs2 o sw) bs bs'; auto. }
     + apply isabs_implies in c3; exrepnd; subst.
       exists (@Abs o abs) bterms bs'; auto.
   - apply isexc_implies2 in c1; exrepnd; subst.
@@ -1203,8 +1204,9 @@ Proof.
   repndors; exrepnd; subst.
   - exists (Can can') ([] : list (@BTerm o)) ([] : list (@BTerm o)); auto.
   - unfold isnoncan_like in c3; repndors.
-    + apply isnoncan_implies in c3; exrepnd; subst.
-      exists (@NCan o c) bterms bs'; auto.
+    + apply isnoncan_implies in c3; repndors; exrepnd; subst.
+      { exists (@NCan o c) bterms bs'; auto. }
+      { exists (@NSwapCs2 o sw) bs bs'; auto. }
     + apply isabs_implies in c3; exrepnd; subst.
       exists (@Abs o abs) bterms bs'; auto.
   - apply isexc_implies2 in c1; exrepnd; subst.
@@ -1617,7 +1619,7 @@ Proof.
   introv isv r.
   destruct a; auto.
   - provefalse; unfold isvalue_like in isv; sp.
-  - dopid o as [can|ncan|exc|abs] Case.
+  - dopid o as [can|ncan|nsw|exc|abs] Case.
     + Case "Can".
       unfold reduces_to in r; exrepnd.
       induction k.
@@ -1625,6 +1627,8 @@ Proof.
       * rw @reduces_in_atmost_k_steps_S in r0; exrepnd.
         csunf r0; allsimpl; ginv; sp.
     + Case "NCan".
+      provefalse; unfold isvalue_like in isv; sp.
+    + Case "NSwapCs2".
       provefalse; unfold isvalue_like in isv; sp.
     + Case "Exc".
       unfold reduces_to in r; exrepnd.
@@ -1675,7 +1679,7 @@ Proof.
   introv isv r.
   destruct a.
   - provefalse; unfold is_value_like, isvalue_like in isv; sp.
-  - dopid o as [can|ncan|exc|abs] Case.
+  - dopid o as [can|ncan|nsw|exc|abs] Case.
     + Case "Can".
       unfold reduces_to in r; exrepnd.
       induction k.
@@ -1683,6 +1687,8 @@ Proof.
       * rw @reduces_in_atmost_k_steps_S in r0; exrepnd.
         csunf r0; allsimpl; ginv; sp.
     + Case "NCan".
+      provefalse; unfold is_value_like, isvalue_like in isv; sp.
+    + Case "NSwapCs2".
       provefalse; unfold is_value_like, isvalue_like in isv; sp.
     + Case "Exc".
       unfold reduces_to in r; exrepnd.
@@ -1751,7 +1757,7 @@ Proof.
     csunf comp1; allsimpl.
     destruct t as [|op bs1]; ginv.
 
-    + dopid op as [can2|ncan2|exc2|abs2] Case; ginv.
+    + dopid op as [can2|ncan2|nsw2|exc2|abs2] Case; ginv.
 
       * Case "Can".
         allsimpl.
@@ -1759,6 +1765,14 @@ Proof.
 
       * Case "NCan".
         remember (compute_step lib (oterm (NCan ncan2) bs1)) as cs;
+          destruct cs; ginv; fold_terms.
+        apply IHk in comp0; auto; exrepnd.
+        exists u0; dands; auto.
+        symmetry in Heqcs; apply reduces_to_if_step in Heqcs.
+        eapply reduces_to_trans; eauto.
+
+      * Case "NSwapCs2".
+        remember (compute_step lib (oterm (NSwapCs2 nsw2) bs1)) as cs;
           destruct cs; ginv; fold_terms.
         apply IHk in comp0; auto; exrepnd.
         exists u0; dands; auto.
@@ -1795,7 +1809,7 @@ Proof.
   - rw @reduces_in_atmost_k_steps_S in comp; exrepnd.
     destruct t as [|op bs1]; ginv.
 
-    dopid op as [can2|ncan2|exc2|abs2] Case; ginv.
+    dopid op as [can2|ncan2|nsw2|exc2|abs2] Case; ginv.
 
     + Case "Can".
       exists (oterm (Can can2) bs1); dands; eauto 3 with slow.
@@ -1804,6 +1818,16 @@ Proof.
       unfold nobnd in comp1.
       rw @compute_step_ncan_ncan in comp1.
       remember (compute_step lib (oterm (NCan ncan2) bs1)) as cs;
+        destruct cs; ginv; fold_terms.
+      apply IHk in comp0; auto; exrepnd.
+      exists u0; dands; auto.
+      symmetry in Heqcs; apply reduces_to_if_step in Heqcs.
+      eapply reduces_to_trans; eauto.
+
+    + Case "NSwapCs2".
+      unfold nobnd in comp1.
+      rw @compute_step_ncan_nswap in comp1.
+      remember (compute_step lib (oterm (NSwapCs2 nsw2) bs1)) as cs;
         destruct cs; ginv; fold_terms.
       apply IHk in comp0; auto; exrepnd.
       exists u0; dands; auto.
@@ -1847,7 +1871,7 @@ Proof.
     provefalse; unfold isvalue_like in isv; sp.
   - rw @reduces_in_atmost_k_steps_S in comp; exrepnd.
     destruct t; ginv; try (complete (csunf comp1; allsimpl; dcwf h)).
-    dopid o0 as [can2|ncan2|exc2|abs2] Case; ginv.
+    dopid o0 as [can2|ncan2|nsw2|exc2|abs2] Case; ginv.
 
     + Case "Can".
       csunf comp1; unfold compute_step_comp in comp1; allsimpl.
@@ -1864,6 +1888,21 @@ Proof.
       rw @compute_step_ncompop_ncan2 in comp1.
       dcwf h; allsimpl.
       remember (compute_step lib (oterm (NCan ncan2) l0)) as cs;
+        destruct cs; ginv.
+      fold_terms.
+      apply IHk in comp0; auto.
+      repndors; exrepnd.
+      * left; exists pk.
+        eapply computes_to_value_step; eauto.
+      * right; exists e; dands; auto.
+        symmetry in Heqcs; apply reduces_to_if_step in Heqcs.
+        eapply reduces_to_trans; eauto.
+
+    + Case "NSwapCs2".
+      unfold nobnd in comp1.
+      rw @compute_step_ncompop_nswap2 in comp1.
+      dcwf h; allsimpl.
+      remember (compute_step lib (oterm (NSwapCs2 nsw2) l0)) as cs;
         destruct cs; ginv.
       fold_terms.
       apply IHk in comp0; auto.
@@ -1917,7 +1956,7 @@ Proof.
     provefalse; unfold isvalue_like in isv; sp.
   - rw @reduces_in_atmost_k_steps_S in comp; exrepnd.
     destruct t; ginv; try (complete (csunf comp1; allsimpl; dcwf h)).
-    dopid o0 as [can2|ncan2|exc2|abs2] Case; ginv.
+    dopid o0 as [can2|ncan2|nsw2|exc2|abs2] Case; ginv.
 
     + Case "Can".
       csunf comp1; allsimpl; dcwf h; allsimpl.
@@ -1937,6 +1976,21 @@ Proof.
       rw @compute_step_narithop_ncan2 in comp1.
       dcwf h; allsimpl.
       remember (compute_step lib (oterm (NCan ncan2) l0)) as cs;
+        destruct cs; ginv.
+      fold_terms.
+      apply IHk in comp0; auto.
+      dorn comp0; exrepnd.
+      * left; exists i.
+        eapply computes_to_value_step; eauto.
+      * right; exists e; dands; auto.
+        symmetry in Heqcs; apply reduces_to_if_step in Heqcs.
+        eapply reduces_to_trans; eauto.
+
+    + Case "NSwapCs2".
+      unfold nobnd in comp1.
+      rw @compute_step_narithop_nswap2 in comp1.
+      dcwf h; allsimpl.
+      remember (compute_step lib (oterm (NSwapCs2 nsw2) l0)) as cs;
         destruct cs; ginv.
       fold_terms.
       apply IHk in comp0; auto.
@@ -2001,7 +2055,7 @@ Proof.
     provefalse; unfold is_value_like, isvalue_like in isv; sp.
   - rw @reduces_in_atmost_k_steps_S in comp; exrepnd.
     destruct t; ginv; try (complete (csunf comp1; allsimpl; dcwf h)).
-    dopid o0 as [can2|ncan2|exc2|abs2] Case; ginv.
+    dopid o0 as [can2|ncan2|nsw2|exc2|abs2] Case; ginv.
 
     + Case "Can".
       csunf comp1; unfold compute_step_comp in comp1; allsimpl.
@@ -2020,6 +2074,20 @@ Proof.
       rw @compute_step_ncompop_ncan2 in comp1.
       dcwf h; allsimpl.
       remember (compute_step lib (oterm (NCan ncan2) l0)) as cs;
+        destruct cs; ginv.
+      fold_terms.
+      apply IHk in comp0; auto.
+      repndors; exrepnd.
+      * left; exists pk; eauto 3 with slow.
+      * right; exists e; dands; auto.
+        symmetry in Heqcs; apply reduces_to_if_step in Heqcs.
+        eapply reduces_to_trans; eauto.
+
+    + Case "NSwapCs2".
+      unfold nobnd in comp1.
+      rw @compute_step_ncompop_nswap2 in comp1.
+      dcwf h; allsimpl.
+      remember (compute_step lib (oterm (NSwapCs2 nsw2) l0)) as cs;
         destruct cs; ginv.
       fold_terms.
       apply IHk in comp0; auto.
@@ -2071,7 +2139,7 @@ Proof.
     provefalse; unfold is_value_like, isvalue_like in isv; sp.
   - rw @reduces_in_atmost_k_steps_S in comp; exrepnd.
     destruct t; ginv; try (complete (csunf comp1; allsimpl; dcwf h)).
-    dopid o0 as [can2|ncan2|exc2|abs2] Case; ginv.
+    dopid o0 as [can2|ncan2|nsw2|exc2|abs2] Case; ginv.
 
     + Case "Can".
       csunf comp1; allsimpl; dcwf h; allsimpl.
@@ -2091,6 +2159,21 @@ Proof.
       rw @compute_step_narithop_ncan2 in comp1.
       dcwf h; allsimpl.
       remember (compute_step lib (oterm (NCan ncan2) l0)) as cs;
+        destruct cs; ginv.
+      fold_terms.
+      apply IHk in comp0; auto.
+      dorn comp0; exrepnd.
+      * left; exists i.
+        eapply computes_to_value_step; eauto.
+      * right; exists e; dands; auto.
+        symmetry in Heqcs; apply reduces_to_if_step in Heqcs.
+        eapply reduces_to_trans; eauto.
+
+    + Case "NSwapCs2".
+      unfold nobnd in comp1.
+      rw @compute_step_narithop_nswap2 in comp1.
+      dcwf h; allsimpl.
+      remember (compute_step lib (oterm (NSwapCs2 nsw2) l0)) as cs;
         destruct cs; ginv.
       fold_terms.
       apply IHk in comp0; auto.
@@ -2181,10 +2264,16 @@ Proof.
     pose proof (Hind _ csk H1c H1v0 eq_refl) as XX. clear H1v0. exrepnd.
     destruct csk as [sckv|csko csklbt]; [inverts Hck; fail|];[].
 
-    dopid csko as [cskoc| cskon | cskexc | cskabs] Case.
+    dopid csko as [cskoc| cskon | cskcsn | cskexc | cskabs] Case.
     + Case "Can".
       simpl in Hck. inverts Hck. exists j; sp. omega.
     + Case "NCan".
+      exists (S j).
+      unfold isinteger in H1v; exrepnd; subst.
+      dands;[|omega]. simpl. rw XX1. simpl. simpl in Hck. simpl.
+      csunf; simpl.
+      dcwf h; allsimpl; tcsp; try (rw Hck); clear Hck; simpl; auto.
+    + Case "NSwapCs2".
       exists (S j).
       unfold isinteger in H1v; exrepnd; subst.
       dands;[|omega]. simpl. rw XX1. simpl. simpl in Hck. simpl.
@@ -2255,10 +2344,21 @@ Proof.
     pose proof (Hind _ csk H1c H1v0 eq_refl) as XX. clear H1v0. exrepnd.
     destruct csk as [sckv|csko csklbt]; [inverts Hck; fail|].
 
-    dopid csko as [cskoc| cskon | cskexc | cskabs] Case.
+    dopid csko as [cskoc| cskon | cskcsn | cskexc | cskabs] Case.
     + Case "Can".
       simpl in Hck. inverts Hck. exists j; sp. omega.
     + Case "NCan".
+      exists (S j).
+      unfold iswfpk in H1v; destruct a; allsimpl.
+      * unfold isinteger in H1v; exrepnd; subst.
+        dands;[|omega]. simpl. rw XX1. simpl. simpl in Hck. simpl.
+        csunf; simpl; dcwf h.
+        rw Hck; clear Hck; auto.
+      * unfold ispk in H1v; exrepnd; subst.
+        dands;[|omega]. simpl. rw XX1. simpl. simpl in Hck. simpl.
+        csunf; simpl; allrw @pk2term_eq; dcwf h; allrw @co_wf_pk2can; ginv.
+        rw Hck; clear Hck; auto.
+    + Case "NSwapCs2".
       exists (S j).
       unfold iswfpk in H1v; destruct a; allsimpl.
       * unfold isinteger in H1v; exrepnd; subst.
@@ -4428,7 +4528,7 @@ Proof.
   - rw @reduces_in_atmost_k_steps_0 in comp; subst; dands; auto.
   - rw @reduces_in_atmost_k_steps_S in comp; exrepnd.
     allrw @wf_term_eq.
-    pose proof (compute_step_preserves lib t u0 wf comp1) as h; repnd.
+    pose proof (compute_step_preserves t u0 lib wf comp1) as h; repnd.
     apply IHk in comp0; repnd; eauto 3 with slow.
     dands; eauto 3 with slow.
     apply compute_step_preserves_utokens in comp1; auto.

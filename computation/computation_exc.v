@@ -77,7 +77,7 @@ Proof.
 
   - split; intro e; repndors; exrepnd; ginv.
 
-  - dopid op as [can|ncan|exc|abs] Case; allsimpl.
+  - dopid op as [can|ncan|nsw|exc|abs] Case; allsimpl.
 
     + Case "Can".
       split; introv e; repndors; exrepnd; ginv; tcsp.
@@ -89,6 +89,13 @@ Proof.
       split; intro e; repndors; exrepnd; ginv; tcsp.
       * right; dands; tcsp.
         remember (compute_step lib (oterm (NCan ncan) bs)) as c; destruct c; ginv.
+        exists n; dands; auto.
+      * rw e2; auto.
+
+    + Case "NSwapCs2".
+      split; intro e; repndors; exrepnd; ginv; tcsp.
+      * right; dands; tcsp.
+        remember (compute_step lib (oterm (NSwapCs2 nsw) bs)) as c; destruct c; ginv.
         exists n; dands; auto.
       * rw e2; auto.
 
@@ -116,7 +123,7 @@ Proof.
                   unfold compute_eager_exc in e.
                   destruct t1 as [v|op bs]; ginv.
 
-                  dopid op as [can|ncan|exc|abs] SCase.
+                  dopid op as [can|ncan|nsw|exc|abs] SCase.
                   - SCase "Can".
                     remember (compute_step lib t2) as c; destruct c; ginv.
                     exists (oterm (Can can) bs) n.
@@ -126,6 +133,10 @@ Proof.
                     remember (compute_step lib (oterm (NCan ncan) bs)) as c; destruct c; ginv.
                     exists n t2.
                     dands; auto.
+                  - SCase "NSwapCs2".
+                    remember (compute_step lib (oterm (NSwapCs2 nsw) bs)) as c; destruct c; ginv.
+                    exists n t2.
+                    dands; auto; right; dands; eauto 2 with slow.
                   - SCase "Exc".
                     remember (compute_step lib t2) as c; destruct c; ginv.
                     exists (oterm Exc bs) n.
@@ -143,8 +154,7 @@ Proof.
                     + apply isexc_implies2 in e0; exrepnd; subst; simpl.
                       rw e3; auto.
                   - unfold isnoncan_like in e0; repndors.
-                    + apply isnoncan_implies in e0; exrepnd; subst; simpl.
-                      rw e3; auto.
+                    + apply isnoncan_implies in e0; repndors; exrepnd; subst; simpl; rw e3; auto.
                     + apply isabs_implies in e0; exrepnd; subst; simpl.
                       rw e3; auto. }
 

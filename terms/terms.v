@@ -484,46 +484,27 @@ Definition iscan {p} (t : @NTerm p) :=
 
 Definition isnoncan {p} (t : @NTerm p) :=
   match t with
-    | vterm _ => False
-(*    | sterm _ => False*)
-    | oterm o _ =>
-      match o with
-        | NCan _ => True
-        | _ => False
-      end
+  | oterm (NCan _) _ => True
+  | oterm (NSwapCs2 _) _ => True
+  | _ => False
   end.
 
 Definition isexception {p} (t: @NTerm p) :=
   match t with
-    | vterm _ => false
-(*    | sterm _ => false*)
-    | oterm o _ =>
-      match o with
-        | Exc => true
-        | _ => false
-      end
+  | oterm Exc _ => true
+  | _ => false
   end.
 
 Definition isexc {p} (t: @NTerm p) :=
   match t with
-    | vterm _ => False
-(*    | sterm _ => False*)
-    | oterm o _ =>
-      match o with
-        | Exc => True
-        | _ => False
-      end
+  | oterm Exc _ => True
+  | _ => False
   end.
 
 Definition isabs {p} (t: @NTerm p) :=
   match t with
-    | vterm _ => False
-(*    | sterm _ => False*)
-    | oterm o _ =>
-      match o with
-        | Abs _ => True
-        | _ => False
-      end
+  | oterm (Abs _) _ => True
+  | _ => False
   end.
 
 Ltac d_isnoncan H :=
@@ -534,8 +515,9 @@ Ltac d_isnoncan H :=
       let tt := fresh "temp" in
       destruct t as [tt|tt tlbt];
         [complete (inverts H as H)|];
-        destruct tt as [tt|tnc|tex|tabs];
+        destruct tt as [tt|tnc|tsw|tex|tabs];
         [ complete(inverts H as H)
+        | idtac
         | idtac
         | complete(inverts H as H)
         | complete(inverts H as H)
@@ -550,8 +532,9 @@ Ltac d_isexc H :=
       let tt := fresh "temp" in
       destruct t as [tt|tt|tt tlbt];
       [complete (inverts H as H)|];
-      destruct tt as [tt|tnc|tex|tabs];
+      destruct tt as [tt|tnc|tsw|tex|tabs];
       [ complete(inverts H as H)
+      | complete(inverts H as H)
       | complete(inverts H as H)
       | idtac
       | complete(inverts H as H)
@@ -566,8 +549,9 @@ Ltac d_isabs H :=
       let tt := fresh "temp" in
       destruct t as [tt|tt tlbt];
         [complete (inverts H as H)|];
-        destruct tt as [tt|tnc|tex|tabs];
+        destruct tt as [tt|tnc|tsw|tex|tabs];
         [ complete(inverts H as H)
+        | complete(inverts H as H)
         | complete(inverts H as H)
         | complete(inverts H as H)
         | idtac
@@ -1810,8 +1794,7 @@ Lemma noncan_not_is_can_or_exc {p} :
 Proof.
   introv Hisnc Hisv.
   destruct e as [|(*?| *)o lbt]; allsimpl; cpx.
-  destruct o; cpx.
-  destruct Hisv as [Hisv|Hisv]; auto.
+  destruct o; cpx; destruct Hisv as [Hisv|Hisv]; auto.
 Qed.
 Hint Resolve noncan_not_is_can_or_exc : slow.
 
