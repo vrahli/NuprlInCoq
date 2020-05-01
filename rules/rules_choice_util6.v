@@ -47,7 +47,7 @@ Proof.
 Qed.
 Hint Rewrite @swap_cs_bterms_twice : slow.
 
-Lemma compute_step_swap_implies_cs2 {o} :
+(*Lemma compute_step_swap_implies_cs2 {o} :
   forall (cond : @LibCond o) (lib : @plibrary o) n1 n2 t (u : NTerm),
     n1 <> n2
     -> sw_not_in_lib (n1, n2) lib
@@ -62,7 +62,7 @@ Proof.
   apply (swap_compute_step (n1,n2)) in comp; autorewrite with slow in comp.
   erewrite swap_cs_plib_trivial_if_no_cs in comp; eauto.
   eapply reduces_to_prinarg; eauto 3 with slow.
-Qed.
+Qed.*)
 
 Lemma free_vars_bterms_swap_cs_bterms {o} :
   forall sw (bs : list (@BTerm o)),
@@ -89,7 +89,7 @@ Proof.
 Qed.
 Hint Rewrite @map_num_bvars_swap_cs_bterms : slow.
 
-Lemma implies_isvalue_can_push_swap_cs_bterms_swap {o} :
+(*Lemma implies_isvalue_can_push_swap_cs_bterms_swap {o} :
   forall n1 n2 can (bs : list (@BTerm o)),
     isvalue (oterm (Can can) bs)
     -> isvalue (oterm (Can can) (push_swap_cs_bterms n1 n2 (swap_cs_bterms (n1, n2) bs))).
@@ -107,9 +107,9 @@ Proof.
   destruct a0; simpl in *.
   allrw @bt_wf_iff; eauto 4 with slow.
 Qed.
-Hint Resolve implies_isvalue_can_push_swap_cs_bterms_swap : slow.
+Hint Resolve implies_isvalue_can_push_swap_cs_bterms_swap : slow.*)
 
-Lemma computes_to_value_swap_implies_cs2 {o} :
+(*Lemma computes_to_value_swap_implies_cs2 {o} :
   forall (cond : @LibCond o) (lib : @plibrary o) n1 n2 t can (bs : list BTerm),
     n1 <> n2
     -> sw_not_in_lib (n1, n2) lib
@@ -128,7 +128,7 @@ Proof.
   eapply reduces_to_trans;[apply reduces_to_prinarg;eauto|]; fold_terms.
   apply reduces_to_if_step; csunf; simpl; auto.
   unfold push_swap_cs_can; simpl; autorewrite with slow; auto.
-Qed.
+Qed.*)
 
 Lemma length_swap_cs_bterms {o} :
   forall sw (bs : list (@BTerm o)),
@@ -139,8 +139,8 @@ Qed.
 Hint Rewrite @length_swap_cs_bterms : slow.
 
 Lemma csubst_mk_swap_cs2 {o} :
-  forall n1 n2 (t : @NTerm o) s,
-    csubst (mk_swap_cs2 n1 n2 t) s = mk_swap_cs2 n1 n2 (csubst t s).
+  forall sw (t : @NTerm o) s,
+    csubst (mk_swap_cs2 sw t) s = mk_swap_cs2 sw (csubst t s).
 Proof.
   introv.
   unfold csubst.
@@ -200,11 +200,11 @@ Hint Rewrite @push_swap_cs_otermc_base : slow.
 
 Definition push_swap_cs_sub_cvterm {o} vs (sw : cs_swap) (t : @CVTerm o vs) :=
   let (a,p) := t in
-  exist (isprog_vars vs) (push_swap_cs_sub_term (fst sw) (snd sw) vs a) (implies_isprog_vars_push_swap_cs_sub_term vs (fst sw) (snd sw) vs a p).
+  exist (isprog_vars vs) (push_swap_cs_sub_term sw vs a) (implies_isprog_vars_push_swap_cs_sub_term vs sw vs a p).
 
 Lemma push_swap_cs_sub_term_nil {o} :
-  forall a b (t : @NTerm o),
-    push_swap_cs_sub_term a b [] t = t.
+  forall sw (t : @NTerm o),
+    push_swap_cs_sub_term sw [] t = t.
 Proof.
   introv; unfold push_swap_cs_sub_term; autorewrite with slow; auto.
 Qed.
@@ -271,8 +271,8 @@ Proof.
 Qed.
 
 Lemma push_swap_cs_can_eq_integer_implies {o} :
-  forall a b (can : @CanonicalOp o) bs k,
-    push_swap_cs_can a b can bs = mk_integer k
+  forall sw (can : @CanonicalOp o) bs k,
+    push_swap_cs_can sw can bs = mk_integer k
     -> can = Nint k # bs = [].
 Proof.
   introv h.
@@ -282,9 +282,9 @@ Proof.
 Qed.
 
 Lemma implies_approx_swap_cs2 {o} :
-  forall n1 n2 lib (a b : @NTerm o),
+  forall sw lib (a b : @NTerm o),
     approx lib a b
-    -> approx lib (mk_swap_cs2 n1 n2 a) (mk_swap_cs2 n1 n2 b).
+    -> approx lib (mk_swap_cs2 sw a) (mk_swap_cs2 sw b).
 Proof.
   introv apx.
   applydup @approx_relates_only_progs in apx; repnd.
@@ -302,17 +302,17 @@ Qed.
 Hint Resolve implies_approxc_swap_cs : slow.
 
 Lemma implies_cequiv_swap_cs2 {o} :
-  forall n1 n2 lib (a b : @NTerm o),
+  forall sw lib (a b : @NTerm o),
     cequiv lib a b
-    -> cequiv lib (mk_swap_cs2 n1 n2 a) (mk_swap_cs2 n1 n2 b).
+    -> cequiv lib (mk_swap_cs2 sw a) (mk_swap_cs2 sw b).
 Proof.
   introv ceq; destruct ceq as [c1 c2]; split; apply implies_approx_swap_cs2; auto.
 Qed.
 
 Lemma implies_cequivc_swap_cs2 {o} :
-  forall n1 n2 lib (a b : @CTerm o),
+  forall sw lib (a b : @CTerm o),
     cequivc lib a b
-    -> cequivc lib (mkc_swap_cs2 n1 n2 a) (mkc_swap_cs2 n1 n2 b).
+    -> cequivc lib (mkc_swap_cs2 sw a) (mkc_swap_cs2 sw b).
 Proof.
   unfold cequivc; introv ceq; destruct_cterms; simpl in *.
   apply implies_cequiv_swap_cs2; auto.
@@ -328,8 +328,8 @@ Qed.
 Hint Resolve implies_cequivc_swap_cs : slow.
 
 Lemma isprogram_mk_swap_cs2_iff {o} :
-  forall n1 n2 (t : @NTerm o),
-    isprogram (mk_swap_cs2 n1 n2 t) <=> isprogram t.
+  forall sw (t : @NTerm o),
+    isprogram (mk_swap_cs2 sw t) <=> isprogram t.
 Proof.
   introv; split; intro h; try apply implies_isprogram_mk_swap_cs2; auto.
   destruct h as [cl wf]; split; unfold closed in *; simpl in *; autorewrite with slow in *; auto.
@@ -347,9 +347,9 @@ Proof.
   apply swap_cs2_computes_to_value_implies in ext1; auto; exrepnd; subst.
   eapply cequiv_axiom in ext0; eauto 3 with slow.
   apply computes_to_value_if_iscan in ext0; eauto 3 with slow; subst.
-  inversion ext0; subst; simpl in *.
+  inversion ext0; autorewrite with slow in *; subst; simpl in *.
   destruct bs; simpl in *; ginv.
-  destruct c; simpl in *; ginv.
+  apply (@swap_computes_to_value o sw) in ext3; autorewrite with slow in ext3.
   exists (@mkc_axiom o); dands; spcast; tcsp.
 Qed.
 
@@ -401,9 +401,9 @@ Proof.
   introv comp; exrepnd; spcast.
   destruct_cterms; unfold computes_to_valc, cequivc in *; simpl in *.
   apply swap_cs2_computes_to_value_implies in comp; auto; exrepnd; subst.
-  inversion comp1 as [xx]; subst; clear comp1.
+  inversion comp1 as [xx]; autorewrite with slow in *; subst; clear comp1.
   destruct bs; simpl in *; ginv.
-  destruct c; simpl in *; ginv.
+  apply (@swap_computes_to_value o sw) in comp0; autorewrite with slow in comp0; auto.
 Qed.
 
 Lemma mkc_swap_computes_to_valc_nat_implies {o} :
@@ -475,24 +475,24 @@ Proof.
 Qed.
 
 Lemma swap_cs2_alpha_eq_implies {o} :
-  forall a b (t : @NTerm o) u,
-    alpha_eq (mk_swap_cs2 a b t) u
-    -> {z : NTerm & u = mk_swap_cs2 a b z # alpha_eq t z}.
+  forall sw (t : @NTerm o) u,
+    alpha_eq (mk_swap_cs2 sw t) u
+    -> {z : NTerm & u = mk_swap_cs2 sw z # alpha_eq t z}.
 Proof.
   introv aeq; apply alpha_eq_oterm_implies_combine2 in aeq; exrepnd; subst.
   unfold alpha_eq_bterms in *; simpl in *; repnd.
   repeat (destruct bs'; simpl in *; tcsp; ginv).
-  pose proof (aeq0 (nobnd t) b0) as aeq0; autodimp aeq0 hyp.
+  pose proof (aeq0 (nobnd t) b) as aeq0; autodimp aeq0 hyp.
   apply alpha_eq_bterm_nobnd in aeq0; exrepnd; subst.
   exists u; dands; auto.
 Qed.
 
 Lemma lsubst_aux_eq_swap2_implies {o} :
-  forall t l k a b (u : @NTerm o),
+  forall t l k sw (u : @NTerm o),
     disjoint k (all_vars t)
     -> length l = length k
-    -> lsubst_aux t (var_ren l k) = mk_swap_cs2 a b u
-    -> {z : NTerm & t = mk_swap_cs2 a b z # u = lsubst_aux z (var_ren l k)}.
+    -> lsubst_aux t (var_ren l k) = mk_swap_cs2 sw u
+    -> {z : NTerm & t = mk_swap_cs2 sw z # u = lsubst_aux z (var_ren l k)}.
 Proof.
   introv disj len h.
   destruct t as [v|op bs]; simpl in *.
@@ -500,17 +500,17 @@ Proof.
     remember (renFind (mk_swapping l k) v) as x; destruct x; simpl in *; ginv. }
   inversion h as [xx]; subst; clear h.
   repeat (destruct bs; simpl in *; tcsp; ginv).
-  destruct b0; simpl in *.
+  destruct b; simpl in *.
   destruct l0; simpl in *; unfold nobnd in *; ginv; fold_terms.
   exists n; dands; autorewrite with slow; auto.
 Qed.
 
 Lemma lsubst_eq_swap2_implies {o} :
-  forall t l k a b (u : @NTerm o),
+  forall t l k sw (u : @NTerm o),
     disjoint k (all_vars t)
     -> length l = length k
-    -> lsubst t (var_ren l k) = mk_swap_cs2 a b u
-    -> {z : NTerm & t = mk_swap_cs2 a b z # u = lsubst z (var_ren l k)}.
+    -> lsubst t (var_ren l k) = mk_swap_cs2 sw u
+    -> {z : NTerm & t = mk_swap_cs2 sw z # u = lsubst z (var_ren l k)}.
 Proof.
   introv disj len h.
   rewrite lsubst_lsubst_aux2 in h; auto;
@@ -522,37 +522,50 @@ Proof.
 Qed.
 
 Lemma implies_cover_vars_mk_swap_cs2 {o} :
-  forall a b (t : @NTerm o) sub,
+  forall sw (t : @NTerm o) sub,
     cover_vars t sub
-    -> cover_vars (mk_swap_cs2 a b t) sub.
+    -> cover_vars (mk_swap_cs2 sw t) sub.
 Proof.
   introv cov.
   allrw @cover_vars_eq; simpl; autorewrite with slow; auto.
 Qed.
 Hint Resolve implies_cover_vars_mk_swap_cs2 : slow.
 
+Lemma push_swap_cs_exc_2nobnd_eq {o} :
+  forall sw (a b : @NTerm o),
+    push_swap_cs_exc sw [nobnd a, nobnd b]
+    = mk_exception (mk_swap_cs2 sw a) (mk_swap_cs2 sw b).
+Proof.
+  introv; unfold push_swap_cs_exc; simpl; autorewrite with slow; fold_terms; auto.
+Qed.
+
 Lemma reduces_in_atmost_k_steps_implies_swap_cs2_computes_to_exc {o} :
-  forall a b lib (t : @NTerm o) x e,
+  forall sw lib (t : @NTerm o) x e,
     reduces_to lib t (mk_exception x e)
-    -> mk_swap_cs2 a b t =e>(x,lib) e.
+    -> mk_swap_cs2 sw t =e>(mk_swap_cs2 sw x,lib) (mk_swap_cs2 sw e).
 Proof.
   introv comp.
   unfold computes_to_exception.
-  eapply reduces_to_trans;[eapply reduces_to_prinarg; eauto|].
-  apply reduces_to_if_step; csunf; simpl; auto.
+  eapply reduces_to_trans;
+    [eapply implies_reduces_to_mk_swap_cs2;
+     apply (@swap_reduces_to o sw) in comp; eauto|].
+  autorewrite with slow.
+  apply reduces_to_if_step.
+  csunf; simpl.
+  rewrite push_swap_cs_exc_2nobnd_eq; auto.
 Qed.
 
 Lemma swap_cs2_computes_to_exc_implies {o} :
-  forall lib a b (t : @NTerm o) x e,
+  forall lib sw (t : @NTerm o) x e,
     wf_term t
-    -> (mk_swap_cs2 a b t) =e>(x,lib) e
+    -> (mk_swap_cs2 sw t) =e>(x,lib) e
     -> t =e>(x,lib) e.
 Proof.
   introv wf comp.
   unfold computes_to_exception, reduces_to in *; exrepnd.
 
-  pose proof (approx_star_swap.computes_to_val_like_in_max_k_steps_swap_cs2_implies
-                lib k (MkSwapCsNfo a b) t (mk_exception x e)) as q.
+  pose proof (computes_to_val_like_in_max_k_steps_swap_cs2_implies
+                lib k sw t (mk_exception x e)) as q.
   repeat (autodimp q hyp); eauto 3 with slow.
   { unfold computes_to_val_like_in_max_k_steps; dands; eauto 3 with slow. }
   repndors; exrepnd; subst; simpl in *; ginv.
@@ -560,12 +573,16 @@ Proof.
   { apply computes_to_val_like_in_max_k_steps_if_isvalue_like in q0; eauto 3 with slow; ginv. }
 
   exists k1; auto.
-Qed.
+  unfold computes_to_exception_in_max_k_steps in *.
+  apply (@swap_reduces_in_atmost_k_steps o sw) in q3.
+  autorewrite with slow in *.
+  simpl in *; fold_terms.
+Abort.
 
 Lemma implies_isprogram_lsust_mk_swap_cs2 {o} :
-  forall a b (t : @NTerm o) sub,
+  forall sw (t : @NTerm o) sub,
     isprogram (lsubst t sub)
-    -> isprogram (lsubst (mk_swap_cs2 a b t) sub).
+    -> isprogram (lsubst (mk_swap_cs2 sw t) sub).
 Proof.
   introv isp.
   unfold lsubst in *; simpl in *; autorewrite with slow in *.
@@ -574,8 +591,8 @@ Qed.
 Hint Resolve implies_isprogram_lsust_mk_swap_cs2 : sow.
 
 Lemma lsust_mk_swap_cs2_eq {o} :
-  forall a b (t : @NTerm o) sub,
-    lsubst (mk_swap_cs2 a b t) sub = mk_swap_cs2 a b (lsubst t sub).
+  forall sw (t : @NTerm o) sub,
+    lsubst (mk_swap_cs2 sw t) sub = mk_swap_cs2 sw (lsubst t sub).
 Proof.
   introv.
   unfold lsubst in *; simpl in *; autorewrite with slow in *.
@@ -583,12 +600,12 @@ Proof.
 Qed.
 
 Lemma lsubst_push_swap_cs_sub_term_var_ren_as {o} :
-  forall a b (t : @NTerm o) (l k : list NVar),
+  forall sw (t : @NTerm o) (l k : list NVar),
     no_repeats k
     -> length l = length k
     -> disjoint k (all_vars t)
-    -> lsubst (push_swap_cs_sub_term a b l t) (var_ren l k)
-       = lsubst_aux (lsubst t (var_ren l k)) (sw_sub a b k).
+    -> lsubst (push_swap_cs_sub_term sw l t) (var_ren l k)
+       = lsubst_aux (lsubst t (var_ren l k)) (sw_sub sw k).
 Proof.
   introv norep len disj.
   rewrite lsubst_push_swap_cs_sub_term_var_ren_eq; auto.
@@ -618,9 +635,9 @@ Proof.
 Qed.
 
 Lemma implies_alpha_eq_bterm_push_swap_cs_bterm {o} :
-  forall a b (b1 b2 : @BTerm o),
+  forall sw (b1 b2 : @BTerm o),
     alpha_eq_bterm b1 b2
-    -> alpha_eq_bterm (push_swap_cs_bterm a b b1) (push_swap_cs_bterm a b b2).
+    -> alpha_eq_bterm (push_swap_cs_bterm sw b1) (push_swap_cs_bterm sw b2).
 Proof.
   introv aeq; unfold push_swap_cs_bterm.
   destruct b1 as [l1 t1], b2 as [l2 t2]; simpl in *.
@@ -632,7 +649,7 @@ Proof.
           try (complete (allrw disjoint_app_r; tcsp));[]).
   repeat (rewrite <- lsubst_push_swap_cs_sub_term_var_ren_eq2; auto;
           try (complete (allrw disjoint_app_r; tcsp));[]).
-  apply approx_star_swap.implies_alpha_eq_lsubst_aux_sw_sub; auto.
+  apply implies_alpha_eq_lsubst_aux_sw_sub; auto.
 Qed.
 
 Lemma change_bvars_to {o} :
@@ -681,8 +698,8 @@ Qed.
 Hint Rewrite @num_bvars_bterm : slow.
 
 Lemma num_bvars_push_swap_cs_bterm {o} :
-  forall a b (x : @BTerm o),
-    num_bvars (push_swap_cs_bterm a b x) = num_bvars x.
+  forall sw (x : @BTerm o),
+    num_bvars (push_swap_cs_bterm sw x) = num_bvars x.
 Proof.
   introv; unfold num_bvars, push_swap_cs_bterm; destruct x; simpl; auto.
 Qed.
@@ -1026,13 +1043,13 @@ Proof.
   eapply simpl_olift_as_cl_olift; eauto.
 Qed.
 
-Definition sw_sub_ts {o} a b l (k : list (@NTerm o)) : @Sub o :=
-  combine l (map (mk_swap_cs2 a b) k).
+Definition sw_sub_ts {o} sw l (k : list (@NTerm o)) : @Sub o :=
+  combine l (map (mk_swap_cs2 sw) k).
 
 Lemma areprograms_implies_prog_sw_sub_ts {o} :
-  forall a b l (ts : list (@NTerm o)),
+  forall sw l (ts : list (@NTerm o)),
     areprograms ts
-    -> prog_sub (sw_sub_ts a b l ts).
+    -> prog_sub (sw_sub_ts sw l ts).
 Proof.
   unfold sw_sub_ts; induction l; introv aps; simpl in *; eauto 3 with slow.
   destruct ts; simpl in *; eauto 3 with slow.
@@ -1042,17 +1059,17 @@ Qed.
 Hint Resolve areprograms_implies_prog_sw_sub_ts : slow.
 
 Lemma areprograms_implies_wf_sw_sub_ts {o} :
-  forall a b l (ts : list (@NTerm o)),
+  forall sw l (ts : list (@NTerm o)),
     areprograms ts
-    -> wf_sub (sw_sub_ts a b l ts).
+    -> wf_sub (sw_sub_ts sw l ts).
 Proof.
   introv aps; eauto 3 with slow.
 Qed.
 Hint Resolve areprograms_implies_wf_sw_sub_ts : slow.
 
 Lemma wf_sw_sub2 {o} :
-  forall a b l k,
-    @wf_sub o (sw_sub2 a b l k).
+  forall sw l k,
+    @wf_sub o (sw_sub2 sw l k).
 Proof.
   introv i; unfold sw_sub2 in *.
   apply in_combine_right_eauto in i.
@@ -1061,9 +1078,9 @@ Qed.
 Hint Resolve wf_sw_sub2 : slow.
 
 Lemma dom_sub_sw_sub2 {o} :
-  forall a b l k,
+  forall sw l k,
     length l = length k
-    -> @dom_sub o (sw_sub2 a b l k) = l.
+    -> @dom_sub o (sw_sub2 sw l k) = l.
 Proof.
   introv len.
   unfold sw_sub2.
@@ -1071,9 +1088,9 @@ Proof.
 Qed.
 
 Lemma dom_sub_sw_sub_ts {o} :
-  forall a b l k,
+  forall sw l k,
     length l = length k
-    -> @dom_sub o (sw_sub_ts a b l k) = l.
+    -> @dom_sub o (sw_sub_ts sw l k) = l.
 Proof.
   introv len.
   unfold sw_sub_ts.
@@ -1081,9 +1098,9 @@ Proof.
 Qed.
 
 Lemma sub_free_vars_sw_sub2 {o} :
-  forall a b l k,
+  forall sw l k,
     length l = length k
-    -> @sub_free_vars o (sw_sub2 a b l k) = k.
+    -> @sub_free_vars o (sw_sub2 sw l k) = k.
 Proof.
   introv len.
   unfold sw_sub2.
@@ -1092,13 +1109,13 @@ Proof.
 Qed.
 
 Lemma isprogram_mk_swap_cs2_sw_sub2_sw_sub_ts {o} :
-  forall a b (t : @NTerm o) l k ts,
+  forall sw (t : @NTerm o) l k ts,
     nt_wf t
     -> areprograms ts
     -> length l = length k
     -> length k = length ts
     -> subset (free_vars t) l
-    -> isprogram (lsubst (mk_swap_cs2 a b (lsubst_aux t (sw_sub2 a b l k))) (sw_sub_ts a b k ts)).
+    -> isprogram (lsubst (mk_swap_cs2 sw (lsubst_aux t (sw_sub2 sw l k))) (sw_sub_ts sw k ts)).
 Proof.
   introv wf aps lena lenb ss.
   apply isprogram_lsubst_if_isprog_sub; eauto 3 with slow.
@@ -1116,14 +1133,17 @@ Qed.
 Hint Resolve isprogram_mk_swap_cs2_sw_sub2_sw_sub_ts : slow.
 
 Lemma computes_to_value_can_implies_swap_cs2 {o} :
-  forall a b lib (t : @NTerm o) c bs,
+  forall sw lib (t : @NTerm o) c bs,
     t =v>(lib) (oterm (Can c) bs)
-    -> mk_swap_cs2 a b t =v>(lib) (push_swap_cs_can a b c bs).
+    -> mk_swap_cs2 sw t =v>(lib) (push_swap_cs_can sw c bs).
 Proof.
   introv comp.
   unfold computes_to_value in *; repnd.
   dands; eauto 3 with slow.
-  eapply reduces_to_trans;[eapply reduces_to_prinarg; eauto|].
+  eapply reduces_to_trans;
+    [eapply implies_reduces_to_mk_swap_cs2;
+     eapply swap_reduces_to;eauto|].
+  autorewrite with slow.
   apply reduces_to_if_step; auto.
 Qed.
 
@@ -1155,9 +1175,9 @@ Qed.
 Hint Resolve areprograms_implies_cl_sub : slow.
 
 Lemma disjoint_bv_sub_sw_sub {o} :
-  forall a b l (t : @NTerm o),
+  forall sw l (t : @NTerm o),
     disjoint (bound_vars t) l
-    -> disjoint_bv_sub t (sw_sub a b l).
+    -> disjoint_bv_sub t (sw_sub sw l).
 Proof.
   introv disj i.
   apply in_map_iff in i; exrepnd; ginv; simpl in *.
@@ -1179,18 +1199,18 @@ Qed.
 Hint Resolve areprograms_implies_disjoint_bv_sub : slow.
 
 Lemma sub_bound_vars_sw_sub {o} :
-  forall a b l,
-    @sub_bound_vars o (sw_sub a b l) = [].
+  forall sw l,
+    @sub_bound_vars o (sw_sub sw l) = [].
 Proof.
   induction l; simpl; auto.
 Qed.
 Hint Rewrite @sub_bound_vars_sw_sub : slow.
 
 Lemma lsubst_sub_sw_sub_as_sw_sub_ts {o} :
-  forall a b l (ts : list (@NTerm o)),
+  forall sw l (ts : list (@NTerm o)),
     no_repeats l
     -> length l = length ts
-    -> lsubst_sub (sw_sub a b l) (combine l ts) = sw_sub_ts a b l ts.
+    -> lsubst_sub (sw_sub sw l) (combine l ts) = sw_sub_ts sw l ts.
 Proof.
   unfold sw_sub_ts.
   induction l; introv norep len; simpl in *; auto.

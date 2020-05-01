@@ -34,6 +34,7 @@
 Require Export approx_star0.
 Require Export approx_star_abs.
 Require Export approx_star_fresh.
+Require Export approx_star_swap.
 
 Require Import extensional_apply.
 Require Import extensional_eapply.

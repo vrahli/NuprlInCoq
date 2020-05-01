@@ -2233,8 +2233,7 @@ Proof.
   introv wf comp.
   unfold computes_to_value, reduces_to in comp; exrepnd.
 
-  pose proof (approx_star_swap.computes_to_val_like_in_max_k_steps_swap_cs2_implies
-                lib k sw t u) as q.
+  pose proof (computes_to_val_like_in_max_k_steps_swap_cs2_implies lib k sw t u) as q.
   repeat (autodimp q hyp); eauto 3 with slow.
   { unfold computes_to_val_like_in_max_k_steps; dands; eauto 3 with slow. }
   repndors; exrepnd; subst; simpl in *;
@@ -2349,7 +2348,7 @@ Proof.
   destruct_cterms; unfold computes_to_valc in *; simpl in *.
   unfold computes_to_value in *; repnd; dands; eauto 3 with slow.
   eapply reduces_to_trans;
-    [apply approx_star_swap.implies_reduces_to_mk_swap_cs2;eapply swap_reduces_to;eauto|].
+    [apply implies_reduces_to_mk_swap_cs2;eapply swap_reduces_to;eauto|].
   autorewrite with slow.
   applydup @isvalue_implies_iscan in comp.
   apply iscan_implies in comp1; exrepnd; subst.
@@ -2417,7 +2416,7 @@ Proof.
   apply howetheorem1;
     try apply implies_isprogram_push_swap_cs_can; auto.
   destruct sw; simpl in *.
-  apply approx_star_swap.approx_star_push_swap_cs_can; eauto 2 with slow;[].
+  apply approx_star_push_swap_cs_can; eauto 2 with slow;[].
   apply implies_nt_wf_push_swap_cs_oterm;
     apply wf_term_implies; apply isprogram_implies_wf;
       eauto 2 with slow.

@@ -9081,7 +9081,7 @@ Proof.
 
   { introv compa.
     apply (@swap_computes_to_value o sw) in compa.
-    rewrite swap_cs_term_idem, approx_star_swap.swap_cs_plib_idem in compa; simpl in compa.
+    rewrite swap_cs_term_idem, swap_cs_plib_idem in compa; simpl in compa.
     apply cv in compa; exrepnd.
     apply (@swap_computes_to_value o sw) in compa1; simpl in compa1.
     rewrite swap_cs_can_twice in compa1.
@@ -13832,7 +13832,7 @@ Proof.
   { repeat rewrite nocs0.
     apply get_cs_swap_cs_term_nil_iff. }
   { split; intro x; dup x as xx; rewrite nocs in x; pose proof (x (name,name')) as x; try congruence.
-    rewrite approx_star_swap.swap_cs_choice_seq_restr_idem in x; rewrite <- x in xx; auto. }
+    rewrite swap_cs_choice_seq_restr_idem in x; rewrite <- x in xx; auto. }
 Qed.
 
 Lemma lib_extends_replace_cs_entry_between1 {o} :
@@ -15138,7 +15138,7 @@ Proof.
   { repeat rewrite nocs0; tcsp.
     apply get_cs_swap_cs_term_nil_iff. }
   { split; intro x; dup x as xx; rewrite nocs in x; pose proof (x sw) as x; try congruence.
-    rewrite approx_star_swap.swap_cs_choice_seq_restr_idem in x; rewrite <- x in xx; auto. }
+    rewrite swap_cs_choice_seq_restr_idem in x; rewrite <- x in xx; auto. }
 Qed.
 Hint Resolve same_conds_swap_cs_lib : slow.
 
