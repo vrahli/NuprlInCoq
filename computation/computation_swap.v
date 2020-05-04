@@ -35,18 +35,6 @@ Definition swap_cs_choice_seq_restr_comp {o}
   | None => swap_cs_choice_seq_restr r restr
   end.
 
-Definition swap_cs_in_lib_entry {o} (r : cs_swap) (e : @library_entry o) :=
-  match e with
-  | lib_cs name e => lib_cs (swap_cs r name) e
-  | lib_abs _ _ _ _ => e
-  end.
-
-Fixpoint swap_cs_in_plib {o} (r : cs_swap) (lib : @plibrary o) :=
-  match lib with
-  | [] => []
-  | entry :: entries => swap_cs_in_lib_entry r entry :: swap_cs_in_plib r entries
-  end.
-
 Definition cs_size {o} (lib : @library o) (name : choice_sequence_name) : nat :=
   match find_cs lib name with
   | Some e => length (cse_vals e)
@@ -118,6 +106,7 @@ Lemma entry_depth_swap_cs_in_lib_entry {o} :
     entry_depth (swap_cs_in_lib_entry sw e) = entry_depth e.
 Proof.
   introv; destruct e; simpl; auto.
+  destruct entry as [vals restr]; simpl; autorewrite with slow; auto.
 Qed.
 Hint Rewrite @entry_depth_swap_cs_in_lib_entry : slow.
 
@@ -349,7 +338,7 @@ Proof.
   unfold swap_cs_choice_seq_vals; rewrite select_map; tcsp.
 Qed.
 
-Lemma find_cs_swap_cs_in_plib {o} :
+(*Lemma find_cs_swap_cs_in_plib {o} :
   forall sw (lib : @plibrary o) name,
     find_cs (swap_cs_in_plib sw lib) (swap_cs sw name)
     = find_cs lib name.
@@ -357,16 +346,16 @@ Proof.
   induction lib; introv; simpl in *; tcsp.
   destruct a; simpl in *; tcsp; boolvar; subst; tcsp.
   apply swap_cs_inj in e; tcsp.
-Qed.
+Qed.*)
 
-Lemma find_cs_value_at_swap_cs_in_plib {o} :
+(*Lemma find_cs_value_at_swap_cs_in_plib {o} :
   forall sw (lib : @plibrary o) name n,
     find_cs_value_at (swap_cs_in_plib sw lib) (swap_cs sw name) n
     = find_cs_value_at lib name n.
 Proof.
   introv; unfold find_cs_value_at.
   rewrite find_cs_swap_cs_in_plib; auto.
-Qed.
+Qed.*)
 
 Lemma isexc_swap_cs_term {o} :
   forall sw (t : @NTerm o),
@@ -759,23 +748,6 @@ Proof.
 Qed.
 Hint Rewrite @get_utokens_swap_cs_term : slow.
 
-Lemma get_utokens_library_entry_swap_cs_in_lib_entry {o} :
-  forall sw (e : @library_entry o),
-    get_utokens_library_entry (swap_cs_in_lib_entry sw e)
-    = get_utokens_library_entry e.
-Proof.
-  destruct e; simpl; auto; autorewrite with slow; auto.
-Qed.
-Hint Rewrite @get_utokens_library_entry_swap_cs_in_lib_entry : slow.
-
-Lemma get_utokens_library_swap_cs_in_plib {o} :
-  forall sw (lib : @plibrary o),
-    get_utokens_library (swap_cs_in_plib sw lib) = get_utokens_library lib.
-Proof.
-  induction lib; introv; simpl; tcsp; rewrite IHlib; autorewrite with slow; auto.
-Qed.
-Hint Rewrite @get_utokens_library_swap_cs_in_plib : slow.
-
 Lemma get_fresh_atom_swap {o} :
   forall sw (lib : @plibrary o) t,
     get_fresh_atom (swap_cs_plib sw lib) (swap_cs_term sw t)
@@ -785,6 +757,16 @@ Proof.
   unfold get_utokens_lib; autorewrite with slow; auto.
 Qed.
 Hint Rewrite @get_fresh_atom_swap : slow.
+
+Lemma get_fresh_atom_swap_cs_in_plib {o} :
+  forall sw (lib : @plibrary o) t,
+    get_fresh_atom (swap_cs_in_plib sw lib) (swap_cs_term sw t)
+    = get_fresh_atom lib t.
+Proof.
+  introv; unfold get_fresh_atom.
+  unfold get_utokens_lib; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @get_fresh_atom_swap_cs_in_plib : slow.
 
 (*Lemma get_fresh_atom_swap2 {o} :
   forall sw (lib : @plibrary o) t,
@@ -918,7 +900,7 @@ Proof.
   eapply ind; eauto.
 Qed.
 
-Lemma swap_cs_pib_swap_cs_plib {o} :
+Lemma swap_cs_plib_swap_cs_plib {o} :
   forall sw sw' (lib : @plibrary o),
     swap_cs_plib (swap_cs_swap sw sw') (swap_cs_plib sw lib)
     = swap_cs_plib sw (swap_cs_plib sw' lib).
@@ -927,6 +909,60 @@ Proof.
   allrw; f_equal.
   destruct a; simpl;auto.
   { rewrite swap_cs_swap_cs; f_equal.
+    destruct entry as [vals restr]; simpl; f_equal.
+    { unfold swap_cs_choice_seq_vals; allrw map_map; unfold compose; apply eq_maps; introv i.
+      destruct_cterms; apply cterm_eq; simpl.
+      rewrite swap_cs_term_swap_cs_term; auto. }
+    { destruct restr; simpl; f_equal.
+      unfold swap_cs_restriction_pred.
+      repeat (apply functional_extensionality; introv); f_equal.
+      destruct_cterms; apply cterm_eq; simpl.
+      rewrite <- swap_cs_term_swap_cs_term; auto.
+      autorewrite with slow; auto. } }
+  { remember (swap_cs_correct_abs sw opabs vars (swap_cs_soterm sw' rhs)
+                                  (swap_cs_correct_abs sw' opabs vars rhs correct)) as cor'; clear Heqcor'.
+    revert cor'.
+    rewrite <- swap_cs_soterm_swap_cs_soterm; introv.
+    f_equal.
+    apply correct_abs_proof_irrelevance. }
+Qed.
+
+Lemma swap_cs_in_plib_swap_cs_in_plib {o} :
+  forall sw sw' (lib : @plibrary o),
+    swap_cs_in_plib (swap_cs_swap sw sw') (swap_cs_in_plib sw lib)
+    = swap_cs_in_plib sw (swap_cs_in_plib sw' lib).
+Proof.
+  induction lib; simpl; auto.
+  allrw; f_equal.
+  destruct a; simpl;auto.
+  { f_equal.
+    destruct entry as [vals restr]; simpl; f_equal.
+    { unfold swap_cs_choice_seq_vals; allrw map_map; unfold compose; apply eq_maps; introv i.
+      destruct_cterms; apply cterm_eq; simpl.
+      rewrite swap_cs_term_swap_cs_term; auto. }
+    { destruct restr; simpl; f_equal.
+      unfold swap_cs_restriction_pred.
+      repeat (apply functional_extensionality; introv); f_equal.
+      destruct_cterms; apply cterm_eq; simpl.
+      rewrite <- swap_cs_term_swap_cs_term; auto.
+      autorewrite with slow; auto. } }
+  { remember (swap_cs_correct_abs sw opabs vars (swap_cs_soterm sw' rhs)
+                                  (swap_cs_correct_abs sw' opabs vars rhs correct)) as cor'; clear Heqcor'.
+    revert cor'.
+    rewrite <- swap_cs_soterm_swap_cs_soterm; introv.
+    f_equal.
+    apply correct_abs_proof_irrelevance. }
+Qed.
+
+Lemma swap_cs_in_plib_swap_cs_plib {o} :
+  forall sw sw' (lib : @plibrary o),
+    swap_cs_in_plib (swap_cs_swap sw sw') (swap_cs_plib sw lib)
+    = swap_cs_plib sw (swap_cs_in_plib sw' lib).
+Proof.
+  induction lib; simpl; auto.
+  allrw; f_equal.
+  destruct a; simpl;auto.
+  { f_equal.
     destruct entry as [vals restr]; simpl; f_equal.
     { unfold swap_cs_choice_seq_vals; allrw map_map; unfold compose; apply eq_maps; introv i.
       destruct_cterms; apply cterm_eq; simpl.
@@ -1158,7 +1194,7 @@ Proof.
       rewrite compute_step_swap_cs2_isnoncan_like_eq; eauto 3 with slow.
       rewrite swap_cs_term_swap_cs_term.
       allrw; fold_terms.
-      rewrite swap_cs_pib_swap_cs_plib; allrw; auto.
+      rewrite swap_cs_in_plib_swap_cs_plib; allrw; auto.
       rewrite swap_cs_term_swap_cs_term; auto. } }
 
   { csunf comp; simpl in *; ginv; csunf; simpl; tcsp. }

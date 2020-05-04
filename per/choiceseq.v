@@ -2185,26 +2185,6 @@ Proof.
   apply equality_of_nat_implies_ccequivc_ext; auto.
 Qed.
 
-Lemma compute_on_can {o} :
-  forall lib (t : @NTerm o) k,
-    iscan t
-    -> compute_at_most_k_steps lib k t = csuccess t.
-Proof.
-  induction k; introv isc; simpl in *; auto.
-  rewrite IHk; auto.
-  apply iscan_compute_step; auto.
-Qed.
-
-Lemma reduces_to_if_can {o} :
-  forall lib (t u : @NTerm o),
-    reduces_to lib t u
-    -> iscan t
-    -> t = u.
-Proof.
- unfold reduces_to, reduces_in_atmost_k_steps; introv Hc Hisv; exrepnd.
- rewrite compute_on_can in Hc0; ginv; auto.
-Qed.
-
 Lemma implies_isvalue_push_swap_cs_can {o} :
   forall sw (can : @CanonicalOp o) bs,
     isvalue (oterm (Can can) bs)
@@ -2213,41 +2193,6 @@ Proof.
   introv isv; inversion isv; subst; split; eauto 3 with slow.
 Qed.
 Hint Resolve implies_isvalue_push_swap_cs_can : slow.
-
-Lemma iscan_push_swap_cs_can {o} :
-  forall sw c (bs : list (@BTerm o)),
-    iscan (push_swap_cs_can sw c bs).
-Proof.
-  tcsp.
-Qed.
-Hint Resolve iscan_push_swap_cs_can : slow.
-
-Lemma swap_cs2_computes_to_value_implies {o} :
-  forall lib sw (t : @NTerm o) u,
-    isprog t
-    -> (mk_swap_cs2 sw t) =v>(lib) u
-    -> {c : CanonicalOp & {bs : list BTerm
-       & ((swap_cs_term sw t) =v>(swap_cs_plib sw lib) (oterm (Can c) bs))
-       # u = (push_swap_cs_can sw (swap_cs_can sw c) (map (swap_cs_bterm sw) bs)) }}.
-Proof.
-  introv wf comp.
-  unfold computes_to_value, reduces_to in comp; exrepnd.
-
-  pose proof (computes_to_val_like_in_max_k_steps_swap_cs2_implies lib k sw t u) as q.
-  repeat (autodimp q hyp); eauto 3 with slow.
-  { unfold computes_to_val_like_in_max_k_steps; dands; eauto 3 with slow. }
-  repndors; exrepnd; subst; simpl in *;
-    allapply @isvalue_mk_exception; tcsp;[].
-
-  exists can bs; dands; auto.
-  { unfold computes_to_value; dands; eauto 3 with slow.
-    unfold computes_to_can_in_max_k_steps in *; repnd.
-    apply reduces_atmost_preserves_program in q4; eauto 3 with slow. }
-
-  unfold computes_to_val_like_in_max_k_steps in *; repnd; eauto 3 with slow.
-  apply reduces_in_atmost_k_steps_implies_reduces_to in q4.
-  apply reduces_to_if_can in q4; eauto 3 with slow.
-Qed.
 
 Lemma mkc_swap_ccomputes_to_valc_ext_integer_implies {o} :
   forall sw lib (t : @CTerm o) k,

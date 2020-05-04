@@ -712,7 +712,7 @@ Definition compute_step {o}
             | (lib,oterm (NSwapCs2 sw) [bterm [] u] as t) =>
               fun F => compute_step_swap_cs2
                          sw u
-                         (F (swap_cs_plib sw lib,swap_cs_term sw u) (compute_step'_size_cs sw u))
+                         (F (swap_cs_in_plib sw lib,swap_cs_term sw u) (compute_step'_size_cs sw u))
             | (lib,oterm (NSwapCs2 sw) _ as t) => fun _ => cfailure bad_args t
             | (lib,oterm (Abs opabs) bs as t) => fun F => compute_step_lib lib opabs bs
           end)
@@ -746,7 +746,7 @@ Definition compute_step_unfold {o}
     | oterm (NCan ncr) ((bterm [] arg1nt)::btsr) =>
       on_success (compute_step lib arg1nt) (fun f => oterm (NCan ncr) (bterm [] f :: btsr))
     | oterm (NSwapCs2 sw) [bterm [] u] =>
-      compute_step_swap_cs2 sw u (compute_step (swap_cs_plib sw lib) (swap_cs_term sw u))
+      compute_step_swap_cs2 sw u (compute_step (swap_cs_in_plib sw lib) (swap_cs_term sw u))
     | oterm (NSwapCs2 sw) _ => cfailure bad_args t
     | oterm (Abs opabs) bs => compute_step_lib lib opabs bs
   end.

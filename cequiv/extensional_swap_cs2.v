@@ -52,7 +52,12 @@ Proof.
     applydup @reduces_atmost_preserves_program in Hcv4; auto; eauto 2 with slow.
     make_red_val_like Hcv4 h1.
 
-    eapply Hi in h1; try apply implies_approx_star_swap_cs_term; try exact Has0bt; eauto 2 with slow.
+    eapply Hi in h1; try apply implies_approx_star_swap_cs_term; try exact Has0bt.
+; eauto 2 with slow.
+
+2:{
+
+}
     apply (implies_approx_star_swap_cs_term _ sw) in h1; simpl in *; autorewrite with slow in *.
 
     apply (implies_isprogram_swap_cs_term sw) in ispc1; simpl in *.
@@ -115,3 +120,4 @@ Proof.
     apply reduces_to_if_step; simpl.
     csunf; simpl; unfold push_swap_cs_exc; simpl; fold_terms; autorewrite with slow; auto.
 Qed.
+u

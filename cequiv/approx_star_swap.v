@@ -34,9 +34,6 @@ Require Export computation_swap.
 Require Export approx_star0.
 
 
-Hint Rewrite @minus0 : slow.
-Hint Rewrite @Nat.add_0_r : slow.
-
 
 Lemma computes_to_val_like_in_max_k_steps_swap_cs1_implies {p} :
   forall lib k n1 n2 n3 v,
@@ -415,135 +412,6 @@ Proof.
   introv comp1 comp2.
   unfold computes_to_value, reduces_to in *; exrepnd.
   eapply implies_compute_at_most_k_steps_mk_swap_cs1 in comp4; try exact comp0; exrepnd; eauto 3 with slow.
-Qed.
-
-Lemma push_swap_cs_sub_term_nil {o} :
-  forall sw (a : @NTerm o),
-    push_swap_cs_sub_term sw [] a = a.
-Proof.
-  introv; unfold push_swap_cs_sub_term; simpl; autorewrite with slow; auto.
-Qed.
-Hint Rewrite @push_swap_cs_sub_term_nil : slow.
-
-Lemma computes_to_val_like_in_max_k_steps_swap_cs2_implies {o} :
-  forall lib k sw n (v : @NTerm o),
-    wf_term n
-    -> computes_to_val_like_in_max_k_steps lib
-         (oterm (NSwapCs2 sw) [nobnd n])
-         v
-         k
-    -> {can : CanonicalOp
-       $ {bs : list BTerm
-       $ {k1 : nat
-       $ k1+1 <= k
-       # computes_to_can_in_max_k_steps (swap_cs_plib sw lib) k1 (swap_cs_term sw n) (oterm (Can can) bs)
-       # reduces_in_atmost_k_steps lib
-           (oterm (NSwapCs2 sw) [nobnd n])
-           (oterm (NSwapCs2 sw)
-                  [nobnd (oterm (Can (swap_cs_can sw can)) (map (swap_cs_bterm sw) bs))])
-           k1
-       # computes_to_val_like_in_max_k_steps lib
-           (push_swap_cs_can sw (swap_cs_can sw can) (map (swap_cs_bterm sw) bs))
-           v
-           (k - (k1 + 1))
-       }}}
-       [+]
-       {en, e : NTerm
-       $ {k1 : nat
-       $ k1 + 1 <= k
-       # v = mk_exception (mk_swap_cs2 sw (swap_cs_term sw en)) (mk_swap_cs2 sw (swap_cs_term sw e))
-       # computes_to_exception_in_max_k_steps (swap_cs_plib sw lib) en (swap_cs_term sw n) e k1
-       # reduces_in_atmost_k_steps lib
-           (mk_swap_cs2 sw n)
-           (mk_swap_cs2 sw (mk_exception (swap_cs_term sw en) (swap_cs_term sw e)))
-           k1
-       }}.
-Proof.
-  induction k; introv wf comp.
-
-  - destruct comp as [r is].
-    inversion r; subst.
-    allunfold @isvalue_like; allsimpl; sp.
-
-  - apply computes_to_val_like_in_max_k_steps_S in comp; exrepnd.
-
-    destruct n; try (complete (inversion comp1));[].
-    dopid o0 as [can1|ncan1|nsw1|exc1|abs1] Case.
-
-    + Case "Can".
-      csunf comp1; simpl in *; ginv.
-      left.
-      exists (swap_cs_can sw can1) (map (swap_cs_bterm sw) l) 0; simpl; dands; try omega;
-        allrw @computes_to_can_in_max_k_steps_0;
-        allrw @reduces_in_atmost_k_steps_0;
-        autorewrite with slow; dands; eauto 3 with slow.
-
-    + Case "NCan".
-      csunf comp1; simpl in *.
-      apply on_success_csuccess in comp1; exrepnd; subst; simpl in *.
-      applydup (@implies_wf_term_swap_cs_term o sw) in wf; simpl in *.
-      apply IHk in comp0; repndors; exrepnd; subst; simpl in *;
-        autorewrite with slow in *; eauto 3 with slow.
-
-      * left.
-        exists can bs (S k1); dands; simpl; auto; try omega.
-        { rw @computes_to_can_in_max_k_steps_S; allrw; eexists; dands; eauto. }
-        rw @reduces_in_atmost_k_steps_S.
-        csunf; simpl; allrw; simpl; eexists; dands; eauto.
-
-      * right.
-        exists en e (S k1); simpl; dands; auto; try omega.
-        { rw @computes_to_exception_in_max_k_steps_S; allrw; eexists; dands; eauto. }
-        rw @reduces_in_atmost_k_steps_S.
-        csunf; simpl; allrw; simpl; eexists; eauto.
-
-    + Case "NSwapCs2".
-      csunf comp1; simpl in *.
-      apply on_success_csuccess in comp1; exrepnd; subst; simpl in *.
-      applydup (@implies_wf_term_swap_cs_term o sw) in wf; simpl in *.
-      apply IHk in comp0; repndors; exrepnd; subst; simpl in *;
-        autorewrite with slow in *; eauto 3 with slow.
-
-      * left.
-        exists can bs (S k1); dands; simpl; auto; try omega.
-        { rw @computes_to_can_in_max_k_steps_S; allrw; eexists; dands; eauto. }
-        rw @reduces_in_atmost_k_steps_S.
-        csunf; simpl; allrw; simpl; eexists; dands; eauto.
-
-      * right.
-        exists en e (S k1); simpl; dands; auto; try omega.
-        { rw @computes_to_exception_in_max_k_steps_S; allrw; eexists; dands; eauto. }
-        rw @reduces_in_atmost_k_steps_S.
-        csunf; simpl; allrw; simpl; eexists; eauto.
-
-    + Case "Exc".
-      csunf comp1; simpl in comp1; ginv.
-      apply wf_exception_implies in wf; exrepnd; subst; simpl in *; fold_terms.
-      apply computes_to_val_like_in_max_k_steps_exc in comp0; subst.
-      right; simpl; fold_terms; autorewrite with slow.
-
-      exists (swap_cs_term sw a) (swap_cs_term sw t) 0; dands; autorewrite with slow; auto; try omega.
-      { apply computes_to_exception_in_max_k_steps_exc; sp. }
-      unfold reduces_in_atmost_k_steps; simpl; sp.
-
-    + Case "Abs".
-      csunf comp1; simpl in *.
-      apply on_success_csuccess in comp1; exrepnd; subst; simpl in *.
-      applydup (@implies_wf_term_swap_cs_term o sw) in wf; simpl in *.
-      apply IHk in comp0; repndors; exrepnd; subst; simpl in *;
-        autorewrite with slow in *; eauto 3 with slow.
-
-      * left.
-        exists can bs (S k1); dands; simpl; auto; try omega.
-        { rw @computes_to_can_in_max_k_steps_S; allrw; eexists; dands; eauto. }
-        rw @reduces_in_atmost_k_steps_S.
-        csunf; simpl; allrw; simpl; eexists; dands; eauto.
-
-      * right.
-        exists en e (S k1); simpl; dands; auto; try omega.
-        { rw @computes_to_exception_in_max_k_steps_S; allrw; eexists; dands; eauto. }
-        rw @reduces_in_atmost_k_steps_S.
-        csunf; simpl; allrw; simpl; eexists; eauto.
 Qed.
 
 Lemma approx_starbts_cons_implies {o} :
@@ -961,68 +829,6 @@ Proof.
   exists sub; dands; autorewrite with slow; auto.
 Qed.
 
-Lemma implies_reduces_in_atmost_k_steps_mk_swap_cs2 {o} :
-  forall k lib sw (t u : @NTerm o),
-    reduces_in_atmost_k_steps (swap_cs_plib sw lib) (swap_cs_term sw t) u k
-    -> {k' : nat & k' <= k # reduces_in_atmost_k_steps lib (mk_swap_cs2 sw t) (mk_swap_cs2 sw (swap_cs_term sw u)) k'}.
-Proof.
-  induction k; introv comp; simpl in *.
-
-  { exists 0; allrw @reduces_in_atmost_k_steps_0; subst; autorewrite with slow; auto. }
-
-  allrw @reduces_in_atmost_k_steps_S; exrepnd.
-  destruct t as [v|op bs]; simpl in *.
-
-  { csunf comp1; simpl in *; ginv. }
-
-  destruct op as [can|ncan|nsw|exc|abs]; simpl in *.
-
-  { csunf comp1; simpl in *; ginv.
-    apply reduces_atmost_can in comp0; subst; simpl in *; autorewrite with slow.
-    exists 0; dands; try omega; allrw @reduces_in_atmost_k_steps_0; auto. }
-
-  { rewrite <- (swap_cs_term_idem sw u0) in comp0.
-    rewrite <- (swap_cs_term_idem sw u) in comp0.
-    eapply IHk in comp0; exrepnd.
-    autorewrite with slow in *.
-    exists (S k'); dands; try omega.
-    allrw @reduces_in_atmost_k_steps_S.
-    csunf; simpl.
-    allrw; simpl; eexists; dands; eauto. }
-
-  { rewrite <- (swap_cs_term_idem sw u0) in comp0.
-    rewrite <- (swap_cs_term_idem sw u) in comp0.
-    eapply IHk in comp0; exrepnd.
-    autorewrite with slow in *.
-    exists (S k'); dands; try omega.
-    allrw @reduces_in_atmost_k_steps_S.
-    csunf; simpl.
-    allrw; simpl; eexists; dands; eauto. }
-
-  { csunf comp1; simpl in *; ginv.
-    apply reduces_atmost_exc in comp0; subst; simpl in *; autorewrite with slow.
-    exists 0; dands; try omega; allrw @reduces_in_atmost_k_steps_0; auto. }
-
-  { rewrite <- (swap_cs_term_idem sw u0) in comp0.
-    rewrite <- (swap_cs_term_idem sw u) in comp0.
-    eapply IHk in comp0; exrepnd.
-    autorewrite with slow in *.
-    exists (S k'); dands; try omega.
-    allrw @reduces_in_atmost_k_steps_S.
-    csunf; simpl.
-    allrw; simpl; eexists; dands; eauto. }
-Qed.
-
-Lemma implies_reduces_to_mk_swap_cs2 {o} :
-  forall lib sw (t u : @NTerm o),
-    reduces_to (swap_cs_plib sw lib) (swap_cs_term sw t) u
-    -> reduces_to lib (mk_swap_cs2 sw t) (mk_swap_cs2 sw (swap_cs_term sw u)).
-Proof.
-  introv comp; unfold reduces_to in *; exrepnd.
-  apply implies_reduces_in_atmost_k_steps_mk_swap_cs2 in comp0; exrepnd.
-  exists k'; auto.
-Qed.
-
 Lemma isprogram_mk_swap_cs2_implies {o} :
   forall sw (t : @NTerm o),
     isprogram (mk_swap_cs2 sw t)
@@ -1042,3 +848,28 @@ Proof.
   unfold isprogram, closed in *; simpl in *; autorewrite with slow in *; repnd; dands; auto.
   apply (implies_nt_wf_swap_cs_term sw) in isp; autorewrite with slow in *; auto.
 Qed.
+
+Lemma swap_cs_in_lib_entry_idem {o} :
+  forall sw (e : @library_entry o),
+    swap_cs_in_lib_entry sw (swap_cs_in_lib_entry sw e) = e.
+Proof.
+  introv; destruct e; simpl in *; autorewrite with slow; dands; auto; eauto 3 with slow.
+
+  remember (swap_cs_correct_abs
+              sw opabs vars (swap_cs_soterm sw rhs)
+              (swap_cs_correct_abs sw opabs vars rhs correct)) as w.
+  clear Heqw.
+  revert w.
+  autorewrite with slow; introv.
+  f_equal; eauto with pi.
+Qed.
+Hint Rewrite @swap_cs_in_lib_entry_idem : slow.
+
+Lemma swap_cs_in_plib_idem {o} :
+  forall sw (lib : @plibrary o),
+    swap_cs_in_plib sw (swap_cs_in_plib sw lib) = lib.
+Proof.
+  induction lib; introv; simpl; dands; auto.
+  autorewrite with slow; tcsp; try congruence.
+Qed.
+Hint Rewrite @swap_cs_in_plib_idem : slow.

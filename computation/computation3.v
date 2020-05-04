@@ -3641,7 +3641,7 @@ Lemma compute_step_swap_cs2_isnoncan_like_eq {o} :
   forall lib sw (t : @NTerm o),
     isnoncan_like t
     -> compute_step lib (mk_swap_cs2 sw t)
-       = match compute_step (swap_cs_plib sw lib) (swap_cs_term sw t) with
+       = match compute_step (swap_cs_in_plib sw lib) (swap_cs_term sw t) with
          | csuccess u => csuccess (mk_swap_cs2 sw (swap_cs_term sw u))
          | cfailure s u => cfailure s u (*cfailure bad_args (oterm (NSwapCs2 sw) [nobnd u])*)
          end.

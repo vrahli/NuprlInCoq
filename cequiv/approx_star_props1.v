@@ -404,7 +404,17 @@ Hint Resolve nrut_sub_implies_oshallow_sub : slow.
 
 (* end hide *)
 
-Lemma approx_star_refl {p} : forall lib t, @nt_wf p t -> approx_star lib t t.
+Lemma dec_op_approx_star {o} :
+  forall (op : @Opid o),
+    op = NCan NFresh
+    [+] {sw : cs_swap & op = NSwapCs2 sw}
+    [+] not_swap_or_fresh op.
+Proof.
+  introv; destruct op; simpl; tcsp; eauto;[].
+  destruct n; simpl; tcsp.
+Qed.
+
+Lemma approx_star_refl {p} : forall t lib, @nt_wf p t -> approx_star lib t t.
 Proof.
   nterm_ind1s t as [?|o lbt Hind] Case; introv Hwf; eauto 3 with slow.
 
@@ -420,19 +430,26 @@ Proof.
     unfold blift_sub.
     exists (lv) (nt) (nt); spc; eauto.
     assert (nt_wf nt) as w by (eapply nt_wf_ot_implies in Hwf; eauto).
-    applydup (Hind nt nt lv) in Hbt1 as ap; eauto 3 with slow.
-    destruct (dec_op_eq_fresh o) as [e|e]; subst.
+    pose proof (Hind nt nt lv) as Hind'.
+    repeat (autodimp Hind' hyp); eauto 3 with slow.
+    pose proof (Hind' lib) as Hind'; repeat (autodimp Hind' hyp).
+    pose proof (dec_op_approx_star o) as e; repndors; exrepnd; subst; simpl in *.
 
-    + right.
+    + right; left.
       pose proof (exists_nrut_sub lv (get_utokens_lib lib nt)) as h; exrepnd; subst.
       exists sub; dands; auto.
 
       * pose proof (Hind nt (lsubst nt sub) (dom_sub sub)) as h.
         repeat (autodimp h hyp); eauto 3 with slow.
-        rw @simple_osize_lsubst; eauto with slow.
+        { rw @simple_osize_lsubst; eauto with slow. }
+        apply h; eauto 3 with slow.
 
       * eapply nrut_sub_subset;[|exact h1].
         introv i; allrw in_app_iff; sp.
+
+    + right; right.
+      exists sw; dands; auto.
+      eapply Hind; eauto; autorewrite with slow; eauto 3 with slow.
 
     + left.
       invertsn Hwf. apply Hwf in Hbt1.
@@ -447,12 +464,16 @@ Lemma approx_starbt_refl {p} :
 Proof.
   introv hbt.
   destruct bt as [lv nt]. simpl. invertsn hbt.
-  exrepnd. exists (lv) (nt) (nt); spc.
-  destruct (dec_op_eq_fresh op) as [e|e]; subst; eauto with slow.
-  pose proof (exists_nrut_sub lv (get_utokens_lib lib nt)) as h; exrepnd; subst.
-  right; exists sub; dands; eauto 4 with slow.
-  eapply nrut_sub_subset;[|exact h1].
-  introv i; allrw in_app_iff; sp.
+  exrepnd.
+  exists (lv) (nt) (nt); spc.
+  pose proof (dec_op_approx_star op) as e; repndors; exrepnd; subst; simpl in *; eauto 3 with slow.
+  { right; left.
+    pose proof (exists_nrut_sub lv (get_utokens_lib lib nt)) as h; exrepnd; subst.
+    exists sub; dands; eauto 4 with slow.
+    eapply nrut_sub_subset;[|exact h1].
+    introv i; allrw in_app_iff; sp. }
+  { right; right; eexists; dands; eauto; eauto 3 with slow. }
+  { left; dands; eauto 3 with slow. }
 Qed.
 Hint Resolve approx_starbt_refl : slow.
 
@@ -972,8 +993,28 @@ Proof.
   allrw @lsubst_allvars_preserves_osize2; auto.
 Qed.
 
-Theorem approx_star_relates_only_wf {p} : forall lib (t1 t2 : @NTerm p),
-  approx_star lib t1 t2 -> nt_wf t1 # nt_wf t2.
+Lemma nth_OpBindings_NSwapCs2 {o} :
+  forall n sw,
+    nth n (@OpBindings o (NSwapCs2 sw)) 0 = 0.
+Proof.
+  introv; simpl.
+  repeat (destruct n; auto).
+Qed.
+Hint Rewrite @nth_OpBindings_NSwapCs2 : slow.
+
+Lemma nt_wf_swap_cs_term_implies {o} :
+  forall sw (t : @NTerm o),
+    nt_wf (swap_cs_term sw t)
+    -> nt_wf t.
+Proof.
+  introv wf.
+  apply (implies_nt_wf_swap_cs_term sw) in wf.
+  autorewrite with slow in *; auto.
+Qed.
+
+Theorem approx_star_relates_only_wf {p} :
+  forall (t1 t2 : @NTerm p) lib,
+    approx_star lib t1 t2 -> nt_wf t1 # nt_wf t2.
 Proof.
   nterm_ind1s t1 as [v1|o lbt1 Hind] Case; introv Hap.
 
@@ -1017,7 +1058,9 @@ Proof.
       destruct x as [l' t']; allsimpl; repnd; cpx.
       unfold lblift_sub in Hrel; allsimpl; repnd; GC.
       pose proof (Hrel 0) as q; autodimp q hyp; clear Hrel.
-      unfold blift_sub in q; exrepnd; repndors; exrepnd; tcsp; GC; subst.
+      unfold blift_sub in q; exrepnd; repndors; exrepnd;
+        subst; simpl in *; tcsp; ginv; GC;[].
+
       allunfold @selectbt; allsimpl.
       applydup @alphaeqbt1v2 in q0; exrepnd; subst.
       destruct sub0 as [|z sub0]; allsimpl; tcsp.
@@ -1027,13 +1070,36 @@ Proof.
       allsimpl; dands; auto.
 
       pose proof (Hind nt (lsubst nt0 [(v',t)]) [v'0]) as h; clear Hind; repeat (autodimp h hyp).
-      { rw @simple_osize_lsubst; eauto with slow.
+      { rw @simple_osize_lsubst; eauto 3 with slow.
         apply alpha_eq_bterm_preserves_osize in q2; allrw; eauto 3 with slow. }
       apply h in q4; repnd; clear h.
       apply bt_wf_bt_wf2.
       apply lsubst_wf_iff in q1; eauto 3 with slow.
       applydup @alphaeqbt_preserves_wf in q2 as btw; apply btw.
       constructor; auto.
+
+    + subst; autorewrite with slow in *; cpx.
+      pose proof (H2wf n) as H2wf.
+      repeat (autodimp H2wf hyp); try congruence; repnd; autorewrite with slow in *.
+      unfold lblift_sub in *; repnd.
+      pose proof (Hrel n) as Hrel; autodimp Hrel hyp; try congruence.
+      unfold blift_sub in Hrel; simpl in *; exrepnd; repndors; exrepnd; tcsp; ginv;[].
+      repeat (cpx; simpl in * ); repndors; subst; simpl in *; tcsp.
+      destruct n; simpl in *; try omega.
+      unfold selectbt in *; simpl in *; ginv.
+      apply alphaeqbt_nilv3 in Has0; repnd; subst; simpl in *.
+      apply alpha_eq_bterm_sym in Has2.
+      apply alphaeqbt_nilv3 in Has2; repnd; subst; simpl in *.
+      apply alphaeqbt_nilv3 in Hrel3; repnd; subst; simpl in *.
+      dands; auto.
+      allrw <- @bt_wf_bt_wf2; allrw @bt_wf_iff.
+      apply alpha_eq_respects_nt_wf in Has0; auto.
+      apply alpha_eq_respects_nt_wf in Has2; auto.
+      apply alpha_eq_preserves_osize in Hrel3.
+      apply alpha_eq_preserves_osize in Has2.
+      eapply Hind in Has3; eauto; autorewrite with slow; allrw; eauto 3 with slow;[].
+      repnd.
+      apply nt_wf_swap_cs_term_implies in Has1; auto.
 Qed.
 
 Theorem approx_starbt_relates_only_wf {p} :
@@ -1061,6 +1127,14 @@ Proof.
     apply alphaeqbt_preserves_nt_wf in H0.
     allrw @bt_wf_iff; auto.
     dands; try (apply H2); try (apply H0); auto.
+
+  - apply approx_star_relates_only_wf in H3; repnd.
+    apply nt_wf_swap_cs_term_implies in H1; auto.
+    apply nt_wf_swap_cs_term_implies in H3; auto.
+    apply alphaeqbt_preserves_nt_wf in H2.
+    apply alphaeqbt_preserves_nt_wf in H0.
+    allrw @bt_wf_iff; auto.
+    allrw <-; dands; auto.
 Qed.
 
 (* end hide *)
@@ -1125,9 +1199,12 @@ Proof.
 
   - eexists; eexists; eexists; dands; eauto 3 with slow.
 
-  - exists (dom_sub sub) nt1 nt0; dands; eauto with slow.
-    right.
+  - exists (dom_sub sub) nt1 nt0; dands; eauto 3 with slow.
+    right; left.
     exists sub; dands; auto.
+
+  - exists x nt1 nt0; simpl; dands; eauto 3 with slow.
+    right; right; eexists; dands; eauto.
 Qed.
 
 (* more useful for rewrite tactics*)
@@ -1610,8 +1687,9 @@ Qed.
  *)
 
 Theorem approx_star_lsubst_vars {p} :
-  forall lib a b lvi lvo,
-    length lvi = length lvo ->
+  forall a lib b lvi lvo,
+    length lvi = length lvo
+    ->
     let sub := @var_ren p lvi lvo in
     approx_star lib a b
     -> approx_star lib (lsubst a sub) (lsubst b sub).
@@ -1734,7 +1812,7 @@ Proof.
       { apply alpha_eq_bterm_preserves_osize in aeqb1; rw aeqb1.
         apply alpha_eq_bterm_preserves_osize in bl2; rw bl2; auto.
         apply alpha_eq_preserves_osize in aeq0; rw aeq0; eauto 3 with slow. }
-      pose proof (h nt2n lv lvn) as aprs1; clear h; repeat (autodimp aprs1 hyp).
+      pose proof (h lib nt2n lv lvn) as aprs1; clear h; repeat (autodimp aprs1 hyp).
 
       pose proof (Hind u' (lsubst nt1n (var_ren lv lvn)) l' aeqb0) as h.
       autodimp h hyp.
@@ -1743,14 +1821,14 @@ Proof.
         apply alpha_eq_bterm_preserves_osize in bl2; rw bl2; auto.
         apply alpha_eq_preserves_osize in aeq0; rw aeq0; eauto 3 with slow. }
       pose proof (@sub_filter_var_ren_implies p lvi lvo lvn) as vr; exrepnd.
-      pose proof (h (lsubst nt2n (var_ren lv lvn)) vs3 vs4) as aprs2; clear h.
+      pose proof (h lib (lsubst nt2n (var_ren lv lvn)) vs3 vs4) as aprs2; clear h.
       repeat (autodimp aprs2 hyp).
       repeat (rw vr0).
       rw <- @lsubst_lsubst_aux2; eauto 3 with slow.
       rw <- @lsubst_lsubst_aux2; eauto 3 with slow.
       subst; auto.
 
-    + right.
+    + right; left.
 
       pose proof (lsubst_nest_same_alpha nt1n (dom_sub sub) lvn (range sub)) as nest1.
       allrw @length_dom; allrw @length_range.
@@ -1813,7 +1891,7 @@ Proof.
         apply alpha_eq_bterm_preserves_osize in bl2; rw bl2.
         apply alpha_eq_preserves_osize in aeq0; rw aeq0; eauto 3 with slow. }
       pose proof (@swap.sub_filter_var_ren_implies p lvi lvo lvn) as vr; exrepnd.
-      pose proof (h (lsubst (lsubst nt2n (var_ren lv lvn)) sub') vs3 vs4) as apr2.
+      pose proof (h lib (lsubst (lsubst nt2n (var_ren lv lvn)) sub') vs3 vs4) as apr2.
       repeat (autodimp apr2 hyp).
       repeat (rw vr0).
       rw <- @lsubst_lsubst_aux2; eauto 3 with slow.
@@ -1859,6 +1937,45 @@ Proof.
       rw e2.
 
       auto.
+
+    + right; right.
+      subst o; simpl in *.
+      exists sw; dands; auto;[].
+      assert {l' : list NVar & {u' : NTerm & LIn (bterm l' u') lbta # alpha_eq_bterm (bterm l' u') (bterm l1 t1)}} as aeqb.
+      { apply alpha_eq_bterms_sym in h3; unfold alpha_eq_bterms in h3; repnd.
+        pose proof (combine_in_left _ _ bs' lbta) as k.
+        autodimp k hyp; apply k in ib0; exrepnd.
+        destruct u0 as [l' u'].
+        applydup in_combine in ib5; repnd.
+        apply h3 in ib5.
+        eexists; eexists; dands; eauto with slow. }
+      exrepnd.
+
+      assert (approx_star (swap_cs_in_plib sw lib) (swap_cs_term sw nt1n) (swap_cs_term sw nt2n)) as apr.
+      { eapply approx_star_alpha_fun_l;[eapply approx_star_alpha_fun_r|]; try exact bl3; eauto 3 with slow. }
+
+      pose proof (Hind u' (swap_cs_term sw nt1n) l' aeqb0) as h.
+      autodimp h hyp; autorewrite with slow.
+      { apply alpha_eq_bterm_preserves_osize in aeqb1; rw aeqb1.
+        apply alpha_eq_bterm_preserves_osize in bl2; rw bl2; auto.
+        apply alpha_eq_preserves_osize in aeq0; rw aeq0; eauto 3 with slow. }
+      pose proof (h (swap_cs_in_plib sw lib) (swap_cs_term sw nt2n) lv lvn) as aprs1; clear h; repeat (autodimp aprs1 hyp).
+
+      pose proof (Hind u' (lsubst (swap_cs_term sw nt1n) (var_ren lv lvn)) l' aeqb0) as h.
+      autodimp h hyp.
+      { rw @lsubst_allvars_preserves_osize2; autorewrite with slow; auto.
+        apply alpha_eq_bterm_preserves_osize in aeqb1; rw aeqb1.
+        apply alpha_eq_bterm_preserves_osize in bl2; rw bl2; auto.
+        apply alpha_eq_preserves_osize in aeq0; rw aeq0; eauto 3 with slow. }
+      pose proof (@sub_filter_var_ren_implies p lvi lvo lvn) as vr; exrepnd.
+      pose proof (h (swap_cs_in_plib sw lib) (lsubst (swap_cs_term sw nt2n) (var_ren lv lvn)) vs3 vs4) as aprs2; clear h.
+      repeat (autodimp aprs2 hyp).
+      repeat (rw vr0).
+      repeat (rewrite <- lsubst_aux_swap_cs_term_if_allvars_sub; eauto 3 with slow;[]).
+      rw <- @lsubst_lsubst_aux2; autorewrite with slow; eauto 3 with slow;[].
+      rw <- @lsubst_lsubst_aux2; autorewrite with slow; eauto 3 with slow;[].
+      subst; auto.
+      repeat rewrite <- lsubst_swap_cs_term_var_ren; auto.
 Qed.
 
 (* The key complication in prev. proof
@@ -1870,7 +1987,7 @@ Qed.
 
 Lemma approx_star_btermd {p} :
   forall lib op bt1 bt2 lva,
-    op <> NCan NFresh
+    not_swap_or_fresh op
     -> approx_star_bterm op lib bt1 bt2
     -> {lvn : list NVar
         & {nt1',nt2' : @NTerm p
@@ -1888,7 +2005,7 @@ Proof.
   exrepnd.
   exists lvn.
 
-  repndors; exrepnd; subst; tcsp.
+  repndors; exrepnd; subst; simpl in *; tcsp;[].
 
   alpharwh_as Hp2 Hab1.
   alpharwh_as Hp3 Hab1.
@@ -1901,7 +2018,7 @@ Qed.
 
 Lemma approx_star_samevar {p} :
   forall lib op a b lv,
-    op <> NCan NFresh
+    not_swap_or_fresh op
     -> approx_star_bterm op lib (bterm lv a) (@bterm p lv b)
     -> approx_star lib a b.
 Proof.
@@ -1952,13 +2069,15 @@ Proof.
   unfold num_bvars. simpl. spc.
 Qed.
 
-Lemma approx_star_bterm_nobnd {p} : forall lib op a bt,
-  approx_star_bterm op lib (bterm [] a) bt
-  -> {b : @NTerm p
+Lemma approx_star_bterm_nobnd {p} :
+  forall lib op a bt,
+    not_swap op
+    -> approx_star_bterm op lib (bterm [] a) bt
+    -> {b : @NTerm p
       $ bt = (bterm [] b)
       # approx_star lib a b}.
 Proof.
-  introv Has.
+  introv nsw Has.
   applydup @blift_sub_numbvars in Has.
   unfold num_bvars in Has0. simpl in Has0.
   destruct bt as [lv b]; allsimpl; cpx.
@@ -1967,9 +2086,9 @@ Proof.
   apply alphaeqbt_nilv in Has2; exrepnd; ginv.
   apply alphaeqbt_nilv in Has0; exrepnd; ginv.
   repndors; exrepnd; subst; cpx; eauto 5 with slow.
-  destruct sub; allsimpl; ginv.
-  allrw @lsubst_nil.
-  eauto with slow.
+  { destruct sub; allsimpl; ginv.
+    allrw @lsubst_nil.
+    eauto with slow. }
 Qed.
 
 Lemma approx_star_btermd_1var {p} :

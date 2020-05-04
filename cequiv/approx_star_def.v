@@ -63,17 +63,17 @@ Definition blift_sub {o}
   {lv : list NVar
    $ {nt1,nt2 : NTerm
    $ (
-      (op <> NCan NFresh (*not_swap_or_fresh op*) # R lib nt1 nt2)
+      ((*op <> NCan NFresh*) not_swap_or_fresh op # R lib nt1 nt2)
       [+]
       {sub : Sub
        & op = NCan NFresh
        # R lib (lsubst nt1 sub) (lsubst nt2 sub)
        # nrut_sub (get_utokens_lib lib nt1 ++ get_utokens_lib lib nt2) sub
        # lv = dom_sub sub}
-(*      [+]
+      [+]
       {sw : cs_swap
        & op = NSwapCs2 sw
-       # R (swap_cs_plib sw lib) (swap_cs_term sw nt1) (swap_cs_term sw nt2)}*)
+       # R (swap_cs_in_plib sw lib) (swap_cs_term sw nt1) (swap_cs_term sw nt2)}
      )
    # alpha_eq_bterm b1 (bterm lv nt1)
    # alpha_eq_bterm b2 (bterm lv nt2) }}.

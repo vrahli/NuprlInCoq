@@ -545,7 +545,7 @@ Lemma compute_step_NSwapCs2_success {o} :
     compute_step lib (oterm (NSwapCs2 sw) bs) = csuccess x
     -> {u : NTerm
         & bs = [bterm [] u]
-        # compute_step_swap_cs2 sw u (compute_step (swap_cs_plib sw lib) (swap_cs_term sw u)) = csuccess x}.
+        # compute_step_swap_cs2 sw u (compute_step (swap_cs_in_plib sw lib) (swap_cs_term sw u)) = csuccess x}.
 Proof.
   introv comp.
   csunf comp; simpl in *; dterms w; eauto.

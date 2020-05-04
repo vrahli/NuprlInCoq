@@ -148,14 +148,24 @@ Definition swap_cs_choice_seq_entry {o}
 
 Definition swap_cs_lib_entry {o} (r : cs_swap) (e : @library_entry o) :=
   match e with
-  | lib_cs name e =>
-    lib_cs (swap_cs r name) (swap_cs_choice_seq_entry r e)
-  | lib_abs abs vars rhs correct =>
-    lib_abs abs vars (swap_cs_soterm r rhs) (swap_cs_correct_abs r abs vars rhs correct)
+  | lib_cs name e => lib_cs (swap_cs r name) (swap_cs_choice_seq_entry r e)
+  | lib_abs abs vars rhs correct => lib_abs abs vars (swap_cs_soterm r rhs) (swap_cs_correct_abs r abs vars rhs correct)
   end.
 
 Fixpoint swap_cs_plib {o} (r : cs_swap) (lib : @plibrary o) :=
   match lib with
   | [] => []
   | entry :: entries => swap_cs_lib_entry r entry :: swap_cs_plib r entries
+  end.
+
+Definition swap_cs_in_lib_entry {o} (r : cs_swap) (e : @library_entry o) :=
+  match e with
+  | lib_cs name e => lib_cs name (swap_cs_choice_seq_entry r e)
+  | lib_abs abs vars rhs correct => lib_abs abs vars (swap_cs_soterm r rhs) (swap_cs_correct_abs r abs vars rhs correct)
+  end.
+
+Fixpoint swap_cs_in_plib {o} (r : cs_swap) (lib : @plibrary o) :=
+  match lib with
+  | [] => []
+  | entry :: entries => swap_cs_in_lib_entry r entry :: swap_cs_in_plib r entries
   end.

@@ -1352,6 +1352,19 @@ Proof.
 Qed.
 Hint Rewrite @get_utokens_library_entry_swap_cs_lib_entry : slow.
 
+Lemma get_utokens_library_entry_swap_cs_in_lib_entry {o} :
+  forall sw (e : @library_entry o),
+    get_utokens_library_entry (swap_cs_in_lib_entry sw e)
+    = get_utokens_library_entry e.
+Proof.
+  destruct e; simpl; auto; autorewrite with slow; auto.
+  destruct entry as [vals restr]; simpl.
+  unfold swap_cs_choice_seq_vals; rewrite flat_map_map; unfold compose.
+  apply eq_flat_maps; introv i.
+  autorewrite with slow; auto.
+Qed.
+Hint Rewrite @get_utokens_library_entry_swap_cs_in_lib_entry : slow.
+
 Lemma get_utokens_library_swap_cs_plib {o} :
   forall sw (lib : @plibrary o),
     get_utokens_library (swap_cs_plib sw lib) = get_utokens_library lib.
@@ -1368,6 +1381,22 @@ Proof.
 Qed.
 Hint Rewrite @get_utokens_lib_swap_cs_plib : slow.
 
+Lemma get_utokens_library_swap_cs_in_plib {o} :
+  forall sw (lib : @plibrary o),
+    get_utokens_library (swap_cs_in_plib sw lib) = get_utokens_library lib.
+Proof.
+  induction lib; introv; simpl; tcsp; rewrite IHlib; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @get_utokens_library_swap_cs_in_plib : slow.
+
+Lemma get_utokens_lib_swap_cs_in_plib {o} :
+  forall sw (lib : @plibrary o) t,
+    get_utokens_lib (swap_cs_in_plib sw lib) t = get_utokens_lib lib t.
+Proof.
+  introv; unfold get_utokens_lib; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @get_utokens_lib_swap_cs_in_plib : slow.
+
 Lemma implies_nr_ut_sub_swap_cs_plib {o} :
   forall sw lib (t : @NTerm o) sub,
     nr_ut_sub lib t sub
@@ -1377,6 +1406,16 @@ Proof.
   constructor; autorewrite with slow; auto.
 Qed.
 Hint Resolve implies_nr_ut_sub_swap_cs_plib : slow.
+
+Lemma implies_nr_ut_sub_swap_cs_in_plib {o} :
+  forall sw lib (t : @NTerm o) sub,
+    nr_ut_sub lib t sub
+    -> nr_ut_sub (swap_cs_in_plib sw lib) t sub.
+Proof.
+  introv nrut; induction nrut; auto.
+  constructor; autorewrite with slow; auto.
+Qed.
+Hint Resolve implies_nr_ut_sub_swap_cs_in_plib : slow.
 
 Lemma map_lsubst_bterm_aux_push_swap_cs_bterms {o} :
   forall sw sub (l : list (@BTerm o)),
@@ -4228,7 +4267,7 @@ Proof.
                       erewrite swap_cs_sub_if_nr_ut_sub in comp2; eauto.
                       pose proof (ind a (swap_cs_term nsw a) []) as ind.
                       repeat (autodimp ind hyp); autorewrite with slow; eauto 3 with slow;[].
-                      pose proof (ind w (swap_cs_plib nsw lib) sub) as ind.
+                      pose proof (ind w (swap_cs_in_plib nsw lib) sub) as ind.
                       unflsubst in ind.
                       repeat (autodimp ind hyp); autorewrite with slow; eauto 3 with slow.
                       exrepnd.
