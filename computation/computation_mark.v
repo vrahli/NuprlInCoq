@@ -1964,8 +1964,8 @@ Proof.
       destruct l; allsimpl; ginv.
       destruct l0; allsimpl; ginv.
       destruct bs; allsimpl; ginv.
-      destruct can; allsimpl; ginv.
-      destruct can2; allsimpl; ginv.
+      destruct can; allsimpl; ginv; try (complete (destruct c; ginv)).
+      destruct can2; allsimpl; ginv; try (complete (destruct c; ginv)).
       left; exists z0.
       unfold computes_to_value; dands; tcsp.
       { exists 0; rw @reduces_in_atmost_k_steps_0; auto. }
@@ -2147,8 +2147,8 @@ Proof.
       destruct l; allsimpl; ginv.
       destruct l0; allsimpl; ginv.
       destruct bs; allsimpl; ginv.
-      destruct can; allsimpl; ginv.
-      destruct can2; allsimpl; ginv.
+      destruct can; allsimpl; ginv; try (complete (destruct c; simpl in *; ginv)).
+      destruct can2; allsimpl; ginv; try (complete (destruct c; simpl in *; ginv)).
       left; exists z0.
       unfold computes_to_value; dands; tcsp.
       { exists 0; rw @reduces_in_atmost_k_steps_0; auto. }

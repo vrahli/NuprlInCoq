@@ -39,14 +39,25 @@ Definition swap_cs (r : cs_swap) (n : choice_sequence_name) : choice_sequence_na
   else if choice_sequence_name_deq n n2 then n1
        else n.
 
-Definition swap_cs_can {o} (r : cs_swap) (can : @CanonicalOp o) : CanonicalOp :=
-  match can with
-  | Ncseq name => Ncseq (swap_cs r name)
-  | _ => can
-  end.
-
 Definition swap_cs_swap (sw : cs_swap) (s : cs_swap) : cs_swap :=
   let (a,b) := s in (swap_cs sw a,swap_cs sw b).
+
+Definition swap_cs_swaps (sw : cs_swap) (l : cs_swaps) : cs_swaps :=
+  map (swap_cs_swap sw) l.
+
+(*Definition swap_cs_info (sw : cs_swap) (nfo : cs_info) : cs_info :=
+  match nfo with
+  | cs_info_nat n => cs_info_nat (swap_cs sw n)
+  | cs_info_bool n => cs_info_bool (swap_cs sw n)
+(*  | cs_info_other n s => cs_info_other (swap_cs sw n) (snoc s sw)*)
+  end.
+*)
+
+Definition swap_cs_can {o} (r : cs_swap) (can : @CanonicalOp o) : CanonicalOp :=
+  match can with
+  | Ncseq n => Ncseq (swap_cs r n)
+  | _ => can
+  end.
 
 (*Definition swap_cs_comp_seq_nfo1 (sw : cs_swap) (nfo : CompSeqNfo1) : CompSeqNfo1 :=
   match nfo with
@@ -68,13 +79,45 @@ Definition swap_cs_ncan (r : cs_swap) (ncan : NonCanonicalOp) : NonCanonicalOp :
   end.
 *)
 
+(*Definition add_to_cs_swaps (sw : cs_swap) (l : cs_swaps) : cs_swaps := sw :: l.*)
+
+Definition add_to_cs_swaps (sw : cs_swap) (l : cs_swaps) : cs_swaps :=
+  match l with
+  | [] => [sw]
+  | sw' :: sws =>
+    if cs_swap_deq sw sw' then sws
+    else sw :: sw' :: sws
+  end.
+
+Definition add_to_cs_swaps_norep :
+  forall (sw : cs_swap) (l : cs_swaps),
+    cs_swaps_norep l = true
+    -> cs_swaps_norep (add_to_cs_swaps sw l) = true.
+Proof.
+  introv norep.
+  destruct l; simpl in *; boolvar; subst; auto;
+    destruct l; simpl in *; boolvar; auto.
+Qed.
+
+Coercion cs_sws_sw : cs_swaps_nr >-> cs_swaps.
+
+Definition add_to_cs_swaps_nr (sw : cs_swap) (l : cs_swaps_nr) : cs_swaps_nr :=
+  mk_cs_swaps_nr
+    (add_to_cs_swaps sw l)
+    (add_to_cs_swaps_norep sw l (cs_sws_nr l)).
+
+Definition swap_cs_abs (sw : cs_swap) (abs : opabs) :=
+  match abs with
+  | mk_opabs name params sign l => mk_opabs name params sign (add_to_cs_swaps_nr sw l)
+  end.
+
 Definition swap_cs_op {o} (r : cs_swap) (op : @Opid o) : Opid :=
   match op with
   | Can can => Can (swap_cs_can r can)
   | NCan ncan => NCan ncan (*(swap_cs_ncan r ncan)*)
   | NSwapCs2 nfo => NSwapCs2 (swap_cs_swap r nfo)
   | Exc => Exc
-  | Abs abs => Abs abs
+  | Abs abs => Abs (swap_cs_abs r abs)
   end.
 
 Fixpoint swap_cs_term {o} (r : cs_swap) (t : @NTerm o) : NTerm :=
@@ -125,13 +168,13 @@ Proof.
 Qed.
 Hint Rewrite @OpBindingsNCan_swap_cs_ncan : slow.*)
 
-(*Lemma opabs_sign_swap_cs_abs :
+Lemma opabs_sign_swap_cs_abs :
   forall r (abs : opabs),
     opabs_sign (swap_cs_abs r abs) = opabs_sign abs.
 Proof.
   destruct abs; simpl; auto.
 Qed.
-Hint Rewrite @opabs_sign_swap_cs_abs : slow.*)
+Hint Rewrite @opabs_sign_swap_cs_abs : slow.
 
 Lemma OpBindings_swap_cs_op {o} :
   forall r (op : @Opid o),
@@ -452,6 +495,36 @@ Proof.
   destruct sw; simpl in *; boolvar; subst; auto; tcsp.
 Qed.
 
+Lemma swap_cs_swaps_twice :
+  forall sw (n : cs_swaps),
+    swap_cs_swaps sw (swap_cs_swaps sw n) = n.
+Proof.
+  introv; unfold swap_cs_swaps; allrw map_map; unfold compose.
+  apply eq_map_l; introv i; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @swap_cs_swaps_twice : slow.
+
+Lemma size_swap_cs_term {o} :
+  forall (r : cs_swap)
+         (t : @NTerm o),
+    size (swap_cs_term r t) = size t.
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
+  allrw map_map; unfold compose.
+  f_equal; f_equal.
+  apply eq_maps; introv i; destruct x; simpl in *.
+  erewrite ind; eauto.
+Qed.
+Hint Rewrite @size_swap_cs_term : slow.
+
+(*Lemma swap_cs_info_twice :
+  forall sw (n : cs_info),
+    swap_cs_info sw (swap_cs_info sw n) = n.
+Proof.
+  introv; destruct n; simpl; auto; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @swap_cs_info_twice : slow.*)
+
 Lemma swap_cs_can_twice {o} :
   forall sw (c : @CanonicalOp o),
     swap_cs_can sw (swap_cs_can sw c) = c.
@@ -459,6 +532,42 @@ Proof.
   introv; destruct c; simpl; auto; autorewrite with slow; auto.
 Qed.
 Hint Rewrite @swap_cs_can_twice : slow.
+
+Lemma implies_eq_cs_swaps_nr :
+  forall (l k : cs_swaps_nr),
+    cs_sws_sw l = cs_sws_sw k
+    -> l = k.
+Proof.
+  introv h; destruct l as [l p], k as [k q]; simpl in *; subst.
+  assert (p = q) by (apply UIP_dec; apply bool_dec); subst; auto.
+Qed.
+
+Lemma add_to_cs_swaps_twice :
+  forall sw l,
+    cs_swaps_norep l = true
+    -> add_to_cs_swaps sw (add_to_cs_swaps sw l) = l.
+Proof.
+  introv norep.
+  repeat (destruct l; simpl in *; repeat (boolvar; subst; simpl; tcsp)).
+Qed.
+
+Lemma add_to_cs_swaps_nr_twice :
+  forall sw l,
+    add_to_cs_swaps_nr sw (add_to_cs_swaps_nr sw l) = l.
+Proof.
+  introv; destruct l as [l nr]; simpl in *.
+  apply implies_eq_cs_swaps_nr; simpl.
+  apply add_to_cs_swaps_twice; auto.
+Qed.
+Hint Rewrite add_to_cs_swaps_nr_twice : slow.
+
+Lemma swap_cs_abs_twice :
+  forall sw (a : opabs),
+    swap_cs_abs sw (swap_cs_abs sw a) = a.
+Proof.
+  introv; destruct a as [n p s l]; simpl; auto; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @swap_cs_abs_twice : slow.
 
 Lemma swap_cs_op_idem {o} :
   forall (r  : cs_swap)
@@ -494,15 +603,11 @@ Proof.
 Qed.
 Hint Rewrite @swap_cs_cterm_idem : slow.
 
-Lemma size_swap_cs_term {o} :
-  forall (r : cs_swap)
-         (t : @NTerm o),
-    size (swap_cs_term r t) = size t.
+Lemma map_swap_cs_bterm_twice {o} :
+  forall sw (bs : list (@BTerm o)),
+    map (swap_cs_bterm sw) (map (swap_cs_bterm sw) bs) = bs.
 Proof.
-  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto.
-  allrw map_map; unfold compose.
-  f_equal; f_equal.
-  apply eq_maps; introv i; destruct x; simpl in *.
-  erewrite ind; eauto.
+  introv; allrw map_map; unfold compose.
+  apply eq_map_l; introv i; destruct x; simpl; autorewrite with slow; auto.
 Qed.
-Hint Rewrite @size_swap_cs_term : slow.
+Hint Rewrite @map_swap_cs_bterm_twice : slow.

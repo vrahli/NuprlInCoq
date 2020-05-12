@@ -2221,69 +2221,6 @@ Proof.
   apply mkc_swap_ccomputes_to_valc_ext_integer_implies in comp; auto.
 Qed.
 
-Definition push_swap_cs_oterm {o} sw (t : @NTerm o) : NTerm :=
-  match t with
-  | oterm (Can can) bs => push_swap_cs_can sw can bs
-  | _ => t
-  end.
-
-Lemma implies_isprog_push_swap_cs_oterm {o} :
-  forall sw (t : @NTerm o),
-    isprog t
-    -> isprog (push_swap_cs_oterm sw t).
-Proof.
-  introv isp.
-  destruct t as [v|op bs]; simpl; auto.
-  destruct op; simpl; auto; simpl in *.
-  unfold push_swap_cs_can; simpl.
-  allrw @isprog_ot_iff; repnd; unfold OpBindings; simpl; autorewrite with slow.
-  dands; auto.
-  introv i; apply in_map_iff in i; exrepnd; subst.
-  destruct a; simpl in *.
-  apply isp in i1.
-  allrw <- @isprogram_bt_eq.
-  unfold isprogram_bt in *; repnd; simpl in *.
-  unfold closed_bt in *; simpl in *; autorewrite with slow; dands; auto.
-  allrw @bt_wf_iff; eauto 3 with slow.
-Qed.
-Hint Resolve implies_isprog_push_swap_cs_oterm : slow.
-
-Definition push_swap_cs_otermc {o} sw (t : @CTerm o) : CTerm :=
-  let (a,x) := t in
-  exist isprog (push_swap_cs_oterm sw a) (implies_isprog_push_swap_cs_oterm sw a x).
-
-Lemma implies_isprogram_push_swap_cs_oterm {o} :
-  forall sw (t : @NTerm o),
-    isprogram t
-    -> isprogram (push_swap_cs_oterm sw t).
-Proof.
-  introv isp.
-  allrw @isprogram_eq; eauto 3 with slow.
-Qed.
-Hint Resolve implies_isprogram_push_swap_cs_oterm : slow.
-
-Lemma implies_iscan_push_swap_cs_oterm {o} :
-  forall sw (t : @NTerm o),
-    iscan t
-    -> iscan (push_swap_cs_oterm sw t).
-Proof.
-  introv isc.
-  destruct t as [|op bs]; simpl in *; tcsp.
-  destruct op; simpl in *; auto.
-Qed.
-Hint Resolve implies_iscan_push_swap_cs_oterm : slow.
-
-Lemma implies_isvalue_push_swap_cs_oterm {o} :
-  forall sw (t : @NTerm o),
-    isvalue t
-    -> isvalue (push_swap_cs_oterm sw t).
-Proof.
-  introv isv.
-  destruct isv as [? isp isc].
-  split; eauto 3 with slow.
-Qed.
-Hint Resolve implies_isvalue_push_swap_cs_oterm : slow.
-
 Lemma mkc_swap_preserves_computes_to_valc {o} :
   forall sw lib (a b : @CTerm o),
     computes_to_valc lib a b

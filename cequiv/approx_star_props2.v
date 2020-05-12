@@ -1393,7 +1393,7 @@ Proof.
       autorewrite with slow in q.
       rw sz1 in q.
       repeat (autodimp q hyp); eauto 3 with slow.
-      pose proof (q (swap_cs_term sw nt2) (swap_cs_in_plib sw lib) (ren ++ ren')) as aprs; clear q.
+      pose proof (q (swap_cs_term sw nt2) lib (ren ++ ren')) as aprs; clear q.
       allrw @range_utok_ren_app.
       allrw @dom_utok_ren_app.
       allrw no_repeats_app.

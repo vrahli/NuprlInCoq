@@ -189,12 +189,6 @@ Fixpoint entry_in_library_extends {o}
 Definition lsubset {A} (l1 l2 : list A) : Prop :=
   forall a, List.In a l1 -> List.In a l2.
 
-Definition is0kind (name : choice_sequence_name) : bool :=
-  match csn_kind name with
-  | cs_kind_nat n => if deq_nat n 0 then true else false
-  | _ => false
-  end.
-
 Definition is_nat_restriction {o} (restr : @ChoiceSeqRestriction o) :=
   match restr with
   | csc_type M => forall n v, M n v <-> is_nat n v
@@ -225,11 +219,8 @@ Definition is_nat_seq_restriction {o} (l : list nat) (restr : @ChoiceSeqRestrict
 
 Definition correct_restriction {o} (name : choice_sequence_name) (restr : @ChoiceSeqRestriction o) :=
   match csn_kind name with
-  | cs_kind_nat n =>
-    if deq_nat n 0 then is_nat_restriction restr
-    else if deq_nat n 1 then is_bool_restriction restr
-         else True
-  | cs_kind_seq l => is_nat_seq_restriction l restr
+  | cs_info_nat  => is_nat_restriction restr
+  | cs_info_bool => is_bool_restriction restr
   end.
 
 Definition safe_choice_sequence_entry {o} (name : choice_sequence_name) (e : @ChoiceSeqEntry o) :=
@@ -237,6 +228,12 @@ Definition safe_choice_sequence_entry {o} (name : choice_sequence_name) (e : @Ch
   | MkChoiceSeqEntry _ vals restriction =>
     correct_restriction name restriction
     /\ choice_sequence_satisfies_restriction vals restriction
+  end.
+
+Definition is0kind (name : choice_sequence_name) : bool :=
+  match csn_kind name with
+  | cs_info_nat => true
+  | _ => false
   end.
 
 Definition upd_restr_entry {o} (name : choice_sequence_name) (e : @ChoiceSeqEntry o) :=

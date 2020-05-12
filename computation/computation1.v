@@ -35,6 +35,7 @@ Require Export substitution.
 Require Export library.
 Require Export terms_pk.
 Require Export terms_choice.
+Require Export swap_cs.
 (** printing #  $\times$ #×# *)
 (** printing <=>  $\Leftrightarrow$ #&hArr;# *)
 
@@ -156,6 +157,31 @@ Definition compute_step_apseq {o}
   end.
 *)
 
+Fixpoint apply_swaps {o} (s : cs_swaps) (t : @NTerm o) : NTerm :=
+  match s with
+  | [] => t
+  | sw :: sws => swap_cs_term sw (apply_swaps sws t)
+  end.
+
+(*Definition cs_info2swaps (nfo : cs_info) : cs_swaps :=
+  match nfo with
+  | cs_info_nat _ => []
+  | cs_info_bool _ => []
+(*  | cs_info_other _ s => s*)
+  end.
+Coercion cs_info2swaps : cs_info >-> cs_swaps.
+*)
+
+(*
+Definition cs_info2name (nfo : cs_info) : choice_sequence_name :=
+  match nfo with
+  | cs_info_nat n => n
+  | cs_info_bool n => n
+(*  | cs_info_other n _ => n*)
+  end.
+Coercion cs_info2name : cs_info >-> choice_sequence_name.
+*)
+
 Definition compute_step_eapply2 {o}
            lib
            (t arg1 arg2 : @NTerm o)
@@ -170,7 +196,7 @@ Definition compute_step_eapply2 {o}
         if Z_le_gt_dec 0 z
         then
           match find_cs_value_at lib name (Z.to_nat z) with
-          | Some u => csuccess (CSVal2term u)
+          | Some u => csuccess ((*apply_swaps name*) (CSVal2term u))
           | None => cfailure bad_args t
           end
         else cfailure bad_args t
@@ -207,7 +233,7 @@ Definition eapply_wf {o} (t : @NTerm o) :=
   end.
 
 Definition eapply_wf_def {o} (t : @NTerm o) :=
-  {name : choice_sequence_name & t = mk_choice_seq name}
+  {name : choice_sequence_name & t = mk_choice_seq name }
   [+] {v : NVar & {b : NTerm & t = mk_lam v b}}.
 
 Lemma eapply_wf_dec {o} :
@@ -501,11 +527,11 @@ Definition compute_step_can_test {p}
 
 Definition is_comp_op {o} (op : ComparisonOp) (c : @CanonicalOp o) :=
   match op, c with
-    | CompOpLess, Nint _  => True
-    | CompOpEq,   Nint _  => True
-    | CompOpEq,   NTok _  => True
-    | CompOpEq,   NUTok _ => True
-    | CompOpEq,   Ncseq _ => True
+    | CompOpLess, Nint _    => True
+    | CompOpEq,   Nint _    => True
+    | CompOpEq,   NTok _    => True
+    | CompOpEq,   NUTok _   => True
+    | CompOpEq,   Ncseq _   => True
     | _,_ => False
   end.
 
@@ -873,7 +899,12 @@ Proof.
         try (complete (left; unfold co_wf_def; exists (@PKi o z); dands; tcsp));
         try (complete (left; unfold co_wf_def; exists (@PKs o s); dands; tcsp));
         try (complete (left; unfold co_wf_def; exists (@PKa o g); dands; tcsp));
-        try (complete (left; unfold co_wf_def; exists (@PKc o c); dands; tcsp)).
+        try (complete (left; unfold co_wf_def; exists (@PKc o c); dands; tcsp));
+        try (complete (left; unfold co_wf_def; exists (@PKc o c); dands; tcsp));
+        try (destruct c);
+        try (complete (right;unfold co_wf_def;intro x; exrepnd; ginv; repndors; exrepnd; ginv));
+        try (complete (left; unfold co_wf_def; exists (@PKc o name); dands; tcsp)).
+
   left; unfold co_wf_def.
   exists (@PKi o z); dands; tcsp.
   right.
@@ -951,18 +982,12 @@ Record ComputationContext {o} :=
   }.
 *)
 
-Fixpoint apply_swaps {o} (s : cs_swaps) (t : @NTerm o) : NTerm :=
-  match s with
-  | [] => t
-  | sw :: sws => apply_swaps sws (mk_swap_cs2 sw t)
-  end.
-
 Definition compute_step_lib {o}
            (lib : @plibrary o)
            (opabs : opabs)
            (bs : list (@BTerm o)) :=
   match unfold_abs lib opabs bs with
-    | Some u => csuccess ((*apply_swaps (opabs_swaps opabs)*) u)
+    | Some u => csuccess (apply_swaps (opabs_swaps opabs) u)
     | None => cfailure compute_step_error_abs (oterm (Abs opabs) bs)
   end.
 

@@ -1073,7 +1073,7 @@ Proof.
       * exists v b; dands; auto.
         { exists (S k1).
           rw @reduces_in_atmost_k_steps_S.
-          exists (mk_instance vars bs rhs); dands; auto. }
+          exists (apply_swaps (opabs_swaps abs) (mk_instance vars bs rhs)); dands; auto. }
         exists k0; auto.
 
       * exists n; dands; eauto 3 with slow.
@@ -1799,7 +1799,7 @@ Lemma compute_step_lib_success_change_bs {o} :
   forall (lib : @plibrary o) oa1 oa2 bs1 bs2 vars rhs correct,
     map num_bvars bs1 = map num_bvars bs2
     -> found_entry lib oa1 bs1 oa2 vars rhs correct
-    -> compute_step_lib lib oa1 bs2 = csuccess (mk_instance vars bs2 rhs).
+    -> compute_step_lib lib oa1 bs2 = csuccess (apply_swaps (opabs_swaps oa1) (mk_instance vars bs2 rhs)).
 Proof.
   introv e f.
   unfold compute_step_lib.
@@ -3601,8 +3601,7 @@ Lemma implies_alpha_eq_apply_swaps {o} :
     alpha_eq t u
     -> alpha_eq (apply_swaps l t) (apply_swaps l u).
 Proof.
-  induction l; introv aeq; simpl in *; auto.
-  apply IHl; eauto 3 with slow.
+  induction l; introv aeq; simpl in *; auto; eauto 3 with slow.
 Qed.
 Hint Resolve implies_alpha_eq_apply_swaps : slow.
 
@@ -3628,20 +3627,11 @@ Proof.
   apply alpha_eq_bterm_nobnd in aeq; exrepnd; ginv; auto.
 Qed.
 
-Lemma map_swap_cs_bterm_twice {o} :
-  forall sw (bs : list (@BTerm o)),
-    map (swap_cs_bterm sw) (map (swap_cs_bterm sw) bs) = bs.
-Proof.
-  introv; allrw map_map; unfold compose.
-  apply eq_map_l; introv i; destruct x; simpl; autorewrite with slow; auto.
-Qed.
-Hint Rewrite @map_swap_cs_bterm_twice : slow.
-
 Lemma compute_step_swap_cs2_isnoncan_like_eq {o} :
   forall lib sw (t : @NTerm o),
     isnoncan_like t
     -> compute_step lib (mk_swap_cs2 sw t)
-       = match compute_step (swap_cs_in_plib sw lib) (swap_cs_term sw t) with
+       = match compute_step lib (swap_cs_term sw t) with
          | csuccess u => csuccess (mk_swap_cs2 sw (swap_cs_term sw u))
          | cfailure s u => cfailure s u (*cfailure bad_args (oterm (NSwapCs2 sw) [nobnd u])*)
          end.
@@ -4286,7 +4276,7 @@ Proof.
                 dcwf h;[].
                 exists (oterm (NCan (NCompOp c))
                               (bterm [] (oterm (Can arg1c) t2arg1bts)
-                                     :: bterm [] (mk_instance vars t2arg2bts rhs)
+                                     :: bterm [] (apply_swaps (opabs_swaps arg2abs) (mk_instance vars t2arg2bts rhs))
                                      :: lbt2));
                   dands; [complete (simpl; boolvar; tcsp; unfold on_success; rw k; auto)|].
                 apply al_oterm; simpl; auto.
@@ -4414,7 +4404,7 @@ Proof.
                 dcwf h;[].
                 exists (oterm (NCan (NArithOp a))
                               (bterm [] (oterm (Can arg1c) t2arg1bts)
-                                     :: bterm [] (mk_instance vars t2arg2bts rhs)
+                                     :: bterm [] (apply_swaps (opabs_swaps arg2abs) (mk_instance vars t2arg2bts rhs))
                                      :: lbt2));
                   dands; [complete (simpl; boolvar; tcsp; unfold on_success; rw k; auto)|].
                 apply al_oterm; simpl; auto.
@@ -4549,7 +4539,7 @@ Proof.
                           vars rhs correct e h0) as k.
             rw k.
             exists (oterm (NCan nc1)
-                          (bterm [] (mk_instance vars t2arg1bts rhs) :: lbt2));
+                          (bterm [] (apply_swaps (opabs_swaps arg1abs) (mk_instance vars t2arg1bts rhs)) :: lbt2));
               dands; auto.
             apply al_oterm; simpl; auto.
             introv h.
@@ -4739,7 +4729,7 @@ Proof.
       pose proof (compute_step_lib_success_change_bs
                     lib abs1 oa2 lbt1 lbt2 vars rhs correct e h0) as k.
 
-      exists (mk_instance vars lbt2 rhs); dands; auto.
+      exists (apply_swaps (opabs_swaps abs1) (mk_instance vars lbt2 rhs)); dands; auto.
       try apply implies_alpha_eq_apply_swaps.
       eapply alpha_eq_lsubst_mk_abs_subst; eauto.
 Qed.

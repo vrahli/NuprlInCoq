@@ -48,14 +48,14 @@ Inductive param_kind {o} :=
 | PKs : String.string -> param_kind
 | PKa : get_patom_set o -> param_kind
 | PKi : Z -> param_kind
-| PKc : choice_sequence_name -> param_kind.
+| PKc : choice_sequence_name (* -> cs_swaps*) -> param_kind.
 
 Definition get_param_from_cop {o} (c: @CanonicalOp o) : option (@param_kind o) :=
   match c with
     | NTok s  => Some (PKs s)
     | NUTok a => Some (PKa a)
     | Nint z  => Some (PKi z)
-    | Ncseq c => Some (PKc c)
+    | Ncseq n => Some (PKc n)
     | _       => None
   end.
 
@@ -76,7 +76,8 @@ Lemma get_param_from_cop_pks {o} :
     get_param_from_cop c = Some (PKs s)
     -> c = NTok s.
 Proof.
-  introv e; destruct c; allsimpl; ginv; auto.
+  introv e; destruct c; allsimpl; ginv; auto;
+    try destruct c; allsimpl; ginv; auto.
 Qed.
 
 Lemma get_param_from_cop_pka {o} :
@@ -84,7 +85,8 @@ Lemma get_param_from_cop_pka {o} :
     get_param_from_cop c = Some (PKa a)
     -> c = NUTok a.
 Proof.
-  introv e; destruct c; allsimpl; ginv; auto.
+  introv e; destruct c; allsimpl; ginv; auto;
+    try destruct c; allsimpl; ginv; auto.
 Qed.
 
 Lemma get_param_from_cop_pki {o} :
@@ -92,7 +94,8 @@ Lemma get_param_from_cop_pki {o} :
     get_param_from_cop c = Some (PKi z)
     -> c = Nint z.
 Proof.
-  introv e; destruct c; allsimpl; ginv; auto.
+  introv e; destruct c; allsimpl; ginv; auto;
+    try destruct c; allsimpl; ginv; auto.
 Qed.
 
 Definition pk2term {o} (pk : @param_kind o) : NTerm :=
@@ -388,7 +391,8 @@ Lemma get_param_from_cop_some {o} :
 Proof.
   introv.
   split; introv e; subst; try (apply get_param_from_cop_pk2can).
-  destruct c; allsimpl; ginv; auto.
+  destruct c; allsimpl; ginv; auto;
+    try destruct c; allsimpl; ginv; auto.
 Qed.
 
 Lemma ispk_implies_isvalue_like {o} :

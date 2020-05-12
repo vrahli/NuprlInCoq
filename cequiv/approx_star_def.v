@@ -73,7 +73,7 @@ Definition blift_sub {o}
       [+]
       {sw : cs_swap
        & op = NSwapCs2 sw
-       # R (swap_cs_in_plib sw lib) (swap_cs_term sw nt1) (swap_cs_term sw nt2)}
+       # R lib (swap_cs_term sw nt1) (swap_cs_term sw nt2)}
      )
    # alpha_eq_bterm b1 (bterm lv nt1)
    # alpha_eq_bterm b2 (bterm lv nt2) }}.

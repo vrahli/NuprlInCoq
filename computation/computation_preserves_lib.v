@@ -39,7 +39,8 @@ Lemma eq_opabs_implies :
   forall x y : opabs,
     x = y -> (opabs_name     x = opabs_name y
               # opabs_params x = opabs_params y
-              # opabs_sign   x = opabs_sign y).
+              # opabs_sign   x = opabs_sign y
+              # opabs_swaps  x = opabs_swaps y).
 Proof.
   introv xx; subst; auto.
 Qed.
@@ -50,6 +51,7 @@ Proof.
   destruct (decidable_eq_opabs_name x y);
     destruct (decidable_eq_opabs_sign x y);
     destruct (parameters_dec (opabs_params x) (opabs_params y));
+    try destruct (cs_swaps_nr_deq (opabs_swaps x) (opabs_swaps y));
     destruct x, y; simpl in *; subst; tcsp;
     try (complete (right; intro xx; apply eq_opabs_implies in xx; tcsp)).
 Defined.

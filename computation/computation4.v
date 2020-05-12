@@ -1817,7 +1817,8 @@ Proof.
 
     + Case "Can".
       destruct l; try (complete (inversion comp1)).
-      destruct can; inversion comp1; subst.
+      destruct can; inversion comp1; subst;
+        try (complete (destruct c; simpl in *; ginv)).
       apply computes_to_val_or_exc_in_max_k_steps_can_iff in comp0; subst.
       exists (@mk_integer p z) k; dands; auto.
       apply computes_to_val_or_exc_in_max_k_steps_can_iff; sp.
@@ -1912,7 +1913,8 @@ Proof.
       destruct l; try (complete (inversion comp1)).
       csunf comp1; allsimpl.
       unfold compute_step_tuni in comp1; simpl in comp1.
-      destruct can; allsimpl; try (complete (inversion comp1)).
+      destruct can; allsimpl; try (complete (inversion comp1));
+        try (complete (destruct c; simpl in *; ginv)).
       destruct (Z_le_gt_dec 0 z); inversion comp1; subst; GC.
       apply computes_to_val_or_exc_in_max_k_steps_can_iff in comp0; subst.
       exists (@mk_integer p z) k; dands; auto.

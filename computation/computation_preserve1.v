@@ -289,6 +289,15 @@ Proof.
 Qed.
 Hint Resolve nt_wf_mk_fresh_choice_nat_seq : slow.
 
+Lemma free_vars_apply_swaps {o} :
+  forall l (t :@NTerm o),
+    free_vars (apply_swaps l t) = free_vars t.
+Proof.
+  induction l; introv; simpl; auto; autorewrite with slow.
+  rewrite IHl; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @free_vars_apply_swaps : slow.
+
 Lemma free_vars_find_last_entry_default_subvars {o} :
   forall lib name (d : @NTerm o),
     subvars (free_vars (find_last_entry_default lib name d)) (free_vars d).
@@ -347,15 +356,10 @@ Proof.
   destruct o0; simpl in *; tcsp.
   { unfold compute_step_swap_cs2 in *.
     destruct arg1c; simpl in *; tcsp; ginv.
+    destruct c0; simpl in *; tcsp; ginv.
     destruct c; simpl in *; tcsp; ginv.
-    destruct arg1bts; simpl in *; tcsp; ginv.
-    destruct l; simpl in *; tcsp; ginv.
-    destruct btsr; simpl in *; tcsp; ginv.
-    destruct b0; simpl in *; tcsp; ginv.
-    destruct l; simpl in *; tcsp; ginv.
-    destruct btsr; simpl in *; tcsp; ginv.
-    left.
-    exists c0 c n; dands; auto. }
+    dterms w; eauto;
+      try (complete (destruct c; ginv; left; eauto; eexists; eexists; eexists; dands; eauto)). }
   { destruct cstep; simpl in *; ginv.
     right; right.
     exists (@NCan o n) l btsr n0; dands; tcsp. }
@@ -403,15 +407,10 @@ Proof.
   destruct o0; simpl in *; tcsp.
   { unfold compute_step_swap_cs0 in *.
     destruct arg1c; simpl in *; tcsp; ginv.
+    destruct c0; simpl in *; tcsp; ginv.
     destruct c; simpl in *; tcsp; ginv.
-    destruct arg1bts; simpl in *; tcsp; ginv.
-    destruct l; simpl in *; tcsp; ginv.
-    destruct btsr; simpl in *; tcsp; ginv.
-    destruct b0; simpl in *; tcsp; ginv.
-    destruct l; simpl in *; tcsp; ginv.
-    destruct btsr; simpl in *; tcsp; ginv.
-    left.
-    exists c0 c n; dands; auto. }
+    dterms w; eauto;
+      try (complete (destruct c; ginv; left; eauto; eexists; eexists; eexists; dands; eauto)). }
   { destruct cstep; simpl in *; ginv.
     right; right.
     exists (@NCan o n) l btsr n0; dands; tcsp. }
@@ -513,22 +512,12 @@ Proof.
 Qed.
 Hint Resolve implies_nt_wf_push_swap_cs0 : slow.
 
-Lemma free_vars_apply_swaps {o} :
-  forall l (t : @NTerm o),
-    free_vars (apply_swaps l t) = free_vars t.
-Proof.
-  induction l; introv; simpl; auto.
-  rewrite IHl; simpl; autorewrite with slow; auto.
-Qed.
-Hint Rewrite @free_vars_apply_swaps : slow.
-
 Lemma wf_apply_swaps {o} :
   forall l (t : @NTerm o),
     wf_term t
     -> wf_term (apply_swaps l t).
 Proof.
-  induction l; introv wf; simpl; auto.
-  apply IHl; apply wf_swap_cs2; auto.
+  induction l; introv wf; simpl; eauto 3 with slow.
 Qed.
 Hint Resolve wf_apply_swaps : slow.
 
@@ -545,7 +534,7 @@ Lemma compute_step_NSwapCs2_success {o} :
     compute_step lib (oterm (NSwapCs2 sw) bs) = csuccess x
     -> {u : NTerm
         & bs = [bterm [] u]
-        # compute_step_swap_cs2 sw u (compute_step (swap_cs_in_plib sw lib) (swap_cs_term sw u)) = csuccess x}.
+        # compute_step_swap_cs2 sw u (compute_step lib (swap_cs_term sw u)) = csuccess x}.
 Proof.
   introv comp.
   csunf comp; simpl in *; dterms w; eauto.

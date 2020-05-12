@@ -732,48 +732,6 @@ Definition per_ffatoms {p} (ts : cts(p)) uk lib (T1 T2 : @CTerm p) (eq : per(p))
 
 (* ****** free from definition type ****** *)
 
-Inductive def_kind :=
-| defk_abs (a : opabs)
-| defk_cs  (c : choice_sequence_name).
-
-Definition def_kinds := list def_kind.
-
-Definition get_defs_c {p} (c : @CanonicalOp p) : def_kinds :=
-  match c with
-  | Ncseq c => [defk_cs c]
-  | _ => []
-  end.
-
-Definition get_defs_sw (sw : cs_swap) : def_kinds :=
-  let (n1,n2) := sw in [defk_cs n1, defk_cs n2].
-
-(*Definition get_defs_n (n : NonCanonicalOp) : def_kinds :=
-  match n with
-  | NSwapCs2 nfo => get_defs_nfo nfo
-  | _ => []
-  end.*)
-
-Definition get_defs_o {p} (o : @Opid p) : def_kinds :=
-  match o with
-  | Can c => get_defs_c c
-  | NCan n => [](*get_defs_n n*)
-  | NSwapCs2 sw => get_defs_sw sw
-  | Abs a => [defk_abs a]
-  | Exc => []
-  end.
-
-Fixpoint get_defs {p} (t : @NTerm p) : def_kinds :=
-  match t with
-  | vterm _ => []
-  | oterm o bterms => (get_defs_o o) ++ (flat_map get_defs_b bterms)
-  end
-with get_defs_b {p} (bt : @BTerm p) : def_kinds :=
-       match bt with
-       | bterm _ t => get_defs t
-       end.
-
-Definition nodefs {o} (t : @NTerm o) := get_defs t = [].
-
 Definition nodefsc {o} (t : @CTerm o) := nodefs (get_cterm t).
 
 Definition ex_nodefsc {o} (eqa : per(o)) (t : @CTerm o) :=

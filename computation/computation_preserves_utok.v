@@ -2000,7 +2000,7 @@ Proof.
   remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; auto.
   remember (last_cs_entry c) as lcs; symmetry in Heqlcs; destruct lcs; auto.
   rewrite not_in_get_utokens_implies_ren_utok_same; eauto 3 with slow.
-  introv xx.
+  introv xx; autorewrite with slow in *.
   eapply find_last_cs_implies_subset_get_utokens_CSVal2term in xx; eauto.
 Qed.
 
@@ -2102,7 +2102,7 @@ Lemma ren_utok_apply_swaps {o} :
     ren_utok (apply_swaps l t) a b
     = apply_swaps l (ren_utok t a b).
 Proof.
-  induction l; introv; simpl; auto.
+  induction l; introv; simpl; auto; try rewrite ren_utok_swap_cs_term.
   rewrite IHl; auto.
 Qed.
 
@@ -2509,7 +2509,7 @@ Proof.
                   rw in_app_iff in nia; rw not_over_or in nia; repnd.
 
                   pose proof (find_cs_value_at_implies_disjoint_get_utokens_lib lib name n v0 [a]) as w.
-                  allrw disjoint_singleton_l.
+                  allrw disjoint_singleton_l; autorewrite with slow in *.
                   repeat (autodimp w hyp).
                   rw in_app_iff in w; rw not_over_or in w; repnd; tcsp.
 
@@ -3819,7 +3819,7 @@ Proof.
       try rewrite ren_utok_apply_swaps.
       rewrite ren_utok_mk_instance; auto.
       allrw map_map; unfold compose.
-      f_equal.
+      f_equal; f_equal.
       apply eq_maps; introv i.
       destruct x as [l t]; simpl; f_equal.
       rewrite ren_utok_lsubst_aux_gen.

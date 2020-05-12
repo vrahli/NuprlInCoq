@@ -35,16 +35,6 @@ Require Export bar_fam.
 
 
 (* !!MOVE *)
-Lemma computes_to_value_implies_isprogram {o} :
-  forall lib (t1 t2 : @NTerm o), (t1 =v>( lib) t2) -> isprogram t2.
-Proof.
-  introv comp.
-  unfold computes_to_value in comp; repnd.
-  apply isvalue_implies in comp; tcsp.
-Qed.
-Hint Resolve computes_to_value_implies_isprogram : slow.
-
-(* !!MOVE *)
 Lemma cequiv_value {o} :
   forall lib (t t' v : @NTerm o),
     t =v>(lib) v

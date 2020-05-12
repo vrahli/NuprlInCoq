@@ -47,11 +47,11 @@ Hint Resolve eapply_wf_def_mk_choice_seq : slow.
 Hint Rewrite Nat2Z.id : slow.
 
 Lemma implies_reduces_to_eapply_choice_seq {o} :
-  forall lib (f a : @NTerm o) name n v,
+  forall lib (f a : @NTerm o) (name : choice_sequence_name) n v,
     find_cs_value_at lib name n = Some v
     -> f =v>( lib) (mk_choice_seq name)
     -> a =v>(lib) (mk_nat n)
-    -> reduces_to lib (mk_eapply f a) (CSVal2term v).
+    -> reduces_to lib (mk_eapply f a) ((*apply_swaps name*) (CSVal2term v)).
 Proof.
   introv fcs compf compa.
   eapply reduces_to_trans;
@@ -93,7 +93,7 @@ Lemma reduces_in_atmost_k_steps_eapply_choice_seq_to_isvalue_like {o} :
         & {j : nat
         & i + j < k
         # reduces_in_atmost_k_steps lib a (mk_nat n) i
-        # reduces_in_atmost_k_steps lib (CSVal2term val) v j
+        # reduces_in_atmost_k_steps lib ((*apply_swaps name*) (CSVal2term val)) v j
         # find_cs_value_at lib name n = Some val }}}}
        [+] {j : nat & j < k # reduces_in_atmost_k_steps lib a v j # isexc v}.
 Proof.
@@ -128,18 +128,219 @@ Proof.
         rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
 Qed.
 
+Lemma implies_isprog_apply_swaps {o} :
+  forall l (t : @NTerm o),
+    isprog t -> isprog (apply_swaps l t).
+Proof.
+  introv isp.
+  allrw @isprog_eq.
+  apply implies_isprogram_apply_swaps;auto.
+Qed.
+Hint Resolve implies_isprog_apply_swaps : slow.
+
+(*Lemma implies_isvalue_apply_swaps {o} :
+  forall l (t : @NTerm o),
+    isvalue t -> isvalue (apply_swaps l t).
+Proof.
+  introv isv.
+  inversion isv as [? isp isc]; subst.
+  split; eauto 3 with slow.
+Qed.
+Hint Resolve implies_isvalue_apply_swaps : slow.*)
+
+Definition apply_swapsc {o} (l : cs_swaps) (t : @CTerm o) : CTerm :=
+  let (a,p) := t in
+  mk_ct (apply_swaps l a) (implies_isprog_apply_swaps l a p).
+
+Definition push_swap_cs_oterm {o} sw (t : @NTerm o) : NTerm :=
+  match t with
+  | oterm (Can can) bs => push_swap_cs_can sw can bs
+  | _ => t
+  end.
+
+Fixpoint push_swap_cs_oterms {o} (l : cs_swaps) (t : @NTerm o) : NTerm :=
+  match l with
+  | [] => t
+  | sw :: sws => push_swap_cs_oterms sws (push_swap_cs_oterm sw t)
+  end.
+
+Lemma implies_isprog_push_swap_cs_oterm {o} :
+  forall sw (t : @NTerm o),
+    isprog t
+    -> isprog (push_swap_cs_oterm sw t).
+Proof.
+  introv isp.
+  destruct t as [v|op bs]; simpl; auto.
+  destruct op; simpl; auto; simpl in *.
+  unfold push_swap_cs_can; simpl.
+  allrw @isprog_ot_iff; repnd; unfold OpBindings; simpl; autorewrite with slow.
+  dands; auto.
+  introv i; apply in_map_iff in i; exrepnd; subst.
+  destruct a; simpl in *.
+  apply isp in i1.
+  allrw <- @isprogram_bt_eq.
+  unfold isprogram_bt in *; repnd; simpl in *.
+  unfold closed_bt in *; simpl in *; autorewrite with slow; dands; auto.
+  allrw @bt_wf_iff; eauto 3 with slow.
+Qed.
+Hint Resolve implies_isprog_push_swap_cs_oterm : slow.
+
+Definition push_swap_cs_otermc {o} sw (t : @CTerm o) : CTerm :=
+  let (a,x) := t in
+  exist isprog (push_swap_cs_oterm sw a) (implies_isprog_push_swap_cs_oterm sw a x).
+
+Lemma implies_isprog_push_swap_cs_oterms {o} :
+  forall l (t : @NTerm o),
+    isprog t
+    -> isprog (push_swap_cs_oterms l t).
+Proof.
+  induction l; introv isp; simpl in *; auto.
+  apply IHl; eauto 3 with slow.
+Qed.
+Hint Resolve implies_isprog_push_swap_cs_oterms : slow.
+
+Definition push_swap_cs_otermsc {o} l (t : @CTerm o) : CTerm :=
+  let (a,x) := t in
+  exist isprog (push_swap_cs_oterms l a) (implies_isprog_push_swap_cs_oterms l a x).
+
+Lemma implies_isprogram_push_swap_cs_oterm {o} :
+  forall sw (t : @NTerm o),
+    isprogram t
+    -> isprogram (push_swap_cs_oterm sw t).
+Proof.
+  introv isp.
+  allrw @isprogram_eq; eauto 3 with slow.
+Qed.
+Hint Resolve implies_isprogram_push_swap_cs_oterm : slow.
+
+Lemma implies_iscan_push_swap_cs_oterm {o} :
+  forall sw (t : @NTerm o),
+    iscan t
+    -> iscan (push_swap_cs_oterm sw t).
+Proof.
+  introv isc.
+  destruct t as [|op bs]; simpl in *; tcsp.
+  destruct op; simpl in *; auto.
+Qed.
+Hint Resolve implies_iscan_push_swap_cs_oterm : slow.
+
+Lemma implies_isvalue_push_swap_cs_oterm {o} :
+  forall sw (t : @NTerm o),
+    isvalue t
+    -> isvalue (push_swap_cs_oterm sw t).
+Proof.
+  introv isv.
+  destruct isv as [? isp isc].
+  split; eauto 3 with slow.
+Qed.
+Hint Resolve implies_isvalue_push_swap_cs_oterm : slow.
+
+Lemma implies_isvalue_push_swap_cs_oterms {o} :
+  forall l (t : @NTerm o),
+    isvalue t
+    -> isvalue (push_swap_cs_oterms l t).
+Proof.
+  induction l; introv isv; simpl in *; eauto 3 with slow.
+Qed.
+Hint Resolve implies_isvalue_push_swap_cs_oterms : slow.
+
+Lemma implies_reduces_to_apply_choice_seq {o} :
+  forall lib (a : @CTerm o) (name : choice_sequence_name) n v,
+    computes_to_valc lib a (mkc_nat n)
+    -> find_cs_value_at lib name n = Some v
+    -> iscvalue v
+    -> reduces_toc lib (mkc_apply (mkc_choice_seq name) a) ((*apply_swapsc name*) v).
+Proof.
+  introv comp find iscv.
+  unfold ChoiceSeqVal, iscvalue in *; destruct_cterms.
+  unfold reduces_toc, computes_to_valc in *; simpl in *.
+  eapply reduces_to_if_split2;[csunf; simpl; reflexivity|].
+  eapply implies_reduces_to_eapply_choice_seq in find; eauto; eauto 3 with slow.
+Qed.
+
+Lemma implies_reduces_in_atmost_k_steps_mk_swap_cs2 {o} :
+  forall k lib sw (t u : @NTerm o),
+    reduces_in_atmost_k_steps lib (swap_cs_term sw t) u k
+    -> {k' : nat
+        & k' <= k
+        # reduces_in_atmost_k_steps lib (mk_swap_cs2 sw t) (mk_swap_cs2 sw (swap_cs_term sw u)) k' }.
+Proof.
+  induction k; introv comp; simpl in *.
+
+  { exists 0; allrw @reduces_in_atmost_k_steps_0; subst; autorewrite with slow; auto. }
+
+  allrw @reduces_in_atmost_k_steps_S; exrepnd.
+  destruct t as [v|op bs]; simpl in *.
+
+  { csunf comp1; simpl in *; ginv. }
+
+  destruct op as [can|ncan|nsw|exc|abs]; simpl in *.
+
+  { csunf comp1; simpl in *; ginv.
+    apply reduces_atmost_can in comp0; subst; simpl in *; autorewrite with slow.
+    exists 0; dands; try omega; allrw @reduces_in_atmost_k_steps_0; auto. }
+
+  { rewrite <- (swap_cs_term_idem sw u0) in comp0.
+    rewrite <- (swap_cs_term_idem sw u) in comp0.
+    eapply IHk in comp0; exrepnd.
+    autorewrite with slow in *.
+    exists (S k'); dands; try omega.
+    allrw @reduces_in_atmost_k_steps_S.
+    csunf; simpl.
+    allrw; simpl; eexists; dands; eauto. }
+
+  { rewrite <- (swap_cs_term_idem sw u0) in comp0.
+    rewrite <- (swap_cs_term_idem sw u) in comp0.
+    eapply IHk in comp0; exrepnd.
+    autorewrite with slow in *.
+    exists (S k'); dands; try omega.
+    allrw @reduces_in_atmost_k_steps_S.
+    csunf; simpl.
+    allrw; simpl; eexists; dands; eauto. }
+
+  { csunf comp1; simpl in *; ginv.
+    apply reduces_atmost_exc in comp0; subst; simpl in *; autorewrite with slow.
+    exists 0; dands; try omega; allrw @reduces_in_atmost_k_steps_0; auto. }
+
+  { rewrite <- (swap_cs_term_idem sw u0) in comp0.
+    rewrite <- (swap_cs_term_idem sw u) in comp0.
+    eapply IHk in comp0; exrepnd.
+    autorewrite with slow in *.
+    exists (S k'); dands; try omega.
+    allrw @reduces_in_atmost_k_steps_S.
+    csunf; simpl.
+    allrw; simpl; eexists; dands; eauto. }
+Qed.
+
+Lemma implies_reduces_to_mk_swap_cs2 {o} :
+  forall lib sw (t u : @NTerm o),
+    reduces_to lib (swap_cs_term sw t) u
+    -> reduces_to lib (mk_swap_cs2 sw t) (mk_swap_cs2 sw (swap_cs_term sw u)).
+Proof.
+  introv comp; unfold reduces_to in *; exrepnd.
+  apply implies_reduces_in_atmost_k_steps_mk_swap_cs2 in comp0; exrepnd.
+  exists k'; auto.
+Qed.
+
+(*Lemma apply_swaps_reduces_to_push_swap_cs_oterms {o} :
+  forall lib l (t : @NTerm o),
+    iscan t
+    -> reduces_to lib (apply_swaps l t) (push_swap_cs_oterms l t).
+Proof.
+  induction l; introv isc; simpl; eauto 3 with slow.
+  eapply reduces_to_trans;[|apply IHl]; eauto 3 with slow.
+SearchAbout reduces_to mk_swap_cs2.
+Qed.*)
+
 Lemma implies_compute_to_valc_apply_choice_seq {o} :
-  forall lib (a : @CTerm o) name n v,
+  forall lib (a : @CTerm o) (name : choice_sequence_name) n v,
     computes_to_valc lib a (mkc_nat n)
     -> find_cs_value_at lib name n = Some v
     -> iscvalue v
     -> computes_to_valc lib (mkc_apply (mkc_choice_seq name) a) v.
 Proof.
   introv comp find iscv.
-  destruct_cterms.
-  unfold computes_to_valc in *; simpl in *.
-  eapply computes_to_value_step;[|csunf; simpl; reflexivity].
-  split; eauto 2 with slow.
-  eapply implies_reduces_to_eapply_choice_seq;[eauto| |eauto].
-  apply computes_to_value_isvalue_refl; eauto 2 with slow.
+  eapply implies_reduces_to_apply_choice_seq in find; eauto.
+  unfold ChoiceSeqVal, computes_to_valc, reduces_toc in *; destruct_cterms; simpl in *.
+  split; simpl; eauto 3 with slow.
 Qed.

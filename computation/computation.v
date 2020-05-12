@@ -247,11 +247,11 @@ Fixpoint last_cs_entry {o} (l : @ChoiceSeqVals o) : option ChoiceSeqVal :=
   | _ :: k => last_cs_entry k
   end.
 
-Definition find_last_entry_default {o} (lib : @plibrary o) name (d : NTerm) : NTerm :=
+Definition find_last_entry_default {o} (lib : @plibrary o) (name : choice_sequence_name) (d : NTerm) : NTerm :=
   match find_cs lib name with
   | Some entry =>
     match last_cs_entry entry with
-    | Some v => CSVal2term v
+    | Some v => (*apply_swaps name*) (CSVal2term v)
     | None => d
     end
   | None => d
@@ -281,6 +281,19 @@ Definition push_swap_cs_bterm {o} sw (bt : @BTerm o) : BTerm :=
 
 Definition push_swap_cs_bterms {o} sw (bs : list (@BTerm o)) : list BTerm :=
   map (push_swap_cs_bterm sw) bs.
+
+(*Definition delayed_swap_cs_info (sw : cs_swap) (nfo : cs_info) : cs_info :=
+  match nfo with
+  | cs_info_nat n => cs_info_nat (swap_cs sw n)
+  | cs_info_bool n => cs_info_bool (swap_cs sw n)
+(*  | cs_info_other n s => cs_info_other (swap_cs sw n) (snoc s sw)*)
+  end.
+
+Definition delayed_swap_cs_can {o} (r : cs_swap) (can : @CanonicalOp o) : CanonicalOp :=
+  match can with
+  | Ncseq n => Ncseq (delayed_swap_cs_info r n)
+  | _ => can
+  end.*)
 
 Definition push_swap_cs_can {o} sw can (bs : list (@BTerm o)) : NTerm :=
   oterm (Can (swap_cs_can sw can)) (push_swap_cs_bterms sw bs).
@@ -660,7 +673,7 @@ Proof.
 Qed.
 
 (*
-  [x] is the initial term
+  TODO: add the swapping to cs_info_other!!!
  *)
 Definition compute_step_swap_cs2 {o} sw (u : @NTerm o) comp :=
   match u with
@@ -712,7 +725,7 @@ Definition compute_step {o}
             | (lib,oterm (NSwapCs2 sw) [bterm [] u] as t) =>
               fun F => compute_step_swap_cs2
                          sw u
-                         (F (swap_cs_in_plib sw lib,swap_cs_term sw u) (compute_step'_size_cs sw u))
+                         (F (lib,swap_cs_term sw u) (compute_step'_size_cs sw u))
             | (lib,oterm (NSwapCs2 sw) _ as t) => fun _ => cfailure bad_args t
             | (lib,oterm (Abs opabs) bs as t) => fun F => compute_step_lib lib opabs bs
           end)
@@ -746,7 +759,7 @@ Definition compute_step_unfold {o}
     | oterm (NCan ncr) ((bterm [] arg1nt)::btsr) =>
       on_success (compute_step lib arg1nt) (fun f => oterm (NCan ncr) (bterm [] f :: btsr))
     | oterm (NSwapCs2 sw) [bterm [] u] =>
-      compute_step_swap_cs2 sw u (compute_step (swap_cs_in_plib sw lib) (swap_cs_term sw u))
+      compute_step_swap_cs2 sw u (compute_step lib (swap_cs_term sw u))
     | oterm (NSwapCs2 sw) _ => cfailure bad_args t
     | oterm (Abs opabs) bs => compute_step_lib lib opabs bs
   end.

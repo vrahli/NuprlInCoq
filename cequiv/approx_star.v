@@ -212,14 +212,6 @@ Qed.
 
 Hint Resolve alphaeqbt_preserves_prog_r_eauto : slow.
 
-Lemma isprogam_bt_nt_wf_eauto {p} :
-  forall (lv : list NVar) (nt : @NTerm p), isprogram_bt (bterm lv nt) -> nt_wf nt.
-Proof.
-  introv Hb.
-  repnud Hb.
-  apply bt_wf_iff in Hb; sp.
-Qed.
-
 Theorem howetheorem1_aux {p}:
   forall lib,
     (fun a b => @approx_star p lib a b # isprogram a # isprogram b)

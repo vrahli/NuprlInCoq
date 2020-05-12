@@ -869,6 +869,16 @@ Proof.
 Qed.
 Hint Resolve subset_get_utokens_lib_csval2term_get_utokens_lib : slow.
 
+(*Lemma lsubst_aux_apply_swaps {o} :
+  forall l (t : @NTerm o) sub,
+    lsubst_aux (apply_swaps l t) sub
+    = apply_swaps l (lsubst_aux t sub).
+Proof.
+  induction l; introv; simpl; auto.
+  rewrite IHl; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @lsubst_aux_apply_swaps : slow.*)
+
 Lemma lsubst_aux_find_last_entry_default {o} :
   forall lib name (a : @NTerm o) sub,
     lsubst_aux (find_last_entry_default lib name a) sub
@@ -890,6 +900,36 @@ Proof.
   unfold get_utokens_lib; simpl; autorewrite with slow; auto.
 Qed.
 Hint Rewrite @get_utokens_lib_mk_last_cs_choice_seq : slow.
+
+Lemma get_utokens_swap_cs_term {o} :
+  forall sw (t : @NTerm o),
+    get_utokens (swap_cs_term sw t)
+    = get_utokens t.
+Proof.
+  nterm_ind t as [v|op bs ind] Case; simpl; auto.
+  autorewrite with slow; f_equal.
+  rewrite flat_map_map; unfold compose.
+  apply eq_flat_maps; introv i; destruct x; simpl; eapply ind; eauto.
+Qed.
+Hint Rewrite @get_utokens_swap_cs_term : slow.
+
+Lemma get_utokens_apply_swaps {o} :
+  forall l (t : @NTerm o),
+    get_utokens (apply_swaps l t)
+    = get_utokens t.
+Proof.
+  induction l; introv; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @get_utokens_apply_swaps : slow.
+
+Lemma get_utokens_lib_apply_swaps {o} :
+  forall lib l (t : @NTerm o),
+    get_utokens_lib lib (apply_swaps l t)
+    = get_utokens_lib lib t.
+Proof.
+  introv; unfold get_utokens_lib; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @get_utokens_lib_apply_swaps : slow.
 
 Lemma get_utokens_lib_find_last_entry_default_subset {o} :
   forall lib name (a : @NTerm o),
@@ -1076,18 +1116,6 @@ Proof.
   erewrite IHsub; eauto.
 Qed.
 
-Lemma get_utokens_swap_cs_term {o} :
-  forall sw (t : @NTerm o),
-    get_utokens (swap_cs_term sw t)
-    = get_utokens t.
-Proof.
-  nterm_ind t as [v|op bs ind] Case; simpl; auto.
-  autorewrite with slow; f_equal.
-  rewrite flat_map_map; unfold compose.
-  apply eq_flat_maps; introv i; destruct x; simpl; eapply ind; eauto.
-Qed.
-Hint Rewrite @get_utokens_swap_cs_term : slow.
-
 Lemma get_utokens_lib_swap_cs_term {o} :
   forall lib sw (t : @NTerm o),
     get_utokens_lib lib (swap_cs_term sw t)
@@ -1224,16 +1252,6 @@ Proof.
 Qed.
 Hint Rewrite @get_utokens_lsubst_aux_sw_sub : slow.
 
-Lemma lsubst_aux_apply_swaps {o} :
-  forall l (t : @NTerm o) sub,
-    lsubst_aux (apply_swaps l t) sub
-    = apply_swaps l (lsubst_aux t sub).
-Proof.
-  induction l; introv; simpl; auto.
-  rewrite IHl; simpl; autorewrite with slow; auto.
-Qed.
-Hint Rewrite @lsubst_aux_apply_swaps : slow.
-
 Lemma get_utokens_lib_mk_swap_cs2 {o} :
   forall lib sw (t : @NTerm o),
     get_utokens_lib lib (mk_swap_cs2 sw t)
@@ -1242,16 +1260,6 @@ Proof.
   unfold get_utokens_lib; introv; simpl; autorewrite with slow; auto.
 Qed.
 Hint Rewrite @get_utokens_lib_mk_swap_cs2 : slow.
-
-Lemma get_utokens_lib_apply_swaps {o} :
-  forall lib l (t : @NTerm o),
-    get_utokens_lib lib (apply_swaps l t)
-    = get_utokens_lib lib t.
-Proof.
-  induction l; introv; simpl; auto.
-  rewrite IHl; autorewrite with slow; auto.
-Qed.
-Hint Rewrite @get_utokens_lib_apply_swaps : slow.
 
 Lemma disjoint_get_utokens_lib_oterm_cons_implies_fst {o} :
   forall k lib op l (t : @NTerm o) bs,
@@ -1440,6 +1448,39 @@ Proof.
   introv; unfold get_utokens_lib; simpl; autorewrite with slow; auto.
 Qed.
 Hint Rewrite @get_utokens_lib_push_swap_cs_exc : slow.
+
+Lemma swap_cs_sub_if_is_utok_sub {o} :
+  forall sw (sub : @Sub o),
+    is_utok_sub sub
+    -> swap_cs_sub sw sub = sub.
+Proof.
+  induction sub; introv h; repnd; simpl in *; auto.
+  allrw @is_utok_sub_cons; repnd.
+  rewrite IHsub; auto.
+  apply is_utok_implies in h0; exrepnd; subst; simpl in *; auto.
+Qed.
+
+Lemma lsubst_aux_swap_cs_term_is_utok_sub {o} :
+  forall (r : cs_swap) (t : @NTerm o) (sub : Sub),
+    is_utok_sub sub
+    -> lsubst_aux (swap_cs_term r t) sub
+       = swap_cs_term r (lsubst_aux t sub).
+Proof.
+  introv nrut.
+  rewrite <- lsubst_aux_swap_cs_term.
+  rewrite swap_cs_sub_if_is_utok_sub; auto.
+Qed.
+
+Lemma lsubst_aux_apply_swaps_utok {o} :
+  forall l (t : @NTerm o) sub,
+    is_utok_sub sub
+    -> lsubst_aux (apply_swaps l t) sub
+       = apply_swaps l (lsubst_aux t sub).
+Proof.
+  induction l; introv isu; simpl; auto.
+  rewrite lsubst_aux_swap_cs_term_is_utok_sub; auto.
+  rewrite IHl; auto.
+Qed.
 
 Lemma compute_step_subst_utoken {o} :
   forall (t u : @NTerm o) lib sub,
@@ -2281,7 +2322,7 @@ Proof.
 
               + allunfold @mk_choice_seq; destruct bts; allsimpl; ginv; allsimpl; fold_terms.
                 eapply lsubst_aux_equal_mk_nat in comp4;[|eauto]; subst; allsimpl.
-                exists (CSVal2term v).
+                exists ((*apply_swaps name*) (CSVal2term v)).
                 unflsubst; simpl; fold_terms; autorewrite with slow.
 
                 dands; eauto 3 with slow;[|].
@@ -4267,7 +4308,7 @@ Proof.
                       erewrite swap_cs_sub_if_nr_ut_sub in comp2; eauto.
                       pose proof (ind a (swap_cs_term nsw a) []) as ind.
                       repeat (autodimp ind hyp); autorewrite with slow; eauto 3 with slow;[].
-                      pose proof (ind w (swap_cs_in_plib nsw lib) sub) as ind.
+                      pose proof (ind w lib sub) as ind.
                       unflsubst in ind.
                       repeat (autodimp ind hyp); autorewrite with slow; eauto 3 with slow.
                       exrepnd.
@@ -4311,11 +4352,12 @@ Proof.
       apply found_entry_implies_matching_entry in fe; auto.
       unfold matching_entry in fe; repnd.
 
-      exists (mk_instance vars bs rhs); unflsubst; simpl; dands;
+      exists (apply_swaps (opabs_swaps abs) (mk_instance vars bs rhs)); unflsubst; simpl; dands;
       autorewrite with slow; eauto 4 with slow.
 
       { pose proof (alpha_eq_lsubst_aux_mk_instance rhs vars bs sub) as h.
-        repeat (autodimp h hyp); eauto with slow. }
+        repeat (autodimp h hyp); eauto with slow.
+        rewrite lsubst_aux_apply_swaps_utok; eauto 3 with slow. }
 
       { eapply subset_disjoint_r;[|apply get_utokens_lib_mk_instance]; auto.
         eapply subset_disjoint_r;[exact disj|].
@@ -4352,6 +4394,8 @@ Proof.
         unflsubst.
         fold (lsubst_bterms_aux bs sub').
         autorewrite with slow; try apply implies_alpha_eq_apply_swaps.
+        try rewrite lsubst_aux_apply_swaps_utok; eauto 3 with slow.
+        try apply implies_alpha_eq_apply_swaps.
         apply alpha_eq_lsubst_aux_mk_instance; eauto with slow.
       }
 Qed.

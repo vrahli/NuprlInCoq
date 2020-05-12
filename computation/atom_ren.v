@@ -1844,7 +1844,7 @@ Proof.
   unfold find_last_entry_default.
   remember (find_cs lib name) as fcs; symmetry in Heqfcs; destruct fcs; auto.
   remember (last_cs_entry c) as lcs; symmetry in Heqlcs; destruct lcs; auto.
-  rewrite ren_utokens_trivial; auto; eauto 3 with slow.
+  rewrite ren_utokens_trivial; auto; eauto 3 with slow; autorewrite with slow.
   introv i j.
   eapply find_last_cs_implies_subset_get_utokens_CSVal2term in j; eauto.
   apply disj in i; tcsp.
@@ -1938,7 +1938,7 @@ Lemma ren_utokens_apply_swaps {o} :
     ren_utokens ren (apply_swaps l t)
     = apply_swaps l (ren_utokens ren t).
 Proof.
-  induction l; introv; simpl; auto.
+  induction l; introv; simpl; auto; try rewrite ren_utokens_swap_cs_term.
   rewrite IHl; simpl; auto.
 Qed.
 
@@ -2021,7 +2021,7 @@ Proof.
                 pose proof (utokens_find_cs_value_at_subset_library lib name n v) as q.
                 repeat (autodimp q hyp).
 
-                rewrite ren_utokens_trivial; eauto 3 with slow. }
+                rewrite ren_utokens_trivial; autorewrite with slow; eauto 3 with slow. }
 
             - apply isexc_implies2 in comp0; exrepnd; subst; allsimpl.
               csunf; simpl.

@@ -34,6 +34,7 @@
 Require Export BinInt.
 Require Export Coq.ZArith.ZArith_dec.
 Require Export list.
+Require Export Eqdep_dec.
 (** printing Z  $\mathbb{Z}$ #Z# *)
 
 
@@ -173,13 +174,6 @@ Inductive cs_kind :=
 | cs_kind_nat (n : nat)
 | cs_kind_seq (l : list nat).
 
-Record choice_sequence_name :=
-  MkChoiceSequenceName
-    {
-      csn_name : cs_name;
-      csn_kind : cs_kind;
-    }.
-
 Definition cs_kind_deq : Deq cs_kind.
 Proof.
   introv.
@@ -191,12 +185,33 @@ Proof.
       right; intro xx; inversion xx; subst; tcsp. }
 Defined.
 
+Inductive cs_info :=
+| cs_info_nat
+| cs_info_bool
+(*| cs_info_other (name : choice_sequence_name) (swaps : cs_swaps)*).
+
+Definition cs_info_deq : Deq cs_info.
+Proof.
+  introv; destruct x as [n1|n1(*|n1 s1*)], y as [n2|n2(*|n2 s2*)];
+    try destruct (choice_sequence_name_deq n1 n2); subst; tcsp;
+      try destruct (cs_swaps_deq s1 s2); subst; tcsp;
+        try (complete (right; introv xx; ginv; tcsp)).
+Defined.
+
+Record choice_sequence_name :=
+  MkChoiceSequenceName
+    {
+      csn_name :> cs_name;
+      csn_kind :> cs_info;
+(*      csn_kind : cs_kind;*)
+    }.
+
 Definition choice_sequence_name_deq : Deq choice_sequence_name.
 Proof.
   introv.
   destruct x as [n1 k1], y as [n2 k2].
   destruct (String.string_dec n1 n2) as [d|d]; subst;
-    destruct (cs_kind_deq k1 k2) as [g|g]; subst; tcsp;
+    try destruct (cs_info_deq k1 k2) as [g|g]; subst; tcsp;
       right; intro xx; inversion xx; subst; tcsp.
 Defined.
 
@@ -222,6 +237,7 @@ Definition cs_swaps_deq : Deq cs_swaps.
 Proof.
   apply deq_list; apply cs_swap_deq.
 Defined.
+
 
 (* ------ operators ------ *)
 (** Here are the Canonical [Opid]s of Nuprl:
@@ -573,16 +589,42 @@ Inductive parameter : tuniv :=
 
 Definition opname := String.string.
 
+Fixpoint cs_swaps_norep (l : cs_swaps) : bool :=
+  match l with
+  | [] => true
+  | sw1 :: k =>
+    match k with
+    | [] => true
+    | sw2 :: sws => if cs_swap_deq sw1 sw2 then false else cs_swaps_norep k
+    end
+  end.
+
+Record cs_swaps_nr :=
+  mk_cs_swaps_nr
+    { cs_sws_sw : cs_swaps;
+      cs_sws_nr : cs_swaps_norep cs_sws_sw = true; }.
+
+Definition cs_swaps_nr_em : cs_swaps_nr :=
+  mk_cs_swaps_nr [] eq_refl.
+
+Lemma cs_swaps_nr_deq : Deq cs_swaps_nr.
+Proof.
+  introv; destruct x as [l1 p1], y as [l2 p2]; simpl in *.
+  destruct (cs_swaps_deq l1 l2); subst; tcsp;
+    try (complete (right; intro xx; inversion xx; subst; tcsp)).
+  assert (p1 = p2) as xx by (apply UIP_dec; apply bool_dec); subst; tcsp.
+Defined.
+
 Record opabs :=
   mk_opabs
     {
       opabs_name   : opname;
       opabs_params : list parameter;
       opabs_sign   : opsign;
-(*      opabs_swaps  : cs_swaps*)
+      opabs_swaps  : cs_swaps_nr;
     }.
 
-Definition dum_opabs : opabs := mk_opabs "" [] [].
+Definition dum_opabs : opabs := mk_opabs "" [] [] cs_swaps_nr_em.
 
 Inductive Opid {p} : tuniv :=
 | Can  : @CanonicalOp p -> Opid
@@ -698,6 +740,26 @@ Proof.
   destruct x, y; tcsp; right; intro h; ginv.
 Defined.
 
+Ltac prove_deq0 :=
+  match goal with
+  | [ a : cs_info,              b : cs_info              |- _ ] => destruct (cs_info_deq              a b)
+  | [ a : choice_sequence_name, b : choice_sequence_name |- _ ] => destruct (choice_sequence_name_deq a b)
+  | [ a : CanInj,               b : CanInj               |- _ ] => destruct (can_inj_deq              a b)
+  | [ a : Z,                    b : Z                    |- _ ] => destruct (Z_noteq_dec              a b)
+  | [ a : string,               b : string               |- _ ] => destruct (String.string_dec        a b)
+  | [ a : get_patom_set ?o,     b : get_patom_set ?o     |- _ ] => destruct (get_patom_deq o          a b)
+  | [ a : qnat_cond,            b : qnat_cond            |- _ ] => destruct (qnat_cond_deq            a b)
+  end.
+
+Ltac prove_deq1 :=
+  let xx := fresh "xx" in
+  try (complete (right; intro xx; ginv; tcsp)).
+
+Ltac prove_deq :=
+  repeat (first [complete (left; auto)
+                |complete prove_deq1
+                |prove_deq0; subst; tcsp; prove_deq1]).
+
 Lemma canonical_dec {o} :
   dec_consts o
   -> forall x y : @CanonicalOp o,
@@ -705,42 +767,14 @@ Lemma canonical_dec {o} :
        -> {x = y} + {x <> y}.
 Proof.
   introv dc ns.
-  destruct x; destruct y;
-  try (left; auto; fail);
-  try (right; sp; inversion H; fail).
+  destruct x; destruct y; prove_deq.
 
-  - destruct (can_inj_deq c c0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
+  - destruct (deq_nat n n1) as [d|d]; subst; tcsp; prove_deq1.
+    destruct (deq_nat n0 n2) as [d|d]; subst; tcsp; prove_deq1.
 
-  - destruct (Z_noteq_dec z z0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
-
-  - destruct (choice_sequence_name_deq c c0) as [d|d]; subst; tcsp;
-      right; intro k; ginv; tcsp.
-
-  - destruct (String.string_dec s s0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
-
-  - assert (Deq (get_patom_set o)) as d by (destruct o; destruct patom0; auto).
-    pose proof (d g g0) as h; dorn h; subst; sp.
-    right; intro k; inversion k; sp.
-
-  - destruct (deq_nat n n1) as [d|d]; subst; tcsp;
-      try (complete (right; intro k; ginv; tcsp)).
-    destruct (deq_nat n0 n2) as [d|d]; subst; tcsp;
-      try (complete (right; intro k; ginv; tcsp)).
-
-  - destruct (qnat_cond_deq q q0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
-
-  - destruct (deq_nat n n0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
-
-  - destruct (get_dp dc g g0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
-
-  - destruct (get_dt dc g g0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
+  - destruct (deq_nat n n0) as [d|d]; subst; tcsp; prove_deq1.
+  - destruct (get_dp dc g g0) as [d|d]; subst; tcsp; prove_deq1.
+  - destruct (get_dt dc g g0) as [d|d]; subst; tcsp; prove_deq1.
 Qed.
 
 Lemma parameter_dec : Deq parameter.
@@ -841,6 +875,8 @@ Proof.
       subst; tcsp; try (complete (right; intro x; inversion x; sp));[].
     destruct (opsign_dec opabs_sign0 opabs_sign1);
       subst; tcsp; try (complete (right; intro x; inversion x; sp)).
+    destruct (cs_swaps_nr_deq opabs_swaps0 opabs_swaps1);
+      subst; tcsp; try (complete (right; intro x; inversion x; sp)).
 Qed.
 
 (* begin hide *)
@@ -865,32 +901,11 @@ Lemma canonical_dec_no_const {p} :
     -> {x = y} + {x <> y}.
 Proof.
   introv nc ns.
-  destruct x; destruct y; allsimpl;
-  try (left; auto; fail);
-  try (right; sp; inversion H; fail);
-  try (complete (inversion nc)).
-
-  - destruct (can_inj_deq c c0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
-
-  - destruct (Z_noteq_dec z z0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
-
-  - destruct (choice_sequence_name_deq c c0) as [d|d]; subst; tcsp;
-      try (complete (right; intro k; ginv; tcsp)).
-
-  - destruct (String.string_dec s s0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
-
-  - assert (Deq (get_patom_set p)) as d by (destruct p; destruct patom0; auto).
-    pose proof (d g g0) as h; dorn h; subst; sp.
-    right; intro k; inversion k; sp.
+  destruct x; destruct y; allsimpl; prove_deq;
+    try (complete (inversion nc)).
 
   - destruct (deq_nat n n1) as [d|d]; subst; tcsp; try (complete (right; intro k; ginv; tcsp)).
     destruct (deq_nat n0 n2) as [d|d]; subst; tcsp; try (complete (right; intro k; ginv; tcsp)).
-
-  - destruct (qnat_cond_deq q q0) as [d|d]; subst; tcsp.
-    right; intro k; ginv; tcsp.
 
   - destruct (deq_nat n n0) as [d|d]; subst; tcsp.
     right; intro k; ginv; tcsp.
@@ -936,7 +951,7 @@ Proof.
     destruct (String.string_dec opabs_name0 opabs_name1);  subst; tcsp; try (complete (right; intro x; inversion x; sp)).
     destruct (parameters_dec opabs_params0 opabs_params1); subst; tcsp; try (complete (right; intro x; inversion x; sp)).
     destruct (opsign_dec opabs_sign0 opabs_sign1);         subst; tcsp; try (complete (right; intro x; inversion x; sp)).
-(*    destruct (cs_swaps_deq opabs_swaps0 opabs_swaps1);     subst; tcsp; try (complete (right; intro x; inversion x; sp)).*)
+    destruct (cs_swaps_nr_deq opabs_swaps0 opabs_swaps1);     subst; tcsp; try (complete (right; intro x; inversion x; sp)).
 Qed.
 
 Lemma decidable_eq_opabs_name :

@@ -1951,7 +1951,7 @@ Proof.
         eexists; eexists; dands; eauto with slow. }
       exrepnd.
 
-      assert (approx_star (swap_cs_in_plib sw lib) (swap_cs_term sw nt1n) (swap_cs_term sw nt2n)) as apr.
+      assert (approx_star lib (swap_cs_term sw nt1n) (swap_cs_term sw nt2n)) as apr.
       { eapply approx_star_alpha_fun_l;[eapply approx_star_alpha_fun_r|]; try exact bl3; eauto 3 with slow. }
 
       pose proof (Hind u' (swap_cs_term sw nt1n) l' aeqb0) as h.
@@ -1959,7 +1959,7 @@ Proof.
       { apply alpha_eq_bterm_preserves_osize in aeqb1; rw aeqb1.
         apply alpha_eq_bterm_preserves_osize in bl2; rw bl2; auto.
         apply alpha_eq_preserves_osize in aeq0; rw aeq0; eauto 3 with slow. }
-      pose proof (h (swap_cs_in_plib sw lib) (swap_cs_term sw nt2n) lv lvn) as aprs1; clear h; repeat (autodimp aprs1 hyp).
+      pose proof (h lib (swap_cs_term sw nt2n) lv lvn) as aprs1; clear h; repeat (autodimp aprs1 hyp).
 
       pose proof (Hind u' (lsubst (swap_cs_term sw nt1n) (var_ren lv lvn)) l' aeqb0) as h.
       autodimp h hyp.
@@ -1968,7 +1968,7 @@ Proof.
         apply alpha_eq_bterm_preserves_osize in bl2; rw bl2; auto.
         apply alpha_eq_preserves_osize in aeq0; rw aeq0; eauto 3 with slow. }
       pose proof (@sub_filter_var_ren_implies p lvi lvo lvn) as vr; exrepnd.
-      pose proof (h (swap_cs_in_plib sw lib) (lsubst (swap_cs_term sw nt2n) (var_ren lv lvn)) vs3 vs4) as aprs2; clear h.
+      pose proof (h lib (lsubst (swap_cs_term sw nt2n) (var_ren lv lvn)) vs3 vs4) as aprs2; clear h.
       repeat (autodimp aprs2 hyp).
       repeat (rw vr0).
       repeat (rewrite <- lsubst_aux_swap_cs_term_if_allvars_sub; eauto 3 with slow;[]).

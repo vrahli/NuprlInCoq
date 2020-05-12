@@ -472,14 +472,6 @@ Proof.
 Qed.
 Hint Rewrite @substc4_mkcv_csname : slow.
 
-Lemma eq_option_refl {o} :
-  forall (x : option (@NTerm o)),
-    eq_option x x.
-Proof.
-  introv; destruct x; simpl; auto.
-Qed.
-Hint Resolve eq_option_refl : slow.
-
 Lemma eq_lsubst_aux_cons_not_in {o} :
   forall (t : @NTerm o) v u sub,
     cl_sub sub

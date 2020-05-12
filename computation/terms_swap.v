@@ -216,6 +216,15 @@ Proof.
 Qed.
 Hint Rewrite @map_num_bvars_push_swap_cs_bterms : slow.
 
+(*Lemma OpBindingsCan_delayed_swap_cs_can {o} :
+  forall sw (can : @CanonicalOp o),
+    OpBindingsCan (delayed_swap_cs_can sw can)
+    = OpBindingsCan can.
+Proof.
+  introv; destruct can; simpl; auto.
+Qed.
+Hint Rewrite @OpBindingsCan_delayed_swap_cs_can : slow.*)
+
 Lemma nt_wf_push_swap_cs_can_implies {o} :
   forall sw can (bs : list (@BTerm o)),
     nt_wf (push_swap_cs_can sw can bs)

@@ -1487,16 +1487,6 @@ Proof.
   allrw @bt_wf_iff; auto.
 Qed.
 
-Lemma isprogram_bt_implies_bt_wf {o} :
-  forall (b : @BTerm o), isprogram_bt b -> bt_wf b.
-Proof.
-  introv isp.
-  destruct b.
-  apply isprogam_bt_nt_wf_eauto in isp.
-  apply wfbt; auto.
-Qed.
-Hint Resolve isprogram_bt_implies_bt_wf : slow.
-
 Lemma approx_inteq_less_swap1 {o} :
   forall lib (t : @NTerm o) n m u v w,
     m <= n

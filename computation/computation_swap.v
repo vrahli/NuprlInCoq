@@ -14,13 +14,8 @@ Defined.*)
 
 Definition cs_name2restr {o} (name : choice_sequence_name) : option (@ChoiceSeqRestriction o) :=
   match csn_kind name with
-  | cs_kind_nat n =>
-    if deq_nat n 0
-    then Some csc_nat
-    else if deq_nat n 1
-         then Some csc_bool
-         else None
-  | cs_kind_seq l => Some (natSeq2restriction l)
+  | cs_info_nat => Some csc_nat
+  | cs_info_bool => Some csc_bool
   end.
 
 (* We make sure that we generate compatible restrictions in case one name
@@ -854,7 +849,7 @@ Proof.
   rewrite swap_cs_swap_cs; auto.
 Qed.
 
-Lemma swap_cs_op_swap_cs_op {o} :
+(*Lemma swap_cs_op_swap_cs_op {o} :
   forall sw sw' (op : @Opid o),
     swap_cs_op (swap_cs_swap sw sw') (swap_cs_op sw op)
     = swap_cs_op sw (swap_cs_op sw' op).
@@ -862,9 +857,9 @@ Proof.
   introv; destruct op; simpl; auto.
   { rewrite swap_cs_can_twice2; auto. }
   { destruct c; simpl; repeat rewrite swap_cs_swap_cs; auto. }
-Qed.
+Qed.*)
 
-Lemma swap_cs_term_swap_cs_term {o} :
+(*Lemma swap_cs_term_swap_cs_term {o} :
   forall sw sw' (t : @NTerm o),
     swap_cs_term (swap_cs_swap sw sw') (swap_cs_term sw t)
     = swap_cs_term sw (swap_cs_term sw' t).
@@ -875,7 +870,7 @@ Proof.
   allrw map_map; unfold compose; simpl; apply eq_maps; introv i.
   destruct x; simpl; f_equal.
   eapply ind; eauto.
-Qed.
+Qed.*)
 
 Lemma swap_cs_swap_twice :
   forall sw sw',
@@ -885,7 +880,7 @@ Proof.
 Qed.
 Hint Rewrite swap_cs_swap_twice : slow.
 
-Lemma swap_cs_soterm_swap_cs_soterm {o} :
+(*Lemma swap_cs_soterm_swap_cs_soterm {o} :
   forall sw sw' (t : @SOTerm o),
     swap_cs_soterm (swap_cs_swap sw sw') (swap_cs_soterm sw t)
     = swap_cs_soterm sw (swap_cs_soterm sw' t).
@@ -898,9 +893,9 @@ Proof.
   allrw map_map; unfold compose; simpl; apply eq_maps; introv i.
   destruct x; simpl; f_equal.
   eapply ind; eauto.
-Qed.
+Qed.*)
 
-Lemma swap_cs_plib_swap_cs_plib {o} :
+(*Lemma swap_cs_plib_swap_cs_plib {o} :
   forall sw sw' (lib : @plibrary o),
     swap_cs_plib (swap_cs_swap sw sw') (swap_cs_plib sw lib)
     = swap_cs_plib sw (swap_cs_plib sw' lib).
@@ -925,9 +920,9 @@ Proof.
     rewrite <- swap_cs_soterm_swap_cs_soterm; introv.
     f_equal.
     apply correct_abs_proof_irrelevance. }
-Qed.
+Qed.*)
 
-Lemma swap_cs_in_plib_swap_cs_in_plib {o} :
+(*Lemma swap_cs_in_plib_swap_cs_in_plib {o} :
   forall sw sw' (lib : @plibrary o),
     swap_cs_in_plib (swap_cs_swap sw sw') (swap_cs_in_plib sw lib)
     = swap_cs_in_plib sw (swap_cs_in_plib sw' lib).
@@ -952,9 +947,9 @@ Proof.
     rewrite <- swap_cs_soterm_swap_cs_soterm; introv.
     f_equal.
     apply correct_abs_proof_irrelevance. }
-Qed.
+Qed.*)
 
-Lemma swap_cs_in_plib_swap_cs_plib {o} :
+(*Lemma swap_cs_in_plib_swap_cs_plib {o} :
   forall sw sw' (lib : @plibrary o),
     swap_cs_in_plib (swap_cs_swap sw sw') (swap_cs_plib sw lib)
     = swap_cs_plib sw (swap_cs_in_plib sw' lib).
@@ -979,8 +974,9 @@ Proof.
     rewrite <- swap_cs_soterm_swap_cs_soterm; introv.
     f_equal.
     apply correct_abs_proof_irrelevance. }
-Qed.
+Qed.*)
 
+(*
 Lemma swap_compute_step {o} :
   forall sw (a b : @NTerm o) lib,
     compute_step lib a = csuccess b
@@ -1246,3 +1242,4 @@ Proof.
   introv r; unfold computes_to_value in *; repnd; dands; auto; eauto 3 with slow.
   eapply swap_reduces_to in r0; eauto; eauto 3 with slow.
 Qed.
+*)

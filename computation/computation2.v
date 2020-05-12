@@ -193,7 +193,7 @@ Definition computes_to_exception {p} lib a (t1 t2 : @NTerm p) :=
 
 (* reductions to markers *)
 
-Definition abs_marker (m : marker) : opabs := mk_opabs m [] [].
+Definition abs_marker (m : marker) : opabs := mk_opabs m [] [] cs_swaps_nr_em.
 
 Definition mk_marker {o} (m : marker) :=
   @oterm o (Abs (abs_marker m)) [].
@@ -1663,7 +1663,7 @@ Lemma compute_step_lib_success {o} :
         & {rhs : SOTerm
         & {correct : correct_abs oa2 vars rhs
            & found_entry lib oa1 bs oa2 vars rhs correct
-           # u = mk_instance vars bs rhs}}}}.
+           # u = apply_swaps (opabs_swaps oa1) (mk_instance vars bs rhs)}}}}.
 Proof.
   introv c.
   unfold compute_step_lib in c.
@@ -3899,7 +3899,7 @@ Lemma found_entry_implies_compute_step_lib_success {o} :
   forall (lib : @plibrary o) oa1 oa2 bs vars rhs correct,
     found_entry lib oa1 bs oa2 vars rhs correct
     -> compute_step_lib lib oa1 bs
-       = csuccess (mk_instance vars bs rhs).
+       = csuccess (apply_swaps (opabs_swaps oa1) (mk_instance vars bs rhs)).
 Proof.
   introv fe.
   unfold compute_step_lib.
@@ -8789,7 +8789,7 @@ Lemma compute_step_eapply2_success {o} :
             & arg1 = mk_choice_seq name
             # arg2 = mk_nat n
             # find_cs_value_at lib name n = Some v
-            # u = CSVal2term v }}})).
+            # u = (*apply_swaps name*) (CSVal2term v) }}})).
 Proof.
   introv comp.
   destruct bs; allsimpl; ginv;[].
