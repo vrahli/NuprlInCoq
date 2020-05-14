@@ -85,8 +85,11 @@ Definition add_to_cs_swaps (sw : cs_swap) (l : cs_swaps) : cs_swaps :=
   match l with
   | [] => [sw]
   | sw' :: sws =>
-    if cs_swap_deq sw sw' then sws
-    else sw :: sw' :: sws
+    if cs_swap_deq sw sw'
+(*    then sws
+    else if cs_swap_deq sw (rev_cs_swap sw')*)
+         then sws
+         else sw :: sw' :: sws
   end.
 
 Definition add_to_cs_swaps_norep :

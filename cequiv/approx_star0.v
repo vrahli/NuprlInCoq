@@ -1433,8 +1433,114 @@ Proof.
 Qed.
 Hint Resolve implies_two_swap_cs2_push_swap_cs_exc : slow.
 
+Lemma swap_cs_term_preserves_two_swap_cs2 {o} :
+  forall sw nsw (a b : @NTerm o),
+    two_swap_cs2 sw a b
+    -> two_swap_cs2 (swap_cs_swap nsw sw) (swap_cs_term nsw a) (swap_cs_term nsw b).
+Proof.
+  nterm_ind1s a as [v|op bs ind] Case; introv h; simpl in *; inv_two_sw; fold_terms.
+
+  { constructor; autorewrite with slow; auto.
+    introv i; rewrite <- map_combine in i; apply in_map_iff in i; exrepnd; ginv.
+    applydup imp in i1; apply in_combine in i1; repnd.
+    inv_two_sw_bterm i0; simpl in *.
+    constructor.
+    eapply ind; eauto 3 with slow. }
+
+  constructor; eapply ind; try (left; reflexivity); simpl; eauto 3 with slow.
+Qed.
+
+Lemma implies_two_swap_cs2_mk_swap_cs2 {o} :
+  forall sw nsw (t1 t2 : @NTerm o),
+    two_swap_cs2 sw t1 t2
+    -> two_swap_cs2 sw (mk_swap_cs2 nsw t1) (mk_swap_cs2 nsw t2).
+Proof.
+  introv d.
+  constructor; simpl; tcsp; introv i; repndors; ginv; tcsp; constructor; auto.
+Qed.
+Hint Resolve implies_two_swap_cs2_mk_swap_cs2 : slow.
+
+Lemma swap_cs_can_thrice {o} :
+  forall sw (c : @CanonicalOp o),
+    swap_cs_can (swap_cs_swap sw sw) (swap_cs_can sw c) = c.
+Proof.
+  introv; destruct c; simpl; auto.
+  destruct sw;simpl; boolvar2.
+Qed.
+Hint Rewrite @swap_cs_can_thrice : slow.
+
+Definition sw_sub_twice {o} sw vs : @Sub o :=
+  map (fun v => (v,mk_swap_cs2 sw (mk_swap_cs2 sw (mk_var v)))) vs.
+
+Lemma sub_find_sw_sub_twice_as {o} :
+  forall sw l v,
+    @sub_find o (sw_sub_twice sw l) v
+    = match sub_find (sw_sub sw l) v with
+      | Some t => Some (mk_swap_cs2 sw t)
+      | None => None
+      end.
+Proof.
+  induction l; introv; simpl; auto.
+  boolvar; auto.
+Qed.
+
+Lemma sub_filter_sw_sub_twice {o} :
+  forall sw l k,
+    @sub_filter o (sw_sub_twice sw l) k
+    = sw_sub_twice sw (remove_nvars k l).
+Proof.
+  induction l; introv; simpl; auto; simpl; autorewrite with slow; tcsp.
+  allrw remove_nvars_cons_r.
+  boolvar; tcsp.
+  rewrite IHl; auto.
+Qed.
+
+Lemma lsubst_aux_twice_as_sw_sub_twice {o} :
+  forall sw (t : @NTerm o) l,
+    lsubst_aux (lsubst_aux t (sw_sub sw l)) (sw_sub sw l)
+    = lsubst_aux t (sw_sub_twice sw l).
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl.
+
+  { rewrite sub_find_sw_sub_twice_as.
+    repeat (rewrite sub_find_sw_sub; boolvar; simpl; autorewrite with slow; tcsp). }
+
+  allrw map_map; unfold compose.
+  f_equal.
+  apply eq_maps; introv i.
+  destruct x; simpl; f_equal.
+  repeat rewrite terms_swap.sub_filter_sw_sub.
+  repeat rewrite sub_filter_sw_sub_twice.
+  eapply ind; eauto.
+Qed.
+
+Lemma implies_two_swap_cs2_lsubst_aux_sw_sub_twice {o} :
+  forall sw (a b : @NTerm o) l,
+    two_swap_cs2 sw a b
+    -> two_swap_cs2 sw (lsubst_aux a (sw_sub_twice sw l)) b.
+Proof.
+  nterm_ind1s a as [v|op bs ind] Case; introv h; inv_two_sw; simpl in *.
+
+  { rewrite sub_find_sw_sub_twice_as.
+    rewrite sub_find_sw_sub; boolvar; simpl; auto. }
+
+  { constructor; autorewrite with slow; auto.
+    introv i.
+    rewrite <- map_combine_left in i; apply in_map_iff in i; exrepnd; ginv.
+    applydup imp in i1; apply in_combine in i1; repnd.
+    inv_two_sw_bterms; simpl.
+    constructor.
+    rewrite sub_filter_sw_sub_twice.
+    eapply ind; eauto; eauto 3 with slow. }
+
+  autorewrite with slow; fold_terms.
+  constructor.
+  eapply ind; try (left; reflexivity); simpl; eauto 3 with slow.
+Qed.
+Hint Resolve implies_two_swap_cs2_lsubst_aux_sw_sub_twice : slow.
+
 Lemma compute_step_two_swap_cs2 {o} :
-  forall sw lib (t u : @NTerm o) z,
+  forall lib (t u : @NTerm o) sw z,
     wf_term t
     -> two_swap_cs2 sw t u
     -> compute_step lib t = csuccess z
@@ -1524,7 +1630,7 @@ Proof.
       { pose proof (ind w2 (subst w2 w0 (mk_utoken (get_fresh_atom lib w2))) [w0]) as ind.
         rewrite simple_osize_subst in ind; eauto 3 with slow.
         repeat (autodimp ind hyp); eauto 3 with slow.
-        pose proof (ind (subst u w0 (mk_utoken (get_fresh_atom lib u))) x) as ind.
+        pose proof (ind (subst u w0 (mk_utoken (get_fresh_atom lib u))) sw x) as ind.
         repeat (autodimp ind hyp); eauto 3 with slow.
         { erewrite two_swap_cs2_implies_same_get_fresh_atom; eauto 3 with slow. }
         exrepnd; fold_terms.
@@ -1890,8 +1996,100 @@ Proof.
       eexists; eexists; eexists; eexists; dands;
         try (complete (apply reduces_to_if_step; csunf; simpl; eauto)); try apply alpha_eq_refl; eauto 3 with slow. }
 
+    inv_two_sw; fold_terms.
+
+    { eapply ind in comp2; try (left; reflexivity); autorewrite with slow;
+        try apply swap_cs_term_preserves_two_swap_cs2; eauto; eauto 3 with slow.
+      exrepnd.
+      apply (swap_cs_term_preserves_two_swap_cs2 _ nsw) in comp4; autorewrite with slow in comp4.
+
+      eexists; eexists; eexists; eexists; dands;
+        [apply implies_reduces_to_mk_swap_cs2; eauto
+        |apply implies_reduces_to_mk_swap_cs2; autorewrite with slow; eauto
+        | | |]; try apply implies_alpha_eq_mk_swap_cs2; try apply implies_alpha_eq_swap_cs_term; eauto; eauto 3 with slow. }
+
+    apply wf_swap_cs2 in wf; apply wf_swap_cs2 in wf.
+    apply compute_step_NSwapCs2_success in comp2; exrepnd; unfold nobnd in *; ginv.
+    apply compute_step_swap_cs2_success in comp1; exrepnd; repndors; exrepnd; subst; simpl in *.
+
+    { destruct t as [v|op bs]; simpl in *; ginv.
+      destruct op; simpl in *; ginv.
+      inv_two_sw.
+      autorewrite with slow.
+      eexists; eexists; eexists; eexists; dands;
+        try (apply reduces_to_if_step; csunf; simpl; eauto);
+        try apply alpha_eq_refl.
+      unfold push_swap_cs_can; autorewrite with slow.
+      unfold push_swap_cs_bterms.
+      allrw map_map; unfold compose.
+      constructor; autorewrite with slow; auto.
+      introv i.
+      rewrite <- map_combine_left in i; apply in_map_iff in i; exrepnd; ginv.
+      applydup imp in i1; apply in_combine in i1; repnd.
+      inv_two_sw_bterms.
+      simpl; constructor; fold_terms.
+      unfold push_swap_cs_sub_term; simpl; autorewrite with slow; fold_terms.
+      rewrite <- lsubst_aux_swap_cs_term; autorewrite with slow.
+      constructor.
+      rewrite lsubst_aux_twice_as_sw_sub_twice; eauto 3 with slow. }
+
+    { destruct t as [v|op bs]; simpl in *; ginv.
+      destruct op; simpl in *; ginv.
+      inv_two_sw.
+      autorewrite with slow.
+      eexists; eexists; eexists; eexists; dands;
+        try (apply reduces_to_if_step; csunf; simpl; eauto);
+        try apply alpha_eq_refl.
+      unfold push_swap_cs_exc; autorewrite with slow.
+      unfold push_swap_cs_bterms.
+      allrw map_map; unfold compose.
+      constructor; autorewrite with slow; auto.
+      introv i.
+      rewrite <- map_combine_left in i; apply in_map_iff in i; exrepnd; ginv.
+      applydup imp in i1; apply in_combine in i1; repnd.
+      inv_two_sw_bterms.
+      simpl; constructor; fold_terms.
+      unfold push_swap_cs_sub_term; simpl; autorewrite with slow; fold_terms.
+      rewrite <- lsubst_aux_swap_cs_term; autorewrite with slow.
+      constructor.
+      rewrite lsubst_aux_twice_as_sw_sub_twice; eauto 3 with slow. }
+
+    fold_terms.
+    eapply ind in comp3; try (left; reflexivity);
+      try (repeat apply swap_cs_term_preserves_two_swap_cs2; eauto);
+      autorewrite with slow; simpl; eauto 3 with slow.
+    exrepnd.
+
+    eexists; eexists; eexists; eexists; dands;
+      [|apply implies_reduces_to_mk_swap_cs2; simpl; fold_terms;
+        apply implies_reduces_to_mk_swap_cs2;autorewrite with slow; eauto
+       | | |].
 
 
+SearchAbout reduces_to mk_swap_cs2.
+SearchAbout two_swap_cs2 swap_cs_term.
+Set Nested Proofs Allowed.
+Locate sw_sub.
+SearchAbout lsubst_aux sw_sub.
+SearchAbout (combine (map _ _) _).
+SearchAbout two_swap_cs2 push_swap_cs_can.
+Locate swap_cs_swap.
+
+
+    }
+
+    eapply ind in comp2; try (left; reflexivity);
+      try (apply implies_two_swap_cs2_mk_swap_cs2; apply swap_cs_term_preserves_two_swap_cs2; eauto);
+      try apply wf_swap_cs2;
+      simpl; autorewrite with slow; eauto 3 with slow.
+    exrepnd.
+
+
+
+SearchAbout compute_step mk_swap_cs2.
+
+SearchAbout two_swap_cs2 mk_swap_cs2.
+SearchAbout two_swap_cs2 swap_cs_term.
 
 
   }

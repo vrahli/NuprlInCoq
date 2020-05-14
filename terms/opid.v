@@ -589,13 +589,21 @@ Inductive parameter : tuniv :=
 
 Definition opname := String.string.
 
+Definition rev_cs_swap (sw : cs_swap) : cs_swap :=
+  let (a,b) := sw in (b,a).
+
 Fixpoint cs_swaps_norep (l : cs_swaps) : bool :=
   match l with
   | [] => true
   | sw1 :: k =>
     match k with
     | [] => true
-    | sw2 :: sws => if cs_swap_deq sw1 sw2 then false else cs_swaps_norep k
+    | sw2 :: sws =>
+      if cs_swap_deq sw1 sw2
+(*      then false
+      else if cs_swap_deq sw1 (rev_cs_swap sw2)*)
+           then false
+           else cs_swaps_norep k
     end
   end.
 
