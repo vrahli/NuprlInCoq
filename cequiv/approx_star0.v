@@ -1096,6 +1096,29 @@ Proof.
 Qed.
 Hint Resolve implies_two_swap_cs2_mk_apply : slow.
 
+Lemma implies_two_swap_cs2_mk_atom_eq {o} :
+  forall sw (t1 t2 t3 t4 u1 u2 u3 u4 : @NTerm o),
+    two_swap_cs2 sw t1 u1
+    -> two_swap_cs2 sw t2 u2
+    -> two_swap_cs2 sw t3 u3
+    -> two_swap_cs2 sw t4 u4
+    -> two_swap_cs2 sw (mk_atom_eq t1 t2 t3 t4) (mk_atom_eq u1 u2 u3 u4).
+Proof.
+  introv da db dc dd.
+  constructor; simpl; tcsp; introv i; repndors; ginv; tcsp; constructor; auto.
+Qed.
+Hint Resolve implies_two_swap_cs2_mk_atom_eq : slow.
+
+Lemma implies_two_swap_cs2_mk_fresh {o} :
+  forall sw v (t1 t2 : @NTerm o),
+    two_swap_cs2 sw t1 t2
+    -> two_swap_cs2 sw (mk_fresh v t1) (mk_fresh v t2).
+Proof.
+  introv d.
+  constructor; simpl; tcsp; introv i; repndors; ginv; tcsp; constructor; auto.
+Qed.
+Hint Resolve implies_two_swap_cs2_mk_fresh : slow.
+
 Lemma two_swap_cs2_preserves_isnoncan_like {o} :
   forall sw (t u : @NTerm o),
     two_swap_cs2 sw t u
@@ -1271,6 +1294,145 @@ Proof.
 Qed.
 Hint Resolve implies_two_swap_cs2_find_last_entry_default : slow.
 
+Lemma implies_two_swap_cs2_subst_utokens_aux {o} :
+  forall sw (a b : @NTerm o) s,
+    two_swap_cs2 sw a b
+    -> two_swap_cs2 sw (subst_utokens_aux a s) (subst_utokens_aux b s).
+Proof.
+  nterm_ind1s a as [v|op bs ind] Case; introv h.
+  { simpl in *; inv_two_sw. }
+  rewrite subst_utokens_aux_oterm.
+  remember (get_utok op) as g; symmetry in Heqg; destruct g.
+  { inv_two_sw_term h; try (complete (simpl in *; ginv)).
+    rewrite subst_utokens_aux_oterm; allrw.
+    unfold subst_utok.
+    remember (utok_sub_find s g) as u; symmetry in Hequ; destruct u; eauto 3 with slow.
+    constructor; autorewrite with slow; auto.
+    introv i; rewrite <- map_combine in i; apply in_map_iff in i; exrepnd; ginv.
+    applydup imp in i1.
+    apply in_combine in i1; repnd.
+    inv_two_sw_bterm i0; simpl; eauto.
+    constructor; eapply ind; eauto; eauto 3 with slow. }
+  inv_two_sw_term h; try (complete (simpl in *; ginv)).
+  { rewrite subst_utokens_aux_oterm; allrw.
+    constructor; autorewrite with slow; auto.
+    introv i; rewrite <- map_combine in i; apply in_map_iff in i; exrepnd; ginv.
+    applydup imp in i1.
+    apply in_combine in i1; repnd.
+    inv_two_sw_bterm i0; simpl; eauto.
+    constructor; eapply ind; eauto; eauto 3 with slow. }
+  simpl in *; fold_terms; GC.
+  apply two_sw_diff; eauto.
+  eapply ind; try (left; reflexivity); simpl; eauto 3 with slow.
+Qed.
+Hint Resolve implies_two_swap_cs2_subst_utokens_aux : slow.
+
+Lemma implies_two_swap_cs2_subst_utokens {o} :
+  forall sw (a b : @NTerm o) s,
+    two_swap_cs2 sw a b
+    -> two_swap_cs2 sw (subst_utokens a s) (subst_utokens b s).
+Proof.
+  introv h; unfold subst_utokens.
+  applydup @two_swap_cs2_implies_same_bound_vars in h; rewrite h0; boolvar; eauto 3 with slow.
+Qed.
+Hint Resolve implies_two_swap_cs2_subst_utokens : slow.
+
+Lemma co_wf_def_two_swap_cs2_implies_iswfpk {o} :
+  forall sw comp c (bs1 bs2 : list (@BTerm o)),
+    co_wf_def comp c bs1
+    -> length bs1 = Datatypes.length bs2
+    -> (forall b1 b2, LIn (b1, b2) (combine bs1 bs2) -> two_swap_cs2_bterm sw b1 b2)
+    -> iswfpk comp (oterm (Can c) bs2).
+Proof.
+  introv wf len imp.
+  unfold co_wf_def in *; exrepnd; repndors; exrepnd; subst; simpl in *; cpx.
+  { destruct c; simpl in *; ginv; simpl; eauto.
+    { exists (@PKi o z); auto. }
+    { exists (@PKc o c); auto. }
+    { exists (@PKs o s); auto. }
+    { exists (@PKa o g); auto. } }
+  { destruct c; simpl in *; ginv; simpl; eauto.
+    exists i; eauto. }
+Qed.
+Hint Resolve co_wf_def_two_swap_cs2_implies_iswfpk : slow.
+
+Lemma ca_wf_def_two_swap_cs2_implies_iswfpk {o} :
+  forall sw c (bs1 bs2 : list (@BTerm o)),
+    ca_wf_def c bs1
+    -> length bs1 = Datatypes.length bs2
+    -> (forall b1 b2, LIn (b1, b2) (combine bs1 bs2) -> two_swap_cs2_bterm sw b1 b2)
+    -> isinteger (oterm (Can c) bs2).
+Proof.
+  introv wf len imp.
+  unfold ca_wf_def in *; exrepnd; repndors; exrepnd; subst; simpl in *; cpx.
+  exists i; eauto.
+Qed.
+Hint Resolve ca_wf_def_two_swap_cs2_implies_iswfpk : slow.
+
+Lemma implies_alpha_eq_mk_arithop {o} :
+  forall op (a1 a2 b1 b2 : @NTerm o),
+    alpha_eq a1 b1
+    -> alpha_eq a2 b2
+    -> alpha_eq (mk_arithop op a1 a2) (mk_arithop op b1 b2).
+Proof.
+  introv aeq1 aeq2.
+  apply alpha_eq_oterm_combine; simpl; dands; auto.
+  introv i; repndors; tcsp; ginv; apply alphaeqbt_nilv2; auto.
+Qed.
+
+Lemma implies_alpha_eq_mk_compop {o} :
+  forall op (a1 a2 a3 a4 b1 b2 b3 b4 : @NTerm o),
+    alpha_eq a1 b1
+    -> alpha_eq a2 b2
+    -> alpha_eq a3 b3
+    -> alpha_eq a4 b4
+    -> alpha_eq (mk_compop op a1 a2 a3 a4) (mk_compop op b1 b2 b3 b4).
+Proof.
+  introv aeq1 aeq2 aeq3 aeq4.
+  apply alpha_eq_oterm_combine; simpl; dands; auto.
+  introv i; repndors; tcsp; ginv; apply alphaeqbt_nilv2; auto.
+Qed.
+
+Lemma implies_two_swap_cs2_push_swap_cs_can {o} :
+  forall sw nsw c (bs1 bs2 : list (@BTerm o)),
+    length bs1 = length bs2
+    -> (forall b1 b2, LIn (b1, b2) (combine bs1 bs2) -> two_swap_cs2_bterm sw b1 b2)
+    -> two_swap_cs2 sw (push_swap_cs_can nsw c bs1) (push_swap_cs_can nsw c bs2).
+Proof.
+  introv len imp.
+  unfold push_swap_cs_can.
+  constructor; autorewrite with slow; simpl; auto.
+  introv i.
+  unfold push_swap_cs_bterms in i; rewrite <-map_combine in i; apply in_map_iff in i; exrepnd; ginv.
+  apply imp in i1.
+  inv_two_sw_bterm i1; constructor.
+  eapply two_sw_same; simpl; auto.
+  introv i; repndors; ginv; tcsp.
+  constructor.
+  unfold push_swap_cs_sub_term; eauto with slow.
+Qed.
+Hint Resolve implies_two_swap_cs2_push_swap_cs_can : slow.
+
+Lemma implies_two_swap_cs2_push_swap_cs_exc {o} :
+  forall sw nsw (bs1 bs2 : list (@BTerm o)),
+    length bs1 = length bs2
+    -> (forall b1 b2, LIn (b1, b2) (combine bs1 bs2) -> two_swap_cs2_bterm sw b1 b2)
+    -> two_swap_cs2 sw (push_swap_cs_exc nsw bs1) (push_swap_cs_exc nsw bs2).
+Proof.
+  introv len imp.
+  unfold push_swap_cs_exc.
+  constructor; autorewrite with slow; simpl; auto.
+  introv i.
+  unfold push_swap_cs_bterms in i; rewrite <-map_combine in i; apply in_map_iff in i; exrepnd; ginv.
+  apply imp in i1.
+  inv_two_sw_bterm i1; constructor.
+  eapply two_sw_same; simpl; auto.
+  introv i; repndors; ginv; tcsp.
+  constructor.
+  unfold push_swap_cs_sub_term; eauto with slow.
+Qed.
+Hint Resolve implies_two_swap_cs2_push_swap_cs_exc : slow.
+
 Lemma compute_step_two_swap_cs2 {o} :
   forall sw lib (t u : @NTerm o) z,
     wf_term t
@@ -1278,11 +1440,13 @@ Lemma compute_step_two_swap_cs2 {o} :
     -> compute_step lib t = csuccess z
     -> {a : NTerm
         & {b : NTerm
-        & {c : NTerm
+        & {a' : NTerm
+        & {b' : NTerm
         & reduces_to lib u b
         # reduces_to lib z a
-        # two_swap_cs2 sw a c
-        # alpha_eq b c}}}.
+        # two_swap_cs2 sw a' b'
+        # alpha_eq b b'
+        # alpha_eq a a'}}}}.
 Proof.
   nterm_ind1s t as [v|op bs ind] Case; introv wf tsw comp; tcsp.
 
@@ -1295,20 +1459,20 @@ Proof.
   { SCase "Can".
     csunf comp; simpl in *; ginv; eauto.
     inv_two_sw.
-    eexists; eexists; eexists; dands; try (apply reduces_to_symm); eauto. }
+    eexists; eexists; eexists; eexists; dands; try (apply reduces_to_symm); try apply alpha_eq_refl; eauto. }
 
   { SCase "NCan".
     csunf comp; simpl in *.
     dterms w; try (complete (csunf; simpl; eauto));
       try (complete (apply on_success_csuccess in comp; exrepnd; subst; simpl in *;
                      inv_two_sw; eapply ind in comp1; try (left; eauto); eauto 3 with slow; exrepnd;
-                     eexists; eexists; eexists; dands;[eapply reduces_to_prinarg;eauto|eapply reduces_to_prinarg;eauto| |];
+                     eexists; eexists; eexists; eexists; dands;[eapply reduces_to_prinarg;eauto|eapply reduces_to_prinarg;eauto| | |];
                      try apply implies_alpha_eq_oterm_fst; eauto;
                      repeat (constructor; simpl; auto; introv i; repndors; ginv; tcsp))).
 
     { apply compute_step_ncan_nil_success in comp; repnd; subst; simpl in *.
       inv_two_sw.
-      eexists; eexists; eexists; dands;[apply reduces_to_if_step; csunf; simpl| | |apply alpha_eq_refl];eauto;
+      eexists; eexists; eexists; eexists; dands;[apply reduces_to_if_step; csunf; simpl| | |apply alpha_eq_refl|apply alpha_eq_refl];eauto;
         try apply reduces_to_symm; simpl; eauto 3 with slow. }
 
     { dopid_noncan ncan SSCase; simpl in *;
@@ -1319,44 +1483,44 @@ Proof.
       { SSCase "NFix".
         ginv.
         repeat inv_two_sw.
-        eexists; eexists; eexists;dands;[apply reduces_to_if_step; csunf; simpl| | |apply alpha_eq_refl]; eauto;
+        eexists; eexists; eexists; eexists;dands;[apply reduces_to_if_step; csunf; simpl| | |apply alpha_eq_refl|apply alpha_eq_refl]; eauto;
           try apply reduces_to_symm; eauto.
         repeat (constructor; simpl; auto; introv xx; repndors; subst; ginv; tcsp; constructor; auto). }
 
       { SSCase "NSleep".
         repeat inv_two_sw.
-        eexists; eexists; eexists; dands;[apply reduces_to_if_step; csunf; simpl;unfold compute_step_sleep; simpl| | |apply alpha_eq_refl]; eauto;
+        eexists; eexists; eexists; eexists; dands;[apply reduces_to_if_step; csunf; simpl;unfold compute_step_sleep; simpl| | |apply alpha_eq_refl|apply alpha_eq_refl]; eauto;
           try apply reduces_to_symm; eauto 3 with slow. }
 
       { SSCase "NTUni".
         repeat inv_two_sw.
-        eexists; eexists; eexists; dands;[apply reduces_to_if_step; csunf; simpl;unfold compute_step_tuni; simpl| | |apply alpha_eq_refl];
+        eexists; eexists; eexists; eexists; dands;[apply reduces_to_if_step; csunf; simpl;unfold compute_step_tuni; simpl| | |apply alpha_eq_refl|apply alpha_eq_refl];
           try apply reduces_to_symm; eauto 3 with slow.
         boolvar; try omega; autorewrite with slow; auto. }
 
       { SSCase "NMinus".
         repeat inv_two_sw.
-        eexists; eexists; eexists; dands;[apply reduces_to_if_step; csunf; simpl;unfold compute_step_minus; simpl| | |apply alpha_eq_refl];
+        eexists; eexists; eexists; eexists; dands;[apply reduces_to_if_step; csunf; simpl;unfold compute_step_minus; simpl| | |apply alpha_eq_refl|apply alpha_eq_refl];
           try apply reduces_to_symm; eauto 3 with slow. }
 
       { SSCase "NParallel".
         repeat inv_two_sw.
-        eexists; eexists; eexists; dands;[apply reduces_to_if_step; csunf; simpl;unfold compute_step_parallel; simpl| | |apply alpha_eq_refl];
+        eexists; eexists; eexists; eexists; dands;[apply reduces_to_if_step; csunf; simpl;unfold compute_step_parallel; simpl| | |apply alpha_eq_refl|apply alpha_eq_refl];
           try apply reduces_to_symm; eauto 3 with slow. } }
 
     { apply compute_step_catch_success in comp; repndors; exrepnd; ginv; subst; simpl in *.
       inv_two_sw.
       inv_two_sw.
-      eexists; eexists; eexists; dands;
+      eexists; eexists; eexists; eexists; dands;
         [apply reduces_to_if_step;csunf; simpl; rewrite compute_step_catch_if_diff
-        |apply reduces_to_if_step;csunf; simpl| |]; eauto. }
+        |apply reduces_to_if_step;csunf; simpl| | |]; try apply alpha_eq_refl; eauto. }
 
     { inv_two_sw.
       apply compute_step_fresh_success in comp; repeat (repndors; exrepnd; GC; ginv; subst; simpl in * ).
       { inv_two_sw.
-        eexists; eexists; eexists; dands; try (apply reduces_to_if_step; csunf; simpl; boolvar; eauto); try apply alpha_eq_refl.
+        eexists; eexists; eexists; eexists; dands; try (apply reduces_to_if_step; csunf; simpl; boolvar; eauto); try apply alpha_eq_refl.
         repeat (constructor; simpl; auto; introv i; repndors; tcsp; ginv). }
-      { eexists; eexists; eexists; dands; try (apply reduces_to_if_step; rewrite compute_step_fresh_if_isvalue_like2; eauto); try apply alpha_eq_refl; eauto 3 with slow. }
+      { eexists; eexists; eexists; eexists; dands; try (apply reduces_to_if_step; rewrite compute_step_fresh_if_isvalue_like2; eauto); try apply alpha_eq_refl; eauto 3 with slow. }
       { pose proof (ind w2 (subst w2 w0 (mk_utoken (get_fresh_atom lib w2))) [w0]) as ind.
         rewrite simple_osize_subst in ind; eauto 3 with slow.
         repeat (autodimp ind hyp); eauto 3 with slow.
@@ -1364,57 +1528,74 @@ Proof.
         repeat (autodimp ind hyp); eauto 3 with slow.
         { erewrite two_swap_cs2_implies_same_get_fresh_atom; eauto 3 with slow. }
         exrepnd; fold_terms.
-        apply reduces_to_fresh in ind1; auto; exrepnd; eauto 3 with slow.
-        applydup @compute_step_subst_utoken in comp2; simpl; eauto 3 with slow; exrepnd;
-          try (complete (unfold get_utokens_sub; simpl; apply disjoint_singleton_l; eauto 3 with slow)).
+        apply reduces_to_fresh in ind0; auto; exrepnd; eauto 3 with slow.
 
-(*
-SearchAbout reduces_to mk_fresh.
-SearchAbout ren_utokens subst_utokens.
-SearchAbout ren_utokens compute_step.
-Print utok_ren.
+        applydup @compute_step_preserves_wf in comp2; eauto 3 with slow;[].
+        applydup @wf_fresh_iff in wf.
+        assert (!LIn w0 (free_vars x)) as ni.
+        { apply compute_step_preserves in comp2; eauto 3 with slow;[]; repnd.
+          intro i; apply subvars_eq in comp3; apply comp3 in i.
+          unfold subst in i; rewrite free_vars_cl_lsubst in i; eauto 3 with slow.
+          simpl in i; apply in_remove_nvars in i; simpl in i; tcsp. }
 
-XXXXX
+        pose proof (simple_subst_subst_utokens_aeq x (get_fresh_atom lib w2) w0) as q.
+        repeat (autodimp q hyp);[].
+        apply (alpha_eq_ren_utokens _ _ [(get_fresh_atom lib w2, get_fresh_atom lib (subst_utokens x [(get_fresh_atom lib w2, mk_var w0)]))]) in q.
+        rewrite subst_ren_utokens in q.
+        rewrite ren_utokens_trivial in q; simpl in *; fold_terms;
+          [|apply disjoint_singleton_l;
+            intro xx; apply get_utokens_subst_utokens_subset in xx; simpl in xx;
+            unfold get_utokens_utok_ren in xx; simpl in xx; autorewrite with slow in xx;
+            apply in_remove in xx; tcsp].
+        unfold ren_atom in q; simpl in *; boolvar; tcsp; GC;[].
+        dup ind2 as h.
 
-       exists (mk_fresh w0 (subst_utokens a [(get_fresh_atom lib w2, mk_var w0)])).
-        eexists; eexists; dands; try exact ind1;
-          try (apply implies_alpha_eq_mk_fresh; eapply alpha_eq_trans;[eauto|]);
-          try (apply alpha_eq_subst_utokens); eauto; try apply alphaeq_utok_sub_refl.
-        { SearchAbout reduces_to mk_fresh.
-SearchAbout compute_step lsubst nr_ut_sub.
+        assert (!LIn (get_fresh_atom lib (subst_utokens x [(get_fresh_atom lib w2, mk_var w0)]))
+                 (remove (get_patom_deq o) (get_fresh_atom lib w2) (get_utokens_lib lib x))) as nif.
+        { intro xx; apply in_remove in xx; repnd; tcsp.
+          pose proof (get_fresh_atom_prop_and_lib lib (subst_utokens x [(get_fresh_atom lib w2, mk_var w0)])) as w.
+          remember (get_fresh_atom lib (subst_utokens x [(get_fresh_atom lib w2, mk_var w0)])) as p; clear Heqp.
+          allrw @in_app_iff; apply not_over_or in w; repnd; repndors; tcsp.
+          destruct w1; apply get_utokens_subst_utokens_subset2; auto; simpl; apply in_remove; tcsp. }
 
-        }
+        apply (reduces_to_ren_utokens _ _ _ [(get_fresh_atom lib w2, get_fresh_atom lib (subst_utokens x [(get_fresh_atom lib w2, mk_var w0)]))]) in h; simpl; eauto 3 with slow;
+          try (complete (apply disjoint_singleton_r; eauto 3 with slow));
+          try (complete (apply disjoint_singleton_l; auto));[].
 
-        repeat (constructor; simpl; auto; introv i; repndors; tcsp; ginv).
-        constructor; simpl.
+        apply alpha_eq_sym in q.
+        eapply reduces_to_alpha in h; try exact q; eauto 3 with slow; exrepnd;[].
+        apply reduces_to_fresh in h1; eauto 2 with slow; exrepnd;
+          try (apply wf_subst_utokens; eauto 3 with slow);[].
 
-SearchAbout (two_swap_cs2 _ (subst_utokens _ _) _).
-SearcAbout 
+        eapply alpha_eq_trans in h0;[|apply alpha_eq_ren_utokens; apply alpha_eq_sym; eauto].
+        apply alpha_eq_sym in h2; eapply alpha_eq_trans in h2;
+          [|apply alpha_eq_subst_utokens;[eauto|]; apply alphaeq_utok_sub_refl].
 
+        pose proof (simple_ren_utokens_subst_utokens_eq1
+                      a' []
+                      (get_fresh_atom lib w2)
+                      (get_fresh_atom lib (subst_utokens x [(get_fresh_atom lib w2, mk_var w0)]))
+                      w0 (remove (get_patom_deq o) (get_fresh_atom lib w2) (get_utokens_lib lib x))) as w.
+        simpl in w; autorewrite with slow in w.
+        repeat (autodimp w hyp); eauto 3 with slow.
+        { apply alphaeq_preserves_utokens in ind1; rewrite <- ind1.
+          apply reduces_to_preserves_utokens in ind2; eauto 3 with slow;[].
+          introv i; apply (get_utokens_subset_get_utokens_lib lib) in i; apply ind2 in i.
+          simpl.
+          destruct (get_patom_deq o (get_fresh_atom lib w2) x0); subst; tcsp.
+          right; apply in_remove; tcsp. }
+        { introv i j; tcsp; unfold ren_atom in j; simpl in j; subst; tcsp. }
+        rewrite w in h2; clear w.
+        rewrite ren_utokens_trivial in h2; simpl; auto;[].
 
-XXXXXXXX
-*)
-        admit.
+        eexists; eexists; eexists; eexists; dands; try exact ind0; try exact h1;
+          [|apply implies_alpha_eq_mk_fresh; eapply alpha_eq_trans;[eauto|];
+            apply alpha_eq_subst_utokens;[eauto|]; apply alphaeq_utok_sub_refl
+           |apply implies_alpha_eq_mk_fresh; eapply alpha_eq_trans;[eauto|]; apply alpha_eq_sym; eauto].
 
-(*        apply reduces_to_fresh in ind0; eauto 3 with slow; exrepnd.
-        { eexists; eexists; dands; eauto; try apply reduces_to_symm.
-
- dup comp1 as q; eapply two_swap_cs2_preserves_isnoncan_like in q; eauto.
-        repndors; exrepnd.
-        { pose proof (ind w2 (subst w2 w0 (mk_utoken (get_fresh_atom lib w2))) [w0]) as ind.
-
-          rewrite simple_osize_subst in ind; eauto 3 with slow.
-          repeat (autodimp ind hyp); eauto 3 with slow.
-          pose proof (ind (subst u w0 (mk_utoken (get_fresh_atom lib u))) x) as ind.
-          repeat (autodimp ind hyp); eauto 3 with slow.
-          { erewrite two_swap_cs2_implies_same_get_fresh_atom; eauto 3 with slow. }
-          exrepnd.
-          apply reduces_to_fresh in ind0; eauto 3 with slow; exrepnd.
-          { eexists; eexists; dands; eauto; try apply reduces_to_symm; eauto.
-            admit. (* needs to add something about alpha_eq *) }
-          admit. (* needs to add something about wf *) }
-        subst.*) } }
-
+        apply implies_two_swap_cs2_mk_fresh.
+        apply (two_swap_cs2_implies_same_get_fresh_atom _ lib) in diff; rewrite diff.
+        apply implies_two_swap_cs2_subst_utokens; auto. } }
 
     { dopid_noncan ncan SSCase; simpl in *;
         try apply_comp_success;
@@ -1422,7 +1603,8 @@ XXXXXXXX
         try (complete (dterms w; ginv; csunf; simpl in *; repndors; repnd; subst; simpl in *;
                        unfold apply_bterm; autorewrite with slow; simpl; eauto));
         try (complete (try dterms w; repndors; repnd; subst; simpl in *;
-                       repeat inv_two_sw; eexists;eexists;eexists;dands;[apply reduces_to_if_step;csunf;simpl|apply reduces_to_symm| |]; eauto;
+                       repeat inv_two_sw; eexists;eexists;eexists;eexists;dands;[apply reduces_to_if_step;csunf;simpl|apply reduces_to_symm| | |];
+                       try apply alpha_eq_refl; eauto;
                        unfold subst, apply_bterm; autorewrite with slow; simpl; tcsp; eauto 4 with slow)).
 
       { SSCase "NEApply".
@@ -1438,23 +1620,24 @@ XXXXXXXX
             inv_two_sw_bterm imp0.
             applydup @two_swap_cs2_preserves_iscan in diff as isc; auto.
             apply iscan_implies in isc; exrepnd; subst.
-            eexists; eexists; eexists; dands;
-              [apply reduces_to_if_step;csunf;simpl;dcwf h; simpl; eauto| | |];
+            eexists; eexists; eexists; eexists; dands;
+              [apply reduces_to_if_step;csunf;simpl;dcwf h; simpl; eauto| | | |];
+              try apply alpha_eq_refl;
               try apply reduces_to_symm; eauto.
             unfold apply_bterm; simpl; eauto 3 with slow. }
 
           inv_two_sw; simpl in *; GC.
-          eexists; eexists; eexists; dands;
-            [apply reduces_to_if_step;csunf;simpl;dcwf h; simpl; boolvar; try omega; autorewrite with slow; allrw; eauto| | |];
-            try (apply reduces_to_symm); eauto; eauto 3 with slow. }
+          eexists; eexists; eexists; eexists; dands;
+            [apply reduces_to_if_step;csunf;simpl;dcwf h; simpl; boolvar; try omega; autorewrite with slow; allrw; eauto| | | |];
+            try apply alpha_eq_refl; try (apply reduces_to_symm); eauto; eauto 3 with slow. }
 
         { apply isexc_implies2 in comp0; exrepnd; subst.
           repeat inv_two_sw.
           dup comp2 as wfd.
           eapply two_swap_cs_bterms_preserves_eapply_wf_def in wfd; eauto.
-          eexists; eexists; eexists; dands;
-            [apply reduces_to_if_step;csunf;simpl;dcwf h| | |];
-            try apply reduces_to_symm; eauto. }
+          eexists; eexists; eexists; eexists; dands;
+            [apply reduces_to_if_step;csunf;simpl;dcwf h| | | |];
+            try apply alpha_eq_refl; try apply reduces_to_symm; eauto. }
 
         eapply ind in comp1; try (right; left; eauto); eauto 3 with slow.
         exrepnd.
@@ -1462,7 +1645,7 @@ XXXXXXXX
         dup comp2 as wfd.
         eapply two_swap_cs_bterms_preserves_eapply_wf_def in wfd; eauto.
         allrw @wf_term_eapply_iff; exrepnd; ginv; simpl in *; cpx.
-        eexists; eexists; eexists; dands;
+        eexists; eexists; eexists; eexists; dands;
           try (apply implies_eapply_red_aux; eauto);
           try (apply implies_alpha_eq_mk_eapply;eauto).
         repeat (constructor; simpl; auto; introv i; repndors; ginv; tcsp). }
@@ -1471,41 +1654,41 @@ XXXXXXXX
         repeat inv_two_sw.
         repndors; exrepnd; subst; simpl in *.
 
-        { eexists; eexists; eexists; dands;
-            [apply reduces_to_if_step; csunf; simpl; eauto| | |];
-            try apply reduces_to_symm; eauto.
+        { eexists; eexists; eexists; eexists; dands;
+            [apply reduces_to_if_step; csunf; simpl; eauto| | | |];
+            try apply alpha_eq_refl; try apply reduces_to_symm; eauto.
           unfold apply_bterm; simpl; allrw @fold_subst; eauto 3 with slow. }
 
-        { eexists; eexists; eexists; dands;
-            [apply reduces_to_if_step; csunf; simpl; eauto| | |];
-            try apply reduces_to_symm; eauto.
+        { eexists; eexists; eexists; eexists; dands;
+            [apply reduces_to_if_step; csunf; simpl; eauto| | | |];
+            try apply alpha_eq_refl;try apply reduces_to_symm; eauto.
           unfold apply_bterm; simpl; allrw @fold_subst; eauto 3 with slow. } }
 
-      { SSCase "NTryCatch".
+(*      { SSCase "NTryCatch".
         dterms w.
         repeat inv_two_sw.
-        eexists; eexists; eexists; dands;
-          [apply reduces_to_if_step; csunf; simpl; eauto| | |];
-          try apply reduces_to_symm; eauto.
+        eexists; eexists; eexists; eexists; dands;
+          [apply reduces_to_if_step; csunf; simpl; eauto| | | |];
+          try apply alpha_eq_refl; try apply reduces_to_symm; eauto.
         repeat (constructor; simpl; auto; introv i; repndors; ginv; tcsp).
-        constructor; eauto 3 with slow. }
+        constructor; eauto 3 with slow. }*)
 
-      { SSCase "NParallel".
+(*      { SSCase "NParallel".
         dterms w.
         repeat inv_two_sw.
         eexists; eexists; eexists; dands;
           [apply reduces_to_if_step; csunf; simpl; eauto| | |];
           try unfold compute_step_parallel;
-          try apply reduces_to_symm; eauto; eauto 3 with slow. }
+          try apply reduces_to_symm; eauto; eauto 3 with slow. }*)
 
       { SSCase "NSwapCs1".
         dterms w; simpl in *.
 
         { apply compute_step_swap_cs1_aux_success_implies in comp; exrepnd; subst; simpl in *.
           repeat inv_two_sw.
-          eexists; eexists; eexists; dands;
-            [apply reduces_to_if_step; csunf; simpl; eauto| | |];
-            try apply reduces_to_symm; eauto.
+          eexists; eexists; eexists; eexists; dands;
+            [apply reduces_to_if_step; csunf; simpl; eauto| | | |];
+            try apply alpha_eq_refl; try apply reduces_to_symm; eauto.
           repeat (constructor; simpl; auto; introv i; repndors; ginv; tcsp). }
 
         { apply on_success_csuccess in comp; exrepnd; subst; simpl in *.
@@ -1515,7 +1698,7 @@ XXXXXXXX
           repeat inv_two_sw.
           allrw @wf_term_swap_cs1_iff; exrepnd; ginv; simpl in *; cpx; simpl in *.
           repeat inv_two_sw_bterms.
-          eexists; eexists; eexists; dands;
+          eexists; eexists; eexists; eexists; dands;
             try (apply implies_swap_cs1_red_aux; eauto 3 with slow);
             try apply implies_alpha_eq_mk_swap_cs1; eauto.
           repeat (constructor; simpl; auto; introv i; repndors; ginv; tcsp). }
@@ -1527,14 +1710,14 @@ XXXXXXXX
           inv_two_sw diff0.
           allrw @wf_term_swap_cs1_iff; exrepnd; ginv; simpl in *; cpx; simpl in *.
           repeat inv_two_sw_bterms.
-          eexists; eexists; eexists; dands;
+          eexists; eexists; eexists; eexists; dands;
             try (apply implies_swap_cs1_red_aux; eauto 3 with slow);
             try apply implies_alpha_eq_mk_swap_cs1; eauto.
           repeat (constructor; simpl; auto; introv i; repndors; ginv; tcsp). }
 
         { repeat inv_two_sw.
-          eexists; eexists; eexists; dands;
-            try (apply reduces_to_if_step; csunf; simpl; eauto); eauto. }
+          eexists; eexists; eexists; eexists; dands;
+            try apply alpha_eq_refl; try (apply reduces_to_if_step; csunf; simpl; eauto); eauto. }
 
         { apply on_success_csuccess in comp; exrepnd; subst; simpl in *.
           inv_two_sw.
@@ -1543,7 +1726,7 @@ XXXXXXXX
           repeat inv_two_sw.
           allrw @wf_term_swap_cs1_iff; exrepnd; ginv; simpl in *; cpx; simpl in *.
           repeat inv_two_sw_bterms.
-          eexists; eexists; eexists; dands;
+          eexists; eexists; eexists; eexists; dands;
             try (apply implies_swap_cs1_red_aux; eauto 3 with slow);
             try apply implies_alpha_eq_mk_swap_cs1; eauto.
           repeat (constructor; simpl; auto; introv i; repndors; ginv; tcsp). } }
@@ -1551,21 +1734,21 @@ XXXXXXXX
       { SSCase "NLastCs".
         unfold nobnd in *; ginv.
         repeat inv_two_sw.
-        eexists; eexists; eexists; dands;
-          [apply reduces_to_if_step; csunf; simpl;eauto| | |];
-          try apply reduces_to_symm; eauto; eauto 3 with slow. }
+        eexists; eexists; eexists; eexists; dands;
+          [apply reduces_to_if_step; csunf; simpl;eauto| | | |];
+          try apply alpha_eq_refl; try apply reduces_to_symm; eauto; eauto 3 with slow. }
 
       { unfold nobnd in *; ginv.
         repeat inv_two_sw.
         repndors; exrepnd; subst.
 
-        { eexists; eexists; eexists; dands;
-            [apply reduces_to_if_step; csunf; simpl; eauto| | |];
-            try apply reduces_to_symm; eauto; eauto 3 with slow. }
+        { eexists; eexists; eexists; eexists; dands;
+            [apply reduces_to_if_step; csunf; simpl; eauto| | | |];
+            try apply alpha_eq_refl;try apply reduces_to_symm; eauto; eauto 3 with slow. }
 
-        { eexists; eexists; eexists; dands;
-            [apply reduces_to_if_step; csunf; simpl; eauto; autorewrite with slow; boolvar; try omega; eauto| | |];
-            try apply reduces_to_symm; eauto; eauto 3 with slow.
+        { eexists; eexists; eexists; eexists; dands;
+            [apply reduces_to_if_step; csunf; simpl; eauto; autorewrite with slow; boolvar; try omega; eauto| | | |];
+            try apply alpha_eq_refl;try apply reduces_to_symm; eauto; eauto 3 with slow.
           repeat (constructor; simpl; auto; introv j; repndors; ginv; tcsp).
           constructor; eauto 3 with slow. } }
 
@@ -1573,132 +1756,154 @@ XXXXXXXX
         repeat inv_two_sw.
         repndors; exrepnd; subst.
 
-        { eexists; eexists; eexists; dands;
-            [apply reduces_to_if_step; csunf; simpl; eauto;boolvar; try omega; eauto| | |];
-            try apply reduces_to_symm; eauto; eauto 3 with slow. }
+        { eexists; eexists; eexists; eexists; dands;
+            [apply reduces_to_if_step; csunf; simpl; eauto;boolvar; try omega; eauto| | | |];
+            try apply alpha_eq_refl; try apply reduces_to_symm; eauto; eauto 3 with slow. }
 
-        { eexists; eexists; eexists; dands;
-            [apply reduces_to_if_step; csunf; simpl; eauto; autorewrite with slow; boolvar; try omega; eauto| | |];
-            try apply reduces_to_symm; eauto; eauto 3 with slow.
+        { eexists; eexists; eexists; eexists; dands;
+            [apply reduces_to_if_step; csunf; simpl; eauto; autorewrite with slow; boolvar; try omega; eauto| | | |];
+            try apply alpha_eq_refl;try apply reduces_to_symm; eauto; eauto 3 with slow.
           repeat (constructor; simpl; auto; introv j; repndors; ginv; tcsp).
           constructor; eauto 3 with slow. } }
 
       { SSCase "NCompOp".
+        dcwf h;[].
+        repeat (dterm w; repeat inv_two_sw; ginv).
 
-
-XXXXXXXX
-
-        (*repeat inv_diff.
-        dcwf h; dterms w; simpl in *.
-        { apply compute_step_compop_success_can_can in comp; exrepnd; subst; simpl.
-          repeat inv_diff.
-          csunf; simpl; dcwf h; autorewrite with slow in *; tcsp;
-            try (complete (apply @co_wf_false_implies_not in Heqh0; tcsp)).
-          repndors; exrepnd; subst; simpl in *; unfold compute_step_comp; simpl; autorewrite with slow.
-          { repeat rewrite get_param_from_cop_swap_cs_can; allrw; boolvar; tcsp;
-              eexists; dands; eauto. }
-          { repeat rewrite get_param_from_cop_swap_cs_can; allrw; destruct pk1, pk2; subst; boolvar; ginv; tcsp;
-              eexists; dands; eauto. } }
+        { apply compute_step_compop_success_can_can in comp; exrepnd; subst; simpl in *;[].
+          repndors; exrepnd; subst; cpx; simpl in *; repeat inv_two_sw_bterms; boolvar; subst; tcsp;
+            try (complete (eexists; eexists; eexists; eexists; dands;
+                           [apply reduces_to_if_step; csunf; simpl; dcwf h;
+                            unfold compute_step_comp; simpl; allrw; eauto| | | |];
+                           try apply alpha_eq_refl; try apply reduces_to_symm; eauto; boolvar; try omega; auto; tcsp)). }
         { apply on_success_csuccess in comp; exrepnd; subst; simpl in *.
-          eapply ind in comp1; try (right; left; eauto); eauto 3 with slow; exrepnd.
-          csunf; simpl; dcwf h; autorewrite with slow in *;
-            try (complete (apply @co_wf_false_implies_not in Heqh0; tcsp)).
-          repeat inv_diff; allrw; simpl; eexists; dands; eauto; eauto 3 with slow;
-            repeat first [constructor; simpl; auto|introv i; repndors; tcsp; ginv]. }
-        { repeat inv_diff.
-          csunf; simpl; dcwf h; autorewrite with slow in *; tcsp;
-            try (complete (apply @co_wf_false_implies_not in Heqh0; tcsp)).
-        eexists; dands; eauto. }
-        { repeat inv_diff.
-          apply on_success_csuccess in comp; exrepnd; subst; simpl in *.
-          eapply ind in comp1; try (right; left; eauto);
-            try (complete (constructor;eauto)); eauto 3 with slow;[].
-          csunf; simpl; dcwf h; autorewrite with slow in *;
-            try (complete (apply @co_wf_false_implies_not in Heqh0; tcsp)).
-          exrepnd; allrw; simpl; eexists; dands; eauto.
-          repeat first [constructor; simpl; auto|introv i; repndors; tcsp; ginv]. }*) }
-
-      { admit.
-        (*repeat inv_diff.
-        dcwf h; dterms w; simpl in *.
-        { apply compute_step_arithop_success_can_can in comp; exrepnd; subst; simpl.
-          repeat inv_diff.
-          csunf; simpl; dcwf h; autorewrite with slow in *; tcsp;
-            try (complete (apply @ca_wf_false_implies_not in Heqh0; tcsp)).
-          repndors; exrepnd; subst; simpl in *; unfold compute_step_arith; simpl; autorewrite with slow.
-          repeat rewrite get_param_from_cop_swap_cs_can; allrw; boolvar; tcsp.
-          eexists; dands; eauto; eauto 3 with slow. }
+          eapply ind in comp1; try (right;left;eauto);try (complete (constructor; eauto)); eauto 3 with slow; exrepnd.
+          allrw @wf_term_ncompop_iff; exrepnd; ginv; simpl in *; cpx; simpl in *.
+          repeat inv_two_sw_bterms; fold_terms.
+          eexists; eexists; eexists; eexists; dands;
+            try (eapply reduce_to_prinargs_comp_can; eauto; try apply reduces_to_symm; eauto 3 with slow);
+            try (apply implies_alpha_eq_mk_compop; eauto).
+          repeat (constructor; simpl; auto; introv j; repndors; ginv; tcsp). }
         { apply on_success_csuccess in comp; exrepnd; subst; simpl in *.
-          eapply ind in comp1; try (right; left; eauto); eauto 3 with slow.
-          csunf; simpl; dcwf h; autorewrite with slow in *;
-            try (complete (apply @ca_wf_false_implies_not in Heqh0; tcsp)).
-          repeat inv_diff; exrepnd; allrw; simpl; eexists; dands; eauto;
-            repeat first [constructor; simpl; auto|introv i; repndors; tcsp; ginv]. }
-        { inv_diff; csunf; simpl; dcwf h; autorewrite with slow in *; tcsp;
-            try (complete (apply @ca_wf_false_implies_not in Heqh0; tcsp)).
-          eexists; dands; eauto. }
-        { inv_diff; apply on_success_csuccess in comp; exrepnd; subst; simpl in *.
-          eapply ind in comp1; try (right; left; eauto);
-            try (complete (constructor;eauto)); eauto 3 with slow.
-          csunf; simpl; dcwf h; autorewrite with slow in *;
-            try (complete (apply @ca_wf_false_implies_not in Heqh0; tcsp)).
-          exrepnd; simpl in *; allrw; simpl; tcsp.
-          eexists; dands; eauto.
-          repeat first [constructor; simpl; auto|introv i; repndors; tcsp; ginv]. }*) }
+          eapply ind in comp1; try (right;left;eauto);try (complete (constructor; eauto)); eauto 3 with slow; exrepnd.
+          allrw @wf_term_ncompop_iff; exrepnd; ginv; simpl in *; cpx; simpl in *.
+          repeat inv_two_sw_bterms; fold_terms.
+          eexists; eexists; eexists; eexists; dands;
+            try (eapply reduce_to_prinargs_comp_can; eauto; try apply reduces_to_symm; eauto 3 with slow);
+            try (apply implies_alpha_eq_mk_compop; eauto).
+          repeat (constructor; simpl; auto; introv j; repndors; ginv; tcsp). }
+        { eexists; eexists; eexists; eexists; dands;
+            try (apply reduces_to_if_step; csunf; simpl; try dcwf h; eauto);
+            try apply alpha_eq_refl; eauto. }
+        { apply on_success_csuccess in comp; exrepnd; subst; simpl in *.
+          eapply ind in comp1; try (right;left;eauto);try (complete (constructor; eauto)); eauto 3 with slow; exrepnd.
+          allrw @wf_term_ncompop_iff; exrepnd; ginv; simpl in *; cpx; simpl in *.
+          repeat inv_two_sw_bterms; fold_terms.
+          eexists; eexists; eexists; eexists; dands;
+            try (eapply reduce_to_prinargs_comp_can; eauto; try apply reduces_to_symm; eauto 3 with slow);
+            try (apply implies_alpha_eq_mk_compop; eauto).
+          repeat (constructor; simpl; auto; introv j; repndors; ginv; tcsp). }
+        { apply on_success_csuccess in comp; exrepnd; subst; simpl in *.
+          eapply ind in comp1; try (right;left;eauto);try (complete (constructor; eauto)); eauto 3 with slow; exrepnd.
+          allrw @wf_term_ncompop_iff; exrepnd; ginv; simpl in *; cpx; simpl in *.
+          repeat inv_two_sw_bterms; fold_terms.
+          eexists; eexists; eexists; eexists; dands;
+            try (eapply reduce_to_prinargs_comp_can; eauto; try apply reduces_to_symm; eauto 3 with slow);
+            try (apply implies_alpha_eq_mk_compop; eauto).
+          repeat (constructor; simpl; auto; introv j; repndors; ginv; tcsp). } }
 
-      { admit.
-        (*dterms w; csunf; simpl; autorewrite with slow; tcsp.
-        repeat inv_diff; eexists; dands; eauto.
-        destruct (canonical_form_test_for c w4); tcsp. *) } }
+      { SSCase "NArithOp".
+        dcwf h;[].
+        repeat (dterm w; repeat inv_two_sw; ginv).
 
-    { admit.
-      (*apply on_success_csuccess in comp; exrepnd; subst.
-      inv_diff.
-      eapply ind in comp1; eauto 2 with slow; exrepnd.
-      inv_diff.
-      { rewrite compute_step_ncan_ncan; allrw; eexists; dands; eauto.
-        repeat first [constructor; simpl; auto|introv i; repndors; tcsp; ginv]. }
-      { unfold mk_swap_cs2 in *; rewrite compute_step_ncan_ncan; allrw; simpl.
-        eexists; dands; eauto.
-        repeat first [constructor; simpl; auto|introv i; repndors; tcsp; ginv]. }*) }
+        { apply compute_step_arithop_success_can_can in comp; exrepnd; subst; simpl in *;[]; cpx.
+          repndors; exrepnd; subst; cpx; simpl in *; repeat inv_two_sw_bterms; boolvar; subst; tcsp;
+            try (complete (eexists; eexists; eexists; eexists; dands;
+                           [apply reduces_to_if_step; csunf; simpl; dcwf h;
+                            unfold compute_step_comp; simpl; allrw; eauto| | | |];
+                           try apply alpha_eq_refl; try apply reduces_to_symm; eauto; boolvar; try omega; auto; tcsp;
+                           repeat (constructor; simpl; auto; introv j; repndors; ginv; tcsp))). }
+        { apply on_success_csuccess in comp; exrepnd; subst; simpl in *.
+          eapply ind in comp1; try (right;left;eauto);try (complete (constructor; eauto)); eauto 3 with slow; exrepnd.
+          allrw @wf_term_narithop_iff; exrepnd; ginv; simpl in *; cpx; simpl in *.
+          repeat inv_two_sw_bterms; fold_terms.
+          eexists; eexists; eexists; eexists; dands;
+            try (eapply reduce_to_prinargs_arith_can; eauto; try apply reduces_to_symm; eauto 3 with slow);
+            try (apply implies_alpha_eq_mk_arithop; eauto).
+          repeat (constructor; simpl; auto; introv j; repndors; ginv; tcsp). }
+        { apply on_success_csuccess in comp; exrepnd; subst; simpl in *.
+          eapply ind in comp1; try (right;left;eauto);try (complete (constructor; eauto)); eauto 3 with slow; exrepnd.
+          allrw @wf_term_narithop_iff; exrepnd; ginv; simpl in *; cpx; simpl in *.
+          repeat inv_two_sw_bterms; fold_terms.
+          eexists; eexists; eexists; eexists; dands;
+            try (eapply reduce_to_prinargs_arith_can; eauto; try apply reduces_to_symm; eauto 3 with slow);
+            try (apply implies_alpha_eq_mk_arithop; eauto).
+          repeat (constructor; simpl; auto; introv j; repndors; ginv; tcsp). }
+        { eexists; eexists; eexists; eexists; dands;
+            try (apply reduces_to_if_step; csunf; simpl; try dcwf h; eauto);
+            try apply alpha_eq_refl; eauto. }
+        { apply on_success_csuccess in comp; exrepnd; subst; simpl in *.
+          eapply ind in comp1; try (right;left;eauto);try (complete (constructor; eauto)); eauto 3 with slow; exrepnd.
+          allrw @wf_term_narithop_iff; exrepnd; ginv; simpl in *; cpx; simpl in *.
+          repeat inv_two_sw_bterms; fold_terms.
+          eexists; eexists; eexists; eexists; dands;
+            try (eapply reduce_to_prinargs_arith_can; eauto; try apply reduces_to_symm; eauto 3 with slow);
+            try (apply implies_alpha_eq_mk_arithop; eauto).
+          repeat (constructor; simpl; auto; introv j; repndors; ginv; tcsp). }
+        { apply on_success_csuccess in comp; exrepnd; subst; simpl in *.
+          eapply ind in comp1; try (right;left;eauto);try (complete (constructor; eauto)); eauto 3 with slow; exrepnd.
+          allrw @wf_term_narithop_iff; exrepnd; ginv; simpl in *; cpx; simpl in *.
+          repeat inv_two_sw_bterms; fold_terms.
+          eexists; eexists; eexists; eexists; dands;
+            try (eapply reduce_to_prinargs_arith_can; eauto; try apply reduces_to_symm; eauto 3 with slow);
+            try (apply implies_alpha_eq_mk_arithop; eauto).
+          repeat (constructor; simpl; auto; introv j; repndors; ginv; tcsp). } }
 
-    { admit.
-      (*apply compute_step_catch_success in comp; repndors; exrepnd; subst; simpl in *.
-      { inversion comp2; subst; simpl in *; clear comp2.
-        repeat inv_diff.
-        csunf; simpl; autorewrite with slow; auto.
-        eexists; dands; eauto.
-        repeat first [constructor; simpl; auto|introv i; repndors; tcsp; ginv].
-        unfold subst; eauto 3 with slow. }
-      { repeat inv_diff.
-        csunf; simpl.
-        rewrite compute_step_catch_if_diff; tcsp; eauto 3 with slow.
-        eexists; dands; eauto. }*) } }
+      { dterms w.
+        repeat inv_two_sw.
+        eexists; eexists; eexists; eexists; dands;
+          try (complete (apply reduces_to_if_step; csunf; simpl; eauto));
+          try apply reduces_to_symm; try apply alpha_eq_refl.
+        destruct (canonical_form_test_for c w4); auto. } }
 
-(*  { apply on_success_csuccess in comp; exrepnd; subst.
-      inv_diff.
-      eapply ind in comp1; eauto 2 with slow; exrepnd.
-      inv_diff.
-      csunf comp1; simpl in *.
-      rewrite compute_step_ncan_abs; allrw; eexists; dands; eauto.
-      repeat first [constructor; simpl; auto|introv i; repndors; tcsp; ginv]. }
+    { apply compute_step_catch_success in comp; repndors; exrepnd; subst; simpl in *; ginv; repeat inv_two_sw.
+      { eexists; eexists; eexists; eexists; dands;
+          try (complete (apply reduces_to_if_step; csunf;simpl; eauto));
+          try apply reduces_to_symm; try apply alpha_eq_refl.
+        apply implies_two_swap_cs2_mk_atom_eq; eauto 3 with slow.
+        repeat (constructor; simpl; auto; introv j; repndors; ginv; tcsp). }
+      { eexists; eexists; eexists; eexists; dands;
+          try (complete (apply reduces_to_if_step; csunf; simpl; rewrite compute_step_catch_non_trycatch; eauto));
+          try apply reduces_to_symm; try apply alpha_eq_refl.
+        repeat (constructor; simpl; auto; introv j; repndors; ginv; tcsp). } }
 
-    { apply compute_step_fresh_success in comp; exrepnd; subst; simpl in *; ginv. } }*)
+    { apply compute_step_fresh_success in comp; repeat (repndors; exrepnd; GC; ginv; subst; simpl in * ). } }
 
-  { admit.
-    (* csunf comp; simpl in *; ginv; csunf; simpl; tcsp.
-    repeat inv_diff; eexists; dands; eauto.*) }
+  { apply compute_step_NSwapCs2_success in comp; exrepnd; subst.
+    apply compute_step_swap_cs2_success in comp0; repndors; exrepnd; subst; simpl in *.
 
-  { admit.
+    { repeat inv_two_sw; fold_terms.
+      eexists; eexists; eexists; eexists; dands;
+        try (complete (apply reduces_to_if_step; csunf; simpl; eauto)); try apply alpha_eq_refl; eauto 3 with slow. }
+
+    { repeat inv_two_sw; fold_terms.
+      eexists; eexists; eexists; eexists; dands;
+        try (complete (apply reduces_to_if_step; csunf; simpl; eauto)); try apply alpha_eq_refl; eauto 3 with slow. }
+
+
+
+
+
   }
 
-  { admit.
-    (*csunf comp; simpl in *.
-    repeat inv_diff; csunf; simpl.
-    apply compute_step_lib_success in comp; exrepnd; subst.
-    eapply compute_step_lib_success_change_bs in comp0;
-      [|eapply diff_swaps_bterms_implies_eq_map_num_bvars; eauto].
-    eexists; dands; eauto; eauto 3 with slow.*) }
+  { csunf comp; simpl in *; ginv.
+    inv_two_sw.
+    eexists; eexists; eexists; eexists; dands;
+      try (complete (apply reduces_to_if_step; csunf; simpl; eauto)); try apply alpha_eq_refl; eauto 3 with slow. }
+
+  { csunf comp; simpl in *; inv_two_sw.
+
+    admit. }
 Admitted.
 
 Lemma reduces_to_or {o} :
