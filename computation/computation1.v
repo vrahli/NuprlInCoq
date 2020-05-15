@@ -160,7 +160,7 @@ Definition compute_step_apseq {o}
 Fixpoint apply_swaps {o} (s : cs_swaps) (t : @NTerm o) : NTerm :=
   match s with
   | [] => t
-  | sw :: sws => swap_cs_term sw (apply_swaps sws t)
+  | sw :: sws => (*swap_cs_term*) mk_swap_cs2 sw (apply_swaps sws t)
   end.
 
 (*Definition cs_info2swaps (nfo : cs_info) : cs_swaps :=

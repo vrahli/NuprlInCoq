@@ -1477,9 +1477,9 @@ Lemma lsubst_aux_apply_swaps_utok {o} :
     -> lsubst_aux (apply_swaps l t) sub
        = apply_swaps l (lsubst_aux t sub).
 Proof.
-  induction l; introv isu; simpl; auto.
-  rewrite lsubst_aux_swap_cs_term_is_utok_sub; auto.
-  rewrite IHl; auto.
+  induction l; introv isu; simpl; auto; fold_terms.
+  try rewrite lsubst_aux_swap_cs_term_is_utok_sub; auto.
+  rewrite IHl; autorewrite with slow; auto.
 Qed.
 
 Lemma compute_step_subst_utoken {o} :

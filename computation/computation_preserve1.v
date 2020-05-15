@@ -512,6 +512,15 @@ Proof.
 Qed.
 Hint Resolve implies_nt_wf_push_swap_cs0 : slow.
 
+Lemma implies_wf_swap_cs2 {o} :
+  forall sw (a : @NTerm o),
+    wf_term a
+    -> wf_term (mk_swap_cs2 sw a).
+Proof.
+  introv wf; apply wf_swap_cs2; auto.
+Qed.
+Hint Resolve implies_wf_swap_cs2 : slow.
+
 Lemma wf_apply_swaps {o} :
   forall l (t : @NTerm o),
     wf_term t

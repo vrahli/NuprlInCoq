@@ -1539,6 +1539,233 @@ Proof.
 Qed.
 Hint Resolve implies_two_swap_cs2_lsubst_aux_sw_sub_twice : slow.
 
+Lemma implies_two_swap_cs2_apply_swaps {o} :
+  forall sw l (a b : @NTerm o),
+    two_swap_cs2 sw a b
+    -> two_swap_cs2 sw (apply_swaps l a) (apply_swaps l b).
+Proof.
+  induction l; introv h; simpl; eauto 3 with slow.
+Qed.
+Hint Resolve implies_two_swap_cs2_apply_swaps : slow.
+
+Inductive two_swap_cs2_sosub_kind {o} sw : @sosub_kind o -> @sosub_kind o -> Type :=
+| two_sw_sosub_kind_cons :
+    forall vs t1 t2,
+      two_swap_cs2 sw t1 t2
+      -> two_swap_cs2_sosub_kind sw (sosk vs t1) (sosk vs t2).
+Hint Constructors two_swap_cs2_sosub_kind.
+
+Inductive two_swap_cs2_sosub {o} sw : @SOSub o -> @SOSub o -> Type :=
+| two_sw_sosub_nil : two_swap_cs2_sosub sw [] []
+| two_sw_sosub_cons :
+    forall (v : NVar) (t1 t2 : sosub_kind) (s1 s2 : SOSub),
+      two_swap_cs2_sosub_kind sw t1 t2
+      -> two_swap_cs2_sosub sw s1 s2
+      -> two_swap_cs2_sosub sw ((v, t1) :: s1) ((v, t2) :: s2).
+Hint Constructors two_swap_cs2_sosub.
+
+Lemma two_swap_cs2_sosub_implies_two_swap_cs2_sosub_find_some {o} :
+  forall sw (s1 s2 : @SOSub o) x t,
+    two_swap_cs2_sosub sw s1 s2
+    -> sosub_find s1 x = Some t
+    -> {u : sosub_kind & sosub_find s2 x = Some u # two_swap_cs2_sosub_kind sw t u}.
+Proof.
+  introv h; induction h; introv q; simpl in *; ginv.
+  inversion t0; subst; simpl in *; clear t0;[].
+  destruct x; simpl in *; boolvar; subst; simpl in *; ginv; eexists; dands; eauto.
+Qed.
+
+Lemma two_swap_cs2_sosub_implies_two_swap_cs2_sosub_find_none {o} :
+  forall sw (s1 s2 : @SOSub o) x,
+    two_swap_cs2_sosub sw s1 s2
+    -> sosub_find s1 x = None
+    -> sosub_find s2 x = None.
+Proof.
+  introv h; induction h; introv q; simpl in *; ginv.
+  inversion t; subst; simpl in *; clear t;[].
+  destruct x; simpl in *; boolvar; subst; simpl in *; ginv.
+Qed.
+
+Lemma implies_two_swap_cs2_sub_combine {o} :
+  forall sw vs (ts1 ts2 : list (@NTerm o)),
+    length vs = length ts1
+    -> length vs = length ts2
+    -> (forall t1 t2, LIn (t1,t2) (combine ts1 ts2) -> two_swap_cs2 sw t1 t2)
+    -> two_swap_cs2_sub sw (combine vs ts1) (combine vs ts2).
+Proof.
+  induction vs; simpl in *; introv lena lenb imp; cpx; auto.
+  destruct ts1, ts2; simpl in *; ginv; cpx.
+Qed.
+
+Lemma implies_two_swap_cs2_apply_list {o} :
+  forall sw (ts1 ts2 : list (@NTerm o)) t1 t2,
+    two_swap_cs2 sw t1 t2
+    -> length ts1 = length ts2
+    -> (forall t1 t2, LIn (t1,t2) (combine ts1 ts2) -> two_swap_cs2 sw t1 t2)
+    -> two_swap_cs2 sw (apply_list t1 ts1) (apply_list t2 ts2).
+Proof.
+  induction ts1; simpl in *; introv tsw len imp; cpx; auto.
+  destruct ts2; simpl in *; ginv; cpx.
+  apply IHts1; eauto 3 with slow.
+  apply implies_two_swap_cs2_mk_apply; auto.
+Qed.
+Hint Resolve implies_two_swap_cs2_apply_list : slow.
+
+Lemma two_swap_cs2_sosub_filter {o} :
+  forall sw l (s1 s2 : @SOSub o),
+    two_swap_cs2_sosub sw s1 s2
+    -> two_swap_cs2_sosub sw (sosub_filter s1 l) (sosub_filter s2 l).
+Proof.
+  introv h; induction h; simpl; auto.
+  inversion t; boolvar; tcsp.
+Qed.
+Hint Resolve two_swap_cs2_sosub_filter : slow.
+
+Lemma implies_two_swap_cs2_sosub_aux {o} :
+  forall sw (t : @SOTerm o) (s1 s2 : @SOSub o),
+    two_swap_cs2_sosub sw s1 s2
+    -> two_swap_cs2 sw (sosub_aux s1 t) (sosub_aux s2 t).
+Proof.
+  soterm_ind1s t as [v ts ind|op bs ind] Case; introv h; simpl in *.
+
+  { remember (sosub_find s1 (v,length ts)) as f; symmetry in Heqf; destruct f; simpl.
+    { dup Heqf as q.
+      eapply two_swap_cs2_sosub_implies_two_swap_cs2_sosub_find_some in q; eauto; exrepnd.
+      allrw.
+      inversion q0 as [? ? ? tsw]; clear q0; subst; simpl in *.
+      apply implies_two_swap_cs2_lsubst_aux; eauto 3 with slow.
+      applydup @sosub_find_some in Heqf.
+      applydup @sosub_find_some in q1.
+      repnd.
+      apply implies_two_swap_cs2_sub_combine; autorewrite with slow; auto.
+      introv i.
+      rewrite <- map_combine in i; apply in_map_iff in i; exrepnd; ginv.
+      apply in_combine_same in i1; repnd; subst.
+      apply ind; auto. }
+    dup Heqf as q.
+    eapply two_swap_cs2_sosub_implies_two_swap_cs2_sosub_find_none in q; eauto; exrepnd.
+    allrw; simpl; eauto 3 with slow.
+    apply implies_two_swap_cs2_apply_list; autorewrite with slow; auto.
+    introv i.
+    rewrite <- map_combine in i; apply in_map_iff in i; exrepnd; ginv.
+    apply in_combine_same in i1; repnd; subst.
+    apply ind; auto. }
+
+  constructor; autorewrite with slow; auto.
+  introv i.
+  rewrite <- map_combine in i; apply in_map_iff in i; exrepnd; ginv.
+  apply in_combine_same in i1; repnd; subst.
+  destruct a; simpl; constructor.
+  eapply ind; eauto; eauto 3 with slow.
+Qed.
+Hint Resolve implies_two_swap_cs2_sosub_aux : slow.
+
+Lemma two_swap_cs2_sosub_implies_same_free_vars {o} :
+  forall sw (s1 s2 : @SOSub o),
+    two_swap_cs2_sosub sw s1 s2
+    -> free_vars_sosub s1 = free_vars_sosub s2.
+Proof.
+  introv h; induction h; simpl; auto.
+  allrw; f_equal.
+  inversion t; subst; simpl; f_equal; eauto 3 with slow.
+Qed.
+
+Lemma two_swap_cs2_sosub_implies_same_bound_vars {o} :
+  forall sw (s1 s2 : @SOSub o),
+    two_swap_cs2_sosub sw s1 s2
+    -> bound_vars_sosub s1 = bound_vars_sosub s2.
+Proof.
+  introv h; induction h; simpl; auto.
+  allrw; f_equal.
+  inversion t; subst; simpl; f_equal; eauto 3 with slow.
+Qed.
+
+Lemma two_swap_cs2_implies_same_allvars {o} :
+  forall sw (t u : @NTerm o),
+    two_swap_cs2 sw t u
+    -> allvars t = allvars u.
+Proof.
+  nterm_ind1s t as [v|op bs ind] Case; introv d; inv_two_sw; simpl; autorewrite with slow; auto;
+    try (complete (eapply ind; try (left; reflexivity); simpl; eauto 3 with slow));[].
+  apply eq_flat_maps_diff; auto.
+  introv i.
+  applydup imp in i.
+  inv_two_sw_bterm i0; simpl.
+  f_equal.
+  apply in_combine in i; repnd.
+  eapply ind; eauto 3 with slow.
+Qed.
+Hint Resolve two_swap_cs2_implies_same_allvars : slow.
+
+Lemma two_swap_cs2_sosub_implies_same_allvars {o} :
+  forall sw (s1 s2 : @SOSub o),
+    two_swap_cs2_sosub sw s1 s2
+    -> allvars_range_sosub s1 = allvars_range_sosub s2.
+Proof.
+  introv h; induction h; simpl; auto.
+  allrw; f_equal.
+  inversion t; subst; simpl; f_equal; eauto 3 with slow.
+Qed.
+
+Lemma implies_two_swap_cs2_sosub_change_bvars {o} :
+  forall sw l (s1 s2 : @SOSub o),
+    two_swap_cs2_sosub sw s1 s2
+    -> two_swap_cs2_sosub
+         sw
+         (sosub_change_bvars_alpha l s1)
+         (sosub_change_bvars_alpha l s2).
+Proof.
+  introv h; induction h; simpl; auto.
+  constructor; auto.
+  inversion t as [? ? ? q]; subst; simpl in *; clear t.
+  unfold sk_change_bvars_alpha; simpl.
+  applydup (implies_two_swap_cs2_change_bvars_alpha sw t0 t3 l) in q.
+  applydup @two_swap_cs2_implies_same_all_vars in q0; allrw.
+  constructor; eauto 3 with slow.
+Qed.
+Hint Resolve implies_two_swap_cs2_sosub_change_bvars : slow.
+
+Lemma implies_two_swap_cs2_sosub {o} :
+  forall sw (t : @SOTerm o) (s1 s2 : @SOSub o),
+    two_swap_cs2_sosub sw s1 s2
+    -> two_swap_cs2 sw (sosub s1 t) (sosub s2 t).
+Proof.
+  introv tsw.
+  applydup @two_swap_cs2_sosub_implies_same_free_vars in tsw.
+  applydup @two_swap_cs2_sosub_implies_same_bound_vars in tsw.
+  applydup @two_swap_cs2_sosub_implies_same_allvars in tsw.
+  unfold sosub; simpl.
+  allrw.
+  boolvar; eauto 3 with slow.
+Qed.
+Hint Resolve implies_two_swap_cs2_sosub : slow.
+
+Hint Rewrite @mk_abs_subst_nil_r : slow.
+
+Lemma implies_twos_swap_cs2_sosub_mk_abs_subst {o} :
+  forall sw (bs1 bs2 : list (@BTerm o)) vs,
+    length bs1 = length bs2
+    -> (forall b1 b2, LIn (b1, b2) (combine bs1 bs2) -> two_swap_cs2_bterm sw b1 b2)
+    -> two_swap_cs2_sosub sw (mk_abs_subst vs bs1) (mk_abs_subst vs bs2).
+Proof.
+  induction bs1; introv len imp; simpl in *; cpx; autorewrite with slow; auto.
+  destruct bs2; simpl in *; cpx; repeat inv_two_sw_bterms.
+  destruct vs; simpl; auto.
+  destruct s; simpl in *; boolvar; subst; simpl in *; auto.
+Qed.
+Hint Resolve implies_twos_swap_cs2_sosub_mk_abs_subst : slow.
+
+Lemma implies_two_swap_cs2_mk_instance {o} :
+  forall sw vs (bs1 bs2 : list (@BTerm o)) t,
+    length bs1 = length bs2
+    -> (forall b1 b2, LIn (b1, b2) (combine bs1 bs2) -> two_swap_cs2_bterm sw b1 b2)
+    -> two_swap_cs2 sw (mk_instance vs bs1 t) (mk_instance vs bs2 t).
+Proof.
+  introv len imp.
+  unfold mk_instance; eauto 3 with slow.
+Qed.
+Hint Resolve implies_two_swap_cs2_mk_instance : slow.
+
 Lemma compute_step_two_swap_cs2 {o} :
   forall lib (t u : @NTerm o) sw z,
     wf_term t
@@ -2081,14 +2308,7 @@ Proof.
       [eapply reduces_to_if_step; csunf; simpl;
        eapply compute_step_lib_success_change_bs;[|eauto]; auto;
        eapply two_swap_cs2_bterms_implies_eq_map_num_bvars; eauto
-      |apply reduces_to_symm| | |]; try apply alpha_eq_refl.
-
-
-Set Nested Proofs Allowed.
-
-Locate apply_swaps.
-
-}
+      |apply reduces_to_symm| | |]; try apply alpha_eq_refl; eauto 3 with slow. }
 Qed.
 
 Lemma reduces_to_or {o} :
@@ -2113,58 +2333,103 @@ Proof.
   eapply compute_split; eauto; try omega.
 Qed.
 
+Lemma reduces_in_atmost_k_steps_preserves_wf_term {o} :
+  forall lib k (t1 t2 : @NTerm o),
+    reduces_in_atmost_k_steps lib t1 t2 k -> wf_term t1 -> wf_term t2.
+Proof.
+  introv r wf.
+  eapply reduces_in_atmost_k_Steps_preserves_wf in r; eauto 3 with slow.
+Qed.
+Hint Resolve reduces_in_atmost_k_steps_preserves_wf_term : slow.
+
+Hint Resolve reduces_to_preserves_wf : slow.
+
 Lemma reduces_in_atmost_k_steps_two_swap_cs2 {o} :
   forall sw lib k (t u : @NTerm o) z,
-    two_swap_cs2 sw t u
+    wf_term t
+    -> two_swap_cs2 sw t u
     -> reduces_in_atmost_k_steps lib t z k
     -> {a : NTerm
         & {b : NTerm
+        & {a' : NTerm
+        & {b' : NTerm
         & reduces_to lib u b
         # reduces_to lib z a
-        # two_swap_cs2 sw a b}}.
+        # two_swap_cs2 sw a' b'
+        # alpha_eq b b'
+        # alpha_eq a a' }}}}.
 Proof.
-  induction k as [? ind] using comp_ind_type; introv h r.
+  induction k as [? ind] using comp_ind_type; introv wf h r.
   destruct k.
   { allrw @reduces_in_atmost_k_steps_0; subst.
-    exists z u; dands; eauto 3 with slow. }
+    exists z u z u; dands; eauto 3 with slow. }
   allrw @reduces_in_atmost_k_steps_S; exrepnd.
+
+  assert (wf_term u) as wfa by eauto 3 with slow.
+  assert (wf_term u0) as wfb by eauto 3 with slow.
+
   eapply compute_step_two_swap_cs2 in r1; eauto; exrepnd.
+
+  assert (wf_term a) as wfc by eauto 3 with slow.
+  assert (wf_term b) as wfd by eauto 3 with slow.
+  assert (wf_term b') as wfe by eauto 3 with slow.
+
   eapply reduces_to_or in r0; eauto.
-  repndors; exrepnd;[|exists a b; dands; auto];[].
+  repndors; exrepnd;[|eexists; eexists; eexists; eexists; dands; eauto];[].
   subst.
-  eapply ind in r0; try exact r1; try omega.
+
+  assert (wf_term z) as wff by eauto 3 with slow.
+
+  dup r0 as comp.
+  eapply reduces_in_atmost_k_steps_alpha in r0; eauto; eauto 3 with slow; exrepnd.
+  eapply ind in r4; try exact r0; eauto 3 with slow; try omega.
   exrepnd.
-  exists a0 b0; dands; eauto 3 with slow.
+  eapply reduces_to_alpha in r9; try apply alpha_eq_sym; eauto; eauto 3 with slow; exrepnd;[].
+  eapply reduces_to_alpha in r8; try apply alpha_eq_sym; eauto; eauto 3 with slow; exrepnd;[].
+
+  exists t2'0 t2'1; eexists; eexists; dands; try exact r10; eauto 3 with slow;[].
   eapply reduces_to_trans; eauto.
 Qed.
 
 Lemma reduces_to_two_swap_cs2 {o} :
   forall sw lib (t u : @NTerm o) z,
-    two_swap_cs2 sw t u
+    wf_term t
+    -> two_swap_cs2 sw t u
     -> reduces_to lib t z
     -> {a : NTerm
         & {b : NTerm
+        & {a' : NTerm
+        & {b' : NTerm
         & reduces_to lib u b
         # reduces_to lib z a
-        # two_swap_cs2 sw a b}}.
+        # two_swap_cs2 sw a' b'
+        # alpha_eq b b'
+        # alpha_eq a a' }}}}.
 Proof.
-  introv h r.
+  introv wf h r.
   unfold reduces_to in r; exrepnd.
   eapply reduces_in_atmost_k_steps_two_swap_cs2 in r0; eauto.
 Qed.
 
 Lemma computes_to_value_two_swap_cs2 {o} :
   forall sw lib (t u : @NTerm o) z,
-    two_swap_cs2 sw t u
+    wf_term t
+    -> two_swap_cs2 sw t u
     -> computes_to_value lib t z
     -> {w : NTerm
+        & {z' : NTerm
+        & {w' : NTerm
         & computes_to_value lib u w
-        # two_swap_cs2 sw z w}.
+        # two_swap_cs2 sw z' w'
+        # alpha_eq z z'
+        # alpha_eq w w' }}}.
 Proof.
-  introv h r; unfold computes_to_value in *; repnd.
+  introv wf h r; unfold computes_to_value in *; repnd.
   eapply reduces_to_two_swap_cs2 in r0; eauto; exrepnd.
   apply reduces_to_if_value in r2; auto; subst.
-  exists b; dands; eauto 3 with slow.
+  applydup @alpha_preserves_value in r0; auto.
+  applydup @two_swap_cs2_preserves_isvalue in r3; auto.
+  eexists; eexists; eexists; dands; eauto; eauto 3 with slow.
 Qed.
 
 Lemma approx_two_swap_cs2 {o} :
@@ -2181,29 +2446,43 @@ Proof.
 
     introv comp.
     applydup @computes_to_value_implies_isprogram in comp as wf.
-    eapply computes_to_value_two_swap_cs2 in comp; eauto; exrepnd.
-    apply two_swap_cs2_can in comp0; exrepnd; subst.
+    eapply computes_to_value_two_swap_cs2 in comp; eauto; exrepnd; eauto 3 with slow.
+    apply alpha_eq_oterm_implies_combine2 in comp3; exrepnd; subst.
+    apply two_swap_cs2_can in comp2; exrepnd; subst.
+    apply alpha_eq_sym in comp0.
+    apply alpha_eq_oterm_implies_combine2 in comp0; exrepnd; subst.
     eexists; dands; eauto.
 
-    unfold lblift; autorewrite with slow; dands; auto.
+    unfold alpha_eq_bterms in *; repnd.
+    unfold lblift; autorewrite with slow; dands; auto; try congruence.
     introv ln; autorewrite with slow.
 
     eapply isprogram_ot_implies_eauto2 in wf; eauto.
     applydup @isprogram_bt_implies_bt_wf in wf.
 
-    pose proof (select2bts tl_subterms bs' n) as q; repeat (autodimp q hyp); exrepnd.
-    applydup comp2 in q1.
-    rewrite q0, q2.
-    rewrite q0 in wf, wf0.
-    destruct b1 as [l1 u1], b2 as [l2 u2].
+    pose proof (select2bts tl_subterms bs' n) as qa; repeat (autodimp qa hyp); exrepnd.
+    pose proof (select2bts bs' bs'0 n) as qb; repeat (autodimp qb hyp); exrepnd; try congruence.
+    pose proof (select2bts bs'0 bs'1 n) as qc; repeat (autodimp qc hyp); exrepnd; try congruence.
+    rewrite qa2 in *; subst b2.
+    rewrite qb2 in *; subst b3.
+    applydup comp3 in qb1.
+    applydup comp4 in qa1.
+    applydup comp2 in qc1.
+    rewrite qa0, qc0, qc2, qb0 in *.
+    destruct b1 as [l1 u1], b0 as [l2 u2], b4 as [l3 u3], b5 as [l4 u4].
+    applydup @alphaeqbt_preserves_wf in qa2 as wfa.
+    applydup wfa in wf0 as wfb; clear wfa.
     apply bt_wf_iff in wf0.
-    inv_two_sw_bterm q3.
+    apply bt_wf_iff in wfb.
+    inv_two_sw_bterm qb2.
 
-    exists l2 u1 u2; dands; eauto 3 with slow.
+    exists l3 u2 u3; dands; eauto 3 with slow.
     unfold olift.
-    dands; eauto 2 with slow.
+    dands; eauto 2 with slow;[].
 
-    assert (subset (free_vars u1) l2) as ssa by eauto 2 with slow.
+    applydup @alpha_eq_bterm_preserves_isprogram_bt in qa2; auto;[].
+    applydup @two_swap_cs2_implies_same_free_vars in diff.
+    assert (subset (free_vars u2) l3) as ssa by eauto 2 with slow.
     introv wfs ispa ispb; left.
     eapply ind; eauto 3 with slow. }
 
@@ -2211,12 +2490,31 @@ Proof.
 
     introv comp.
     applydup @preserve_program_exc2 in comp; auto; repnd; eauto 3 with slow.
-    eapply reduces_to_two_swap_cs2 in comp; eauto; exrepnd.
+    eapply reduces_to_two_swap_cs2 in comp; eauto; exrepnd; eauto 3 with slow.
     apply reduces_to_if_isvalue_like in comp4; eauto 3 with slow; subst.
-    inv_two_sw.
+    apply alpha_eq_exception in comp3; exrepnd; subst.
+    inv_two_sw; fold_terms.
+    apply alpha_eq_sym in comp6; apply alpha_eq_exception in comp6; exrepnd; subst.
+
     applydup @reduces_to_preserves_program in comp2; eauto 3 with slow.
-    apply isprogram_exception_iff in comp3; repnd.
-    exists u1 u0; dands; auto; left; eapply ind; eauto 3 with slow. }
+    apply isprogram_exception_iff in comp4; repnd.
+    applydup @alpha_prog_eauto in comp7; auto.
+    applydup @alpha_prog_eauto in comp3; auto.
+    applydup @two_swap_cs2_preserves_isprogram in diff0; auto.
+    applydup @two_swap_cs2_preserves_isprogram in diff; auto.
+
+    eexists; eexists; dands; eauto.
+    { left.
+
+(* add [alpha_eq] hyps around [two_swap_cs2] *)
+
+      eapply respects_alpha_l_approx_aux_bot2;[apply alpha_eq_sym;eauto|].
+      eapply respects_alpha_r_approx_aux_bot2;[eauto|].
+      eapply ind; eauto; eauto 3 with slow. }
+    { left.
+      eapply respects_alpha_l_approx_aux_bot2;[apply alpha_eq_sym;eauto|].
+      eapply respects_alpha_r_approx_aux_bot2;[eauto|].
+      eapply ind; eauto; eauto 3 with slow. } }
 Qed.
 
 Lemma implies_two_swap_cs2_mk_swap_cs2 {o} :
