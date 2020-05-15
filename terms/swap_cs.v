@@ -82,14 +82,15 @@ Definition swap_cs_ncan (r : cs_swap) (ncan : NonCanonicalOp) : NonCanonicalOp :
 (*Definition add_to_cs_swaps (sw : cs_swap) (l : cs_swaps) : cs_swaps := sw :: l.*)
 
 Definition add_to_cs_swaps (sw : cs_swap) (l : cs_swaps) : cs_swaps :=
+  let sw0 := ord_cs_swap sw in
   match l with
-  | [] => [sw]
+  | [] => [sw0]
   | sw' :: sws =>
-    if cs_swap_deq sw sw'
+    if cs_swap_deq sw0 sw'
 (*    then sws
     else if cs_swap_deq sw (rev_cs_swap sw')*)
          then sws
-         else sw :: sw' :: sws
+         else sw0 :: sw' :: sws
   end.
 
 Definition add_to_cs_swaps_norep :
@@ -102,12 +103,42 @@ Proof.
     destruct l; simpl in *; boolvar; auto.
 Qed.
 
+Lemma CsLe_total :
+  forall a b, CsLe a b \/ CsLe b a.
+Proof.
+  destruct a as [a p], b as [b q]; unfold CsLe; simpl.
+  destruct (VarLt_dec a b) as [w|w]; tcsp.
+  destruct (VarLt_dec b a) as [z|z]; tcsp.
+  apply not_VarLt_implies_VarLe in z.
+  apply VarLe_iff_VarLt in z; repndors; tcsp; subst.
+  destruct p, q; simpl; tcsp.
+Qed.
+
+Lemma is_ord_cs_swap_ord_cs_swap :
+  forall sw, is_ord_cs_swap (ord_cs_swap sw) = true.
+Proof.
+  introv; destruct sw as [a b]; simpl; boolvar; simpl; boolvar; tcsp.
+  destruct (CsLe_total a b); tcsp.
+Qed.
+
+Definition add_to_cs_swaps_ord :
+  forall (sw : cs_swap) (l : cs_swaps),
+    cs_swaps_ord l = true
+    -> cs_swaps_ord (add_to_cs_swaps sw l) = true.
+Proof.
+  introv norep.
+  destruct l; simpl in *; boolvar; subst; auto; allrw andb_true; repnd; dands; tcsp.
+  { apply is_ord_cs_swap_ord_cs_swap. }
+  { simpl; allrw andb_true; dands; auto; apply is_ord_cs_swap_ord_cs_swap. }
+Qed.
+
 Coercion cs_sws_sw : cs_swaps_nr >-> cs_swaps.
 
 Definition add_to_cs_swaps_nr (sw : cs_swap) (l : cs_swaps_nr) : cs_swaps_nr :=
   mk_cs_swaps_nr
     (add_to_cs_swaps sw l)
-    (add_to_cs_swaps_norep sw l (cs_sws_nr l)).
+    (add_to_cs_swaps_norep sw l (cs_sws_nr l))
+    (add_to_cs_swaps_ord sw l (cs_sws_rd l)).
 
 Definition swap_cs_abs (sw : cs_swap) (abs : opabs) :=
   match abs with
@@ -541,8 +572,9 @@ Lemma implies_eq_cs_swaps_nr :
     cs_sws_sw l = cs_sws_sw k
     -> l = k.
 Proof.
-  introv h; destruct l as [l p], k as [k q]; simpl in *; subst.
+  introv h; destruct l as [l p r], k as [k q s]; simpl in *; subst.
   assert (p = q) by (apply UIP_dec; apply bool_dec); subst; auto.
+  assert (r = s) by (apply UIP_dec; apply bool_dec); subst; auto.
 Qed.
 
 Lemma add_to_cs_swaps_twice :
@@ -614,3 +646,92 @@ Proof.
   apply eq_map_l; introv i; destruct x; simpl; autorewrite with slow; auto.
 Qed.
 Hint Rewrite @map_swap_cs_bterm_twice : slow.
+
+Lemma swap_cs_swap_swap_cs_swap_same :
+  forall sw s,
+    swap_cs_swap (swap_cs_swap sw sw) s = swap_cs_swap sw s.
+Proof.
+  introv; destruct sw, s; simpl; boolvar; subst; tcsp.
+Qed.
+Hint Rewrite swap_cs_swap_swap_cs_swap_same : slow.
+
+Lemma swap_cs_can_swap_cs_swap_same {o} :
+  forall sw (can : @CanonicalOp o),
+    swap_cs_can (swap_cs_swap sw sw) can = swap_cs_can sw can.
+Proof.
+  introv; destruct can; simpl; auto; autorewrite with slow.
+  destruct sw; simpl; boolvar; subst; tcsp.
+Qed.
+Hint Rewrite @swap_cs_can_swap_cs_swap_same : slow.
+
+Lemma VarLe_implies_eq :
+  forall a b, VarLe b a -> VarLe a b -> a = b.
+Proof.
+  introv h q.
+  destruct (VarDeq a b); subst; auto.
+  apply VarLe_implies_VarLt in n; auto.
+  apply VarLe_iff_VarLt in h; repndors; auto.
+  eapply VarLt_trans in h; eauto.
+  apply not_VarLt_refl in h; tcsp.
+Qed.
+
+Lemma CsLe_implies_eq :
+  forall a b, CsLe a b -> CsLe b a -> a = b.
+Proof.
+  introv ha hb.
+  destruct a as [a p], b as [b q]; unfold CsLe in *; simpl in *; repndors; repnd; subst; tcsp.
+  { eapply VarLt_trans in ha; eauto; apply not_VarLt_refl in ha; tcsp. }
+  { apply not_VarLt_refl in hb; tcsp. }
+  { apply not_VarLt_refl in ha; tcsp. }
+  { destruct p, q; simpl in *; tcsp. }
+Qed.
+
+Lemma ord_cs_swap_swap_cs_swap_same :
+  forall sw, ord_cs_swap (swap_cs_swap sw sw) = ord_cs_swap sw.
+Proof.
+  introv; destruct sw as [a b]; simpl; boolvar; subst; tcsp.
+  { eapply CsLe_implies_eq in c; eauto; subst; auto. }
+  destruct (CsLe_total a b); tcsp.
+Qed.
+Hint Rewrite ord_cs_swap_swap_cs_swap_same : slow.
+
+Lemma add_to_cs_swaps_swap_cs_swap_same :
+  forall sw l, add_to_cs_swaps (swap_cs_swap sw sw) l = add_to_cs_swaps sw l.
+Proof.
+  introv; destruct l; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite add_to_cs_swaps_swap_cs_swap_same : slow.
+
+Lemma add_to_cs_swaps_nr_swap_cs_swap_same :
+  forall sw l, add_to_cs_swaps_nr (swap_cs_swap sw sw) l = add_to_cs_swaps_nr sw l.
+Proof.
+  introv; destruct l as [l nr rd]; simpl.
+  apply implies_eq_cs_swaps_nr; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite add_to_cs_swaps_nr_swap_cs_swap_same : slow.
+
+Lemma swap_cs_abs_swap_cs_swap_same :
+  forall sw (a : opabs),
+    swap_cs_abs (swap_cs_swap sw sw) a = swap_cs_abs sw a.
+Proof.
+  introv; destruct a as [n p s l]; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @swap_cs_abs_swap_cs_swap_same : slow.
+
+Lemma swap_cs_op_swap_cs_swap_same {o} :
+  forall sw (op : @Opid o),
+    swap_cs_op (swap_cs_swap sw sw) op = swap_cs_op sw op.
+Proof.
+  introv; destruct op; simpl; autorewrite with slow; auto.
+Qed.
+Hint Rewrite @swap_cs_op_swap_cs_swap_same : slow.
+
+Lemma swap_cs_term_swap_cs_swap_same {o} :
+  forall sw (t : @NTerm o),
+    swap_cs_term (swap_cs_swap sw sw) t = swap_cs_term sw t.
+Proof.
+  nterm_ind t as [v|op bs ind] Case; introv; simpl; auto; autorewrite with slow.
+  f_equal.
+  apply eq_maps; introv i; destruct x; simpl; f_equal; eauto.
+Qed.
+Hint Rewrite @swap_cs_term_swap_cs_swap_same : slow.

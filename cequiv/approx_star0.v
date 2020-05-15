@@ -2060,39 +2060,15 @@ Proof.
       autorewrite with slow; simpl; eauto 3 with slow.
     exrepnd.
 
+    autorewrite with slow in *.
     eexists; eexists; eexists; eexists; dands;
-      [|apply implies_reduces_to_mk_swap_cs2; simpl; fold_terms;
+      [eauto
+      |apply implies_reduces_to_mk_swap_cs2; simpl; fold_terms;
         apply implies_reduces_to_mk_swap_cs2;autorewrite with slow; eauto
-       | | |].
-
-
-SearchAbout reduces_to mk_swap_cs2.
-SearchAbout two_swap_cs2 swap_cs_term.
-Set Nested Proofs Allowed.
-Locate sw_sub.
-SearchAbout lsubst_aux sw_sub.
-SearchAbout (combine (map _ _) _).
-SearchAbout two_swap_cs2 push_swap_cs_can.
-Locate swap_cs_swap.
-
-
-    }
-
-    eapply ind in comp2; try (left; reflexivity);
-      try (apply implies_two_swap_cs2_mk_swap_cs2; apply swap_cs_term_preserves_two_swap_cs2; eauto);
-      try apply wf_swap_cs2;
-      simpl; autorewrite with slow; eauto 3 with slow.
-    exrepnd.
-
-
-
-SearchAbout compute_step mk_swap_cs2.
-
-SearchAbout two_swap_cs2 mk_swap_cs2.
-SearchAbout two_swap_cs2 swap_cs_term.
-
-
-  }
+       | |eauto
+       |apply implies_alpha_eq_mk_swap_cs2;apply implies_alpha_eq_swap_cs_term;
+        apply implies_alpha_eq_mk_swap_cs2;apply implies_alpha_eq_swap_cs_term;eauto].
+    simpl; autorewrite with slow; fold_terms; eauto. }
 
   { csunf comp; simpl in *; ginv.
     inv_two_sw.
@@ -2100,9 +2076,20 @@ SearchAbout two_swap_cs2 swap_cs_term.
       try (complete (apply reduces_to_if_step; csunf; simpl; eauto)); try apply alpha_eq_refl; eauto 3 with slow. }
 
   { csunf comp; simpl in *; inv_two_sw.
+    applydup @compute_step_lib_success in comp; exrepnd; subst.
+    eexists; eexists; eexists; eexists; dands;
+      [eapply reduces_to_if_step; csunf; simpl;
+       eapply compute_step_lib_success_change_bs;[|eauto]; auto;
+       eapply two_swap_cs2_bterms_implies_eq_map_num_bvars; eauto
+      |apply reduces_to_symm| | |]; try apply alpha_eq_refl.
 
-    admit. }
-Admitted.
+
+Set Nested Proofs Allowed.
+
+Locate apply_swaps.
+
+}
+Qed.
 
 Lemma reduces_to_or {o} :
   forall lib (k : nat) (t u v : @NTerm o),

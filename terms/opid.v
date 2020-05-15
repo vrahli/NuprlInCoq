@@ -35,6 +35,7 @@ Require Export BinInt.
 Require Export Coq.ZArith.ZArith_dec.
 Require Export list.
 Require Export Eqdep_dec.
+Require Export variables.
 (** printing Z  $\mathbb{Z}$ #Z# *)
 
 
@@ -592,6 +593,36 @@ Definition opname := String.string.
 Definition rev_cs_swap (sw : cs_swap) : cs_swap :=
   let (a,b) := sw in (b,a).
 
+Definition CsInfoLe (a b : cs_info) : Prop :=
+  match a, b with
+  | cs_info_nat, _ => True
+  | cs_info_bool, cs_info_bool => True
+  | cs_info_bool, cs_info_nat => False
+  end.
+
+Definition CsLe (a b : choice_sequence_name) : Prop :=
+  VarLt (csn_name a) (csn_name b)
+  \/ (csn_name a = csn_name b /\ CsInfoLe (csn_kind a) (csn_kind b)).
+
+Lemma CsLe_dec :
+  forall (a b : choice_sequence_name), {CsLe a b} + {~ CsLe a b}.
+Proof.
+  destruct a as [a p], b as [b q]; unfold CsLe; simpl.
+  destruct (VarLt_dec a b); tcsp.
+  destruct (VarDeq a b); subst; tcsp.
+  { destruct p, q; simpl; tcsp.
+    right; intro x; repndors; tcsp. }
+  { right; intro x; repndors; tcsp. }
+Defined.
+
+Definition ord_cs_swap (sw : cs_swap) : cs_swap :=
+  let (a,b) := sw in
+  if CsLe_dec a b then (a,b) else (b,a).
+
+Definition is_ord_cs_swap (sw : cs_swap) : bool :=
+  let (a,b) := sw in
+  if CsLe_dec a b then true else false.
+
 Fixpoint cs_swaps_norep (l : cs_swaps) : bool :=
   match l with
   | [] => true
@@ -607,20 +638,28 @@ Fixpoint cs_swaps_norep (l : cs_swaps) : bool :=
     end
   end.
 
+Fixpoint cs_swaps_ord (l : cs_swaps) : bool :=
+  match l with
+  | [] => true
+  | sw :: k => andb (is_ord_cs_swap sw) (cs_swaps_ord k)
+  end.
+
 Record cs_swaps_nr :=
   mk_cs_swaps_nr
     { cs_sws_sw : cs_swaps;
-      cs_sws_nr : cs_swaps_norep cs_sws_sw = true; }.
+      cs_sws_nr : cs_swaps_norep cs_sws_sw = true;
+      cs_sws_rd : cs_swaps_ord cs_sws_sw = true; }.
 
 Definition cs_swaps_nr_em : cs_swaps_nr :=
-  mk_cs_swaps_nr [] eq_refl.
+  mk_cs_swaps_nr [] eq_refl eq_refl.
 
 Lemma cs_swaps_nr_deq : Deq cs_swaps_nr.
 Proof.
-  introv; destruct x as [l1 p1], y as [l2 p2]; simpl in *.
+  introv; destruct x as [l1 p1 q1], y as [l2 p2 q2]; simpl in *.
   destruct (cs_swaps_deq l1 l2); subst; tcsp;
-    try (complete (right; intro xx; inversion xx; subst; tcsp)).
-  assert (p1 = p2) as xx by (apply UIP_dec; apply bool_dec); subst; tcsp.
+    try (complete (right; intro xx; inversion xx; subst; tcsp));
+    assert (p1 = p2) as xx by (apply UIP_dec; apply bool_dec); subst; tcsp;
+      assert (q1 = q2) as xx by (apply UIP_dec; apply bool_dec); subst; tcsp.
 Defined.
 
 Record opabs :=
