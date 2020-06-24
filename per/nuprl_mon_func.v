@@ -162,6 +162,57 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Lemma weq_eq_term_equals {p} :
+  forall lib (eqa1 eqa2 : per(p))
+         eqb1 eqb2 t1 t2,
+    (forall (a1 a2 : CTerm) (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2),
+       eq_term_equals (eqb1 a1 a2 e1) (eqb2 a1 a2 e2))
+    -> eq_term_equals eqa1 eqa2
+    -> weq lib eqa1 eqb1 t1 t2
+    -> weq lib eqa2 eqb2 t1 t2.
+Proof.
+  introv eqbeq eqaeq weqt.
+  induction weqt as [t t' a f a' f' e c c' h h'].
+  duplicate e as e'.
+  rw eqaeq in e.
+  apply @weq_cons with (a := a) (a' := a') (f := f) (f' := f') (e := e); sp.
+  apply h'.
+  generalize (eqbeq a a' e' e); intro eqb.
+  rw eqb; sp.
+Qed.
+
+Definition weq_bar_lib_per {o}
+           (lib : @library o)
+           (eqa : lib-per(lib,o))
+           (eqb : lib-per-fam(lib,eqa,o)) : lib-per(lib,o).
+Proof.
+  exists (fun lib' x => weq_bar lib' (raise_lib_per eqa x) (raise_lib_per_fam eqb x)).
+  repeat introv.
+  unfold weq_bar; split; intro h; exrepnd;
+    eapply in_open_bar_ext_pres; eauto; clear h; introv h; simpl in *.
+
+  - eapply weq_eq_term_equals; try exact h; auto; try (unfold raise_ext_per; apply lib_per_cond).
+    introv; simpl; unfold raise_ext_per_fam.
+    apply lib_per_fam_cond.
+
+  - eapply weq_eq_term_equals; try exact h; auto; try (unfold raise_ext_per; apply lib_per_cond).
+    introv; simpl; unfold raise_ext_per_fam.
+    apply lib_per_fam_cond.
+Defined.
+
+Lemma per_w_bar_monotone_func {o} :
+  forall (ts : cts(o)), type_monotone_func (per_w_bar ts).
+Proof.
+  introv per.
+  unfold per_w_bar in *; exrepnd.
+
+  exists (weq_bar_lib_per lib eqa eqb); introv; simpl; dands; eauto 3 with slow.
+
+  exists (raise_lib_per eqa x)
+         (raise_lib_per_fam eqb x).
+  dands; eauto 3 with slow.
+Qed.
+
 Definition per_qtime_eq_bar_lib_per {o}
            (lib : @library o)
            (eqa : lib-per(lib,o)) : lib-per(lib,o).
@@ -666,6 +717,12 @@ Proof.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
+
+(*  - Case "CL_w".
+    pose proof (per_w_bar_monotone_func (close ts) uk lib T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
+      repnd; dands; eauto 3 with slow.*)
 
   - Case "CL_union".
     pose proof (per_union_monotone_func (close ts) uk lib T T' eq) as q.

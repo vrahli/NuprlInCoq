@@ -255,6 +255,45 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Lemma sub_per_weq_bar2 {o} :
+  forall (lib lib' lib'' : @library o)
+         (x : lib_extends lib' lib)
+         (y : lib_extends lib'' lib')
+         (w : lib_extends lib'' lib) eqa eqb,
+    sub_per (weq_bar lib' (raise_lib_per eqa x) (raise_lib_per_fam eqb x))
+            (weq_bar lib'' (raise_lib_per eqa w) (raise_lib_per_fam eqb w)).
+Proof.
+  introv y h.
+  unfold weq_bar in *; exrepnd.
+  apply (lib_extends_preserves_in_open_bar_ext _ _ _ y) in h; auto.
+  eapply in_open_bar_ext_pres; try exact h; eauto; clear h; introv h; simpl in *.
+  eapply weq_eq_term_equals; try exact h; try apply lib_per_cond.
+  introv; try apply lib_per_fam_cond.
+Qed.
+Hint Resolve sub_per_weq_bar2 : slow.
+
+Lemma sub_lib_per_weq_bar_lib_per {o} :
+  forall {lib lib'} (x : @lib_extends o lib' lib) eqa eqb,
+    sub_lib_per (weq_bar_lib_per lib eqa eqb) x.
+Proof.
+  introv h z; simpl in *.
+  eapply sub_per_weq_bar2;[|eauto];auto.
+Qed.
+Hint Resolve sub_lib_per_weq_bar_lib_per : slow.
+
+Lemma per_w_bar_monotone_func2 {o} :
+  forall (ts : cts(o)), type_monotone_func2 (per_w_bar ts).
+Proof.
+  introv per.
+  unfold per_w_bar in *; exrepnd.
+
+  exists (weq_bar_lib_per lib eqa eqb); introv; simpl; dands; eauto 3 with slow.
+
+  exists (raise_lib_per eqa x)
+         (raise_lib_per_fam eqb x).
+  dands; eauto 3 with slow.
+Qed.
+
 Lemma sub_per_per_qtime_eq_bar2 {o} :
   forall (lib lib' lib'' : @library o)
          (x : lib_extends lib' lib)
@@ -709,6 +748,12 @@ Proof.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
+
+(*  - Case "CL_w".
+    pose proof (per_w_bar_monotone_func2 (close ts) uk lib T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
+      repnd; dands; eauto 3 with slow.*)
 
   - Case "CL_union".
     pose proof (per_union_monotone_func2 (close ts) uk lib T T' eq) as q.

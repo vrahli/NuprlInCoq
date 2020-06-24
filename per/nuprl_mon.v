@@ -480,6 +480,31 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
+Lemma sub_per_weq_bar {o} :
+  forall (lib lib' : @library o) (ext : lib_extends lib' lib) eqa eqb,
+    sub_per (weq_bar lib eqa eqb)
+            (weq_bar lib' (raise_lib_per eqa ext) (raise_lib_per_fam eqb ext)).
+Proof.
+  introv h.
+  unfold weq_bar in *; exrepnd; simpl.
+  eapply lib_extends_preserves_in_open_bar_ext in h; eauto.
+Qed.
+Hint Resolve sub_per_weq_bar : slow.
+
+Lemma per_w_monotone {o} :
+  forall (ts : cts(o)), type_monotone (per_w_bar ts).
+Proof.
+  introv per ext.
+  unfold per_w_bar in *; exrepnd.
+
+  exists (weq_bar lib' (raise_lib_per eqa ext) (raise_lib_per_fam eqb ext)).
+  dands; eauto 3 with slow.
+
+  exists (raise_lib_per eqa ext)
+         (raise_lib_per_fam eqb ext).
+  dands; eauto 3 with slow.
+Qed.
+
 Lemma sub_per_per_qtime_eq_bar {o} :
   forall (lib lib' : @library o) (ext : lib_extends lib' lib) eqa,
     sub_per (per_qtime_eq_bar lib eqa)
@@ -921,6 +946,11 @@ Proof.
     pose proof (per_func_monotone (close ts) uk lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
+
+(*  - Case "CL_w".
+    pose proof (per_w_monotone (close ts) uk lib lib' T T' eq) as q.
+    repeat (autodimp q hyp).
+    exrepnd; exists eq'; dands; auto.*)
 
   - Case "CL_union".
     pose proof (per_union_monotone (close ts) uk lib lib' T T' eq) as q.

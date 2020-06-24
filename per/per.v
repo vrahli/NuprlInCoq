@@ -2136,6 +2136,18 @@ Definition per_w {p} (ts : cts) lib uk T1 T2 (eq : per(p)) : [U] :=
    type_family mkc_w ts uk lib T1 T2 eqa eqb
    # eq <=2=> (weq lib eqa eqb)}}.
 
+Definition weq_bar {o}
+           (lib  : library)
+           (eqa  : lib-per(lib,o))
+           (eqb  : lib-per-fam(lib,eqa))
+           (t t' : CTerm) : [U] :=
+  in_open_bar_ext lib (fun lib' x => weq lib' (eqa lib' x) (eqb lib' x) t t').
+
+Definition per_w_bar {o} (ts : cts) (uk : ukind) lib T1 T2 (eq : per(o)) : [U] :=
+  {eqa : lib-per(lib,o) , {eqb : lib-per-fam(lib,eqa) ,
+   type_family_ext mkc_w ts uk lib T1 T2 eqa eqb
+   # eq <=2=> (weq_bar lib eqa eqb)}}.
+
 (**
 
   types%~\cite{Berg+Marchi:2007,Abbott+Altenkirch+Ghani:2005}% are
@@ -2658,7 +2670,7 @@ Inductive close {p} (ts : cts) uk lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
 (*  | CL_pertype  : per_pertype  (close ts) uk lib T T' eq -> close ts uk lib T T' eq*)
 (*  | CL_ipertype : per_ipertype (close ts) uk lib T T' eq -> close ts uk lib T T' eq*)
 (*  | CL_spertype : per_spertype (close ts) uk lib T T' eq -> close ts uk lib T T' eq*)
-(*  | CL_w        : per_w        (close ts) uk lib T T' eq -> close ts uk lib T T' eq*)
+(*  | CL_w        : per_w_bar        (close ts) uk lib T T' eq -> close ts uk lib T T' eq*)
 (*  | CL_m        : per_m        (close ts) uk lib T T' eq -> close ts uk lib T T' eq*)
 (*  | CL_pw       : per_pw       (close ts) uk lib T T' eq -> close ts uk lib T T' eq*)
 (*  | CL_pm       : per_pm       (close ts) uk lib T T' eq -> close ts uk lib T T' eq*)
@@ -3126,24 +3138,26 @@ Definition close_ind' {pp}
                      (per : per_spertype (close ts) uk lib T T' eq),
                 P ts uk lib T T' eq)*)
 
-(*  (w     : forall (ts   : cts)
-                  (lib  : library)
-                  (T T' : @CTerm pp)
-                  (eq   : per)
-                  (A A' : @CTerm pp)
-                  (v v' : NVar)
-                  (B    : CVTerm [v])
-                  (B'   : CVTerm [v'])
-                  (eqa  : per)
-                  (eqb  : forall a a' : CTerm, forall e : eqa a a', per)
-                  (c1   : T ===>(lib) (mkc_w A v B))
-                  (c2   : T' ===>(lib) (mkc_w A' v' B'))
-                  (cla  : close ts uk lib A A' eqa)
-                  (reca : P ts uk lib A A' eqa)
-                  (clb  : forall a a', forall e : eqa a a', close ts uk lib (substc a v B) (substc a' v' B') (eqb a a' e))
-                  (recb : forall a a', forall e : eqa a a', P ts uk lib (substc a v B) (substc a' v' B') (eqb a a' e))
-                  (eqiff : forall t t', eq t t' <=> weq lib eqa eqb t t')
-                  (per : per_w (close ts) uk lib T T' eq),
+(*  (w     : forall (ts    : cts)
+                  (uk    : ukind)
+                  (lib   : library)
+                  (T T'  : @CTerm pp)
+                  (eq    : per)
+                  (A A'  : @CTerm pp)
+                  (v v'  : NVar)
+                  (B     : CVTerm [v])
+                  (B'    : CVTerm [v'])
+                  (eqa   : lib-per(lib,pp))
+                  (eqb   : lib-per-fam(lib,eqa))
+                  (c1    : T ===>(lib) (mkc_w A v B))
+                  (c2    : T' ===>(lib) (mkc_w A' v' B'))
+                  (inv   : is_swap_invariant_cond uk eqa v B v' B')
+                  (cla   : in_ext_ext lib (fun lib' x => close ts uk lib' A A' (eqa lib' x)))
+                  (reca  : in_ext_ext lib (fun lib' x => P ts uk lib' A A' (eqa lib' x)))
+                  (clb   : in_ext_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), close ts uk lib' (substc a v B) (substc a' v' B') (eqb lib' x a a' e)))
+                  (recb  : in_ext_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), P ts uk lib' (substc a v B) (substc a' v' B') (eqb lib' x a a' e)))
+                  (eqiff : eq <=2=> (weq_bar lib eqa eqb))
+                  (per   : per_w_bar (close ts) uk lib T T' eq),
             P ts uk lib T T' eq)*)
 
 (*  (m     : forall (ts   : cts)
@@ -4021,7 +4035,7 @@ Definition close_ind' {pp}
 (*   | CL_w pts =>
        let (eqa, x) := pts in
        let (eqb, x) := x in
-       let (tf, teq) := x in
+       let (tf, eqiff) := x in
        let (A,   x) := tf in
        let (A',  x) := x in
        let (v,   x) := x in
@@ -4030,21 +4044,25 @@ Definition close_ind' {pp}
        let (B',  x) := x in
        let (c1,  x) := x in
        let (c2,  x) := x in
+       let (inv, x) := x in
        let (tsa, tsb) := x in
-       w ts uk lib T T' eq A A' v v' B B' eqa eqb
-         c1
-         c2
-         tsa
-         (rec ts lib A A' eqa tsa)
-         tsb
-         (fun a a' eqa =>
-            rec ts lib
-                (substc a v B)
-                (substc a' v' B')
-                (eqb a a' eqa)
-                (tsb a a' eqa))
-         teq
-         pts*)
+         w ts uk lib T T' eq A A' v v' B B' eqa eqb
+              c1
+              c2
+              inv
+              tsa
+              (fun (lib' : library) (i : lib_extends lib' lib) =>
+                 rec ts uk lib' A A' (eqa lib' i) (tsa lib' i))
+              tsb
+              (fun (lib' : library) (i : lib_extends lib' lib)
+                   a a' (e : eqa lib' i a a') =>
+                 rec ts uk lib'
+                     (substc a v B)
+                     (substc a' v' B')
+                     (eqb lib' i a a' e)
+                     (tsb lib' i a a' e))
+              eqiff
+              pts*)
 
 (*   | CL_m pts =>
      let (eqa, x) := pts in
@@ -4673,6 +4691,7 @@ Ltac one_unfold_per :=
     | [ H : per_ipertype    _ _ _ _ _ _ |- _ ] => unfold per_ipertype    in H; exrepd
     | [ H : per_spertype    _ _ _ _ _ _ |- _ ] => unfold per_spertype    in H; exrepd
     | [ H : per_w           _ _ _ _ _ _ |- _ ] => unfold per_w           in H; exrepd
+    | [ H : per_w_bar       _ _ _ _ _ _ |- _ ] => unfold per_w_bar       in H; exrepd
     | [ H : per_m           _ _ _ _ _ _ |- _ ] => unfold per_m           in H; exrepd
     | [ H : per_pw          _ _ _ _ _ _ |- _ ] => unfold per_pw          in H; exrepd
     | [ H : per_pm          _ _ _ _ _ _ |- _ ] => unfold per_pm          in H; exrepd

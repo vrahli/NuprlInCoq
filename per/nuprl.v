@@ -455,7 +455,9 @@ Proof.
 (*  - Case "CL_w".
     apply CL_w; unfold per_w; sp.
     exists eqa eqb; sp.
-    exists A A' v v' B B'; sp.*)
+    exists A A' v v' B B'; sp; introv;
+      try (apply reca; auto);
+      try (introv; apply recb; auto).*)
 
 (*  - Case "CL_m".
     apply CL_m; unfold per_m; sp.
@@ -861,9 +863,11 @@ Proof.
 (*  - Case "CL_w".
     apply CL_w.
     unfold per_w, type_family; sp.
-    exists eqa eqb; sp; try (exists A A' v v' B B'); sp.
-    apply IHn with (i0 := i); sp.
-    apply recb with (i0 := i); sp.*)
+    exists eqa eqb; sp; try (exists A A' v v' B B'); sp;
+      try (introv);
+      try (eapply reca; eauto);
+      try (introv; try (eapply recb; eauto));
+      try (complete (eapply IHn; eauto)).*)
 
 (*  - Case "CL_m".
     apply CL_m.

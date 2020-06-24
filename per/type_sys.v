@@ -3144,6 +3144,63 @@ Ltac apply_cequivc_val :=
       try (eqconstr H)
 
 
+  (* mkc_w *)
+
+  | [ H : cequivc _ (mkc_w _ _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let v  := fresh "v"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    eapply cequivc_mkc_w in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [v [b [H [h1 h2] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : cequivc _ _ (mkc_w _ _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let v  := fresh "v"  in
+    let b  := fresh "b"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    apply cequivc_sym in H;
+    eapply cequivc_mkc_w in H;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct H as [a [v [b [H [h1 h2] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in H;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib (mkc_w _ _ _) _ |- _ ] =>
+    let a  := fresh "a"  in
+    let v  := fresh "v"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    eapply cequivc_mkc_w in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [v [b [c [h1 h2] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+    try (eqconstr H)
+
+  | [ H : ccequivc_ext ?lib _ (mkc_w _ _ _) |- _ ] =>
+    let a  := fresh "a"  in
+    let v  := fresh "v"  in
+    let b  := fresh "b"  in
+    let c  := fresh "c"  in
+    let h1 := fresh "h1" in
+    let h2 := fresh "h2" in
+    let xx := fresh "xx" in
+    pose proof (H lib) as c; autodimp c xx; eauto 2 with slow;[]; simpl in c; spcast;
+    try (hide_hyp H);
+    apply cequivc_sym in c;
+    eapply cequivc_mkc_w in c;[|apply computes_to_valc_refl; eauto 2 with slow];[];
+    destruct c as [a [v [b [c [h1 h2] ] ] ] ];
+    apply computes_to_valc_isvalue_eq in c;[|eauto 2 with slow];[];subst;
+      try (eqconstr H)
+
+
   (* mkc_uni *)
 
   | [ H : cequivc _ (mkc_uni _) _ |- _ ] =>

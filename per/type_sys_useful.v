@@ -1138,25 +1138,6 @@ Proof.
 Qed.
 
 
-Lemma weq_eq_term_equals {p} :
-  forall lib (eqa1 eqa2 : per(p))
-         eqb1 eqb2 t1 t2,
-    (forall (a1 a2 : CTerm) (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2),
-       eq_term_equals (eqb1 a1 a2 e1) (eqb2 a1 a2 e2))
-    -> eq_term_equals eqa1 eqa2
-    -> weq lib eqa1 eqb1 t1 t2
-    -> weq lib eqa2 eqb2 t1 t2.
-Proof.
-  introv eqbeq eqaeq weqt.
-  induction weqt as [t t' a f a' f' e c c' h h'].
-  duplicate e as e'.
-  rw eqaeq in e.
-  apply @weq_cons with (a := a) (a' := a') (f := f) (f' := f') (e := e); sp.
-  apply h'.
-  generalize (eqbeq a a' e' e); intro eqb.
-  rw eqb; sp.
-Qed.
-
 Lemma weq_sym {p} :
   forall uk lib eqa eqb t1 t2 v1 v2 B1 B2 (ts : cts(p)),
     term_equality_symmetric eqa
@@ -1204,90 +1185,6 @@ Proof.
   pd (uv2 (substc a1 v2 B2) (eqb a a1 e1)).
   rw h; sp.
 Qed.
-
-(*Lemma weq_trans {o} :
-  forall (lib : @library o) eqa eqb t1 t2 t3 ts v1 B1 v2 B2,
-    term_equality_symmetric eqa
-    -> term_equality_transitive eqa
-    -> (forall (a1 a2 : @CTerm o) (e : eqa a1 a2),
-          type_sys_props ts uk lib
-                         (substc a1 v1 B1)
-                         (substc a2 v2 B2)
-                         (eqb a1 a2 e))
-    -> weq lib eqa eqb t1 t2
-    -> weq lib eqa eqb t2 t3
-    -> weq lib eqa eqb t1 t3.
-Proof.
-  introv teqsa teqta ftsp weq1.
-  generalize t3; clear t3.
-  induction weq1 as [t t' a f a' f' e c c' h h'].
-  introv weq2.
-  inversion weq2 as [x g a'0 f'0 e0 d d' h1].
-  ccomputes_to_eqval.
-  assert (eqa a a'0) as e' by (apply teqta with (t2 := a'); sp).
-  apply @weq_cons with (a := a) (f := f) (a' := a'0) (f' := f'0) (e := e');
-    try (complete (spcast; sp)); introv hyp.
-  apply h' with (b' := b'); sp.
-  apply (eq_family_trans1 lib) with (a1 := a'0) (ts := ts) (v1 := v1) (B1 := B1) (v2 := v2) (B2 := B2) (e1 := e'); sp.
-  apply h1.
-  generalize (eq_term_equals_sym_tsp2 ts uk lib eqa eqb v1 B1 v2 B2); intro i; sp.
-  duplicate e0 as e1.
-  apply teqsa in e0.
-  duplicate e' as e2.
-  apply teqsa in e'.
-  generalize (i a' a'0 e1 e0); intro eq1.
-  rw eq1.
-  generalize (i a a'0 e2 e'); intro eq2.
-  rw eq2 in hyp.
-  apply (eq_family_trans1 lib) with (a1 := a) (ts := ts) (v1 := v1) (B1 := B1) (v2 := v2) (B2 := B2) (e1 := e'); sp.
-  generalize (ftsp a'0 a e'); intro tsp.
-  onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1; sp.
-  apply tet1 with (t2 := b); sp.
-Qed.*)
-
-(*
-Lemma weq_cequivc2 :
-  forall eqa eqb ts v1 B1 v2 B2 a a' e f f' b b',
-    term_equality_respecting eqa
-    -> term_equality_symmetric eqa
-    -> term_equality_transitive eqa
-    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
-          type_sys_props ts
-                         (substc a1 v1 B1)
-                         (substc a2 v2 B2)
-                         (eqb a1 a2 e))
-    -> weq eqa eqb (mkc_apply f b) (mkc_apply f b)
-    -> eqb a a' e b b'
-    -> cequivc f f'
-    -> weq eqa eqb (mkc_apply f b) (mkc_apply f' b').
-Proof.
-  introv tera tesa teta ftspb weq1 eqb1 ceq.
-  generalize f' b' eqb1 ceq; clear ceq eqb1 b' f'.
-  remember (mkc_apply f b).
-  generalize Heqc; clear Heqc.
-  induction weq1.
-  introv eq eqb1 ceq; subst.
-  generalize (cequivc_mkc_sup t' t'0 a' f'); intros i.
-  repeat (dest_imp i hyp); exrepnd.
-  rename b' into f'0.
-  unfold term_equality_respecting in tera.
-  generalize (tera a' a'0); intro j.
-  repeat (dest_imp j hyp).
-  apply teta with (t2 := a); sp.
-  apply weq_cons with (a := a') (f := f') (a' := a'0) (f' := f'0) (e := j); sp.
-  apply X with (b := b'); sp.
-
-  generalize (eq_term_equals_sym_tsp2 ts eqa eqb v1 B1 v2 B2); introv i.
-  repeat (dest_imp i hyp); repnd.
-  assert (eqa a' a) as e' by sp.
-  generalize (i a a' e e'); intro eqt; rw eqt.
-  generalize (ftspb a' a e'); intro tspb.
-  onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  apply tes.
-  generalize (eq_family_trans1 eqa eqb a' a'0 a b b' ts v1 B1 v2 B2 j e'); sp.
-
-Abort.
-*)
 
 Lemma cequivc_val {o} :
   forall lib (t t' : @CTerm o) v,

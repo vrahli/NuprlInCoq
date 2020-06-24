@@ -1878,6 +1878,15 @@ Proof.
 Qed.
 Hint Resolve constructor_inj_function : slow.
 
+Lemma constructor_inj_w {o} :
+  @constructor_inj o mkc_w.
+Proof.
+  split; introv h; ginv; eqconstr h; tcsp.
+  eapply cequivc_mkc_w in h;[|eauto 3 with slow]; exrepnd.
+  apply computes_to_valc_isvalue_eq in h1; eauto 3 with slow; eqconstr h1; tcsp.
+Qed.
+Hint Resolve constructor_inj_w : slow.
+
 Lemma constructor_inj_product {o} :
   @constructor_inj o mkc_product.
 Proof.
