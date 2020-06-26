@@ -31,7 +31,7 @@
 
 
 Require Export sequents2.
-Require Export sequents_lib.
+(*Require Export sequents_lib.*)
 Require Export rules_useful.
 Require Export per_props_equality.
 Require Export per_props_union.
@@ -40,41 +40,92 @@ Require Export per_props_squash.
 Require Export subst_tacs.
 Require Export sequents_equality.
 Require Export sequents_tacs2.
+Require Export sequents_useful.
 
 
 Lemma inhabited_mkc_or {o} :
-  forall lib (A B : @CTerm o),
-    inhabited_type lib (mkc_or A B)
-    <=> (type lib A
-         # type lib B
-         # (inhabited_type lib A {+} inhabited_type lib B)).
+  forall uk lib (A B : @CTerm o),
+    inhabited_type_bar uk lib (mkc_or A B)
+    <=> (type uk lib A
+         # type uk lib B
+         # in_open_bar lib (fun lib => (inhabited_type uk lib A {+} inhabited_type uk lib B))).
 Proof.
   introv.
-  unfold inhabited_type.
-  split; introv h; exrepnd.
+  split; introv h; exrepnd; dands.
 
-  - apply equality_mkc_or in h0; exrepnd; dands; auto.
-    repndors; exrepnd.
+  - apply all_in_ex_bar_type_implies_type.
+    eapply in_open_bar_pres; eauto; clear h; introv ext h.
+    unfold inhabited_type in *; exrepnd.
+    apply equality_mkc_or in h0; exrepnd; dands; auto.
 
-    + left; exists a1.
-      apply equality_refl in h0; auto.
+  - apply all_in_ex_bar_type_implies_type.
+    eapply in_open_bar_pres; eauto; clear h; introv ext h.
+    unfold inhabited_type in *; exrepnd.
+    apply equality_mkc_or in h0; exrepnd; dands; auto.
 
-    + right; exists b1.
-      apply equality_refl in h0; auto.
+  - apply in_open_bar_ext_in_open_bar.
+    eapply in_open_bar_ext_comb2;eauto; clear h.
+    apply in_ext_ext_implies_in_open_bar_ext; introv ext h.
+    unfold inhabited_type in *; exrepnd.
+    apply equality_mkc_or in h0; exrepnd.
+    eapply in_open_bar_pres; eauto; clear h0; introv xt h0.
+    repndors; exrepnd; apply equality_refl in h0; eauto.
 
-  - repndors; exrepnd.
+  - eapply in_open_bar_pres; eauto; clear h.
+    introv ext h; unfold inhabited_type in *; repndors; exrepnd.
 
     + exists (mkc_inl t).
-      apply equality_mkc_or; dands; auto.
-      left.
-      exists t t; dands; auto; spcast;
-      apply computes_to_valc_refl; eauto 3 with slow.
+      apply equality_mkc_or; dands; auto; eauto 3 with slow.
+      apply in_ext_implies_in_open_bar; introv xt; left.
+      exists t t; dands; auto; spcast; eauto 3 with slow.
 
     + exists (mkc_inr t).
-      apply equality_mkc_or; dands; auto.
-      right.
-      exists t t; dands; auto; spcast;
-      apply computes_to_valc_refl; eauto 3 with slow.
+      apply equality_mkc_or; dands; auto; eauto 3 with slow.
+      apply in_ext_implies_in_open_bar; introv xt; right.
+      exists t t; dands; auto; spcast; eauto 3 with slow.
+Qed.
+
+
+(* MOVE *)
+Lemma equality_respects_ccequivc_bar_left {o} :
+  forall uk lib (t1 t2 t T : @CTerm o),
+    ccequivc_bar lib t1 t
+    -> equality uk lib t1 t2 T
+    -> equality uk lib t t2 T.
+Proof.
+  introv ceq equ.
+  apply ccequivc_ext_bar_iff_ccequivc_bar in ceq.
+  apply all_in_ex_bar_equality_implies_equality.
+  eapply in_open_bar_pres; eauto; clear ceq; introv ext ceq.
+  eapply equality_respects_cequivc_left; eauto 3 with slow.
+Qed.
+Hint Resolve equality_respects_ccequivc_bar_left : nequality.
+
+Lemma equality_respects_ccequivc_bar_right {o} :
+  forall uk lib (t1 t2 t T : @CTerm o),
+    ccequivc_bar lib t2 t
+    -> equality uk lib t1 t2 T
+    -> equality uk lib t1 t T.
+Proof.
+  introv ceq equ.
+  apply ccequivc_ext_bar_iff_ccequivc_bar in ceq.
+  apply all_in_ex_bar_equality_implies_equality.
+  eapply in_open_bar_pres; eauto; clear ceq; introv ext ceq.
+  eapply equality_respects_cequivc_right; eauto 3 with slow.
+Qed.
+Hint Resolve equality_respects_ccequivc_bar_right : nequality.
+
+Lemma in_open_bar_collapse {o} :
+  forall (lib : @library o) P,
+    in_open_bar lib (fun lib' => in_open_bar lib' P) <=> in_open_bar lib P.
+Proof.
+  introv; split; intro h.
+  { apply in_open_bar_ext_in_open_bar.
+    eapply in_open_bar_ext_comb2; eauto; clear h.
+    apply in_ext_ext_implies_in_open_bar_ext; introv xt h; auto. }
+  { apply in_open_bar_ext_in_open_bar in h.
+    eapply in_open_bar_comb2; eauto; clear h.
+    apply in_ext_ext_implies_in_open_bar_ext; introv xt h; auto. }
 Qed.
 
 
@@ -93,25 +144,25 @@ Qed.
 Definition rule_equality_equality_base_or {o}
            (H  : @barehypotheses o)
            (A B a1 a2 b1 b2 : NTerm)
-           (i : nat) :=
+           (u i : nat) :=
   mk_rule
     (mk_baresequent
        H
        (mk_conclax (mk_equality
                       (mk_equality a1 a2 A)
                       (mk_equality b1 b2 B)
-                      (mk_uni i))))
-    [ mk_baresequent H (mk_conclax (mk_equality A B (mk_uni i))),
+                      (mk_uni u i))))
+    [ mk_baresequent H (mk_conclax (mk_equality A B (mk_uni u i))),
       mk_baresequent H (mk_conclax (mk_squash (mk_or (mk_equality a1 b1 A) (mk_cequiv a1 b1)))),
       mk_baresequent H (mk_conclax (mk_squash (mk_or (mk_equality a2 b2 A) (mk_cequiv a2 b2))))
     ]
     [].
 
 Lemma rule_equality_equality_base_or_true {o} :
-  forall lib (H : @barehypotheses o)
+  forall u lib (H : @barehypotheses o)
          (A B a1 a2 b1 b2 : NTerm)
          (i : nat),
-    rule_true lib (rule_equality_equality_base_or H A B a1 a2 b1 b2 i).
+    rule_true u lib (rule_equality_equality_base_or H A B a1 a2 b1 b2 u i).
 Proof.
   unfold rule_equality_equality_base_or, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -135,7 +186,7 @@ Proof.
   rw <- @member_equality_iff.
 
   pose proof (teq_and_eq_if_equality
-                lib (mk_uni i) (mk_equality a1 a2 A) (mk_equality b1 b2 B)
+                u lib' (mk_uni u i) (mk_equality a1 a2 A) (mk_equality b1 b2 B)
                 s1 s2 H wT w1 w2 c1 c6 c2 c7 cT cT2
                 eqh sim) as eqp.
   lsubst_tac.
@@ -149,7 +200,7 @@ Proof.
   apply equality_mkc_equality2_sp_in_uni; dands.
 
   - vr_seq_true in hyp1.
-    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+    pose proof (hyp1 _ ext s1 s2 hf sim) as h; clear hyp1; exrepnd.
     lsubst_tac.
     rw <- @member_equality_iff in h1.
     apply equality_commutes in h0; auto.
@@ -157,70 +208,143 @@ Proof.
   - split.
 
     + vr_seq_true in hyp2.
-      pose proof (hyp2 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+      pose proof (hyp2 _ ext s1 s2 hf sim) as h; clear hyp2; exrepnd.
       lsubst_tac.
       apply equality_in_mkc_squash in h1; repnd.
       clear h2 h3.
       rw @tequality_mkc_squash in h0.
       apply tequality_mkc_or in h0; repnd.
-      rw @tequality_mkc_equality_sp in h2; repnd.
+      apply tequality_mkc_equality_sp in h2; repnd.
       allrw @fold_equorsq.
       apply inhabited_mkc_or in h1; repnd.
 
+      apply in_open_bar_collapse.
+      eapply in_open_bar_comb; try exact h1; clear h1.
+      eapply in_open_bar_comb; try exact h2; clear h2.
+      eapply in_open_bar_pres; try exact h4; clear h4.
+      introv xt h4 h2 h1.
+
       repndors.
-
-      * apply inhabited_mkc_equality in h1.
-        eapply cequorsq_equality_trans2 in h1;[|eauto].
-        left; auto.
-
-      * rw @inhabited_cequiv in h1.
-        destruct h2 as [d|d]; spcast.
-
-        { eapply equality_respects_cequivc_left in d;[|apply cequivc_sym; eauto].
-          left; auto. }
-
-        { eapply cequivc_trans in d;[|eauto].
-          right; spcast; auto. }
+      { apply inhabited_mkc_equality in h1.
+        apply in_ext_implies_in_open_bar; introv xt'.
+        eapply equality_monotone in h1; eauto.
+        left.
+        eapply equality_trans;[exact h1|]; eauto 3 with slow. }
+      { apply inhabited_mkc_equality in h1.
+        apply in_ext_implies_in_open_bar; introv xt'.
+        eapply equality_monotone in h1; eauto.
+        left.
+        eapply equality_trans;[exact h1|]; eauto 3 with slow. }
+      { apply inhabited_mkc_equality in h1.
+        apply in_ext_implies_in_open_bar; introv xt'.
+        eapply equality_monotone in h1; eauto.
+        left.
+        eapply equality_respects_cequivc_right;[|exact h1]; eauto 3 with slow. }
+      { apply inhabited_mkc_equality in h1.
+        apply in_ext_implies_in_open_bar; introv xt'.
+        eapply equality_monotone in h1; eauto.
+        left.
+        eapply equality_respects_cequivc_right;[|exact h1]; eauto 2 with slow. }
+      { apply inhabited_cequiv in h1.
+        apply in_ext_implies_in_open_bar; introv xt'.
+        eapply lib_extends_preserves_in_open_bar in h1; eauto.
+        eapply equality_monotone in h2; eauto.
+        left.
+        eapply equality_respects_ccequivc_bar_left;[|exact h2]; eauto.
+        apply ccequivc_bar_sym; auto. }
+      { apply inhabited_cequiv in h1.
+        apply in_ext_implies_in_open_bar; introv xt'.
+        eapply lib_extends_preserves_in_open_bar in h1; eauto.
+        eapply equality_monotone in h2; eauto.
+        left.
+        eapply equality_respects_ccequivc_bar_left;[|exact h2]; eauto.
+        apply ccequivc_bar_sym; auto. }
+      { apply inhabited_cequiv in h1.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h1.
+        eapply in_open_bar_pres; try exact h1; clear h1; introv xt' h1.
+        right.
+        eapply ccequivc_ext_trans;[eauto|]; eauto 3 with slow. }
+      { apply inhabited_cequiv in h1.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h1.
+        eapply in_open_bar_pres; try exact h1; clear h1; introv xt' h1.
+        right.
+        eapply ccequivc_ext_trans;[eauto|]; eauto 3 with slow. }
 
     + vr_seq_true in hyp3.
-      pose proof (hyp3 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+      pose proof (hyp3 _ ext s1 s2 hf sim) as h; clear hyp2; exrepnd.
       lsubst_tac.
       apply equality_in_mkc_squash in h1; repnd.
       clear h2 h3.
       rw @tequality_mkc_squash in h0.
       apply tequality_mkc_or in h0; repnd.
-      rw @tequality_mkc_equality_sp in h2; repnd.
-      allrw @fold_equorsq.
+      apply tequality_mkc_equality_sp in h2; repnd.
       apply inhabited_mkc_or in h1; repnd.
 
+      apply in_open_bar_collapse.
+      eapply in_open_bar_comb; try exact h1; clear h1.
+      eapply in_open_bar_comb; try exact h2; clear h2.
+      eapply in_open_bar_pres; try exact h4; clear h4.
+      introv xt h4 h2 h1.
+
       repndors.
-
-      * apply inhabited_mkc_equality in h1.
-        eapply cequorsq_equality_trans2 in h1;[|eauto].
-        left; auto.
-
-      * rw @inhabited_cequiv in h1.
-        destruct h2 as [d|d]; spcast.
-
-        { eapply equality_respects_cequivc_left in d;[|apply cequivc_sym; eauto].
-          left; auto. }
-
-        { eapply cequivc_trans in d;[|eauto].
-          right; spcast; auto. }
+      { apply inhabited_mkc_equality in h1.
+        apply in_ext_implies_in_open_bar; introv xt'.
+        eapply equality_monotone in h1; eauto.
+        left.
+        eapply equality_trans;[exact h1|]; eauto 3 with slow. }
+      { apply inhabited_mkc_equality in h1.
+        apply in_ext_implies_in_open_bar; introv xt'.
+        eapply equality_monotone in h1; eauto.
+        left.
+        eapply equality_trans;[exact h1|]; eauto 3 with slow. }
+      { apply inhabited_mkc_equality in h1.
+        apply in_ext_implies_in_open_bar; introv xt'.
+        eapply equality_monotone in h1; eauto.
+        left.
+        eapply equality_respects_cequivc_right;[|exact h1]; eauto 3 with slow. }
+      { apply inhabited_mkc_equality in h1.
+        apply in_ext_implies_in_open_bar; introv xt'.
+        eapply equality_monotone in h1; eauto.
+        left.
+        eapply equality_respects_cequivc_right;[|exact h1]; eauto 2 with slow. }
+      { apply inhabited_cequiv in h1.
+        apply in_ext_implies_in_open_bar; introv xt'.
+        eapply lib_extends_preserves_in_open_bar in h1; eauto.
+        eapply equality_monotone in h2; eauto.
+        left.
+        eapply equality_respects_ccequivc_bar_left;[|exact h2]; eauto.
+        apply ccequivc_bar_sym; auto. }
+      { apply inhabited_cequiv in h1.
+        apply in_ext_implies_in_open_bar; introv xt'.
+        eapply lib_extends_preserves_in_open_bar in h1; eauto.
+        eapply equality_monotone in h2; eauto.
+        left.
+        eapply equality_respects_ccequivc_bar_left;[|exact h2]; eauto.
+        apply ccequivc_bar_sym; auto. }
+      { apply inhabited_cequiv in h1.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h1.
+        eapply in_open_bar_pres; try exact h1; clear h1; introv xt' h1.
+        right.
+        eapply ccequivc_ext_trans;[eauto|]; eauto 3 with slow. }
+      { apply inhabited_cequiv in h1.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h1.
+        eapply in_open_bar_pres; try exact h1; clear h1; introv xt' h1.
+        right.
+        eapply ccequivc_ext_trans;[eauto|]; eauto 3 with slow. }
 Qed.
 
 
 
-Definition rule_equality_equality_concl {o} (H : @bhyps o) a1 a2 b1 b2 A B i :=
+Definition rule_equality_equality_concl {o} (H : @bhyps o) a1 a2 b1 b2 A B u i :=
   mk_baresequent
     H
     (mk_conclax (mk_equality
                    (mk_equality a1 a2 A)
                    (mk_equality b1 b2 B)
-                   (mk_uni i))).
+                   (mk_uni u i))).
 
-Definition rule_equality_equality_hyp1 {o} (H : @bhyps o) A B i e :=
-  mk_baresequent H (mk_concl (mk_equality A B (mk_uni i)) e).
+Definition rule_equality_equality_hyp1 {o} (H : @bhyps o) A B u i e :=
+  mk_baresequent H (mk_concl (mk_equality A B (mk_uni u i)) e).
 
 Definition rule_equality_equality_hyp2 {o} (H : @bhyps o) a b A e :=
   mk_baresequent H (mk_concl (mk_equality a b A) e).
@@ -240,20 +364,20 @@ Definition rule_equality_equality_hyp2 {o} (H : @bhyps o) a b A e :=
 Definition rule_equality_equality {o}
            (H  : @barehypotheses o)
            (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
-           (i : nat) :=
+           (u i : nat) :=
   mk_rule
-    (rule_equality_equality_concl H a1 a2 b1 b2 A B i)
-    [ rule_equality_equality_hyp1 H A B i e1,
+    (rule_equality_equality_concl H a1 a2 b1 b2 A B u i)
+    [ rule_equality_equality_hyp1 H A B u i e1,
       rule_equality_equality_hyp2 H a1 b1 A e2,
       rule_equality_equality_hyp2 H a2 b2 A e3
     ]
     [].
 
 Lemma rule_equality_equality_true3 {o} :
-  forall lib (H : @barehypotheses o)
+  forall u lib (H : @barehypotheses o)
          (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
          (i : nat),
-    rule_true3 lib (rule_equality_equality H A B a1 a2 b1 b2 e1 e2 e3 i).
+    rule_true3 u lib (rule_equality_equality H A B a1 a2 b1 b2 e1 e2 e3 u i).
 Proof.
   unfold rule_equality_equality, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -268,7 +392,7 @@ Proof.
   destseq; allsimpl; proof_irr; GC.
 
   match goal with
-  | [ |- sequent_true2 _ ?s ] => assert (wf_csequent s) as wfc
+  | [ |- sequent_true2 _ _ ?s ] => assert (wf_csequent s) as wfc
   end.
   {
     clear hyp1 hyp2 hyp3.
@@ -288,7 +412,7 @@ Proof.
   rw <- @member_equality_iff.
 
   pose proof (teq_and_eq_if_equality
-                lib (mk_uni i) (mk_equality a1 a2 A) (mk_equality b1 b2 B)
+                u lib' (mk_uni u i) (mk_equality a1 a2 A) (mk_equality b1 b2 B)
                 s1 s2 H wT w1 w2 c1 c6 c2 c7 cT cT2
                 eqh sim) as eqp.
   lsubst_tac.
@@ -302,32 +426,54 @@ Proof.
   apply equality_mkc_equality2_sp_in_uni; dands.
 
   - vr_seq_true in hyp1.
-    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+    pose proof (hyp1 _ ext s1 s2 hf sim) as h; clear hyp1; exrepnd.
     lsubst_tac.
     apply equality_in_mkc_equality in h1; repnd.
     clear h1 h3.
     apply equality_commutes in h0; auto.
 
-  - split; left.
+  - split; apply in_ext_implies_in_open_bar; left.
 
     + vr_seq_true in hyp2.
-      pose proof (hyp2 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+      pose proof (hyp2 _ ext s1 s2 hf sim) as h; clear hyp2; exrepnd.
       lsubst_tac.
-      rw @tequality_mkc_equality_sp in h0; repnd.
-      allrw @fold_equorsq.
+      apply tequality_mkc_equality_sp in h0; repnd.
       apply equality_in_mkc_equality in h1; repnd.
-      eapply cequorsq_equality_trans2 in h4;[|eauto]; auto.
+      eapply lib_extends_preserves_in_open_bar in h0; eauto.
+      eapply lib_extends_preserves_in_open_bar in h3; eauto.
+
+      apply all_in_ex_bar_equality_implies_equality.
+      eapply in_open_bar_comb; try exact h0; clear h0.
+      eapply in_open_bar_pres; try exact h3; clear h3.
+      introv xt h3 h0.
+
+      repndors.
+      { eapply equality_trans;[|exact h0]; eauto 3 with slow. }
+      { eapply equality_trans;[|exact h0]; eauto 3 with slow. }
+      { eapply equality_respects_cequivc_right; eauto; eauto 3 with slow. }
+      { eapply equality_respects_cequivc_right; eauto; eauto 3 with slow. }
 
     + vr_seq_true in hyp3.
-      pose proof (hyp3 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+      pose proof (hyp3 _ ext s1 s2 hf sim) as h; clear hyp2; exrepnd.
       lsubst_tac.
-      rw @tequality_mkc_equality_sp in h0; repnd.
-      allrw @fold_equorsq.
+      apply tequality_mkc_equality_sp in h0; repnd.
       apply equality_in_mkc_equality in h1; repnd.
-      eapply cequorsq_equality_trans2 in h4;[|eauto]; auto.
+      eapply lib_extends_preserves_in_open_bar in h0; eauto.
+      eapply lib_extends_preserves_in_open_bar in h3; eauto.
+
+      apply all_in_ex_bar_equality_implies_equality.
+      eapply in_open_bar_comb; try exact h0; clear h0.
+      eapply in_open_bar_pres; try exact h3; clear h3.
+      introv xt h3 h0.
+
+      repndors.
+      { eapply equality_trans;[|exact h0]; eauto 3 with slow. }
+      { eapply equality_trans;[|exact h0]; eauto 3 with slow. }
+      { eapply equality_respects_cequivc_right; eauto; eauto 3 with slow. }
+      { eapply equality_respects_cequivc_right; eauto; eauto 3 with slow. }
 Qed.
 
-Lemma rule_equality_equality_true_ext_lib {o} :
+(*Lemma rule_equality_equality_true_ext_lib {o} :
   forall lib (H : @barehypotheses o)
          (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
          (i : nat),
@@ -337,13 +483,13 @@ Proof.
   apply rule_true3_implies_rule_true_ext_lib.
   introv.
   apply rule_equality_equality_true3.
-Qed.
+Qed.*)
 
 Lemma rule_equality_equality_wf2 {o} :
   forall (H : @barehypotheses o)
          (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
-         (i : nat),
-    wf_rule2 (rule_equality_equality H A B a1 a2 b1 b2 e1 e2 e3 i).
+         (u i : nat),
+    wf_rule2 (rule_equality_equality H A B a1 a2 b1 b2 e1 e2 e3 u i).
 Proof.
   introv wf m; allsimpl.
   repndors; subst; tcsp;
@@ -388,20 +534,20 @@ Definition rule_equality_equality_hyp3 {o} (H : @bhyps o) a b e :=
 Definition rule_equality_equality_base {o}
            (H  : @barehypotheses o)
            (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
-           (i : nat) :=
+           (u i : nat) :=
   mk_rule
-    (rule_equality_equality_concl H a1 a2 b1 b2 A B i)
-    [ rule_equality_equality_hyp1 H A B i e1,
+    (rule_equality_equality_concl H a1 a2 b1 b2 A B u i)
+    [ rule_equality_equality_hyp1 H A B u i e1,
       rule_equality_equality_hyp3 H a1 b1 e2,
       rule_equality_equality_hyp3 H a2 b2 e3
     ]
     [].
 
 Lemma rule_equality_equality_base_true3 {o} :
-  forall lib (H : @barehypotheses o)
+  forall u lib (H : @barehypotheses o)
          (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
          (i : nat),
-    rule_true3 lib (rule_equality_equality_base H A B a1 a2 b1 b2 e1 e2 e3 i).
+    rule_true3 u lib (rule_equality_equality_base H A B a1 a2 b1 b2 e1 e2 e3 u i).
 Proof.
   unfold rule_equality_equality_base, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -416,7 +562,7 @@ Proof.
   destseq; allsimpl; proof_irr; GC.
 
   match goal with
-  | [ |- sequent_true2 _ ?s ] => assert (wf_csequent s) as wfc
+  | [ |- sequent_true2 _ _ ?s ] => assert (wf_csequent s) as wfc
   end.
   {
     clear hyp1 hyp2 hyp3.
@@ -436,7 +582,7 @@ Proof.
   rw <- @member_equality_iff.
 
   pose proof (teq_and_eq_if_equality
-                lib (mk_uni i) (mk_equality a1 a2 A) (mk_equality b1 b2 B)
+                u lib' (mk_uni u i) (mk_equality a1 a2 A) (mk_equality b1 b2 B)
                 s1 s2 H wT w1 w2 c1 c6 c2 c7 cT cT2
                 eqh sim) as eqp.
   lsubst_tac.
@@ -450,34 +596,90 @@ Proof.
   apply equality_mkc_equality2_sp_in_uni; dands.
 
   - vr_seq_true in hyp1.
-    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+    pose proof (hyp1 _ ext s1 s2 hf sim) as h; clear hyp1; exrepnd.
     lsubst_tac.
     apply equality_in_mkc_equality in h1; repnd.
     clear h1 h3.
     apply equality_commutes in h0; auto.
 
-  - split; right.
+  - split.
 
     + vr_seq_true in hyp2.
-      pose proof (hyp2 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+      pose proof (hyp2 _ ext s1 s2 hf sim) as h; clear hyp2; exrepnd.
       lsubst_tac.
-      rw @tequality_mkc_equality_sp in h0; repnd.
-      allrw @fold_equorsq.
+      apply tequality_mkc_equality_sp in h0; repnd.
       apply equality_in_mkc_equality in h1; repnd.
-      eapply cequorsq_equality_trans2 in h4;[|eauto]; auto.
+      eapply lib_extends_preserves_in_open_bar in h0; eauto.
+      eapply lib_extends_preserves_in_open_bar in h3; eauto.
       apply equality_in_base in h4; auto.
+      apply ccequivc_ext_bar_iff_ccequivc_bar in h4.
+
+      apply in_open_bar_collapse.
+      eapply in_open_bar_comb; try exact h0; clear h0.
+      eapply in_open_bar_comb; try exact h3; clear h3.
+      eapply in_open_bar_pres; try exact h4; clear h4.
+      introv xt h3 h0 h4.
+
+      repndors.
+      { apply equality_in_base in h0; auto.
+        apply equality_in_base in h4; auto.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h0.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h4.
+        eapply in_open_bar_comb; try exact h0; clear h0.
+        eapply in_open_bar_pres; try exact h4; clear h4.
+        introv xt' h0 h4; right.
+        eauto 3 with slow. }
+      { apply equality_in_base in h4; auto.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h4.
+        eapply in_open_bar_pres; try exact h4; clear h4.
+        introv xt' h4; right.
+        eauto 3 with slow. }
+      { apply equality_in_base in h0; auto.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h0.
+        eapply in_open_bar_pres; try exact h0; clear h0.
+        introv xt' h0; right.
+        eauto 3 with slow. }
+      { eapply in_ext_implies_in_open_bar; introv xt'; right; eauto 3 with slow. }
 
     + vr_seq_true in hyp3.
-      pose proof (hyp3 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+      pose proof (hyp3 _ ext s1 s2 hf sim) as h; clear hyp2; exrepnd.
       lsubst_tac.
-      rw @tequality_mkc_equality_sp in h0; repnd.
-      allrw @fold_equorsq.
+      apply tequality_mkc_equality_sp in h0; repnd.
       apply equality_in_mkc_equality in h1; repnd.
-      eapply cequorsq_equality_trans2 in h4;[|eauto]; auto.
+      eapply lib_extends_preserves_in_open_bar in h0; eauto.
+      eapply lib_extends_preserves_in_open_bar in h3; eauto.
       apply equality_in_base in h4; auto.
+      apply ccequivc_ext_bar_iff_ccequivc_bar in h4.
+
+      apply in_open_bar_collapse.
+      eapply in_open_bar_comb; try exact h0; clear h0.
+      eapply in_open_bar_comb; try exact h3; clear h3.
+      eapply in_open_bar_pres; try exact h4; clear h4.
+      introv xt h3 h0 h4.
+
+      repndors.
+      { apply equality_in_base in h0; auto.
+        apply equality_in_base in h4; auto.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h0.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h4.
+        eapply in_open_bar_comb; try exact h0; clear h0.
+        eapply in_open_bar_pres; try exact h4; clear h4.
+        introv xt' h0 h4; right.
+        eauto 3 with slow. }
+      { apply equality_in_base in h4; auto.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h4.
+        eapply in_open_bar_pres; try exact h4; clear h4.
+        introv xt' h4; right.
+        eauto 3 with slow. }
+      { apply equality_in_base in h0; auto.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h0.
+        eapply in_open_bar_pres; try exact h0; clear h0.
+        introv xt' h0; right.
+        eauto 3 with slow. }
+      { eapply in_ext_implies_in_open_bar; introv xt'; right; eauto 3 with slow. }
 Qed.
 
-Lemma rule_equality_equality_base_true_ext_lib {o} :
+(*Lemma rule_equality_equality_base_true_ext_lib {o} :
   forall lib (H : @barehypotheses o)
          (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
          (i : nat),
@@ -487,13 +689,13 @@ Proof.
   apply rule_true3_implies_rule_true_ext_lib.
   introv.
   apply rule_equality_equality_base_true3.
-Qed.
+Qed.*)
 
 Lemma rule_equality_equality_base_wf2 {o} :
   forall (H : @barehypotheses o)
          (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
-         (i : nat),
-    wf_rule2 (rule_equality_equality_base H A B a1 a2 b1 b2 e1 e2 e3 i).
+         (u i : nat),
+    wf_rule2 (rule_equality_equality_base H A B a1 a2 b1 b2 e1 e2 e3 u i).
 Proof.
   introv wf m; allsimpl.
   repndors; subst; tcsp;
@@ -534,20 +736,20 @@ Qed.
 Definition rule_equality_equality_base1 {o}
            (H  : @barehypotheses o)
            (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
-           (i : nat) :=
+           (u i : nat) :=
   mk_rule
-    (rule_equality_equality_concl H a1 a2 b1 b2 A B i)
-    [ rule_equality_equality_hyp1 H A B i e1,
+    (rule_equality_equality_concl H a1 a2 b1 b2 A B u i)
+    [ rule_equality_equality_hyp1 H A B u i e1,
       rule_equality_equality_hyp3 H a1 b1 e2,
       rule_equality_equality_hyp2 H a2 b2 A e3
     ]
     [].
 
 Lemma rule_equality_equality_base1_true3 {o} :
-  forall lib (H : @barehypotheses o)
+  forall u lib (H : @barehypotheses o)
          (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
          (i : nat),
-    rule_true3 lib (rule_equality_equality_base1 H A B a1 a2 b1 b2 e1 e2 e3 i).
+    rule_true3 u lib (rule_equality_equality_base1 H A B a1 a2 b1 b2 e1 e2 e3 u i).
 Proof.
   unfold rule_equality_equality_base1, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -562,7 +764,7 @@ Proof.
   destseq; allsimpl; proof_irr; GC.
 
   match goal with
-  | [ |- sequent_true2 _ ?s ] => assert (wf_csequent s) as wfc
+  | [ |- sequent_true2 _ _ ?s ] => assert (wf_csequent s) as wfc
   end.
   {
     clear hyp1 hyp2 hyp3.
@@ -582,7 +784,7 @@ Proof.
   rw <- @member_equality_iff.
 
   pose proof (teq_and_eq_if_equality
-                lib (mk_uni i) (mk_equality a1 a2 A) (mk_equality b1 b2 B)
+                u lib' (mk_uni u i) (mk_equality a1 a2 A) (mk_equality b1 b2 B)
                 s1 s2 H wT w1 w2 c1 c6 c2 c7 cT cT2
                 eqh sim) as eqp.
   lsubst_tac.
@@ -597,33 +799,67 @@ Proof.
   apply equality_mkc_equality2_sp_in_uni; dands.
 
   - vr_seq_true in hyp1.
-    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+    pose proof (hyp1 _ ext s1 s2 hf sim) as h; clear hyp1; exrepnd.
     lsubst_tac.
     apply equality_in_mkc_equality in h1; repnd.
     clear h1 h3.
     apply equality_commutes in h0; auto.
 
-  - split; [right|left].
+  - split.
 
     + vr_seq_true in hyp2.
-      pose proof (hyp2 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+      pose proof (hyp2 _ ext s1 s2 hf sim) as h; clear hyp2; exrepnd.
       lsubst_tac.
-      rw @tequality_mkc_equality_sp in h0; repnd.
-      allrw @fold_equorsq.
+      apply tequality_mkc_equality_sp in h0; repnd.
       apply equality_in_mkc_equality in h1; repnd.
-      eapply cequorsq_equality_trans2 in h4;[|eauto]; auto.
       apply equality_in_base in h4; auto.
+      apply ccequivc_ext_bar_iff_ccequivc_bar in h4.
+
+      apply in_open_bar_collapse.
+      eapply in_open_bar_comb; try exact h0; clear h0.
+      eapply in_open_bar_comb; try exact h3; clear h3.
+      eapply in_open_bar_pres; try exact h4; clear h4.
+      introv xt h3 h0 h4.
+
+      repndors.
+      { apply equality_in_base in h0; auto.
+        apply equality_in_base in h4; auto.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h0.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h4.
+        eapply in_open_bar_comb; try exact h0; clear h0.
+        eapply in_open_bar_pres; try exact h4; clear h4.
+        introv xt' h0 h4; right.
+        eauto 3 with slow. }
+      { apply equality_in_base in h4; auto.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h4.
+        eapply in_open_bar_pres; try exact h4; clear h4.
+        introv xt' h4; right.
+        eauto 3 with slow. }
+      { apply equality_in_base in h0; auto.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h0.
+        eapply in_open_bar_pres; try exact h0; clear h0.
+        introv xt' h0; right.
+        eauto 3 with slow. }
+      { eapply in_ext_implies_in_open_bar; introv xt'; right; eauto 3 with slow. }
 
     + vr_seq_true in hyp3.
-      pose proof (hyp3 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+      pose proof (hyp3 _ ext s1 s2 hf sim) as h; clear hyp2; exrepnd.
       lsubst_tac.
-      rw @tequality_mkc_equality_sp in h0; repnd.
-      allrw @fold_equorsq.
+      apply tequality_mkc_equality_sp in h0; repnd.
       apply equality_in_mkc_equality in h1; repnd.
-      eapply cequorsq_equality_trans2 in h4;[|eauto]; auto.
+
+      eapply in_open_bar_comb; try exact h0; clear h0.
+      eapply in_open_bar_pres; try exact h3; clear h3.
+      introv xt h3 h0; left.
+
+      repndors.
+      { eapply equality_trans;[|exact h0]; eauto 3 with slow. }
+      { eapply equality_trans;[|exact h0]; eauto 3 with slow. }
+      { eapply equality_respects_cequivc_right; eauto; eauto 3 with slow. }
+      { eapply equality_respects_cequivc_right; eauto; eauto 3 with slow. }
 Qed.
 
-Lemma rule_equality_equality_base1_true_ext_lib {o} :
+(*Lemma rule_equality_equality_base1_true_ext_lib {o} :
   forall lib (H : @barehypotheses o)
          (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
          (i : nat),
@@ -633,13 +869,13 @@ Proof.
   apply rule_true3_implies_rule_true_ext_lib.
   introv.
   apply rule_equality_equality_base1_true3.
-Qed.
+Qed.*)
 
 Lemma rule_equality_equality_base1_wf2 {o} :
   forall (H : @barehypotheses o)
          (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
-         (i : nat),
-    wf_rule2 (rule_equality_equality_base1 H A B a1 a2 b1 b2 e1 e2 e3 i).
+         (u i : nat),
+    wf_rule2 (rule_equality_equality_base1 H A B a1 a2 b1 b2 e1 e2 e3 u i).
 Proof.
   introv wf m; allsimpl.
   repndors; subst; tcsp;
@@ -679,20 +915,20 @@ Qed.
 Definition rule_equality_equality_base2 {o}
            (H  : @barehypotheses o)
            (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
-           (i : nat) :=
+           (u i : nat) :=
   mk_rule
-    (rule_equality_equality_concl H a1 a2 b1 b2 A B i)
-    [ rule_equality_equality_hyp1 H A B i e1,
+    (rule_equality_equality_concl H a1 a2 b1 b2 A B u i)
+    [ rule_equality_equality_hyp1 H A B u i e1,
       rule_equality_equality_hyp2 H a1 b1 A e2,
       rule_equality_equality_hyp3 H a2 b2 e3
     ]
     [].
 
 Lemma rule_equality_equality_base2_true3 {o} :
-  forall lib (H : @barehypotheses o)
+  forall u lib (H : @barehypotheses o)
          (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
          (i : nat),
-    rule_true3 lib (rule_equality_equality_base2 H A B a1 a2 b1 b2 e1 e2 e3 i).
+    rule_true3 u lib (rule_equality_equality_base2 H A B a1 a2 b1 b2 e1 e2 e3 u i).
 Proof.
   unfold rule_equality_equality_base2, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -707,7 +943,7 @@ Proof.
   destseq; allsimpl; proof_irr; GC.
 
   match goal with
-  | [ |- sequent_true2 _ ?s ] => assert (wf_csequent s) as wfc
+  | [ |- sequent_true2 _ _ ?s ] => assert (wf_csequent s) as wfc
   end.
   {
     clear hyp1 hyp2 hyp3.
@@ -727,7 +963,7 @@ Proof.
   rw <- @member_equality_iff.
 
   pose proof (teq_and_eq_if_equality
-                lib (mk_uni i) (mk_equality a1 a2 A) (mk_equality b1 b2 B)
+                u lib' (mk_uni u i) (mk_equality a1 a2 A) (mk_equality b1 b2 B)
                 s1 s2 H wT w1 w2 c1 c6 c2 c7 cT cT2
                 eqh sim) as eqp.
   lsubst_tac.
@@ -742,33 +978,67 @@ Proof.
   apply equality_mkc_equality2_sp_in_uni; dands.
 
   - vr_seq_true in hyp1.
-    pose proof (hyp1 s1 s2 hf sim) as h; clear hyp1; exrepnd.
+    pose proof (hyp1 _ ext s1 s2 hf sim) as h; clear hyp1; exrepnd.
     lsubst_tac.
     apply equality_in_mkc_equality in h1; repnd.
     clear h1 h3.
     apply equality_commutes in h0; auto.
 
-  - split; [left|right].
+  - split.
 
     + vr_seq_true in hyp2.
-      pose proof (hyp2 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+      pose proof (hyp2 _ ext s1 s2 hf sim) as h; clear hyp2; exrepnd.
       lsubst_tac.
-      rw @tequality_mkc_equality_sp in h0; repnd.
-      allrw @fold_equorsq.
+      apply tequality_mkc_equality_sp in h0; repnd.
       apply equality_in_mkc_equality in h1; repnd.
-      eapply cequorsq_equality_trans2 in h4;[|eauto]; auto.
+
+      eapply in_open_bar_comb; try exact h0; clear h0.
+      eapply in_open_bar_pres; try exact h3; clear h3.
+      introv xt h3 h0; left.
+
+      repndors.
+      { eapply equality_trans;[|exact h0]; eauto 3 with slow. }
+      { eapply equality_trans;[|exact h0]; eauto 3 with slow. }
+      { eapply equality_respects_cequivc_right; eauto; eauto 3 with slow. }
+      { eapply equality_respects_cequivc_right; eauto; eauto 3 with slow. }
 
     + vr_seq_true in hyp3.
-      pose proof (hyp3 s1 s2 hf sim) as h; clear hyp2; exrepnd.
+      pose proof (hyp3 _ ext s1 s2 hf sim) as h; clear hyp3; exrepnd.
       lsubst_tac.
-      rw @tequality_mkc_equality_sp in h0; repnd.
-      allrw @fold_equorsq.
+      apply tequality_mkc_equality_sp in h0; repnd.
       apply equality_in_mkc_equality in h1; repnd.
-      eapply cequorsq_equality_trans2 in h4;[|eauto]; auto.
       apply equality_in_base in h4; auto.
+      apply ccequivc_ext_bar_iff_ccequivc_bar in h4.
+
+      apply in_open_bar_collapse.
+      eapply in_open_bar_comb; try exact h0; clear h0.
+      eapply in_open_bar_comb; try exact h3; clear h3.
+      eapply in_open_bar_pres; try exact h4; clear h4.
+      introv xt h3 h0 h4.
+
+      repndors.
+      { apply equality_in_base in h0; auto.
+        apply equality_in_base in h4; auto.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h0.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h4.
+        eapply in_open_bar_comb; try exact h0; clear h0.
+        eapply in_open_bar_pres; try exact h4; clear h4.
+        introv xt' h0 h4; right.
+        eauto 3 with slow. }
+      { apply equality_in_base in h4; auto.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h4.
+        eapply in_open_bar_pres; try exact h4; clear h4.
+        introv xt' h4; right.
+        eauto 3 with slow. }
+      { apply equality_in_base in h0; auto.
+        apply ccequivc_ext_bar_iff_ccequivc_bar in h0.
+        eapply in_open_bar_pres; try exact h0; clear h0.
+        introv xt' h0; right.
+        eauto 3 with slow. }
+      { eapply in_ext_implies_in_open_bar; introv xt'; right; eauto 3 with slow. }
 Qed.
 
-Lemma rule_equality_equality_base2_true_ext_lib {o} :
+(*Lemma rule_equality_equality_base2_true_ext_lib {o} :
   forall lib (H : @barehypotheses o)
          (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
          (i : nat),
@@ -778,13 +1048,13 @@ Proof.
   apply rule_true3_implies_rule_true_ext_lib.
   introv.
   apply rule_equality_equality_base2_true3.
-Qed.
+Qed.*)
 
 Lemma rule_equality_equality_base2_wf2 {o} :
   forall (H : @barehypotheses o)
          (A B a1 a2 b1 b2 e1 e2 e3 : NTerm)
-         (i : nat),
-    wf_rule2 (rule_equality_equality_base2 H A B a1 a2 b1 b2 e1 e2 e3 i).
+         (u i : nat),
+    wf_rule2 (rule_equality_equality_base2 H A B a1 a2 b1 b2 e1 e2 e3 u i).
 Proof.
   introv wf m; allsimpl.
   repndors; subst; tcsp;

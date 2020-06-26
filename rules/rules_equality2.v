@@ -27,7 +27,7 @@
 *)
 
 
-Require Export sequents_lib.
+(*Require Export sequents_lib.*)
 Require Export rules_useful.
 Require Export per_props_equality.
 Require Export per_props_union.
@@ -53,10 +53,10 @@ Definition rule_equality_to_extract {o}
       [].
 
 Lemma rule_equality_to_extract_true {p} :
-  forall lib
+  forall uk lib
          (T t : NTerm)
          (H : @barehypotheses p),
-    rule_true lib (rule_equality_to_extract T t H).
+    rule_true uk lib (rule_equality_to_extract T t H).
 Proof.
   unfold rule_equality_to_extract, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -78,19 +78,18 @@ Proof.
   vr_seq_true.
 
   vr_seq_true in hyp1.
-  pose proof (hyp1 s1 s2 eqh sim) as h; exrepnd; clear hyp1.
+  pose proof (hyp1 _ ext s1 s2 eqh sim) as h; exrepnd; clear hyp1.
 
   lsubst_tac.
 
   allrw @tequality_mkc_member_sp.
   allrw @equality_in_member.
 
-  dands; auto; spcast;
-  try (apply computes_to_valc_refl; eauto 3 with slow).
+  dands; auto; spcast; eauto 3 with slow.
   apply equality_refl in h1; auto.
 Qed.
 
-Lemma rule_equality_to_extract_true_ext_lib {p} :
+(*Lemma rule_equality_to_extract_true_ext_lib {p} :
   forall lib
          (T t : NTerm)
          (H : @barehypotheses p),
@@ -101,4 +100,4 @@ Proof.
   introv.
   apply rule_true_implies_rule_true3; auto;[|apply rule_equality_to_extract_true].
   introv h; apply @wf_axiom.
-Qed.
+Qed.*)

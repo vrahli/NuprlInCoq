@@ -34,6 +34,16 @@
 Require Export sequents.
 
 
+Lemma hyps_functionality_ext_init_seg {o} :
+  forall uk lib s1a s1b (H : @bhyps o) J s3,
+    hyps_functionality_ext uk lib (s1a ++ s1b) (H ++ J)
+    -> similarity uk lib s1b s3 (substitute_hyps s1a J)
+    -> hyps_functionality_ext uk lib s1a H.
+Proof.
+  introv imp simj xt.
+  eapply hyps_functionality_init_seg; eauto 3 with slow.
+Qed.
+
 Lemma hyps_functionality_ext_snoc {o} :
   forall uk lib (H : @bhyps o) h s t,
     in_ext lib (fun lib => forall t' s' w c c',

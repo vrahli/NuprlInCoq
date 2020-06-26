@@ -35,13 +35,13 @@ Require Export sequents.
 
 
 Lemma equality_in_mkc_halts_ax {o} :
-  forall lib (t : @CTerm o),
-    equality lib mkc_axiom mkc_axiom (mkc_halts t)
+  forall uk lib (t : @CTerm o),
+    equality uk lib mkc_axiom mkc_axiom (mkc_halts t)
     <=> chaltsc lib t.
 Proof.
   introv.
   rw <- @equality_in_halts; split; intro h; repnd; dands; auto; spcast;
-    apply computes_to_valc_refl; eauto 3 with slow.
+    try apply computes_to_valc_refl; eauto 3 with slow.
 Qed.
 
 Lemma teq_and_eq_if_halts {o} :

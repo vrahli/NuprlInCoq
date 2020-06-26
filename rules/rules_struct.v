@@ -31,13 +31,15 @@
 
 
 Require Export sequents2.
-Require Export sequents_lib.
+(*Require Export sequents_lib.*)
 Require Export rules_useful.
 Require Export sequents_useful.
 Require Export sequents_tacs.
 Require Export sequents_tacs2.
 Require Export subst_tacs_aeq.
 Require Export cequiv_tacs.
+Require Export per_props_equality.
+
 
 
 (** printing |- $\vdash$ *)
@@ -77,9 +79,9 @@ Definition rule_thin_hyps {o}
     [].
 
 Lemma rule_thin_hyps_true {o} :
-  forall lib (H J  : @barehypotheses o)
+  forall uk lib (H J  : @barehypotheses o)
          (C t  : NTerm),
-    rule_true lib (rule_thin_hyps H J C t).
+    rule_true uk lib (rule_thin_hyps H J C t).
 Proof.
   intros.
   unfold rule_thin_hyps, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -128,11 +130,11 @@ Proof.
 
   allrw @similarity_app; exrepd; subst.
 
-  generalize (hyp1 s1a s2a); clear hyp1; intro hyp1.
+  generalize (hyp1 _ ext s1a s2a); clear hyp1; intro hyp1.
 
   autodimp hyp1 hyp.
-  intros s2 sim.
-  apply @hyps_functionality_init_seg with (s1b := s1b) (J := J) (s3 := s2b) in sim; auto.
+  intros lib'' xt s2 sim.
+  apply @hyps_functionality_init_seg with (s1b := s1b) (J := J) (s3 := s2b) in sim; auto; eauto 3 with slow.
 
   autodimp hyp1 hyp; exrepd.
 
@@ -168,21 +170,21 @@ Qed.
 (* begin hide *)
 
 Lemma rule_thin_hyps_true_ex {o} :
-  forall lib (H : @bhyps o) J c t,
-    rule_true_if lib (rule_thin_hyps H J c t).
+  forall uk lib (H : @bhyps o) J c t,
+    rule_true_if uk lib (rule_thin_hyps H J c t).
 Proof.
   intros.
-  generalize (rule_thin_hyps_true lib H J c t); intro rt.
+  generalize (rule_thin_hyps_true uk lib H J c t); intro rt.
   rw <- @rule_true_eq_ex in rt.
   unfold rule_true_ex in rt; sp.
 Qed.
 
 Lemma rule_thin_hyps_true2 {o} :
-  forall lib (H : @bhyps o) J c t,
-    rule_true2 lib (rule_thin_hyps H J c t).
+  forall uk lib (H : @bhyps o) J c t,
+    rule_true2 uk lib (rule_thin_hyps H J c t).
 Proof.
   intros.
-  generalize (rule_thin_hyps_true lib H J c t); intro rt.
+  generalize (rule_thin_hyps_true uk lib H J c t); intro rt.
   apply rule_true_iff_rule_true2; sp.
 Qed.
 
@@ -239,11 +241,11 @@ Definition rule_unhide_equality {o}
     [].
 
 Lemma rule_unhide_equality_true3 {o} :
-  forall (lib : library)
+  forall uk (lib : library)
          (H J : @barehypotheses o)
          (A C t1 t2 e : NTerm)
          (x : NVar),
-    rule_true3 lib (rule_unhide_equality H J A C t1 t2 e x).
+    rule_true3 uk lib (rule_unhide_equality H J A C t1 t2 e x).
 Proof.
   intros.
   unfold rule_unhide_equality, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -259,7 +261,7 @@ Proof.
   destseq; allsimpl; clear_irr; GC.
 
   match goal with
-  | [ |- sequent_true2 _ ?s ] => assert (wf_csequent s) as wfc
+  | [ |- sequent_true2 _ _ ?s ] => assert (wf_csequent s) as wfc
   end.
   {
     clear hyp1.
@@ -291,16 +293,17 @@ Proof.
 
   vr_seq_true in hyp1.
 
-  generalize (hyp1 s1 s2); clear hyp1; intro hyp1.
+  generalize (hyp1 _ ext s1 s2); clear hyp1; intro hyp1.
   repeat (autodimp hyp1 hyp).
 
   {
-    intros s3 sim3.
-    rw @similarity_hhyp in sim3; rw @eq_hyps_hhyp.
+    intros lib'' xt s3 sim3.
+    apply similarity_hhyp in sim3.
+    apply eq_hyps_hhyp.
     apply eqh; sp.
   }
 
-  { rw @similarity_hhyp; auto. }
+  { apply similarity_hhyp; auto. }
 
   exrepd; clear_irr; dands; auto.
 
@@ -310,29 +313,29 @@ Proof.
 Qed.
 
 Lemma rule_unhide_equality_true {o} :
-  forall (lib : library)
+  forall uk (lib : library)
          (H J : @barehypotheses o)
          (A C t1 t2 e : NTerm)
          (x : NVar),
-    rule_true lib (rule_unhide_equality H J A C t1 t2 e x).
+    rule_true uk lib (rule_unhide_equality H J A C t1 t2 e x).
 Proof.
   introv.
   apply rule_true3_implies_rule_true.
   apply rule_unhide_equality_true3.
 Qed.
 
-Lemma rule_unhide_equality_true_ext_lib {o} :
-  forall (lib : library)
+(*Lemma rule_unhide_equality_true_ext_lib {o} :
+  forall uk (lib : library)
          (H J : @barehypotheses o)
          (A C t1 t2 e : NTerm)
          (x : NVar),
-    rule_true_ext_lib lib (rule_unhide_equality H J A C t1 t2 e x).
+    rule_true_ext_lib uk lib (rule_unhide_equality H J A C t1 t2 e x).
 Proof.
   introv.
   apply rule_true3_implies_rule_true_ext_lib.
   introv.
   apply rule_unhide_equality_true3.
-Qed.
+Qed.*)
 
 Lemma rule_unhide_equality_wf2 {o} :
   forall (H J : @barehypotheses o) A C t1 t2 e x,
@@ -389,10 +392,10 @@ Definition rule_hypothesis_equality {o}
     [].
 
 Lemma rule_hypothesis_equality_true {o} :
-  forall lib (G J : @barehypotheses o)
+  forall uk lib (G J : @barehypotheses o)
          (A : NTerm)
          (x : NVar),
-    rule_true lib (rule_hypothesis_equality G J A x).
+    rule_true uk lib (rule_hypothesis_equality G J A x).
 Proof.
   intros.
   unfold rule_hypothesis_equality, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -449,7 +452,7 @@ Proof.
   rw <- @member_member_iff.
   rw @tequality_mkc_member.
 
-  applydup eqh in sim; clear eqh.
+  applydup eqh in sim; clear eqh; auto.
   allrw @similarity_app; exrepd; subst; cpx.
   allrw @similarity_snoc; exrepd; subst; cpx.
   revert c1 cT c0 cT0; rewrite hvar_mk_hyp; intros.
@@ -498,7 +501,7 @@ Proof.
 
   lsubst_tac.
 
-  applydup @equality_refl in e3; sp.
+  applydup @equality_refl in e3; sp; eauto 3 with slow.
 
   split; sp; GC.
   apply @tequality_preserving_equality with (A := lsubstc A wtA s1a p); auto.
@@ -507,7 +510,7 @@ Proof.
   apply equality_refl in e3; sp.
 Qed.
 
-Lemma rule_hypothesis_equality_true_ext_lib {o} :
+(*Lemma rule_hypothesis_equality_true_ext_lib {o} :
   forall lib (G J : @barehypotheses o)
          (A : NTerm)
          (x : NVar),
@@ -518,7 +521,7 @@ Proof.
   { unfold wf_extract, wf_extract_goal, wf_extract_seq; simpl; introv wf; apply wf_axiom. }
   introv.
   apply rule_hypothesis_equality_true.
-Qed.
+Qed.*)
 
 
 
@@ -552,11 +555,11 @@ Definition rule_maybe_hidden_hypothesis_equality {o}
     [].
 
 Lemma rule_maybe_hidden_hypothesis_equality_true {o} :
-  forall lib (G J : @barehypotheses o)
+  forall uk lib (G J : @barehypotheses o)
          (A : NTerm)
          (x : NVar)
          (b : bool),
-    rule_true lib (rule_maybe_hidden_hypothesis_equality G J A x b).
+    rule_true uk lib (rule_maybe_hidden_hypothesis_equality G J A x b).
 Proof.
   intros.
   unfold rule_maybe_hidden_hypothesis_equality, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -614,7 +617,7 @@ Proof.
   rw <- @member_member_iff.
   rw @tequality_mkc_member.
 
-  applydup eqh in sim; clear eqh.
+  applydup eqh in sim; clear eqh; auto.
   allrw @similarity_app; exrepd; subst; cpx.
   allrw @similarity_snoc; exrepd; subst; cpx.
   revert c1 cT c0 cT0.
@@ -664,7 +667,7 @@ Proof.
 
   lsubst_tac.
 
-  applydup @equality_refl in e3; sp.
+  applydup @equality_refl in e3; sp; eauto 3 with slow.
 
   split; sp; GC.
   apply @tequality_preserving_equality with (A := lsubstc A wtA s1a p); auto.
@@ -673,7 +676,7 @@ Proof.
   apply equality_refl in e3; sp.
 Qed.
 
-Lemma rule_maybe_hidden_hypothesis_equality_true_ext_lib {o} :
+(*Lemma rule_maybe_hidden_hypothesis_equality_true_ext_lib {o} :
   forall lib (G J : @barehypotheses o)
          (A : NTerm)
          (x : NVar)
@@ -685,7 +688,7 @@ Proof.
   { unfold wf_extract, wf_extract_goal, wf_extract_seq; simpl; introv wf; apply wf_axiom. }
   introv.
   apply rule_maybe_hidden_hypothesis_equality_true.
-Qed.
+Qed.*)
 
 
 
@@ -726,10 +729,10 @@ Definition rule_introduction {o}
     [ sarg_term t ].
 
 Lemma rule_introduction_true3 {o} :
-  forall lib
+  forall uk lib
          (H : @barehypotheses o)
          (C t e : NTerm),
-    rule_true3 lib (rule_introduction H C t e).
+    rule_true3 uk lib (rule_introduction H C t e).
 Proof.
   intros.
   unfold rule_introduction, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -757,7 +760,7 @@ Proof.
 
   vr_seq_true in hyp1.
 
-  generalize (hyp1 s1 s2); clear hyp1; intro hyp1.
+  generalize (hyp1 _ ext s1 s2); clear hyp1; intro hyp1.
   autodimp hyp1 h.
   autodimp hyp1 h.
   exrepd.
@@ -769,7 +772,7 @@ Proof.
   rw @tequality_mkc_member in t0; tcsp.
 Qed.
 
-Lemma rule_introduction_true_ext_lib {o} :
+(*Lemma rule_introduction_true_ext_lib {o} :
   forall lib
          (H : @barehypotheses o)
          (C t e : NTerm),
@@ -779,13 +782,13 @@ Proof.
   apply rule_true3_implies_rule_true_ext_lib.
   introv.
   apply rule_introduction_true3.
-Qed.
+Qed.*)
 
 Lemma rule_introduction_true {o} :
-  forall lib
+  forall uk lib
          (H : @barehypotheses o)
          (C t e : NTerm),
-    rule_true lib (rule_introduction H C t e).
+    rule_true uk lib (rule_introduction H C t e).
 Proof.
   introv.
   apply rule_true3_implies_rule_true.
@@ -838,10 +841,10 @@ Definition rule_hypothesis {o}
   mk_rule (rule_hypothesis_concl G J A x) [] [].
 
 Lemma rule_hypothesis_true3 {o} :
-  forall lib (G J : @barehypotheses o)
+  forall uk lib (G J : @barehypotheses o)
          (A : NTerm)
          (x : NVar),
-    rule_true3 lib (rule_hypothesis G J A x).
+    rule_true3 uk lib (rule_hypothesis G J A x).
 Proof.
   intros.
   unfold rule_hypothesis, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -865,7 +868,7 @@ Proof.
 
   vr_seq_true.
 
-  pose proof (eqh s2 sim) as h.
+  pose proof (eqh _ (lib_extends_refl _) s2 sim) as h.
   apply eq_hyps_app in h; exrepnd; subst.
   apply eq_hyps_snoc in h5; exrepnd; subst.
   allrw length_snoc; cpx.
@@ -895,7 +898,7 @@ Proof.
   proof_irr; auto.
 Qed.
 
-Lemma rule_hypothesis_true_ext_lib {o} :
+(*Lemma rule_hypothesis_true_ext_lib {o} :
   forall lib (G J : @barehypotheses o)
          (A : NTerm)
          (x : NVar),
@@ -905,13 +908,13 @@ Proof.
   apply rule_true3_implies_rule_true_ext_lib.
   introv.
   apply rule_hypothesis_true3.
-Qed.
+Qed.*)
 
 Lemma rule_hypothesis_true {o} :
-  forall lib (G J : @barehypotheses o)
+  forall uk lib (G J : @barehypotheses o)
          (A : NTerm)
          (x : NVar),
-    rule_true lib (rule_hypothesis G J A x).
+    rule_true uk lib (rule_hypothesis G J A x).
 Proof.
   introv.
   apply rule_true3_implies_rule_true.
@@ -968,10 +971,10 @@ Definition rule_thin {o}
     [].
 
 Lemma rule_thin_true3 {o} :
-  forall lib (G J : @barehypotheses o)
+  forall uk lib (G J : @barehypotheses o)
          (A C t : NTerm)
          (x   : NVar),
-    rule_true3 lib (rule_thin G J A C t x).
+    rule_true3 uk lib (rule_thin G J A C t x).
 Proof.
   intros.
   unfold rule_thin, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -1028,14 +1031,14 @@ Proof.
 
   vr_seq_true in hyp1.
 
-  generalize (hyp1 (s1a0 ++ s1b) (s2a0 ++ s2b)); clear hyp1; intro hyp1.
+  generalize (hyp1 _ ext (s1a0 ++ s1b) (s2a0 ++ s2b)); clear hyp1; intro hyp1.
   autodimp hyp1 hyp.
 
-  intros s3 sim3.
+  intros lib'' xt s3 sim3.
   rw @similarity_app in sim3; exrepnd; subst.
   apply app_split in sim0; sp; subst;
   try (complete (allapply @similarity_length; sp; omega)).
-  generalize (eqh (snoc s2a (x, t1) ++ s2b0)); intro h.
+  generalize (eqh _ xt (snoc s2a (x, t1) ++ s2b0)); intro h.
   autodimp h hyp.
 
   rw @similarity_app.
@@ -1045,7 +1048,7 @@ Proof.
   rw @similarity_snoc; simpl.
   exists s1a s2a t1 t1 w p; sp.
   rewrite member_eq.
-  allapply @equality_refl; sp.
+  allapply @equality_refl; sp; eauto 3 with slow.
 
   rewrite substitute_hyps_snoc_sub_weak; sp.
 
@@ -1098,17 +1101,17 @@ Proof.
 Qed.
 
 Lemma rule_thin_true {o} :
-  forall lib (G J : @barehypotheses o)
+  forall uk lib (G J : @barehypotheses o)
          (A C t : NTerm)
          (x   : NVar),
-    rule_true lib (rule_thin G J A C t x).
+    rule_true uk lib (rule_thin G J A C t x).
 Proof.
   introv.
   apply rule_true3_implies_rule_true.
   apply rule_thin_true3.
 Qed.
 
-Lemma rule_thin_true_ext_lib {o} :
+(*Lemma rule_thin_true_ext_lib {o} :
   forall lib (G J : @barehypotheses o)
          (A C t : NTerm)
          (x   : NVar),
@@ -1118,7 +1121,7 @@ Proof.
   apply rule_true3_implies_rule_true_ext_lib.
   introv.
   apply rule_thin_true3.
-Qed.
+Qed.*)
 
 Lemma vs_wf_hypotheses_snoc_vs_implies {o} :
   forall (H : @bhyps o) vs x,
@@ -1187,6 +1190,8 @@ Qed.
 
 
 
+
+
 (* end hide *)
 
 (* [13] ============ WIDENING ============ *)
@@ -1231,11 +1236,11 @@ Definition rule_widening {o}
     [sarg_var y, sarg_var z].
 
 Lemma rule_widening_true {o} :
-  forall lib (T U C t : NTerm)
+  forall uk lib (T U C t : NTerm)
          (x y z : NVar)
          (i : nat)
          (H J : @barehypotheses o),
-    rule_true lib
+    rule_true uk lib
               (rule_widening
                  T U C t
                  x y z
@@ -1322,13 +1327,13 @@ Proof.
   (* we use our 1st subgoal to prove that tequality *)
   vr_seq_true in hyp1.
 
-  generalize (hyp1 (snoc s1a0 (x, t1) ++ s1b)
+  generalize (hyp1 _ ext (snoc s1a0 (x, t1) ++ s1b)
                    (snoc s2a0 (x, t2) ++ s2b));
     clear hyp1; intro hyp1.
 
   autodimp hyp1 h.
 
-  introv sim.
+  introv xt sim.
   allrw @similarity_app; exrepd; subst; allsimpl; cpx.
   apply app_split in e; exrepd; allrw length_snoc; try (complete (allrw; sp)); subst; cpx.
   repeat (allrw @similarity_snoc; exrepd; subst; allsimpl; cpx; GC).
@@ -1346,24 +1351,24 @@ Proof.
   rw @eq_hyps_snoc; simpl.
   exists s1a s2a1 t0 t3 w0 p0 c2; sp.
 
-  generalize (eqh (snoc s2a1 (x, t2) ++ s2b)); intro imp.
+  generalize (eqh _ xt (snoc s2a1 (x, t2) ++ s2b)); intro imp.
   autodimp imp hyp.
   rw @similarity_app; simpl.
-  exists (snoc s1a (x, t0)) s1b0 (snoc s2a1 (x, t2)) s2b; repeat (rw length_snoc); sp.
+  exists (snoc s1a (x, t0)) s1b0 (snoc s2a1 (x, t2)) s2b; repeat (rw length_snoc); sp; eauto 2 with slow.
   rw @similarity_snoc; simpl.
-  exists s1a s2a1 t0 t2 w p; sp.
+  exists s1a s2a1 t0 t2 w p; sp; eauto 3 with slow.
 
   rw @eq_hyps_app in imp; exrepnd.
   apply app_split in imp0; exrepd; allrw length_snoc; try (complete (allrw; sp)); subst; cpx.
   apply app_split in imp2; exrepd; allrw length_snoc; try (complete (allrw; sp)); subst; cpx.
   rw @eq_hyps_snoc in imp5; exrepnd; sp; cpx.
 
-  generalize (eqh (snoc s2a1 (x, t2) ++ s2b)); intro imp.
+  generalize (eqh _ xt (snoc s2a1 (x, t2) ++ s2b)); intro imp.
   autodimp imp hyp.
   rw @similarity_app; simpl.
-  exists (snoc s1a (x, t0)) s1b0 (snoc s2a1 (x, t2)) s2b; repeat (rw length_snoc); sp.
+  exists (snoc s1a (x, t0)) s1b0 (snoc s2a1 (x, t2)) s2b; repeat (rw length_snoc); sp; eauto 2 with slow.
   rw @similarity_snoc; simpl.
-  exists s1a s2a1 t0 t2 w p; sp.
+  exists s1a s2a1 t0 t2 w p; sp; eauto 2 with slow.
 
   rw @eq_hyps_app in imp; exrepnd.
   apply app_split in imp0; exrepd; allrw length_snoc; try (complete (allrw; sp)); subst; cpx.
@@ -1371,9 +1376,9 @@ Proof.
   rw @eq_hyps_snoc in imp5; exrepnd; sp; cpx; allsimpl; cpx; clear_irr.
 
   (* from imp0 and sequent 3 *)
-  generalize (subtype_tequality lib s1a0 s2a H T U x t1 t4 w w0 p p0 c2 (wfh0, (wfct0, wfce1), (ct, ce)));
-    intro j; repeat (autodimp j hyp).
-  apply hyps_functionality_init_seg with (s3 := s2b1) in eqh; sp.
+  generalize (subtype_tequality uk lib'0 s1a0 s2a H T U x t1 t4 w w0 p p0 c2 (wfh0, (wfct0, wfce1), (ct, ce)));
+    intro j; repeat (autodimp j hyp); eauto 3 with slow.
+  eapply hyps_functionality_ext_init_seg with (s3 := s2b1) in eqh; eauto; eauto 3 with slow.
 
   assert (cover_vars T s2a1)
     as c2
@@ -1381,18 +1386,18 @@ Proof.
           allrw @dom_csub_snoc; simpl;
           allapply @similarity_dom; repd; allrw; sp).
 
-  generalize (eqh (snoc s2a1 (x, t3) ++ s2b0)); intro j; autodimp j hyp.
+  generalize (eqh _ xt (snoc s2a1 (x, t3) ++ s2b0)); intro j; autodimp j hyp.
   rw @similarity_app; simpl.
   exists (snoc s1a (x, t0)) s1b0 (snoc s2a1 (x, t3)) s2b0; allrw length_snoc; sp.
   rw @similarity_snoc; simpl.
   exists s1a s2a1 t0 t3 w p; sp.
 
-  generalize (strong_subtype_equality lib s1a s2a1 t0 t2 t3 T U w w0 p p0 c2 H x y z
+  generalize (strong_subtype_equality uk lib'0 s1a s2a1 t0 t2 t3 T U w w0 p p0 c2 H x y z
                                       (wfh0, (wfct0, wfce1), (ct, ce))
                                       (wfh1, (wfct1, wfce1), (ct0, ce0)));
-    intro q; repeat (destimp q hyp).
+    intro q; repeat (destimp q hyp); eauto 3 with slow.
   repnd.
-  apply hyps_functionality_init_seg with (s3 := s2b) in eqh; sp.
+  apply hyps_functionality_ext_init_seg with (s3 := s2b) in eqh; sp; eauto 3 with slow.
   apply @equality_commutes4 with (U := lsubstc T w s2a1 c2) (a2 := t0) (a3 := t2); sp.
 
   rw @eq_hyps_app in j; exrepnd.
@@ -1414,15 +1419,16 @@ Proof.
 
   exists s1a0 s2a0 t1 t2 wfu c1; sp.
 
-  generalize (subtype_equality lib t1 t2 T U  s1a0 s2a0 w wfu p c1 H x
+  generalize (subtype_equality uk lib' t1 t2 T U  s1a0 s2a0 w wfu p c1 H x
                                (wfh0, (wfct0, wfce1), (ct, ce)));
-    intro j; repeat (autodimp j hyp).
-  apply hyps_functionality_init_seg with (s3 := s2b) in eqh; sp.
+    intro j; repeat (autodimp j hyp); eauto 3 with slow.
+  apply hyps_functionality_ext_init_seg with (s3 := s2b) in eqh; sp; eauto 3 with slow.
 
   exrepnd; clear_irr; sp.
 Qed.
 
 (* begin hide *)
+
 
 
 
@@ -1464,10 +1470,10 @@ Definition rule_cut {o}
     [sarg_var x].
 
 Lemma rule_cut_true3 {o} :
-  forall lib (H : @barehypotheses o)
+  forall uk lib (H : @barehypotheses o)
          (B C t u : NTerm)
          (x : NVar),
-    rule_true3 lib (rule_cut H B C t u x).
+    rule_true3 uk lib (rule_cut H B C t u x).
 Proof.
   unfold rule_cut, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros; repnd.
@@ -1552,16 +1558,17 @@ Proof.
              apply subvars_trans with (vs2 := nh_vars_hyps H); sp).
 
   generalize (hyp2
+                _ ext
                 (snoc s1 (x, lsubstc u wfce0 s1 cu1))
                 (snoc s2 (x, lsubstc u wfce0 s2 cu2))); clear hyp2; intro hyp2.
 
   autodimp hyp2 hyp.
-  { apply hyps_functionality_snoc2; simpl; auto.
-    introv eq sim'; allsimpl.
+  { apply hyps_functionality_ext_snoc2; simpl; auto; eauto 3 with slow.
+    introv xt eq sim'; allsimpl.
 
     vr_seq_true in hyp1.
-    generalize (hyp1 s1 s'); clear hyp1; intro hyp1.
-    repeat (autodimp hyp1 hyp); exrepnd; clear_irr; sp.
+    generalize (hyp1 _ (lib_extends_trans xt ext) s1 s'); clear hyp1; intro hyp1.
+    repeat (autodimp hyp1 hyp); exrepnd; clear_irr; sp; eauto 3 with slow.
   }
 
   assert (cover_vars B s1) as cvbs1 by (rw @cover_vars_eq; insub).
@@ -1569,7 +1576,7 @@ Proof.
   autodimp hyp2 hyp.
   { sim_snoc; dands; auto.
     vr_seq_true in hyp1.
-    generalize (hyp1 s1 s2); clear hyp1; intro hyp1.
+    generalize (hyp1 _ ext s1 s2); clear hyp1; intro hyp1.
     repeat (autodimp hyp1 hyp); exrepnd; clear_irr; sp.
   }
 
@@ -1595,7 +1602,7 @@ Proof.
   rw <- k2; rw <- k0; auto.
 Qed.
 
-Lemma rule_cut_true_ext_lib {o} :
+(*Lemma rule_cut_true_ext_lib {o} :
   forall lib (H : @barehypotheses o)
          (B C t u : NTerm)
          (x : NVar),
@@ -1605,15 +1612,15 @@ Proof.
   apply rule_true3_implies_rule_true_ext_lib.
   introv.
   apply rule_cut_true3.
-Qed.
+Qed.*)
 
 (* begin hide *)
 
 Lemma rule_cut_true {o} :
-  forall lib (H : @barehypotheses o)
+  forall uk lib (H : @barehypotheses o)
          (B C t u : NTerm)
          (x : NVar),
-    rule_true lib (rule_cut H B C t u x).
+    rule_true uk lib (rule_cut H B C t u x).
 Proof.
   introv.
   apply rule_true3_implies_rule_true.
@@ -1621,20 +1628,20 @@ Proof.
 Qed.
 
 Lemma rule_cut_true_ex {o} :
-  forall lib (H : @bhyps o) B C t u x,
-    rule_true_if lib (rule_cut H B C t u x).
+  forall uk lib (H : @bhyps o) B C t u x,
+    rule_true_if uk lib (rule_cut H B C t u x).
 Proof.
   intros.
-  generalize (rule_cut_true lib H B C t u x); intro rt.
+  generalize (rule_cut_true uk lib H B C t u x); intro rt.
   rw <- @rule_true_eq_ex in rt.
   unfold rule_true_ex in rt; sp.
 Qed.
 
 Lemma rule_cut_true2 {o} :
-  forall lib (H : @barehypotheses o)
+  forall uk lib (H : @barehypotheses o)
          (B C t u : NTerm)
          (x : NVar),
-    rule_true2 lib (rule_cut H B C t u x).
+    rule_true2 uk lib (rule_cut H B C t u x).
 Proof.
   introv.
   apply rule_true_iff_rule_true2; sp.
@@ -1715,10 +1722,10 @@ Definition rule_cutH {o}
     [sarg_var x].
 
 Lemma rule_cutH_true {o} :
-  forall lib (H : @barehypotheses o)
+  forall uk lib (H : @barehypotheses o)
          (B C t u : NTerm)
          (x : NVar),
-    rule_true lib (rule_cutH H B C t u x).
+    rule_true uk lib (rule_cutH H B C t u x).
 Proof.
   unfold rule_cutH, rule_true, closed_type_baresequent, closed_extract_baresequent; simpl.
   intros.
@@ -1792,18 +1799,19 @@ Proof.
              insub;
              apply subvars_trans with (vs2 := nh_vars_hyps H); sp).
 
-  generalize (hyp2
+  generalize (hyp2 _ ext
                 (snoc s1 (x, lsubstc u wfce1 s1 cu1))
                 (snoc s2 (x, lsubstc u wfce1 s2 cu2))); clear hyp2; intro hyp2.
 
   autodimp hyp2 hyp.
-  generalize (hyps_functionality_snoc lib H (mk_hhyp x B) s1 (lsubstc u wfce1 s1 cu1)).
-  intro imp; apply imp; thin imp; try (complete auto).
-  introv eq sim'; allsimpl.
+  generalize (hyps_functionality_ext_snoc uk lib' H (mk_hhyp x B) s1 (lsubstc u wfce1 s1 cu1)).
+  intro imp.
+  repeat (autodimp imp hyp); eauto 3 with slow.
+  introv xt eq sim'; allsimpl.
 
   vr_seq_true in hyp1.
-  generalize (hyp1 s1 s'); clear hyp1; intro hyp1.
-  repeat (autodimp hyp1 hyp); exrepnd; clear_irr; sp.
+  generalize (hyp1 _ (lib_extends_trans xt ext) s1 s'); clear hyp1; intro hyp1.
+  repeat (autodimp hyp1 hyp); exrepnd; clear_irr; sp; eauto 3 with slow.
 
   assert (cover_vars B s1) as cvbs1 by (rw @cover_vars_eq; insub).
 
@@ -1812,7 +1820,7 @@ Proof.
   exists s1 s2 (lsubstc u wfce1 s1 cu1) (lsubstc u wfce1 s2 cu2) wfct1 cvbs1; sp.
 
   vr_seq_true in hyp1.
-  generalize (hyp1 s1 s2); clear hyp1; intro hyp1.
+  generalize (hyp1 _ ext s1 s2); clear hyp1; intro hyp1.
   repeat (autodimp hyp1 hyp); exrepnd; clear_irr; sp.
 
   exrepnd.
@@ -1822,11 +1830,11 @@ Qed.
 (* begin hide *)
 
 Lemma rule_cutH_true_ex {o} :
-  forall lib (H : @bhyps o) B C t u x,
-    rule_true_if lib (rule_cutH H B C t u x).
+  forall uk lib (H : @bhyps o) B C t u x,
+    rule_true_if uk lib (rule_cutH H B C t u x).
 Proof.
   intros.
-  generalize (rule_cutH_true lib H B C t u x); intro rt.
+  generalize (rule_cutH_true uk lib H B C t u x); intro rt.
   rw <- @rule_true_eq_ex in rt.
   unfold rule_true_ex in rt; sp.
 Qed.

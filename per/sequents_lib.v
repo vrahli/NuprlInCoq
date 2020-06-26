@@ -34,25 +34,25 @@ Require Export sequents2.
 Require Export computation_lib_extends.
 
 
-Definition sequent_true_ext_lib {o} lib0 (s : @csequent o) : Type :=
+Definition sequent_true_ext_lib {o} uk lib0 (s : @csequent o) : Type :=
   forall lib,
     lib_extends lib lib0
-    -> VR_sequent_true lib s.
+    -> VR_sequent_true uk lib s.
 
-Definition sequent_true_ext_lib_wf {o} lib (s : @baresequent o) :=
-  {c : wf_csequent s & sequent_true_ext_lib lib (mk_wcseq s c)}.
+Definition sequent_true_ext_lib_wf {o} uk lib (s : @baresequent o) :=
+  {c : wf_csequent s & sequent_true_ext_lib uk lib (mk_wcseq s c)}.
 
-Definition rule_true_ext_lib {o} lib (R : @rule o) : Type :=
+Definition rule_true_ext_lib {o} uk lib (R : @rule o) : Type :=
   forall (wf    : wf_bseq (goal R))
          (cargs : args_constraints (sargs R) (hyps (goal R)))
-         (hyps  : forall s, LIn s (subgoals R) -> sequent_true_ext_lib_wf lib s),
-    sequent_true_ext_lib_wf lib (goal R).
+         (hyps  : forall s, LIn s (subgoals R) -> sequent_true_ext_lib_wf uk lib s),
+    sequent_true_ext_lib_wf uk lib (goal R).
 
 Lemma sequent_true_mono_lib {o} :
-  forall (e : @library_entry o) (l : library) (s : baresequent),
+  forall (e : @library_entry o) uk (l : library) (s : baresequent),
     entry_not_in_lib e l
-    -> sequent_true_ext_lib_wf l s
-    -> sequent_true_ext_lib_wf (e :: l) s.
+    -> sequent_true_ext_lib_wf uk l s
+    -> sequent_true_ext_lib_wf uk (e :: l) s.
 Proof.
   introv ni st.
   unfold sequent_true_ext_lib_wf in *; exrepnd.

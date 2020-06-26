@@ -30,7 +30,7 @@
 
 
 Require Export sequents2.
-Require Export sequents_lib.
+(*Require Export sequents_lib.*)
 Require Export sequents_tacs.
 Require Export sequents_equality.
 
@@ -59,8 +59,8 @@ Definition rule_axiom_equality {o}
     [].
 
 Lemma rule_axiom_equality_true3 {o} :
-  forall lib (H : @bhyps o) e a b T,
-    rule_true3 lib (rule_axiom_equality H e a b T).
+  forall u lib (H : @bhyps o) e a b T,
+    rule_true3 u lib (rule_axiom_equality H e a b T).
 Proof.
   intros.
   unfold rule_axiom_equality, rule_true3, wf_bseq, closed_type_baresequent, closed_extract_baresequent; simpl.
@@ -92,20 +92,20 @@ Proof.
   lsubst_tac.
   rw @tequality_mkc_member_sp.
   rw <- @member_member_iff.
-  rewrite member_eq.
   rw <- @member_equality_iff.
 
   vr_seq_true in hyp1.
-  pose proof (hyp1 s1 s2) as q; clear hyp1.
+  pose proof (hyp1 _ ext s1 s2) as q; clear hyp1.
   repeat (autodimp q hyp); exrepnd.
   lsubst_tac; auto.
   apply equality_in_mkc_equality in q1; repnd.
 
   dands; auto.
-  right; spcast; auto.
+  apply in_ext_implies_in_open_bar; introv xt.
+  right; spcast; eauto 3 with slow.
 Qed.
 
-Lemma rule_axiom_equality_true_ext_lib {o} :
+(*Lemma rule_axiom_equality_true_ext_lib {o} :
   forall lib (H : @bhyps o) e a b T,
     rule_true_ext_lib lib (rule_axiom_equality H e a b T).
 Proof.
@@ -113,7 +113,7 @@ Proof.
   apply rule_true3_implies_rule_true_ext_lib.
   introv.
   apply rule_axiom_equality_true3.
-Qed.
+Qed.*)
 
 Lemma rule_axiom_equality_wf2 {o} :
   forall (H : @barehypotheses o) e a b T,

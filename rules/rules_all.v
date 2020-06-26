@@ -47,3 +47,27 @@ Require Export rules_function.
 Require Export rules_function2.
 (*TO FIX*)(*Require Export rules_apply.*)
 Require Export rules_qnat.
+Require Export rules_uni.
+Require Export rules_struct.
+
+(* free choice sequence rules *)
+Require Export rules_choice_roadmap.
+
+(* rules about references *)
+Require Export rules_ref.
+Require Export rules_ref2.
+
+Require Export rules_product.
+Require Export rules_set.
+Require Export rules_union.
+(*Require Export rules_not_classical.*)
+Require Export rules_classical.
+Require Export rules_function.
+Require Export rules_function2.
+(*TO FIX*)(*Require Export rules_apply.*)
+Require Export rules_qnat.
+Require Export rules_uni.
+Require Export rules_struct.
+Require Export rules_equality2.
+Require Export rules_equality3.
+Require Export rules_equality4.

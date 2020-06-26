@@ -56,9 +56,9 @@ Require Import function_all_types.
 Require Import weak_consistency.
 
 
-(*
 (* Rules(structural): *)
- Require Import rules_struct.
+Require Import rules_struct.
+(*
  Require Import rules_struct2.
  Require Import rules_move.
 
@@ -163,10 +163,11 @@ Require Import weak_consistency.
 
 (* Equality type *)
  Require Import rules_equality.
- Require Import rules_equality2.
- Require Import rules_equality3.
- Require Import rules_equality4.
- Require Import rules_equality5.
+*)
+Require Import rules_equality2.
+Require Import rules_equality3.
+Require Import rules_equality4.
+(* Require Import rules_equality5.
  Require Import rules_equality6.
  Require Import rules_equality7.
 
@@ -236,12 +237,14 @@ Require Import rules_classical.
 
 (* Nominal rules *)
  Require Import rules_fresh.
-
+*)
 
 (* Universe type *)
- Require Import rules_uni.
+Require Import rules_uni.
+(* Require Import rules_uni2.*)
 
 
+(*
 (* Void type: *)
  Require Import rules_void.
 *)
