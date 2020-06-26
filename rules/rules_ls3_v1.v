@@ -167,6 +167,28 @@ Proof.
 Qed.
 Hint Rewrite @lsubstc_ls3_eq : slow.
 
+Lemma equality_in_mkc_mqnat_implies_equality_in_mkc_lqnat {o} :
+  forall uk lib (a b : @CTerm o),
+    equality uk lib a b mkc_mqnat
+    -> equality uk lib a b mkc_lqnat.
+Proof.
+  introv equ.
+  apply equality_in_qnat in equ; apply equality_in_qnat.
+  eapply in_open_bar_pres; eauto; clear equ; introv ext equ.
+  unfold equality_of_qnat in *; repnd; dands; tcsp.
+  introv x; inversion x.
+Qed.
+Hint Resolve equality_in_mkc_mqnat_implies_equality_in_mkc_lqnat : slow.
+
+Lemma member_of_mkc_mqnat_implies_member_of_mkc_lqnat {o} :
+  forall uk lib (a : @CTerm o),
+    member uk lib a mkc_mqnat
+    -> member uk lib a mkc_lqnat.
+Proof.
+  introv equ; unfold member in *; eauto 3 with slow.
+Qed.
+Hint Resolve member_of_mkc_mqnat_implies_member_of_mkc_lqnat : slow.
+
 Lemma tequality_ls3c_aux7 {o} :
   forall uk (lib : @library o) a1 a'0 a'1 a2 a'2 a3,
     no_repeats_library lib
@@ -1211,7 +1233,8 @@ XXXXXXXXXX
      [apply ccequivc_ext_refl|apply ccequivc_ext_sym;apply ccomputes_to_valc_ext_implies_ccequivc_ext;eauto]
     |].
 
-  apply equality_qnatk2nat_implies in eb0.
+  apply equality_qnatk2nat_implies in eb0;
+    try apply equality_lib_depth1_in_mqnat;[].
 
   apply all_in_ex_bar_member_implies_member.
   eapply in_open_bar_pres; try exact eb0; clear eb0; introv ext eb0; exrepnd.

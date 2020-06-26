@@ -78,9 +78,13 @@ Qed.
 Definition mkcv_qnat {o} vs c : @CVTerm o vs :=
   exist (isprog_vars vs) (mk_qnat c) (isprog_vars_qnat_implies vs c).
 
-Definition mkcv_mqnat {o} vs : @CVTerm o vs := mkcv_qnat vs qnat_mon_cond.
-Definition mkc_mqnat {o} : @CTerm o := mkc_qnat qnat_mon_cond.
-Definition mk_mqnat {o} : @NTerm o := mk_qnat qnat_mon_cond.
+Definition mkcv_lqnat {o} vs : @CVTerm o vs := mkcv_qnat vs qlt_cond.
+Definition mkc_lqnat {o} : @CTerm o := mkc_qnat qlt_cond.
+Definition mk_lqnat {o} : @NTerm o := mk_qnat qlt_cond.
+
+Definition mkcv_mqnat {o} vs : @CVTerm o vs := mkcv_qnat vs qnat_inc_cond.
+Definition mkc_mqnat {o} : @CTerm o := mkc_qnat qnat_inc_cond.
+Definition mk_mqnat {o} : @NTerm o := mk_qnat qnat_inc_cond.
 
 Lemma nt_wf_mk_lib_depth {o} : @nt_wf o mk_lib_depth.
 Proof.
@@ -771,8 +775,8 @@ Lemma dest_nuprl_qlt2 {o} :
     nuprl uk lib (mkc_qlt a b) (mkc_qlt c d) eq
     ->
     (eq <=2=> (per_bar_eq lib (equality_of_qlt_bar_lib_per lib a b))
-     # equality_of_qnat_bar lib qnat_mon_cond a c
-     # equality_of_qnat_bar lib qnat_mon_cond b d).
+     # equality_of_qnat_bar lib qlt_cond a c
+     # equality_of_qnat_bar lib qlt_cond b d).
 Proof.
   introv u.
   apply dest_nuprl_qlt in u.
@@ -802,8 +806,8 @@ Lemma tequality_mkc_qlt {o} :
     tequality uk lib (mkc_qlt a b) (mkc_qlt c d)
     <=>
     (
-      equality_of_qnat_bar lib qnat_mon_cond a c
-      # equality_of_qnat_bar lib qnat_mon_cond b d
+      equality_of_qnat_bar lib qlt_cond a c
+      # equality_of_qnat_bar lib qlt_cond b d
     ).
 Proof.
   introv; split; intro h.
@@ -909,7 +913,7 @@ Hint Resolve equality_of_nat_bar_implies_equality_of_qnat_bar : slow.
 
 Lemma equality_mkc_qnat_implies_tequality_mkc_natk {o} :
   forall uk lib (a b : @CTerm o),
-    equality uk lib a b mkc_mqnat
+    equality uk lib a b mkc_lqnat
     -> tequality uk lib (mkc_qnatk a) (mkc_qnatk b).
 Proof.
   introv equ.
@@ -939,7 +943,7 @@ Hint Resolve equality_in_mkc_qnatk_implies_equality_in_mkc_tnat : slow.
 
 Lemma equality_nat2nat_to_qnatk2nat {o} :
   forall uk lib (n f g : @CTerm o),
-    member uk lib n mkc_mqnat
+    member uk lib n mkc_lqnat
     -> equality uk lib f g nat2nat
     -> equality uk lib f g (mkc_qnatk2nat n).
 Proof.
@@ -1266,9 +1270,9 @@ Qed.
 Hint Resolve equality_of_qlt_implies_equality_of_qlt_bar : slow.
 
 Lemma equality_of_qlt_implies_are_same_qnats_left {o} :
-  forall lib (a b : @CTerm o),
+  forall lib (a b : @CTerm o) c,
     equality_of_qlt lib a b
-    -> are_same_qnats lib qnat_mon_cond a a.
+    -> are_same_qnats lib c a a.
 Proof.
   introv equ ext.
   apply equ in ext; exrepnd.
@@ -1314,8 +1318,8 @@ Lemma equality_in_mkc_qlt {o} :
     equality uk lib t u (mkc_qlt a b)
     <=>
     (in_open_bar lib (fun lib => equality_of_qlt lib a b)
-     # equality_of_qnat_bar lib qnat_mon_cond a a
-     # equality_of_qnat_bar lib qnat_mon_cond b b).
+     # equality_of_qnat_bar lib qlt_cond a a
+     # equality_of_qnat_bar lib qlt_cond b b).
 Proof.
   introv; split; intro equ; repnd.
   { unfold equality in equ; exrepnd.
@@ -1366,7 +1370,7 @@ Qed.
 Hint Resolve zero_in_nat : slow.
 
 Definition is_mqnat {o} lib (t : @CTerm o) :=
-  is_qnat lib t # sat_qnat_cond lib qnat_mon_cond t.
+  is_qnat lib t # sat_qnat_cond lib qlt_cond t.
 
 Definition is_mqnat_bar {o} lib (t : @CTerm o) :=
   in_open_bar lib (fun lib => is_mqnat lib t).
@@ -1382,7 +1386,7 @@ Hint Resolve are_same_qnats_implies_is_qnat_right : slow.
 
 Lemma equality_of_qnat_implies_is_mqnat_left {o} :
   forall (lib : @library o) a b,
-    equality_of_qnat lib qnat_mon_cond a b
+    equality_of_qnat lib qlt_cond a b
     -> is_mqnat lib a.
 Proof.
   introv h; unfold equality_of_qnat, is_mqnat in *; repnd; dands; eauto 3 with slow.
@@ -1391,7 +1395,7 @@ Hint Resolve equality_of_qnat_implies_is_mqnat_left : slow.
 
 Lemma equality_of_qnat_bar_implies_is_qnat_bar_left {o} :
   forall (lib : @library o) a b,
-    equality_of_qnat_bar lib qnat_mon_cond a b
+    equality_of_qnat_bar lib qlt_cond a b
     -> is_mqnat_bar lib a.
 Proof.
   introv equ.
@@ -1402,7 +1406,7 @@ Hint Resolve equality_of_qnat_bar_implies_is_qnat_bar_left : slow.
 
 Lemma equality_of_qnat_implies_is_qnat_right {o} :
   forall (lib : @library o) a b,
-    equality_of_qnat lib qnat_mon_cond a b
+    equality_of_qnat lib qlt_cond a b
     -> is_mqnat lib b.
 Proof.
   introv h; unfold equality_of_qnat, is_mqnat in *; repnd; dands; eauto 3 with slow.
@@ -1411,7 +1415,7 @@ Hint Resolve equality_of_qnat_implies_is_qnat_right : slow.
 
 Lemma equality_of_qnat_bar_implies_is_qnat_bar_right {o} :
   forall (lib : @library o) a b,
-    equality_of_qnat_bar lib qnat_mon_cond a b
+    equality_of_qnat_bar lib qlt_cond a b
     -> is_mqnat_bar lib b.
 Proof.
   introv equ.
@@ -1423,7 +1427,7 @@ Hint Resolve equality_of_qnat_bar_implies_is_qnat_bar_right : slow.
 Lemma tequality_mkc_qnatk {o} :
   forall uk (lib : @library o) (a b : CTerm),
     tequality uk lib (mkc_qnatk a) (mkc_qnatk b)
-    <=> equality_of_qnat_bar lib qnat_mon_cond a b.
+    <=> equality_of_qnat_bar lib qlt_cond a b.
 Proof.
   introv; repeat rewrite mkc_qnatk_eq.
   rw (@tequality_set o uk).
@@ -1443,7 +1447,7 @@ Qed.
 
 Lemma equality_of_qnat_same {o} :
   forall lib (a : @CTerm o),
-    equality_of_qnat lib qnat_mon_cond a a <=> is_mqnat lib a.
+    equality_of_qnat lib qlt_cond a a <=> is_mqnat lib a.
 Proof.
   introv; split; intro h; eauto 3 with slow.
   unfold equality_of_qnat, is_mqnat in *; repnd; dands; eauto 3 with slow.
@@ -1452,7 +1456,7 @@ Qed.
 
 Lemma equality_of_qnat_bar_same {o} :
   forall lib (a : @CTerm o),
-    equality_of_qnat_bar lib qnat_mon_cond a a <=> is_mqnat_bar lib a.
+    equality_of_qnat_bar lib qlt_cond a a <=> is_mqnat_bar lib a.
 Proof.
   introv; split; intro h; eapply in_open_bar_pres; eauto; clear h; introv ext h; eauto 3 with slow.
   apply equality_of_qnat_same; auto.
@@ -1522,8 +1526,8 @@ Lemma inhabited_type_bar_mkc_qlt {o} :
     inhabited_type_bar uk lib (mkc_qlt a b)
     <->
     (in_open_bar lib (fun lib => equality_of_qlt lib a b)
-     # equality_of_qnat_bar lib qnat_mon_cond a a
-     # equality_of_qnat_bar lib qnat_mon_cond b b).
+     # equality_of_qnat_bar lib qlt_cond a a
+     # equality_of_qnat_bar lib qlt_cond b b).
 Proof.
   introv; split; intro equ; repnd.
   { unfold inhabited_type_bar in equ.
@@ -1603,7 +1607,7 @@ Lemma equality_in_mkc_qnatk {o} :
   forall uk lib (a b : @CTerm o) n,
     equality uk lib a b (mkc_qnatk n)
     <=> (in_open_bar lib (fun lib : library => equality_of_qlt lib a n)
-         # equality_of_qnat_bar lib qnat_mon_cond n n
+         # equality_of_qnat_bar lib qlt_cond n n
          # equality uk lib a b mkc_tnat).
 Proof.
   introv; split; intro equ; repnd; dands; eauto 3 with slow; try (eapply equality_in_mkc_qnatk_implies; eauto).
@@ -1635,18 +1639,21 @@ Hint Resolve is_qnat_implies_are_same_qnats : slow.
 
 Lemma equality_qnatk2nat_implies {o} :
   forall uk lib (f g : @CTerm o) n,
-    equality uk lib f g (mkc_qnatk2nat n)
+    member uk lib n mkc_mqnat
+    -> equality uk lib f g (mkc_qnatk2nat n)
     -> in_open_bar lib (fun lib => {z : nat
        , ccomputes_to_valc lib n (mkc_nat z)
        # in_open_bar lib (fun lib => forall m, m < z -> {k : nat
        , ccomputes_to_valc_ext lib (mkc_apply f (mkc_nat m)) (mkc_nat k)
        # ccomputes_to_valc_ext lib (mkc_apply g (mkc_nat m)) (mkc_nat k)})}).
 Proof.
-  introv mem.
+  introv mn mem.
   apply equality_in_fun in mem; repnd.
   rw @type_mkc_qnatk in mem0.
+  apply equality_in_qnat in mn.
+  eapply in_open_bar_comb; try exact mn; clear mn.
   eapply in_open_bar_pres; try exact mem0; clear mem0.
-  introv ext mem0.
+  introv ext mem0 mn.
   unfold is_mqnat in mem0; repnd.
   pose proof (mem2 _ (lib_extends_refl _)) as w; simpl in *; exrepnd.
 
@@ -1661,8 +1668,10 @@ Proof.
     { apply in_ext_implies_in_open_bar; introv xta xtb.
       pose proof (mem2 _ (lib_extends_trans xtb xta)) as z; simpl in *; exrepnd.
       exists m n1; dands; spcast; eauto 3 with slow.
-      pose proof (mem0 lib' lib'1 n0 n1) as mem0.
-      repeat (autodimp mem0 hyp); eauto 3 with slow; try omega. }
+
+      unfold equality_of_qnat in mn; repnd.
+      pose proof (mn lib' lib'1 n0 n1) as mn.
+      repeat (autodimp mn hyp); eauto 3 with slow; try omega. }
     { apply in_ext_implies_in_open_bar; introv xta.
       unfold equality_of_qnat; dands; eauto 3 with slow. } }
 

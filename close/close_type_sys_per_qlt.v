@@ -42,8 +42,8 @@ Lemma close_type_system_qlt {o} :
     -> type_monotone ts
     -> ccomputes_to_valc_ext lib T (mkc_qlt a b)
     -> ccomputes_to_valc_ext lib T' (mkc_qlt a' b')
-    -> equality_of_qnat lib qnat_mon_cond a a'
-    -> equality_of_qnat lib qnat_mon_cond b b'
+    -> equality_of_qnat lib qlt_cond a a'
+    -> equality_of_qnat lib qlt_cond b b'
     -> (eq <=2=> (equality_of_qlt_bar lib a b))
     -> type_sys_props4 (close ts) uk lib T T' eq.
 Proof.

@@ -482,7 +482,7 @@ Definition per_nat_bar {p} (ts : cts(p)) (uk : ukind) lib (T1 T2 : @CTerm p) (eq
 
 Definition sat_qnat_cond {o} (lib : @library o) (c : qnat_cond) t :=
   forall lib1 lib2 n1 n2,
-    c = qnat_mon_cond
+    c = qnat_inc_cond
     -> lib_extends lib1 lib
     -> lib_extends lib2 lib1
     -> computes_to_valc lib1 t (mkc_nat n1)
@@ -531,14 +531,15 @@ Definition equality_of_qlt {o} lib (a b : @CTerm o) :=
 Definition equality_of_qlt_bar {o} lib (a b : @CTerm o) (t t' : @CTerm o) :=
   in_open_bar lib (fun lib => equality_of_qlt lib a b).
 
+Definition qlt_cond := qnat_no_cond.  (*qnat_mon_cond*)
+
 Definition per_qlt {p} (ts : cts(p)) (uk : ukind) lib (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
   {a, b, c, d : CTerm
   , T1 ===>(lib) (mkc_qlt a b)
   # T2 ===>(lib) (mkc_qlt c d)
-  # equality_of_qnat lib qnat_mon_cond a c
-  # equality_of_qnat lib qnat_mon_cond  b d
+  # equality_of_qnat lib qlt_cond a c
+  # equality_of_qnat lib qlt_cond b d
   # eq <=2=> (equality_of_qlt_bar lib a b)}.
-
 
 
 (* When using [ccequivc], we cannot prove that [per_qtime_eq_bar] is transitive *)
@@ -2990,8 +2991,8 @@ Definition close_ind' {pp}
                 (c d   : @CTerm pp)
                 (c1    : T ===>(lib) (mkc_qlt a b))
                 (c2    : T' ===>(lib) (mkc_qlt c d))
-                (ceqa  : equality_of_qnat lib qnat_mon_cond a c)
-                (ceqb  : equality_of_qnat lib qnat_mon_cond b d)
+                (ceqa  : equality_of_qnat lib qlt_cond a c)
+                (ceqb  : equality_of_qnat lib qlt_cond b d)
                 (eqiff : eq <=2=> (equality_of_qlt_bar lib a b))
                 (per   : per_qlt (close ts) uk lib T T' eq),
       P ts uk lib T T' eq)

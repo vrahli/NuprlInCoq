@@ -201,7 +201,8 @@ Proof.
 Defined.
 
 Inductive qnat_cond :=
-| qnat_mon_cond
+| qnat_inc_cond
+| qnat_dec_cond
 | qnat_no_cond.
 
 (* ------ operators ------ *)
