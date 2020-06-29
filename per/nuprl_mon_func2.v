@@ -749,11 +749,11 @@ Proof.
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
       repnd; dands; eauto 3 with slow.
 
-(*  - Case "CL_w".
+  - Case "CL_w".
     pose proof (per_w_bar_monotone_func2 (close ts) uk lib T T' eq) as q.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; introv; pose proof (q0 _ x) as q0;
-      repnd; dands; eauto 3 with slow.*)
+      repnd; dands; eauto 3 with slow.
 
   - Case "CL_union".
     pose proof (per_union_monotone_func2 (close ts) uk lib T T' eq) as q.

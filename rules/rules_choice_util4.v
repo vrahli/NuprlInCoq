@@ -2420,6 +2420,14 @@ Proof.
   introv; destruct_cterms; apply cterm_eq; simpl; auto.
 Qed.
 
+Lemma swap_cs_cterm_sup {o} :
+  forall sw (a b : @CTerm o),
+    swap_cs_cterm sw (mkc_sup a b)
+    = mkc_sup (swap_cs_cterm sw a) (swap_cs_cterm sw b).
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+Qed.
+
 Lemma swap_cs_cterm_mkc_choice_seq_same {o} :
   forall name name',
     swap_cs_cterm (name, name') (@mkc_choice_seq o name)
@@ -10819,6 +10827,13 @@ Proof.
 Qed.
 Hint Rewrite @swap_cs_cterm_mkc_function : slow.
 
+Lemma swap_cs_cterm_mkc_w {o} :
+  forall sw a x (b : @CVTerm o [x]), @swap_cs_cterm o sw (mkc_w a x b) = mkc_w (swap_cs_cterm sw a) x (swap_cs_cvterm sw b).
+Proof.
+  introv; destruct_cterms; apply cterm_eq; simpl; auto.
+Qed.
+Hint Rewrite @swap_cs_cterm_mkc_w : slow.
+
 Lemma swap_cs_cterm_mkc_product {o} :
   forall sw a x (b : @CVTerm o [x]), @swap_cs_cterm o sw (mkc_product a x b) = mkc_product (swap_cs_cterm sw a) x (swap_cs_cvterm sw b).
 Proof.
@@ -11199,6 +11214,102 @@ Proof.
     { autorewrite with slow; eapply lib_per_cond; eauto. }
     pose proof (imp _ _ xa) as q; revert dependent xa; autorewrite with slow; introv q.
     eapply lib_per_fam_cond; eauto. }
+Qed.
+
+Notation "per-fam ( o , eqa )" :=
+  (forall (a a' : @CTerm o) (p : eqa a a'), per(o)) (at level 0).
+
+Definition swap_cs_per_fam {o}
+           sw
+           {eqa  : per(o)}
+           (eqb  : per-fam(o,eqa))
+  : per-fam(o,swap_cs_per sw eqa) :=
+  fun a a' (p : swap_cs_per sw eqa a a') =>
+    swap_cs_per
+      sw
+      (eqb (swap_cs_cterm sw a) (swap_cs_cterm sw a') p).
+
+Lemma implies_swap_weq {o} :
+  forall sw (sane : sane_swapping sw) lib (eqa : per(o)) (eqb : per-fam(eqa)) u1 u2,
+    (forall a a' (e f : eqa a a'), (eqb a a' e) <=2=> (eqb a a' f))
+    -> weq lib eqa eqb u1 u2
+    -> weq (swap_cs_lib sw lib)
+           (swap_cs_per sw eqa)
+           (swap_cs_per_fam sw eqb)
+           (swap_cs_cterm sw u1)
+           (swap_cs_cterm sw u2).
+Proof.
+  introv sane cond q.
+
+  induction q as [t t' a f a' f' e c c' h h'].
+  apply (swap_ccomputes_to_valc_ext sw) in c; auto.
+  apply (swap_ccomputes_to_valc_ext sw) in c'; auto.
+  rewrite swap_cs_cterm_sup in c, c'.
+
+  assert (swap_cs_per sw eqa (swap_cs_cterm sw a) (swap_cs_cterm sw a')) as ea.
+  { unfold swap_cs_per; autorewrite with slow; auto. }
+
+  eapply (weq_cons _ _ _ _ _ _ _ _ _ ea); eauto.
+  introv swb.
+  unfold swap_cs_per_fam, swap_cs_per in swb, ea.
+  revert dependent ea; autorewrite with slow; introv swb.
+
+  pose proof (h' (swap_cs_cterm sw b) (swap_cs_cterm sw b')) as h'.
+  repeat rewrite swap_cs_cterm_apply in h'; autorewrite with slow in h'.
+  apply h'.
+  eapply cond; eauto.
+Qed.
+
+Lemma swap_weq {o} :
+  forall sw (sane : sane_swapping sw) lib (eq : per(o)) (eqa : per(o)) (eqb : per-fam(eqa)),
+    (forall a a' (e f : eqa a a'), (eqb a a' e) <=2=> (eqb a a' f))
+    -> (eq <=2=> (weq lib eqa eqb))
+    -> (swap_cs_per sw eq) <=2=> (weq (swap_cs_lib sw lib) (swap_cs_per sw eqa) (swap_cs_per_fam sw eqb)).
+Proof.
+  introv sane cond h; introv; unfold swap_cs_per; split; intro q.
+  { apply h in q; clear h.
+    apply (implies_swap_weq sw sane) in q; auto.
+    autorewrite with slow in *; auto. }
+  { apply h.
+    apply (implies_swap_weq sw sane) in q; auto.
+    { autorewrite with slow in *.
+      eapply implies_eq_term_equals_weq; try exact q.
+      { unfold swap_cs_per; introv; autorewrite with slow; auto; tcsp. }
+      { repeat introv; unfold swap_cs_per_fam, swap_cs_per in *;
+          revert dependent v; autorewrite with slow; introv; apply cond. } }
+    repeat introv; unfold swap_cs_per_fam, swap_cs_per; simpl; apply cond. }
+Qed.
+
+Lemma swap_weq_bar {o} :
+  forall sw (sane : sane_swapping sw) lib (eq : per(o)) (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa)),
+    (eq <=2=> (weq_bar lib eqa eqb))
+    -> (swap_cs_per sw eq) <=2=> (weq_bar (swap_cs_lib sw lib) (swap_cs_lib_per sw sane eqa) (swap_cs_lib_per_fam sw sane eqb)).
+Proof.
+  introv h; introv; unfold swap_cs_per; split; intro q.
+  { apply h in q; clear h.
+    eapply in_open_bar_ext_swap_cs_lib_pres; try exact q; clear q; auto.
+    introv q.
+    apply (implies_swap_weq sw sane) in q; tcsp; try apply lib_per_fam_cond.
+    autorewrite with slow in *; auto.
+    eapply implies_eq_term_equals_weq; try exact q; tcsp.
+    { unfold swap_cs_lib_per, swap_cs_per; simpl; introv; autorewrite with slow.
+      remember (lib_extends_swap_cs_lib_twice_implies (swap_lib_extends sane y)) as xe; clear Heqxe.
+      revert dependent xe; autorewrite with slow in *; introv; apply lib_per_cond. }
+    unfold swap_cs_lib_per_fam, swap_cs_per_fam, swap_cs_lib_per, swap_cs_per; simpl; repeat introv; autorewrite with slow.
+    remember (lib_extends_swap_cs_lib_twice_implies (swap_lib_extends sane y)) as xe; clear Heqxe.
+    revert dependent xe; autorewrite with slow in *; introv; apply lib_per_fam_cond. }
+  { apply h; clear h.
+    eapply in_open_bar_ext_swap_cs_lib_pres2; try exact q; clear q; auto.
+    introv q.
+    apply (implies_swap_weq sw sane) in q; tcsp; try apply lib_per_fam_cond.
+    autorewrite with slow in *; auto.
+    eapply implies_eq_term_equals_weq; try exact q; tcsp.
+    { unfold swap_cs_lib_per, swap_cs_per; simpl; introv; autorewrite with slow.
+      remember (lib_extends_swap_cs_lib_twice_implies (swap_lib_extends sane y)) as xe; clear Heqxe.
+      revert dependent xe; autorewrite with slow in *; introv; apply lib_per_cond. }
+    unfold swap_cs_lib_per_fam, swap_cs_per_fam, swap_cs_lib_per, swap_cs_per; simpl; repeat introv; autorewrite with slow.
+    remember (lib_extends_swap_cs_lib_twice_implies (swap_lib_extends sane y)) as xe; clear Heqxe.
+    revert dependent xe; autorewrite with slow in *; introv; apply lib_per_fam_cond. }
 Qed.
 
 Lemma swap_per_product_ext_eq {o} :
@@ -11801,6 +11912,39 @@ Proof.
       introv; unfold swap_cs_per; simpl; apply lib_per_fam_cond. }
 
     apply swap_per_func_ext_eq; auto. }
+
+  { Case "CL_w".
+    apply CL_w; clear per.
+    apply (swap_ccomputes_to_valc_ext sw) in c1; auto.
+    apply (swap_ccomputes_to_valc_ext sw) in c2; auto.
+    autorewrite with slow in *.
+    unfold per_w_bar.
+
+    exists (swap_cs_lib_per sw sane eqa) (swap_cs_lib_per_fam sw sane eqb).
+    dands; eauto.
+
+    { unfold type_family_ext; simpl.
+      eexists; eexists; eexists; eexists; eexists; eexists.
+      dands; eauto; eauto 2 with slow.
+
+      { introv; simpl.
+        pose proof (reca _ (lib_extends_swap_right_to_left sane e)) as reca; simpl in reca.
+        repeat (autodimp reca hyp).
+        autorewrite with slow in *.
+        eapply close_extensionality; try exact reca; auto.
+        introv; unfold swap_cs_per; simpl; apply lib_per_cond. }
+
+      introv; simpl.
+      assert (eqa (swap_cs_lib sw lib') (lib_extends_swap_right_to_left sane e) (swap_cs_cterm sw a) (swap_cs_cterm sw a')) as ex.
+      { unfold swap_cs_per in *; simpl in *.
+        eapply lib_per_cond; eauto. }
+      pose proof (recb _ (lib_extends_swap_right_to_left sane e) (swap_cs_cterm sw a) (swap_cs_cterm sw a') ex) as recb; simpl in recb.
+      repeat (autodimp recb hyp).
+      autorewrite with slow in *.
+      eapply close_extensionality; try exact recb; auto.
+      introv; unfold swap_cs_per; simpl; apply lib_per_fam_cond. }
+
+    apply swap_weq_bar; auto. }
 
   { Case "CL_union".
     apply CL_union; clear per.
@@ -18865,6 +19009,62 @@ Proof.
     pose proof (h _ _ e1) as h; eapply lib_per_fam_cond; eauto. }
 Qed.
 
+Lemma implies_weq_swap_names {o} :
+  forall name name' (lib lib' lib'' : @library o) eqa eqb
+         (nodup : lib_nodup lib)
+         (sat   : sat_lib_cond lib)
+         (safe  : strong_safe_library lib)
+         (swap  : swapped_css_libs name name' lib lib')
+         (exta   : lib_extends (swap_names name name' lib'') lib')
+         (extb   : lib_extends lib'' lib)
+         t1 t2,
+    weq lib'' eqa eqb t1 t2
+    -> weq (swap_names name name' lib'') eqa eqb t1 t2.
+Proof.
+  introv nodup sat safe swap exta extb q.
+  induction q as [t t' a f a' f' e c c' h h'].
+  pose proof (@lib_extends_preserves_perm_libs _ name name' lib'' lib lib') as q.
+  repeat (autodimp q hyp); repnd.
+  eapply (weq_cons _ _ _ _ _ _ _ _ _ e); tcsp.
+  { eapply swapped_css_libs_ccomputes_to_valc_ext; auto; try exact c; eauto; eauto 3 with slow. }
+  { eapply swapped_css_libs_ccomputes_to_valc_ext; auto; try exact c'; eauto; eauto 3 with slow. }
+Qed.
+
+Lemma swapped_css_libs_equality_of_w_bar {o} :
+  forall name name' (lib lib' : @library o) eqa eqb
+         (nodup : lib_nodup lib)
+         (sat   : sat_lib_cond lib)
+         (safe  : strong_safe_library lib)
+         (swap  : swapped_css_libs name name' lib lib'),
+    (weq_bar lib eqa eqb) <=2=> (weq_bar lib' (perm_lib_per sat safe nodup swap eqa)(perm_lib_per_fam sat safe nodup swap eqb)).
+Proof.
+  introv; introv; split; intro h.
+  { eapply in_open_bar_ext_swapped_css_libs_pres; try exact h; eauto.
+    clear h; introv h.
+    unfold perm_lib_per; simpl.
+    remember (proj1 (lib_extends_preserves_perm_libs
+                (swapped_css_libs_preserves_lib_nodup swap nodup)
+                (swapped_css_libs_preserves_sat_lib_cond swap nodup sat)
+                (swapped_css_libs_preserves_strong_safe_library swap safe) y
+                (swapped_css_libs_sym swap))) as w; clear Heqw; repnd.
+    revert dependent w; rewrite swap_names_twice; eauto 3 with slow; introv.
+
+    eapply implies_weq_swap_names;
+      try (eapply weq_eq_term_equals; try exact h; try apply lib_per_cond; try apply lib_per_fam_cond); eauto. }
+  { dup swap as swap'; apply swapped_css_libs_sym in swap'.
+    eapply in_open_bar_ext_swapped_css_libs_pres; try exact h; eauto; eauto 3 with slow.
+    clear h; introv h.
+    unfold perm_lib_per in h; simpl in h.
+    remember (proj1 (lib_extends_preserves_perm_libs
+                (swapped_css_libs_preserves_lib_nodup swap nodup)
+                (swapped_css_libs_preserves_sat_lib_cond swap nodup sat)
+                (swapped_css_libs_preserves_strong_safe_library swap safe) e
+                (swapped_css_libs_sym swap))) as w; clear Heqw; repnd.
+    eapply implies_weq_swap_names;
+      try (eapply weq_eq_term_equals; try exact h; try apply lib_per_cond; try apply lib_per_fam_cond);
+      try exact w; try exact swap'; eauto 3 with slow. }
+Qed.
+
 Lemma swapped_css_libs_equality_of_union_bar {o} :
   forall name name' (lib lib' : @library o) eqa eqb
          (nodup : lib_nodup lib)
@@ -19402,6 +19602,48 @@ Proof.
         eapply close_type_extensionality; try exact recb; auto; eapply lib_per_fam_cond. } }
     eapply eq_term_equals_trans;[eauto|].
     eapply swapped_css_libs_equality_of_func_bar; eauto. }
+
+  { Case "CL_w".
+    apply CL_w.
+    clear per.
+    unfold per_w_bar in *.
+    apply (swapped_css_libs_ccomputes_to_valc_ext nodup sat safe swap) in c1.
+    apply (swapped_css_libs_ccomputes_to_valc_ext nodup sat safe swap) in c2.
+
+    exists (perm_lib_per sat safe nodup swap eqa) (perm_lib_per_fam sat safe nodup swap eqb); dands; auto; eauto 3 with slow.
+    { unfold type_family_ext.
+      exists A A' v v' B B'; dands; eauto 3 with slow.
+      { eapply swapped_css_libs_preserves_in_ext_ext; try exact reca; eauto.
+        clear reca; introv reca; simpl in *.
+        repeat (autodimp reca hyp); eauto 3 with slow.
+        pose proof (reca (swap_names name name' lib'0)) as reca.
+        autodimp reca hyp.
+        { eapply lib_extends_preserves_perm_libs; eauto. }
+        eapply close_type_extensionality; try exact reca; auto.
+        remember (proj1 (lib_extends_preserves_perm_libs
+                    (swapped_css_libs_preserves_lib_nodup swap nodup)
+                    (swapped_css_libs_preserves_sat_lib_cond swap nodup sat)
+                    (swapped_css_libs_preserves_strong_safe_library swap safe) y
+                    (swapped_css_libs_sym swap))) as w; clear Heqw; repnd.
+        revert w; rewrite swap_names_twice; eauto 3 with slow; introv.
+        apply lib_per_cond. }
+      { eapply swapped_css_libs_preserves_in_ext_ext; try exact recb; eauto.
+        clear recb; introv recb; simpl in *; introv.
+        remember (proj1 (lib_extends_preserves_perm_libs
+                    (swapped_css_libs_preserves_lib_nodup swap nodup)
+                    (swapped_css_libs_preserves_sat_lib_cond swap nodup sat)
+                    (swapped_css_libs_preserves_strong_safe_library swap safe) y
+                    (swapped_css_libs_sym swap))) as w; clear Heqw; repnd.
+        revert dependent w; rewrite swap_names_twice; introv; eauto 3 with slow.
+        assert (eqa lib'0 e a a') as e1 by (eapply lib_per_cond; eauto).
+        pose proof (recb a a' e1) as recb.
+        repeat (autodimp recb hyp); eauto 3 with slow.
+        pose proof (recb (swap_names name name' lib'0)) as recb.
+        autodimp recb hyp.
+        { eapply lib_extends_preserves_perm_libs; eauto. }
+        eapply close_type_extensionality; try exact recb; auto; eapply lib_per_fam_cond. } }
+    eapply eq_term_equals_trans;[eauto|].
+    eapply swapped_css_libs_equality_of_w_bar; eauto. }
 
   { Case "CL_union".
     apply CL_union.

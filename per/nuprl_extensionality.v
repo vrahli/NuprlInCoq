@@ -137,12 +137,12 @@ Proof.
     eapply eq_term_equals_trans;[|eauto].
     apply eq_term_equals_sym; auto.
 
-(*  - Case "CL_w".
+  - Case "CL_w".
     apply CL_w.
     exists eqa eqb; dands; auto.
     { exists A A' v v' B B'; dands; auto. }
     eapply eq_term_equals_trans;[|eauto].
-    apply eq_term_equals_sym; auto.*)
+    apply eq_term_equals_sym; auto.
 
   - Case "CL_union".
     apply CL_union.

@@ -600,7 +600,7 @@ Proof.
   apply per_bar_eq_weq_bar_lib_per in alla; auto.
 Qed.
 
-(*Lemma per_w_bar_implies_per_bar {o} :
+Lemma per_w_bar_implies_per_bar {o} :
   forall ts uk lib (T T' : @CTerm o) eq,
     per_w_bar (close ts) uk lib T T' eq
     -> per_bar (close ts) uk lib T T' eq.
@@ -619,7 +619,7 @@ Proof.
   - eapply eq_term_equals_trans;[eauto|]; clear per1.
     apply eq_term_equals_sym; apply per_bar_eq_weq_bar_lib_per.
 Qed.
-Hint Resolve per_w_bar_implies_per_bar : slow.*)
+Hint Resolve per_w_bar_implies_per_bar : slow.
 
 Lemma local_per_union_eq_bar {o} :
   forall (lib : @library o) (eqa eqb : lib-per(lib,o)) t1 t2,

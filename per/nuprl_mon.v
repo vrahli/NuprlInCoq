@@ -947,10 +947,10 @@ Proof.
     repeat (autodimp q hyp).
     exrepnd; exists eq'; dands; auto.
 
-(*  - Case "CL_w".
+  - Case "CL_w".
     pose proof (per_w_monotone (close ts) uk lib lib' T T' eq) as q.
     repeat (autodimp q hyp).
-    exrepnd; exists eq'; dands; auto.*)
+    exrepnd; exists eq'; dands; auto.
 
   - Case "CL_union".
     pose proof (per_union_monotone (close ts) uk lib lib' T T' eq) as q.

@@ -40,7 +40,7 @@ Require Export dest_close_qtime.
 Require Export dest_close_func.
 (*Require Export dest_close_isect.*)
 Require Export dest_close_product.
-(*Require Export dest_close_w.*)
+Require Export dest_close_w.
 (*Require Export dest_close_m.*)
 (*Require Export dest_close_pw.*)
 (*Require Export dest_close_pm.*)
@@ -212,22 +212,28 @@ Ltac dest_close_lr h :=
       |- _ ] =>
       generalize (dest_close_per_product_r ts uk lib T A v B A' v' B' T' eq ea eb H1 H2 H3 H4 H5 H6); intro h; no_duplicate h
 
-(*    (* w *)
+    (* w *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
-        H3 : ccomputes_to_valc_ext ?lib ?T (mkc_w ?A ?v ?B),
-        H4 : close ?ts ?uk ?lib ?T ?T' ?eq
+        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) ?uk lib' ?A ?A' (?eaa lib' x)),
+        H4 : in_ext_ext ?lib (fun lib' x => forall a a' (e : ?eaa lib' x a a'), type_sys_props4 (close ?ts) ?uk lib' (substc ?a ?v ?B) (substc ?a' ?v' ?B') (?ebb lib' x a a' e)),
+        H5 : ccomputes_to_valc_ext ?lib ?T (mkc_w ?A ?v ?B),
+        H6 : close ?ts ?uk ?lib ?T ?T' ?eq,
+        H' : context[weq_bar ?lib ?ea ?eb]
       |- _ ] =>
-      generalize (dest_close_per_w_l ts uk lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_w_l ts uk lib T A v B A' v' B' T' eq ea eb H1 H2 H3 H4 H5 H6); intro h; no_duplicate h
 
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
-        H3 : ccomputes_to_valc_ext ?lib ?T' (mkc_w ?A ?v ?B),
-        H4 : close ?ts ?uk ?lib ?T ?T' ?eq
+        H3 : in_ext_ext ?lib (fun lib' x => type_sys_props4 (close ?ts) ?uk lib' ?A' ?A (?eaa lib' x)),
+        H4 : in_ext_ext ?lib (fun lib' x => forall a a' (e : ?eaa lib' x a a'), type_sys_props4 (close ?ts) ?uk lib' (substc ?a ?v' ?B') (substc ?a' ?v ?B) (?ebb lib' x a a' e)),
+        H5 : ccomputes_to_valc_ext ?lib ?T' (mkc_w ?A ?v ?B),
+        H6 : close ?ts ?uk ?lib ?T ?T' ?eq,
+        H' : context[weq_bar ?lib ?ea ?eb]
       |- _ ] =>
-      generalize (dest_close_per_w_r ts uk lib T A v B T' eq H1 H2 H3 H4); intro h; no_duplicate h
+      generalize (dest_close_per_w_r ts uk lib T A v B A' v' B' T' eq ea eb H1 H2 H3 H4 H5 H6); intro h; no_duplicate h
 
-    (* m *)
+(*    (* m *)
     | [ H1 : type_system ?ts,
         H2 : defines_only_universes ?ts,
         H3 : ccomputes_to_valc_ext ?lib ?T (mkc_m ?A ?v ?B),

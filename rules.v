@@ -155,12 +155,13 @@ Require Import rules_struct.
 
 (* Functionality rules *)
  Require Import rules_functionality.
-
+*)
 
 (* Set type *)
- Require Import rules_set.
+Require Import rules_set.
 
 
+(*
 (* Equality type *)
  Require Import rules_equality.
 *)

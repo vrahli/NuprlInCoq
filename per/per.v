@@ -2671,7 +2671,7 @@ Inductive close {p} (ts : cts) uk lib (T T' : @CTerm p) (eq : per(p)) : [U] :=
 (*  | CL_pertype  : per_pertype  (close ts) uk lib T T' eq -> close ts uk lib T T' eq*)
 (*  | CL_ipertype : per_ipertype (close ts) uk lib T T' eq -> close ts uk lib T T' eq*)
 (*  | CL_spertype : per_spertype (close ts) uk lib T T' eq -> close ts uk lib T T' eq*)
-(*  | CL_w        : per_w_bar        (close ts) uk lib T T' eq -> close ts uk lib T T' eq*)
+  | CL_w        : per_w_bar        (close ts) uk lib T T' eq -> close ts uk lib T T' eq
 (*  | CL_m        : per_m        (close ts) uk lib T T' eq -> close ts uk lib T T' eq*)
 (*  | CL_pw       : per_pw       (close ts) uk lib T T' eq -> close ts uk lib T T' eq*)
 (*  | CL_pm       : per_pm       (close ts) uk lib T T' eq -> close ts uk lib T T' eq*)
@@ -2716,7 +2716,7 @@ Arguments CL_func     {p} [ts] [uk] [lib] [T] [T'] [eq] _.
 (*Arguments CL_pertype  {p} [ts] [uk] [lib] [T] [T'] [eq] _.*)
 (*Arguments CL_ipertype {p} [ts] [uk] [lib] [T] [T'] [eq] _.*)
 (*Arguments CL_spertype {p} [ts] [uk] [lib] [T] [T'] [eq] _.*)
-(*Arguments CL_w        {p} [ts] [uk] [lib] [T] [T'] [eq] _.*)
+Arguments CL_w        {p} [ts] [uk] [lib] [T] [T'] [eq] _.
 (*Arguments CL_m        {p} [ts] [uk] [lib] [T] [T'] [eq] _.*)
 (*Arguments CL_pw       {p} [ts] [uk] [lib] [T] [T'] [eq] _.*)
 (*Arguments CL_pm       {p} [ts] [uk] [lib] [T] [T'] [eq] _.*)
@@ -2761,7 +2761,7 @@ Tactic Notation "close_cases" tactic(first) ident(c) :=
 (*  | Case_aux c "CL_pertype"*)
 (*  | Case_aux c "CL_ipertype"*)
 (*  | Case_aux c "CL_spertype"*)
-(*  | Case_aux c "CL_w"*)
+  | Case_aux c "CL_w"
 (*  | Case_aux c "CL_m"*)
 (*  | Case_aux c "CL_pw"*)
 (*  | Case_aux c "CL_pm"*)
@@ -3139,7 +3139,7 @@ Definition close_ind' {pp}
                      (per : per_spertype (close ts) uk lib T T' eq),
                 P ts uk lib T T' eq)*)
 
-(*  (w     : forall (ts    : cts)
+  (w     : forall (ts    : cts)
                   (uk    : ukind)
                   (lib   : library)
                   (T T'  : @CTerm pp)
@@ -3159,7 +3159,7 @@ Definition close_ind' {pp}
                   (recb  : in_ext_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), P ts uk lib' (substc a v B) (substc a' v' B') (eqb lib' x a a' e)))
                   (eqiff : eq <=2=> (weq_bar lib eqa eqb))
                   (per   : per_w_bar (close ts) uk lib T T' eq),
-            P ts uk lib T T' eq)*)
+            P ts uk lib T T' eq)
 
 (*  (m     : forall (ts   : cts)
                   (lib  : library)
@@ -4033,7 +4033,7 @@ Definition close_ind' {pp}
               eqt
               pts*)
 
-(*   | CL_w pts =>
+   | CL_w pts =>
        let (eqa, x) := pts in
        let (eqb, x) := x in
        let (tf, eqiff) := x in
@@ -4063,7 +4063,7 @@ Definition close_ind' {pp}
                      (eqb lib' i a a' e)
                      (tsb lib' i a a' e))
               eqiff
-              pts*)
+              pts
 
 (*   | CL_m pts =>
      let (eqa, x) := pts in

@@ -55,6 +55,7 @@ Require Export close_type_sys_per_image.
 Require Export close_type_sys_per_qtime.
 Require Export close_type_sys_per_ffdefs.
 Require Export close_type_sys_per_qlt.
+Require Export close_type_sys_per_w.
 
 (*Require Export close_type_sys_per_req.
  Require Export close_type_sys_per_teq.
@@ -64,7 +65,6 @@ Require Export close_type_sys_per_qlt.
  Require Export close_type_sys_per_pertype.
  Require Export close_type_sys_per_ipertype.
  Require Export close_type_sys_per_spertype.
- Require Export close_type_sys_per_w.
  Require Export close_type_sys_per_m.
  Require Export close_type_sys_per_texc.*)
 (* Require Export close_type_sys_per_partial.
@@ -419,8 +419,8 @@ Proof.
 (*  - Case "CL_spertype".
     eapply close_type_system_spertype; eauto.*)
 
-(*  - Case "CL_w".
-    eapply close_type_system_w; eauto.*)
+  - Case "CL_w".
+    eapply close_type_system_w; eauto; eauto 3 with slow.
 
 (*  - Case "CL_m".
     eapply close_type_system_m; eauto.*)
