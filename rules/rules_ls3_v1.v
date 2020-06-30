@@ -47,7 +47,7 @@ Definition ls3 {o} (A a b n : NVar) (u i : nat) : @NTerm o :=
           (mk_fun
              (mk_apply (mk_var A) (mk_var a))
              (mk_exists
-                mk_mqnat
+                mk_lqnat
                 n
                 (mk_function
                    (mk_csname 0)
@@ -75,7 +75,7 @@ Definition ls3c {o} (A a b n : NVar) (u i : nat) : @CTerm o :=
              (mkcv_apply _ (mk_cv_app_l [a] _ (mkc_var A)) (mk_cv_app_r [A] _ (mkc_var a)))
              (mkcv_exists
                 _
-                (mkcv_mqnat _)
+                (mkcv_lqnat _)
                 n
                 (mkcv_function
                    _
@@ -189,19 +189,55 @@ Proof.
 Qed.
 Hint Resolve member_of_mkc_mqnat_implies_member_of_mkc_lqnat : slow.
 
+Lemma tequality_lqnat {o} :
+  forall uk (lib : @library o), tequality uk lib mkc_lqnat mkc_lqnat.
+Proof.
+  introv; apply tequality_qnat.
+Qed.
+Hint Resolve tequality_lqnat : slow.
+
+Lemma type_lqnat {o} :
+  forall uk (lib : @library o), type uk lib mkc_lqnat.
+Proof.
+  introv; apply tequality_qnat.
+Qed.
+Hint Resolve type_lqnat : slow.
+
+Lemma substc2_mkcv_lqnat {o} :
+  forall v (t : @CTerm o) x,
+    substc2 v t x (mkcv_lqnat [v,x]) = mkcv_lqnat [v].
+Proof.
+  introv.
+  destruct_cterms.
+  apply cvterm_eq; simpl.
+  apply subst_trivial; eauto 2 with slow.
+Qed.
+Hint Rewrite @substc2_mkcv_lqnat : slow.
+
+Lemma mkcv_lqnat_substc {o} :
+  forall v (t : @CTerm o),
+    substc t v (mkcv_lqnat [v])
+    = mkc_lqnat.
+Proof.
+  introv.
+  destruct_cterms; apply cterm_eq; simpl.
+  unfsubst.
+Qed.
+Hint Rewrite @mkcv_lqnat_substc : slow.
+
 Lemma tequality_ls3c_aux7 {o} :
   forall uk (lib : @library o) a1 a'0 a'1 a2 a'2 a3,
     no_repeats_library lib
     -> safe_library lib
     -> lib_cond_sat_def lib
     -> equality uk lib a1 a'0 (mkc_csname 0)
-    -> equality uk lib a2 a'1 mkc_mqnat
+    -> equality uk lib a2 a'1 mkc_lqnat
     -> equality uk lib a3 a'2 (mkc_csname 0)
     -> tequality uk lib (mkc_equality a1 a3 (mkc_qnatk2nat a2)) (mkc_equality a'0 a'2 (mkc_qnatk2nat a'1)).
 Proof.
   introv norep safe sat; introv equb eque equf.
 
-  apply tequality_mkc_equality_if_equal; eauto 3 with slow.
+  apply tequality_mkc_equality_if_equal; eauto 3 with slow;[| |].
 
   { apply tequality_fun; dands; eauto 3 with slow. }
 
@@ -219,7 +255,7 @@ Lemma tequality_ls3c_aux6 {o} :
     -> lib_cond_sat_def lib
     -> equality uk lib a0 a' (mkc_csprop uk i)
     -> equality uk lib a1 a'0 (mkc_csname 0)
-    -> equality uk lib a2 a'1 mkc_mqnat
+    -> equality uk lib a2 a'1 mkc_lqnat
     -> equality uk lib a3 a'2 (mkc_csname 0)
     -> tequality
          uk lib
@@ -251,7 +287,7 @@ Lemma tequality_ls3c_aux5 {o} :
     -> lib_cond_sat_def lib
     -> equality uk0 lib a0 a' (mkc_csprop uk0 i)
     -> equality uk0 lib a1 a'0 (mkc_csname 0)
-    -> equality uk0 lib a2 a'1 mkc_mqnat
+    -> equality uk0 lib a2 a'1 mkc_lqnat
     -> tequality uk0 lib
     (mkc_function (mkc_csname 0) b
        (substc5 b a2 n a1 a a0 A
@@ -282,7 +318,7 @@ Lemma tequality_ls3c_aux5 {o} :
 Proof.
   introv da db dc dd de df norep safe sat; introv equa equb eque.
 
-  apply tequality_function; dands; eauto 3 with slow.
+  apply tequality_function; dands; eauto 3 with slow;[].
 
   introv extf equf.
   eapply tequality_respects_alphaeqc_left;
@@ -336,7 +372,7 @@ Lemma tequality_ls3c_aux4 {o} :
     -> equality uk0 lib a0 a' (mkc_csprop uk0 i)
     -> equality uk0 lib a1 a'0 (mkc_csname 0)
     -> tequality uk0 lib
-    (mkc_product mkc_mqnat n
+    (mkc_product mkc_lqnat n
        (substc2 n a1 a
           (substc3 n a a0 A
              (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
@@ -352,7 +388,7 @@ Lemma tequality_ls3c_aux4 {o} :
                    (mkcv_apply ([b, n, a] ++ [A])
                       (mk_cv_app_l [b, n, a] [A] (mkc_var A))
                       (mk_cv_app_r [n, a, A] [b] (mkc_var b)))))))))
-    (mkc_product mkc_mqnat n
+    (mkc_product mkc_lqnat n
        (substc2 n a'0 a
           (substc3 n a a' A
              (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
@@ -397,7 +433,7 @@ Lemma tequality_ls3c_aux3 {o} :
     -> tequality uk0 lib
     (mkc_fun (mkc_apply a0 a1)
           (substc2 a a0 A
-             (mkcv_exists [a, A] (mkcv_mqnat [a, A]) n
+             (mkcv_exists [a, A] (mkcv_lqnat [a, A]) n
                 (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
                    (mkcv_fun (([b, n] ++ [a]) ++ [A])
                       (mkcv_equality (([b, n] ++ [a]) ++ [A])
@@ -413,7 +449,7 @@ Lemma tequality_ls3c_aux3 {o} :
                          (mk_cv_app_r [n, a, A] [b] (mkc_var b)))))))) [[a \\ a1]])
     (mkc_fun (mkc_apply a' a'0)
           (substc2 a a' A
-             (mkcv_exists [a, A] (mkcv_mqnat [a, A]) n
+             (mkcv_exists [a, A] (mkcv_lqnat [a, A]) n
                 (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
                    (mkcv_fun [b, n, a, A]
                       (mkcv_equality (([b, n] ++ [a]) ++ [A])
@@ -467,7 +503,7 @@ Lemma tequality_ls3c_aux2 {o} :
           (mkcv_fun ([a] ++ [A])
              (mkcv_apply ([a] ++ [A]) (mk_cv_app_l [a] [A] (mkc_var A))
                 (mk_cv_app_r [A] [a] (mkc_var a)))
-                (mkcv_exists [a, A] (mkcv_mqnat [a, A]) n
+                (mkcv_exists [a, A] (mkcv_lqnat [a, A]) n
                    (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
                       (mkcv_fun (([b, n] ++ [a]) ++ [A])
                          (mkcv_equality (([b, n] ++ [a]) ++ [A])
@@ -490,7 +526,7 @@ Lemma tequality_ls3c_aux2 {o} :
           (mkcv_fun ([a] ++ [A])
              (mkcv_apply ([a] ++ [A]) (mk_cv_app_l [a] [A] (mkc_var A))
                 (mk_cv_app_r [A] [a] (mkc_var a)))
-                (mkcv_exists [a, A] (mkcv_mqnat [a, A]) n
+                (mkcv_exists [a, A] (mkcv_lqnat [a, A]) n
                    (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
                       (mkcv_fun [b, n, a, A]
                          (mkcv_equality (([b, n] ++ [a]) ++ [A])
@@ -557,7 +593,7 @@ Lemma tequality_ls3c_aux1 {o} :
              (mkcv_fun ([a] ++ [A])
                 (mkcv_apply ([a] ++ [A]) (mk_cv_app_l [a] [A] (mkc_var A))
                    (mk_cv_app_r [A] [a] (mkc_var a)))
-                   (mkcv_exists [a, A] (mkcv_mqnat [a, A]) n
+                   (mkcv_exists [a, A] (mkcv_lqnat [a, A]) n
                       (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
                          (mkcv_fun (([b, n] ++ [a]) ++ [A])
                             (mkcv_equality (([b, n] ++ [a]) ++ [A])
@@ -579,7 +615,7 @@ Lemma tequality_ls3c_aux1 {o} :
              (mkcv_fun ([a] ++ [A])
                 (mkcv_apply ([a] ++ [A]) (mk_cv_app_l [a] [A] (mkc_var A))
                    (mk_cv_app_r [A] [a] (mkc_var a)))
-                   (mkcv_exists [a, A] (mkcv_mqnat [a, A]) n
+                   (mkcv_exists [a, A] (mkcv_lqnat [a, A]) n
                       (mkcv_function [n, a, A] (mkcv_csname [n, a, A] 0) b
                          (mkcv_fun [b, n, a, A]
                             (mkcv_equality (([b, n] ++ [a]) ++ [A])
@@ -854,7 +890,7 @@ Proof.
   rewrite mkcv_product_substc; auto;[].
   autorewrite with slow.
 
-  apply equality_in_product; dands; eauto 3 with slow.
+  apply equality_in_product; dands; eauto 3 with slow;[|].
 
   { introv xt eqq.
     repeat rewrite substc2_substc3_eq.
