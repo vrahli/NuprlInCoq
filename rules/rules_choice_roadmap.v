@@ -49,7 +49,9 @@ Require Export rules_choice3.
 (* Contains a proof of the validity of the extensional version of LS2 *)
 Require Export rules_choice5.
 
-(* A proof of a simple version of LS3 *)
+(* A proof of a simple squashed version of LS3 *)
 Require Export rules_ls3_v0.
-(* Another version of LS3, that uses a time-squashed nat instead *)
+(* Another version of LS3, that uses a monotonically increasing time-squashed nat instead *)
 Require Export rules_ls3_v1.
+(* Another version of LS3, that uses a non-monotonic time-squashed nat instead *)
+Require Export rules_ls3_v2.
