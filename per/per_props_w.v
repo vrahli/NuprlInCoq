@@ -30,39 +30,594 @@
  *)
 
 
+Require Export per_props_util.
 Require Export per_props_function.
 Require Export list. (* WTF?? *)
 
 
-Lemma equality_in_w {p} :
-  forall lib (s1 s2 : @CTerm p) A v B,
-    equality lib s1 s2 (mkc_w A v B)
+
+Lemma type_extensionality_per_w_bar_nuprl {o} :
+  @type_extensionality o (per_w_bar nuprl).
+Proof.
+  introv per e.
+  unfold per_w_bar in *; exrepnd.
+  exists eqa eqb; dands; auto.
+  eapply eq_term_equals_trans;[|eauto].
+  apply eq_term_equals_sym; auto.
+Qed.
+Hint Resolve type_extensionality_per_w_bar_nuprl : slow.
+
+Lemma uniquely_valued_per_w_bar_nuprl {o} :
+  @uniquely_valued o (per_w_bar nuprl).
+Proof.
+  introv pera perb.
+  unfold per_w_bar in *; exrepnd.
+
+  eapply eq_term_equals_trans;[eauto|].
+  eapply eq_term_equals_trans;[|apply eq_term_equals_sym;eauto].
+
+  unfold type_family_ext in *; exrepnd.
+  computes_to_eqval_ext.
+  hide_hyp pera3.
+  computes_to_eqval_ext.
+  apply ccequivc_ext_mkc_w_implies in ceq.
+  apply ccequivc_ext_mkc_w_implies in ceq0.
+  repnd.
+
+  apply implies_eq_term_equals_weq_bar.
+
+  {
+    introv.
+    pose proof (pera5 _ e) as pera5.
+    pose proof (perb5 _ e) as perb5.
+    simpl in *.
+    apply nuprl_refl in pera5.
+    apply nuprl_refl in perb5.
+    eapply nuprl_uniquely_valued; eauto.
+    eapply nuprl_value_respecting_left;[|eapply lib_extends_preserves_ccequivc_ext;[eauto|];eauto ].
+    eapply nuprl_value_respecting_right;[|eapply lib_extends_preserves_ccequivc_ext;[eauto|];eauto ].
+    auto.
+  }
+
+  {
+    introv.
+    pose proof (pera0 _ e a a' u) as pera0.
+    pose proof (perb0 _ e a a' v1) as perb0.
+    simpl in *.
+    apply nuprl_refl in pera0.
+    apply nuprl_refl in perb0.
+    eapply nuprl_uniquely_valued; eauto.
+    eapply nuprl_value_respecting_left;
+      [|eapply lib_extends_preserves_ccequivc_ext;[eauto|];
+        apply bcequivc_ext_implies_ccequivc_ext;eauto
+      ].
+    eapply nuprl_value_respecting_right;
+      [|eapply lib_extends_preserves_ccequivc_ext;[eauto|];
+        apply bcequivc_ext_implies_ccequivc_ext;eauto
+      ].
+    auto.
+  }
+Qed.
+Hint Resolve uniquely_valued_per_w_bar_nuprl : slow.
+
+Lemma local_per_bar_per_w_bar_nuprl {o} :
+  @local_ts o (per_bar (per_w_bar nuprl)).
+Proof.
+  apply local_per_bar; eauto 3 with slow.
+Qed.
+Hint Resolve local_per_bar_per_w_bar_nuprl : slow.
+
+Lemma dest_nuprl_per_w_l {o} :
+  forall (ts : cts(o)) uk lib T A v B T' eq,
+    ts = univ
+    -> ccomputes_to_valc_ext lib T (mkc_w A v B)
+    -> close ts uk lib T T' eq
+    -> per_bar (per_w_bar (close ts)) uk lib T T' eq.
+Proof.
+  introv equ comp cl.
+  assert (type_system ts) as sys by (subst; eauto 3 with slow).
+  assert (defines_only_universes ts) as dou by (subst; eauto 3 with slow).
+  close_cases (induction cl using @close_ind') Case; subst; try close_diff_all; auto; eauto 3 with slow.
+
+  eapply local_per_bar_per_w_bar_nuprl; eauto.
+  eapply in_open_bar_ext_pres; try exact reca; clear reca; introv reca.
+  eapply reca; eauto 3 with slow.
+Qed.
+
+Lemma dest_nuprl_w {o} :
+  forall uk (lib : @library o) (A : @CTerm o) v B C w D eq,
+    nuprl uk lib (mkc_w A v B) (mkc_w C w D) eq
+    -> per_bar (per_w_bar nuprl) uk lib (mkc_w A v B) (mkc_w C w D) eq.
+Proof.
+  introv cl.
+  unfold nuprl in cl.
+  eapply dest_nuprl_per_w_l in cl; auto;
+    try (apply computes_to_valc_refl; eauto 3 with slow); eauto 3 with slow.
+Qed.
+
+
+
+
+Lemma type_family_ext_nuprl_w_uniquely_valued_eqas {o} :
+  forall uk lib A v B C w D (eqa1 eqa2 : lib-per(lib,o)) (eqb1 : lib-per-fam(lib,eqa1,o)) (eqb2 : lib-per-fam(lib,eqa2,o)),
+    type_family_ext mkc_w nuprl uk lib (mkc_w A v B) (mkc_w C w D) eqa1 eqb1
+    -> type_family_ext mkc_w nuprl uk lib (mkc_w A v B) (mkc_w C w D) eqa2 eqb2
+    -> in_ext_ext lib (fun lib' x => (eqa1 lib' x) <=2=> (eqa2 lib' x)).
+Proof.
+  introv tfa tfb.
+  eapply type_family_ext_nuprl_uniquely_valued_eqas; eauto; eauto 3 with slow.
+Qed.
+
+
+
+Lemma dest_nuprl_w2 {o} :
+  forall uk lib (eq : per(o)) A v B C w D,
+    nuprl uk lib (mkc_w A v B) (mkc_w C w D) eq
+    ->
+    exists (eqa : lib-per(lib,o)) (eqb : lib-per-fam(lib,eqa,o)),
+      eq <=2=> (per_bar_eq lib (weq_bar_lib_per lib eqa eqb))
+      # in_open_bar_ext lib (fun lib' x => nuprl uk lib' A C (eqa lib' x))
+      # in_open_bar_ext lib (fun lib' x => forall a a' (e : eqa lib' x a a'), nuprl uk lib' (substc a v B) (substc a' w D) (eqb lib' x a a' e))
+      # is_swap_invariant_cond uk eqa v B w D.
+Proof.
+  introv u.
+  apply dest_nuprl_w in u.
+  unfold per_bar in u; exrepnd.
+
+  unfold per_w_bar in u1.
+  apply in_open_bar_ext_choice in u1; exrepnd.
+  apply in_open_bar_eqa_choice in u2; exrepnd.
+  apply in_open_bar_eqa_fam_choice in u1; exrepnd.
+
+  assert (FunDeqEqa_cond Feqa) as cond.
+  { eapply nuprl_type_family_ext_implies_FunDeqEq_cond; try exact u2; eauto 3 with slow. }
+
+  exists (fun_lib_dep_eqa Feqa).
+  exists (fun_lib_dep_eqb cond Feqb).
+
+  dands.
+
+  {
+    eapply eq_term_equals_trans;[eauto|].
+    clear dependent eq.
+
+    apply implies_eq_term_equals_per_bar_eq.
+    introv ext.
+    assert (lib_extends (Flib lib' ext) lib') as xta by eauto 3 with slow.
+    exists (Flib _ ext) xta.
+    introv xtb; introv; simpl.
+    pose proof (u2 _ ext _ xtb z) as q; simpl in q; repnd.
+    eapply eq_term_equals_trans;[eauto|].
+    apply implies_eq_term_equals_weq_bar; simpl.
+
+    {
+      repeat introv; simpl; unfold raise_ext_per; simpl.
+      split; intro h.
+
+      - exists lib' ext lib'0 xtb z e; auto.
+
+      - exrepnd.
+        pose proof (u2 _ ext1 _ ext2 extz) as u; exrepnd.
+        apply (implies_type_family_ext_raise_lib_per _ _ _ _ _ e) in q0.
+        apply (implies_type_family_ext_raise_lib_per _ _ _ _ _ z0) in u0.
+        eapply @type_family_ext_nuprl_uniquely_valued_eqas in u0; try exact q0; auto; simpl in *; eauto 3 with slow;[].
+        pose proof (u0 _ (lib_extends_refl _)) as u0; simpl in *.
+        unfold raise_ext_per in u0; simpl in *.
+        eapply lib_per_cond; apply u0; eapply lib_per_cond; eauto.
+    }
+
+    {
+      repeat introv; simpl; unfold raise_ext_per_fam; simpl.
+      split; intro h.
+
+      - exists lib' ext lib'0 xtb z e; auto.
+        eapply lib_per_fam_cond; eauto.
+
+      - exrepnd.
+        pose proof (u2 _ ext1 _ ext2 extz) as xx; exrepnd.
+        apply (implies_type_family_ext_raise_lib_per _ _ _ _ _ e) in q0.
+        apply (implies_type_family_ext_raise_lib_per _ _ _ _ _ z0) in xx0.
+        dup xx0 as eqas.
+        dup xx0 as eqbs.
+        eapply @type_family_ext_nuprl_uniquely_valued_eqas in eqas; try exact q0; auto; simpl in *; eauto 3 with slow;[].
+        eapply @type_family_ext_nuprl_uniquely_valued_eqbs in eqbs; try exact q0; auto; simpl in *; eauto 3 with slow;[].
+
+        pose proof (eqas _ (lib_extends_refl _)) as eqas; simpl in *.
+
+        assert (raise_ext_per (Feqa lib' ext lib'0 xtb z) e lib'1 (lib_extends_refl lib'1) a a') as eqa1.
+        { unfold raise_ext_per; simpl.
+          eapply lib_per_cond; eauto. }
+        assert (raise_ext_per (Feqa lib1 ext1 lib2 ext2 extz) z0 lib'1 (lib_extends_refl lib'1) a a') as eqa2.
+        { unfold raise_ext_per; simpl.
+          apply eqas.
+          eapply lib_per_cond; eauto. }
+
+        pose proof (eqbs _ (lib_extends_refl _) a a' eqa1 eqa2) as eqbs; simpl in *.
+
+        unfold raise_ext_per_fam in eqbs; simpl in *.
+        eapply lib_per_fam_cond; apply eqbs; eapply lib_per_fam_cond; eauto.
+    }
+  }
+
+  {
+    introv ext.
+    assert (lib_extends (Flib lib' ext) lib') as xta by eauto 3 with slow.
+    exists (Flib _ ext) xta.
+    introv xtb; introv; simpl.
+    pose proof (u2 _ ext _ xtb z) as q; simpl in q; repnd.
+    unfold type_family_ext in q0; exrepnd.
+    repeat ccomputes_to_valc_ext_val.
+
+    pose proof (q4 _ (lib_extends_refl lib'0)) as q4; simpl in *.
+    eapply nuprl_value_respecting_left in q4;[|apply ccequivc_ext_sym;eauto].
+    eapply nuprl_value_respecting_right in q4;[|apply ccequivc_ext_sym;eauto].
+    eapply type_extensionality_nuprl;[eauto|].
+
+    split; intro h.
+
+    - exists lib' ext lib'0 xtb z (lib_extends_refl lib'0); auto.
+
+    - exrepnd.
+      pose proof (u2 _ ext1 _ ext2 extz) as u2; repnd.
+      unfold type_family_ext in u1; exrepnd.
+      repeat ccomputes_to_valc_ext_val.
+
+      pose proof (u6 _ z0) as u6; simpl in *.
+      apply nuprl_refl in u6.
+      apply nuprl_refl in q4.
+      eapply nuprl_value_respecting_left in u6;[|eapply lib_extends_preserves_ccequivc_ext;[|apply ccequivc_ext_sym;eauto];auto].
+      eapply nuprl_value_respecting_right in u6;[|eapply lib_extends_preserves_ccequivc_ext;[|apply ccequivc_ext_sym;eauto];auto].
+      eapply nuprl_uniquely_valued in u6; try exact q4.
+      apply u6; auto.
+  }
+
+  {
+    introv ext.
+    assert (lib_extends (Flib lib' ext) lib') as xta by eauto 3 with slow.
+    exists (Flib _ ext) xta.
+    introv xtb; introv; simpl.
+    pose proof (u2 _ ext _ xtb z) as q; simpl in q; repnd.
+    unfold type_family_ext in q0; exrepnd.
+    repeat ccomputes_to_valc_ext_val.
+
+    assert ((Feqa lib' ext lib'0 xtb z) lib'0 (lib_extends_refl lib'0) a a') as e1.
+    { simpl in *; exrepnd; eapply cond; eauto. }
+
+    pose proof (q0 _ (lib_extends_refl lib'0) a a' e1) as q0; simpl in *.
+    eapply nuprl_value_respecting_left in q0;[|apply ccequivc_ext_sym;apply bcequivc_ext_implies_ccequivc_ext;eauto].
+    eapply nuprl_value_respecting_right in q0;[|apply ccequivc_ext_sym;apply bcequivc_ext_implies_ccequivc_ext;eauto].
+
+    eapply type_extensionality_nuprl;[eauto|].
+
+    split; intro h.
+
+    - exists lib' ext lib'0 xtb z (lib_extends_refl lib'0).
+      eapply lib_per_fam_cond; eauto.
+
+    - exrepnd.
+      pose proof (u2 _ ext1 _ ext2 extz) as u2; repnd.
+      unfold type_family_ext in u1; exrepnd.
+      repeat ccomputes_to_valc_ext_val.
+
+      assert ((Feqa lib1 ext1 lib2 ext2 extz) lib'0 z0 a a') as eb.
+      { simpl in *; exrepnd; eapply cond; eauto. }
+
+      pose proof (u1 _ z0 a a' eb) as u1; simpl in *.
+      eapply nuprl_value_respecting_left in u1;[|eapply lib_extends_preserves_ccequivc_ext;[|apply ccequivc_ext_sym;apply bcequivc_ext_implies_ccequivc_ext;eauto] ]; auto;[].
+      eapply nuprl_value_respecting_right in u1;[|eapply lib_extends_preserves_ccequivc_ext;[|apply ccequivc_ext_sym;apply bcequivc_ext_implies_ccequivc_ext;eauto] ]; auto;[].
+      apply nuprl_refl in u1.
+      apply nuprl_refl in q0.
+      eapply nuprl_uniquely_valued in u1; try exact q0.
+      apply u1; auto; eapply lib_per_fam_cond; eauto.
+  }
+
+  {
+    destruct uk; simpl; auto;[].
+    dands; introv ext; simpl in *; exrepnd;
+      pose proof (u2 _ ext1 _ ext2 extz) as u2; simpl in u2; repnd;
+        unfold type_family_ext in *; simpl in *; exrepnd;
+          repeat ccomputes_to_valc_ext_val; eauto 3 with slow.
+  }
+Qed.
+
+Lemma implies_in_open_bar_ext_in_ext_ext {o} :
+  forall (lib : @library o) (F : forall lib', lib_extends lib' lib -> Prop),
+    in_open_bar_ext lib F
+    -> in_open_bar_ext lib (fun lib' e => in_ext_ext lib' (fun lib'' e' => F lib'' (lib_extends_trans e' e))).
+Proof.
+  introv h ext.
+  pose proof (h _ ext) as h; exrepnd.
+  exists lib'' y; introv xt; repeat introv.
+  pose proof (h1 lib'1 (lib_extends_trans e xt)) as h1; simpl in h1; auto.
+Qed.
+
+Lemma equality_in_w {o} :
+  forall u lib (s1 s2 : @CTerm o) A v B,
+    equality u lib s1 s2 (mkc_w A v B)
     <=>
-    {eqa : per
-     , {eqb : (forall a a' : CTerm, forall e : eqa a a', per)
-        , nuprl lib A A eqa
-        # (forall a a' : CTerm,
-           forall e : eqa a a',
-             nuprl lib (substc a v B) (substc a' v B) (eqb a a' e))
-        # weq lib eqa eqb s1 s2}}.
+    {eqa : lib-per(lib,o)
+     , {eqb :  lib-per-fam(lib,eqa,o)
+        , in_open_bar_ext lib (fun lib e => nuprl u lib A A (eqa lib e))
+        # in_open_bar_ext lib
+             (fun lib x =>
+                forall a a' (e : eqa lib x a a'),
+                  nuprl u lib (substc a v B) (substc a' v B) (eqb lib x a a' e))
+        # is_swap_invariant_cond u eqa v B v B
+        # weq_bar lib eqa eqb s1 s2}}.
 Proof.
   introv; sp_iff Case; introv e.
 
   - unfold equality in e; exrepnd.
-    unfold nuprl in e1.
-    inversion e1; try not_univ.
-    allunfold @per_w; allunfold @type_family; exrepnd.
-    computes_to_value_isvalue.
-    allfold (@nuprl p lib).
-    exists eqa eqb; sp.
-    allunfold @eq_term_equals; discover; sp.
+    applydup @dest_nuprl_w2 in e1; exrepnd.
+    apply e3 in e0.
+    exists eqa eqb; dands; auto.
+
+    { unfold per_bar_eq in *; simpl in *.
+      apply in_open_bar_ext_dup; simpl in *.
+      eapply in_open_bar_ext_pres; try exact e0; introv h.
+      eapply in_open_bar_ext_pres; try exact h; introv q; introv.
+      eapply implies_eq_term_equals_weq; try exact q.
+      { unfold raise_lib_per, raise_ext_per; simpl; apply lib_per_cond. }
+      { introv; unfold raise_lib_per_fam, raise_ext_per_fam; simpl; apply lib_per_fam_cond. } }
 
   - exrepnd.
-    exists (weq lib eqa eqb); sp.
-    apply CL_w.
-    exists eqa eqb; sp.
-    exists A A v v B B; sp; spcast; computes_to_value_refl.
+    unfold equality.
+    exists (per_bar_eq lib (weq_bar_lib_per lib eqa eqb)); dands; tcsp.
+
+    { apply CL_bar.
+      exists (weq_bar_lib_per lib eqa eqb); dands; tcsp.
+      apply implies_in_open_bar_ext_in_ext_ext in e0.
+      apply implies_in_open_bar_ext_in_ext_ext in e2.
+      eapply in_open_bar_ext_comb; try exact e0; clear e0.
+      eapply in_open_bar_ext_pres; try exact e2; clear e2.
+      introv e2 e0.
+      apply CL_w; simpl.
+      exists (raise_lib_per eqa e) (raise_lib_per_fam eqb e).
+      dands; tcsp; eauto 3 with slow.
+      exists A A v v B B; sp; spcast; eauto 2 with slow. }
+
+    apply per_bar_eq_weq_bar_lib_per; auto.
 Qed.
+
+Lemma weq_implies {p} :
+  forall lib (eqa1 eqa2 : per(p)) eqb1 eqb2,
+    eq_term_equals eqa1 eqa2
+    -> (forall (a a' : CTerm) (ea1 : eqa1 a a') (ea2 : eqa2 a a'),
+          eq_term_equals (eqb1 a a' ea1) (eqb2 a a' ea2))
+    -> forall t1 t2,
+         weq lib eqa1 eqb1 t1 t2
+         -> weq lib eqa2 eqb2 t1 t2.
+Proof.
+  introv eqia eqib weq1.
+  induction weq1.
+
+  assert (eqa2 a a') as ea2 by (allrw <-; sp).
+
+  apply @weq_cons
+        with
+        (a  := a)
+        (f  := f)
+        (a' := a')
+        (f' := f')
+        (e  := ea2);
+    try (complete sp).
+
+  introv eia.
+
+  apply_hyp.
+  generalize (eqib a a' e ea2); intro eqt; allrw; sp.
+Qed.
+
+
+Lemma eq_term_equals_weq {p} :
+  forall lib (eqa1 eqa2 : per(p)) eqb1 eqb2,
+    eq_term_equals eqa1 eqa2
+    -> (forall (a a' : CTerm) (ea1 : eqa1 a a') (ea2 : eqa2 a a'),
+          eq_term_equals (eqb1 a a' ea1) (eqb2 a a' ea2))
+    -> eq_term_equals (weq lib eqa1 eqb1)
+                      (weq lib eqa2 eqb2).
+Proof.
+  introv eqia eqib.
+  eapply implies_eq_term_equals_weq; eauto.
+Qed.
+
+Lemma tequality_mkc_w {p} :
+  forall u lib (A1 : @CTerm p) v1 B1
+         A2 v2 B2,
+    tequality u lib
+      (mkc_w A1 v1 B1)
+      (mkc_w A2 v2 B2)
+    <=>
+    (tequality u lib A1 A2
+     # equality_swap_invariant_cond u lib A1 v1 B1 v2 B2
+     # in_ext lib (fun lib => forall a1 a2,
+        equality u lib a1 a2 A1
+        -> tequality u lib (substc a1 v1 B1) (substc a2 v2 B2))).
+Proof.
+  introv; split; intro e; repnd.
+
+  - unfold tequality in e; exrepnd.
+    apply dest_nuprl_w2 in e0; exrepnd.
+
+    dands; eauto 3 with slow.
+    introv ext equ.
+
+    eapply (lib_extends_preserves_in_open_bar_ext _ _ _ ext) in e2.
+    eapply (lib_extends_preserves_in_open_bar_ext _ _ _ ext) in e3.
+
+    eapply all_in_ex_bar_tequality_implies_tequality.
+    eapply in_open_bar_comb2; try exact e3; clear e3.
+    eapply in_open_bar_ext_pres; try exact e2; clear e2.
+    introv e2 e3.
+    eapply equality_monotone in equ; eauto.
+    eapply equality_eq1 in e2; apply e2 in equ; clear e2.
+    pose proof (e3 _ _ equ) as e3.
+    eexists; eauto.
+
+  - assert (forall lib', lib_extends lib' lib -> tequality u lib' A1 A2) as teqa by eauto 3 with slow.
+    clear e0.
+
+    rename e into teqb.
+
+    unfold tequality in *.
+
+    apply choice_ext_lib_teq in teqa; exrepnd.
+    eapply choice_ext_lib_teq_fam in teqb;[|eauto]; exrepnd.
+
+    exists (weq_bar lib eqa eqb).
+    apply CL_w.
+    exists eqa eqb.
+    dands; eauto 3 with slow.
+    exists A1 A2 v1 v2 B1 B2.
+    dands; spcast; eauto 3 with slow;
+      try (complete (eapply equality_swap_invariant_cond_nuprl_imp; eauto;
+                     introv; apply teqa0)).
+Qed.
+
+Lemma equality_in_w_v1 {p} :
+  forall u lib A v B (t1 t2 : @CTerm p),
+    equality u lib t1 t2 (mkc_w A v B)
+    <=> in_open_bar
+          lib
+          (fun lib =>
+             {a1, a2, f1, f2 : CTerm
+             , t1 ===>(lib) (mkc_sup a1 f1)
+             # t2 ===>(lib) (mkc_sup a2 f2)
+             # equality u lib a1 a2 A
+             # equality u lib f1 f2 (mkc_fun (substc a1 v B) (mkc_w A v B))})
+         # type u lib A
+         # equality_swap_invariant_cond u lib A v B v B
+         # in_ext_ext lib (fun lib e => forall a a', equality u lib a a' A -> tequality u lib (substc a v B) (substc a' v B)).
+Proof.
+  introv; split; intro e.
+
+  - applydup @inhabited_implies_tequality in e as teq.
+    apply equality_in_w in e; exrepnd.
+    dands; auto.
+
+    { eapply in_open_bar_comb; try exact e1; clear e1.
+      eapply in_open_bar_comb; try exact e0; clear e0.
+      eapply in_open_bar_pres; try exact e2; clear e2.
+      introv xt e2 e0 e1.
+
+      pose proof (e0 xt) as e0'.
+      pose proof (e2 xt) as e2'.
+      pose proof (e1 xt) as e1'.
+
+      inversion e1'.
+      eexists; eexists; eexists; eexists; dands; eauto.
+
+      { exists (eqa lib' xt); dands; auto. }
+
+      pose proof (e2' _ _ e) as e2'.
+      apply equality_in_fun; dands; eauto 3 with slow.
+
+      { apply nuprl_refl in e2'.
+        eexists; eauto. }
+
+      introv xt' equ.
+
+
+XXXXXXXXXXXXX
+
+        apply tequality_mkc_w; dands; eauto 3 with slow.
+
+        { eapply nuprl_monotone_func in e0; exrepnd.
+          pose proof (e4 _ xt') as e4; repnd.
+          eexists; eauto. }
+
+        { SearchAbout equality_swap_invariant_cond is_swap_invariant_cond.
+
+SearchAbout equality mkc_fun.
+      exists (eqb lib' xt a a' e); dands; auto.
+      
+
+ unfold equality in e; exrepnd.
+    apply dest_nuprl_w2 in e1; exrepnd.
+
+
+    inversion e1; try not_univ.
+    allunfold @per_w; exrepnd.
+    allunfold @type_family; exrepnd.
+    allfold (@nuprl p lib).
+    computes_to_value_isvalue.
+    allunfold @eq_term_equals; discover.
+    destruct h.
+    exists a a' f f'; sp.
+    exists eqa; sp.
+    rw <- @fold_mkc_fun.
+    rw @equality_in_function; dands.
+
+    exists (eqb a a' e).
+    apply @nuprl_refl with (t2 := substc a' v0 B0); sp.
+
+    intros b1 b2 eib.
+    generalize (equality_eq1 lib (substc a v0 B0) (substc a' v0 B0) b1 b2 (eqb a a' e));
+      intro k; repeat (dest_imp k hyp).
+    discover.
+    allrw @substc_cnewvar.
+    exists eq; sp.
+
+    intros b1 b2 eib.
+    allrw @substc_cnewvar.
+    exists eq; sp.
+    allrw.
+    apply_hyp.
+    generalize (equality_eq1 lib (substc a v0 B0) (substc a' v0 B0) b1 b2 (eqb a a' e));
+      intro k; repeat (dest_imp k hyp).
+    discover; sp.
+
+    allunfold @equality; exrepnd.
+    generalize (nuprl_uniquely_valued lib A0 eq0 eqa); introv k; repeat (dest_imp k hyp).
+    assert (eqa a0 a'0) as ea by (allrw <-; sp).
+    exists (eqb a0 a'0 ea); sp.
+
+  - exrepnd.
+    unfold equality in e3; exrepnd.
+    rename eq into eqa.
+
+    generalize (choice_teq lib A v B v B e1); intro n; exrepnd.
+
+    exists (weq lib eqa (fun a a' ea => f a a' (eq_equality1 lib a a' A eqa ea e3))); dands.
+
+    apply CL_w; unfold per_w.
+    exists eqa.
+    exists (fun a a' ea => f a a' (eq_equality1 lib a a' A eqa ea e3)); sp.
+    unfold type_family.
+    fold (@nuprl p lib).
+    exists A A v v B B; sp;
+    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_w))).
+
+    apply @weq_cons with (a := a1) (f := f1) (a' := a2) (f' := f2) (e := e5); sp.
+    generalize (n0 a1 a2 (eq_equality1 lib a1 a2 A eqa e5 e3)); intro n.
+    rw <- @fold_mkc_fun in e4.
+    rw @equality_in_function in e4; repnd.
+    generalize (e4 b b'); intro k.
+    dest_imp k hyp.
+    exists (f a1 a2 (eq_equality1 lib a1 a2 A eqa e5 e3)); sp.
+    allapply @nuprl_refl; sp.
+    allrw @substc_cnewvar.
+    unfold equality in k; exrepnd.
+    inversion k1; try not_univ.
+    allunfold @per_w; exrepnd.
+    allunfold @type_family; exrepnd; allfold (@nuprl p lib).
+    computes_to_value_isvalue.
+    allunfold @eq_term_equals; discover.
+
+    assert (eq_term_equals eqa0 eqa)
+           as eqta by (eapply nuprl_uniquely_valued; eauto).
+
+    assert (forall (a a' : CTerm) (ea : eqa a a') (ea' : eqa0 a a'),
+              eq_term_equals (f a a' (eq_equality1 lib a a' A0 eqa ea e3)) (eqb a a' ea'))
+           as eqtb.
+    introv.
+    generalize (n0 a a' (eq_equality1 lib a a' A0 eqa ea e3)); intro n1.
+    assert (nuprl lib (substc a v0 B0) (substc a' v0 B0) (eqb a a' ea')) as n2 by sp.
+    apply (nuprl_uniquely_valued lib) with (t := substc a v0 B0); sp; allapply @nuprl_refl; sp.
+    apply weq_implies with (eqa1 := eqa0) (eqb1 := eqb); sp.
+    apply eq_term_equals_sym; sp.
+Qed.
+
 
 (**
 
@@ -73,16 +628,16 @@ Qed.
 *)
 
 Lemma w_ind_eq {p} :
-  forall lib (A : @CTerm p) va B (Q : CTerm -> CTerm -> [U]),
+  forall u (lib : library) (A : @CTerm p) va B (Q : CTerm -> CTerm -> [U]),
     (forall t1 t2 t3 t4, cequivc lib t1 t3 -> cequivc lib t2 t4 -> Q t1 t2 -> Q t3 t4)
     -> (forall a1 a2 f1 f2,
-          equality lib a1 a2 A
-          -> equality lib f1 f2 (mkc_fun (substc a1 va B) (mkc_w A va B))
+          equality u lib a1 a2 A
+          -> equality u lib f1 f2 (mkc_fun (substc a1 va B) (mkc_w A va B))
           -> (forall b1 b2,
-                equality lib b1 b2 (substc a1 va B)
+                equality u lib b1 b2 (substc a1 va B)
                 -> Q (mkc_apply f1 b1) (mkc_apply f2 b2))
           -> Q (mkc_sup a1 f1) (mkc_sup a2 f2))
-    -> (forall w1 w2, equality lib w1 w2 (mkc_w A va B) -> Q w1 w2).
+    -> (forall w1 w2, equality u lib w1 w2 (mkc_w A va B) -> Q w1 w2).
 Proof.
   introv ceq ind e.
   rw @equality_in_w in e; exrepnd.
@@ -175,1152 +730,3 @@ Proof.
   apply ind; allapply @equality_refl; sp.
 Qed.
 
-Lemma equality_in_pw {o} :
-  forall lib (s1 s2 : @CTerm o) P ap A bp ba B cp ca cb C p,
-    equality lib s1 s2 (mkc_pw P ap A bp ba B cp ca cb C p)
-    <=>
-    {eqp : per
-     , {eqa : (forall p p' : CTerm, forall ep : eqp p p', per)
-     , {eqb : (forall p p' : CTerm,
-               forall ep : eqp p p',
-               forall a a' : CTerm,
-               forall ea : eqa p p' ep a a',
-                 per)
-        , nuprl lib P P eqp
-        # (forall p p' : CTerm,
-           forall ep : eqp p p',
-             nuprl lib (substc p ap A) (substc p' ap A) (eqa p p' ep))
-        # (forall p p' : CTerm,
-           forall ep : eqp p p',
-           forall a a' : CTerm,
-           forall ea : eqa p p' ep a a',
-             nuprl lib (lsubstc2 bp p ba a B)
-                   (lsubstc2 bp p' ba a' B)
-                   (eqb p p' ep a a' ea))
-        # (forall p p',
-           forall ep : eqp p p',
-           forall a a',
-           forall ea : eqa p p' ep a a',
-           forall b b',
-           forall eb : eqb p p' ep a a' ea b b',
-             eqp (lsubstc3 cp p ca a cb b C)
-                 (lsubstc3 cp p' ca a' cb b' C))
-        # eqp p p
-        # pweq lib eqp eqa eqb cp ca cb C p s1 s2}}}.
-Proof.
-  introv; sp_iff Case; introv e.
-
-  - unfold equality in e; exrepnd.
-    unfold nuprl in e1.
-    inversion e1; try not_univ.
-    allunfold @per_pw; allunfold @type_pfamily; exrepnd.
-    computes_to_value_isvalue.
-    allfold (@nuprl o).
-    exists eqp eqa eqb; sp.
-    allunfold @eq_term_equals; discover; sp.
-
-  - exrepnd.
-    exists (pweq lib eqp eqa eqb cp ca cb C p); sp.
-    apply CL_pw.
-    exists eqp eqa eqb p p; sp.
-    exists cp cp ca ca cb cb C C; sp.
-    exists P P ap ap A A bp bp.
-    exists ba ba B B; sp; spcast; computes_to_value_refl.
-Qed.
-
-Lemma isprog_vars_lsubstc3v3 {p} :
-  forall v1 u1 v2 u2 v3 u3 (t : @CVTerm p [v1,v2,v3]),
-    isprog_vars
-      [u3]
-      (lsubst (get_cvterm [v1;v2;v3] t)
-              [(v1,get_cterm u1),(v2,get_cterm u2),(v3,mk_var u3)]).
-Proof.
-  introv.
-  destruct_cterms.
-  rw @isprog_vars_eq; simpl; dands.
-
-  generalize (eqvars_free_vars_disjoint x1 [(v1, x0), (v2, x), (v3, mk_var u3)]);
-    introv eqv.
-  rw eqvars_prop in eqv.
-  rw subvars_prop; introv k.
-  rw in_single_iff.
-  apply eqv in k; clear eqv.
-  apply isprog_vars_eq in i1; repnd.
-  rw in_app_iff in k; rw in_remove_nvars in k; repdors; repnd.
-
-  simpl in k0; repeat (rw not_over_or in k0); repnd.
-  rw subvars_prop in i2.
-  apply i2 in k1; simpl in k1; sp.
-
-  revert k; simpl; boolvar; simpl;
-  allrw in_app_iff; allrw in_single_iff; allrw in_remove_nvar; repnd;
-  allrw @isprog_eq; allunfold @isprogram; repnd; allrw; simpl;
-  intro k; repdors; try (complete sp).
-
-  apply isprog_vars_eq in i1; repnd.
-  apply lsubst_wf_iff; sp.
-  unfold wf_sub, sub_range_sat; simpl; introv k; repdors; cpx;
-  allrw @isprog_eq; allunfold @isprogram; sp.
-Qed.
-
-Definition lsubstc3v3 {p} (v1 : NVar) (u1 : @CTerm p)
-                      (v2 : NVar) (u2 : CTerm)
-                      (v3 : NVar) (u3 : NVar)
-                      (t : CVTerm [v1;v2;v3]) : CVTerm [u3] :=
-  exist (isprog_vars [u3])
-        (lsubst (get_cvterm [v1;v2;v3] t)
-                [(v1,get_cterm u1),(v2,get_cterm u2),(v3,mk_var u3)])
-        (isprog_vars_lsubstc3v3 v1 u1 v2 u2 v3 u3 t).
-
-Lemma lsubst_mk_pw {o} :
-  forall (P : @NTerm o) ap A bp ba B cp ca cb C p sub,
-    prog_sub sub
-    -> isprog P
-    -> isprog_vars [ap] A
-    -> isprog_vars [bp;ba] B
-    -> isprog_vars [cp;ca;cb] C
-    -> isprog_vars (dom_sub sub) p
-    -> lsubst (mk_pw P ap A bp ba B cp ca cb C p) sub
-       = mk_pw P ap A bp ba B cp ca cb C (lsubst p sub).
-Proof.
-  introv ps iP iA iB iC ip.
-  change_to_lsubst_aux4.
-  simpl.
-  allrw @fold_nobnd.
-  rw @fold_pw; simpl.
-  allrw @sub_filter_nil_r.
-
-  assert (lsubst_aux P sub = P) as eqP.
-  apply lsubst_aux_trivial; introv i; discover; dands; try (complete sp).
-  intro j.
-  allrw @isprog_eq; allunfold @isprogram; repnd.
-  rw iP0 in j; sp.
-  rw eqP.
-
-  assert (lsubst_aux A (sub_filter sub [ap]) = A) as eqA.
-  apply lsubst_aux_trivial; introv i.
-  apply in_sub_filter in i; repnd; discover; dands; try (complete sp).
-  intro j.
-  rw @isprog_vars_eq in iA; repnd.
-  rw subvars_prop in iA0; apply iA0 in j; sp.
-  rw eqA.
-
-  assert (lsubst_aux B (sub_filter sub [bp,ba]) = B) as eqB.
-  apply lsubst_aux_trivial; introv i.
-  apply in_sub_filter in i; repnd; discover; dands; try (complete sp).
-  intro j.
-  rw @isprog_vars_eq in iB; repnd.
-  rw subvars_prop in iB0; apply iB0 in j; sp.
-  rw eqB.
-
-  assert (lsubst_aux C (sub_filter sub [cp,ca,cb]) = C) as eqC.
-  apply lsubst_aux_trivial; introv i.
-  apply in_sub_filter in i; repnd; discover; dands; try (complete sp).
-  intro j.
-  rw @isprog_vars_eq in iC; repnd.
-  rw subvars_prop in iC0; apply iC0 in j; sp.
-  rw eqC.
-
-  sp.
-Qed.
-
-Ltac cpx2 :=
-  match goal with
-    | [ H1 : closed ?x, H2 : LIn ?v (free_vars ?x) |- _ ] =>
-        rewrite H1 in H2; simpl in H2; complete (destruct H2)
-  end.
-
-Lemma substc_mkc_pw_vs {o} :
-  forall (p : @CTerm o) a b v P ap A bp ba B cp ca cb C,
-    !LIn v (bound_vars (get_cvterm [cp;ca;cb] C))
-    -> substc b v
-              (mkc_pw_vs [v] P ap A bp ba B cp ca cb C
-                         (lsubstc3v3 cp p ca a cb v C))
-       = mkc_pw P ap A bp ba B cp ca cb C (lsubstc3 cp p ca a cb b C).
-Proof.
-  introv niv.
-  destruct_cterms; simpl.
-  apply cterm_eq; simpl.
-  unfold csubst, subst; simpl.
-  rw @lsubst_mk_pw;
-    try (complete sp);
-    try (complete (unfold prog_sub, sub_range_sat; simpl; sp; cpx; rw @isprogram_eq; sp)).
-
-  rw @simple_lsubst_lsubst; simpl.
-
-  assert (lsubst x2 [(v, x0)] = x2) as eq.
-  rw @lsubst_trivial; allsimpl; try (complete sp); introv k; repdors; cpx.
-  allrw @isprog_eq; dands; try (complete sp); allunfold @isprogram; repnd; allrw; sp.
-  rw eq; clear eq.
-
-  assert (lsubst x1 [(v, x0)] = x1) as eq.
-  rw @lsubst_trivial; allsimpl; try (complete sp); introv k; repdors; cpx.
-  allrw @isprog_eq; dands; try (complete sp); allunfold @isprogram; repnd; allrw; sp.
-  rw eq; clear eq.
-
-  assert (lsubst (mk_var v) [(v, x0)] = x0) as eq.
-  change_to_lsubst_aux4; simpl; boolvar; sp.
-  rw eq; clear eq.
-
-  assert (lsubst x3 [(cp, x2), (ca, x1), (cb, x0), (v, x0)]
-          = lsubst x3 [(cp, x2), (ca, x1), (cb, x0)]) as eq.
-  clear niv.
-  generalize (in_deq NVar deq_nvar v [cp,ca,cb]); intro k; destruct k as [k | k]; simpl in k.
-  (* v in list *)
-  assert ([(cp, x2), (ca, x1), (cb, x0), (v, x0)] = snoc [(cp, x2), (ca, x1), (cb, x0)] (v, x0)) as e by sp.
-  rw e; clear e.
-  rw @lsubst_snoc_dup; try (complete sp).
-  introv j; simpl in j; repdors; cpx; allrw @isprog_eq; sp.
-  allrw @isprog_eq; sp.
-  (* v not in list *)
-  allrw not_over_or; repnd.
-  allrw @isprog_vars_eq; repnd.
-  allrw subvars_prop; allsimpl.
-  rw @simple_lsubst_trim.
-  symmetry.
-  rw @simple_lsubst_trim.
-  simpl; boolvar; try (complete sp); discover; repdors; try subst; try (complete sp).
-  introv j; simpl in j; repdors; cpx; allrw @isprog_eq; allunfold @isprogram; repnd; allrw; simpl; try (complete sp).
-  introv j; simpl in j; repdors; cpx; allrw @isprog_eq; allunfold @isprogram; repnd; allrw; simpl; try (complete sp).
-  rw eq; sp.
-
-  introv k; repdors; cpx; try (complete sp);
-  allrw @isprog_eq; allunfold @isprogram; repnd; allrw; sp; simpl.
-  rw disjoint_singleton_l.
-  exact niv.
-
-  introv k; repdors; cpx; try (complete sp); allrw @isprog_eq; sp.
-
-  clear niv; simpl; rw @isprog_vars_eq; simpl; sp.
-
-  rw @isprog_vars_eq in i3; repnd.
-  rw subvars_prop in i6.
-  generalize (eqvars_free_vars_disjoint x3 [(cp, x2), (ca, x1), (cb, mk_var v)]); intro eqv.
-  rw subvars_prop; introv j; rw eqvars_prop in eqv; apply eqv in j.
-  rw in_single_iff.
-  rw in_app_iff in j; rw in_remove_nvars in j; repdors; repnd.
-  simpl in j0; repeat (rw not_over_or in j0); repnd; discover; allsimpl; sp.
-  apply in_sub_free_vars in j; exrepnd.
-  revert j0; simpl; boolvar; simpl; introv k; repdors; cpx;
-  allrw @isprog_eq; allunfold @isprogram; repnd; try cpx2.
-
-  allrw @isprog_eq; allrw @isprog_vars_eq; allunfold @isprogram; repnd.
-  apply lsubst_wf_iff; sp.
-  unfold wf_sub, sub_range_sat; simpl; introv k; repdors; cpx.
-Qed.
-
-Lemma param_w_ind {o} :
-  forall lib (P : @CTerm o) ap A bp ba B cp ca cb C (Q : CTerm -> CTerm -> CTerm -> [U]),
-    (forall p t1 t2 t3 t4, cequivc lib t1 t3 -> cequivc lib t2 t4 -> Q p t1 t2 -> Q p t3 t4)
-    -> (forall p a1 a2 f1 f2 vb,
-       equality lib a1 a2 (substc p ap A)
-       -> equality lib f1 f2 (mkc_function
-                            (lsubstc2 bp p ba a1 B)
-                            vb
-                            (mkc_pw_vs [vb]
-                                       P ap A bp ba B cp ca cb C
-                                       (lsubstc3v3 cp p ca a1 cb vb C)))
-       -> (forall b1 b2,
-             equality lib b1 b2 (lsubstc2 bp p ba a1 B)
-             -> Q (lsubstc3 cp p ca a1 cb b1 C)
-                  (mkc_apply f1 b1)
-                  (mkc_apply f2 b2))
-       -> Q p
-            (mkc_sup a1 f1)
-            (mkc_sup a2 f2))
-    -> (forall p w1 w2,
-          equality lib w1 w2 (mkc_pw P ap A bp ba B cp ca cb C p)
-          -> Q p w1 w2).
-Proof.
-  introv ceq ind e.
-  apply equality_in_pw in e; exrepnd.
-  induction e0; spcast.
-  apply ceq with (t1 := mkc_sup a1 f1) (t2 := mkc_sup a2 f2);
-    try (complete (apply cequivc_sym; apply computes_to_valc_implies_cequivc; sp)).
-
-  assert (eqa p p ep a2 a2)
-         as ea2
-         by (generalize (e2 p p ep); intro na;
-             apply (equality_eq_refl lib) with (A := substc p ap A) (B := substc p ap A) (b := a1); sp;
-             apply (equality_eq_sym lib) with (A := substc p ap A) (B := substc p ap A); sp).
-
-  assert ({v : NVar, !LIn v (bound_vars (get_cvterm [cp, ca, cb] C))})
-         as ev
-         by (exists (fresh_var (bound_vars (get_cvterm [cp, ca, cb] C)));
-             apply fresh_var_not_in); exrepnd.
-
-  apply ind with (vb := v); try (complete (exists (eqa p p ep); sp)).
-
-  rw @equality_in_function.
-  dands.
-
-  (* 1 *)
-  exists (eqb p p ep a1 a2 ea); sp.
-  generalize (e3 p p ep a1 a2 ea); intro n.
-  apply nuprl_refl in n; sp.
-
-  (* 2 *)
-  intros b b' eq.
-  rw @substc_mkc_pw_vs; simpl; try (complete sp).
-  rw @substc_mkc_pw_vs; simpl; try (complete sp).
-  exists (pweq lib eqp eqa eqb cp ca cb C (lsubstc3 cp p ca a1 cb b C)); sp.
-  apply CL_pw; unfold per_pw; unfold type_pfamily.
-  exists eqp eqa eqb (lsubstc3 cp p ca a1 cb b C) (lsubstc3 cp p ca a1 cb b' C).
-  exists cp cp ca ca cb cb C C; sp.
-  exists P P ap ap A A.
-  exists bp bp ba ba B B; sp; spcast; try (apply computes_to_valc_refl; apply iscvalue_mkc_pw).
-  assert (eqa p p ep a1 a1)
-         as ea1
-         by (eapply equality_eq_refl; eauto).
-  apply e4 with (ep := ep) (ea := ea1).
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a1 ea1); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a1 ea1))
-         as eqt
-         by (apply (nuprl_uniquely_valued lib) with (t := lsubstc2 bp p ba a1 B); sp;
-             allapply nuprl_refl; sp).
-  rw <- eqt; sp.
-
-  (* 3 *)
-  intros b b' eq.
-  rw @substc_mkc_pw_vs; simpl; try (complete sp).
-  apply equality_in_pw.
-  exists eqp eqa eqb; dands; try (complete sp).
-
-  assert (eqa p p ep a1 a1)
-         as ea1
-         by (eapply equality_eq_refl; eauto).
-  apply e4 with (ep := ep) (ea := ea1).
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a1 ea1); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a1 ea1))
-         as eqt
-         by (apply (nuprl_uniquely_valued lib) with (t := lsubstc2 bp p ba a1 B); sp;
-             allapply nuprl_refl; sp).
-  rw <- eqt; sp.
-  eapply equality_eq_refl; eauto.
-
-  apply_hyp.
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a2 ea); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a2 ea))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto;
-             allapply @nuprl_refl; sp).
-  rw <- eqt; sp.
-
-  (* 4 *)
-  intros b b' eq.
-  apply_hyp.
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a2 ea); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a2 ea))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto;
-             allapply @nuprl_refl; sp).
-  rw <- eqt; sp.
-
-  assert (eqa p p ep a1 a1)
-         as ea1
-         by (eapply equality_eq_refl; eauto).
-  apply e4 with (ep := ep) (ea := ea1).
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a1 ea1); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a1 ea1))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto;
-             allapply nuprl_refl; sp).
-  rw <- eqt; sp.
-  eapply equality_eq_refl; eauto.
-Qed.
-
-(* Not as useful as 3 because we don't have any constraint on vb *)
-Lemma param_w_ind2 {o} :
-  forall lib (P : @CTerm o) ap A bp ba B cp ca cb C (Q : CTerm -> CTerm -> CTerm -> CTerm -> [U]),
-    (forall p1 p2 t1 t2 t3 t4,
-       cequivc lib t1 t3 -> cequivc lib t2 t4 -> Q p1 p2 t1 t2 -> Q p1 p2 t3 t4)
-    -> (forall p1 p2 a1 a2 f1 f2 vb,
-       equality lib p1 p2 P
-       -> equality lib a1 a2 (substc p1 ap A)
-       -> equality lib f1 f2 (mkc_function
-                            (lsubstc2 bp p1 ba a1 B)
-                            vb
-                            (mkc_pw_vs [vb]
-                                       P ap A bp ba B cp ca cb C
-                                       (lsubstc3v3 cp p1 ca a1 cb vb C)))
-       -> (forall b1 b2,
-             equality lib b1 b2 (lsubstc2 bp p1 ba a1 B)
-             -> Q (lsubstc3 cp p1 ca a1 cb b1 C)
-                  (lsubstc3 cp p2 ca a2 cb b2 C)
-                  (mkc_apply f1 b1)
-                  (mkc_apply f2 b2))
-       -> Q p1
-            p2
-            (mkc_sup a1 f1)
-            (mkc_sup a2 f2))
-    -> (forall p1 p2 w1 w2,
-          equality lib p1 p2 P
-          -> equality lib w1 w2 (mkc_pw P ap A bp ba B cp ca cb C p1)
-          -> Q p1 p2 w1 w2).
-Proof.
-  introv ceq ind eqip e.
-  apply equality_in_pw in e; exrepnd.
-  revert_dependents p2.
-  induction e0; spcast.
-  introv eqip.
-  apply ceq with (t1 := mkc_sup a1 f1) (t2 := mkc_sup a2 f2);
-    try (complete (apply cequivc_sym; apply computes_to_valc_implies_cequivc; sp)).
-
-  assert (eqa p p ep a2 a2)
-         as ea2
-         by (generalize (e2 p p ep); intro na;
-             apply (equality_eq_refl lib) with (A := substc p ap A) (B := substc p ap A) (b := a1); sp;
-             eapply equality_eq_sym; eauto).
-
-  assert ({v : NVar, !LIn v (bound_vars (get_cvterm [cp, ca, cb] C))})
-         as ev
-         by (exists (fresh_var (bound_vars (get_cvterm [cp, ca, cb] C)));
-             apply fresh_var_not_in); exrepnd.
-
-  apply ind with (vb := v); try (complete sp); try (complete (exists (eqa p p ep); sp)).
-
-  rw @equality_in_function.
-  dands.
-
-  (* 1 *)
-  exists (eqb p p ep a1 a2 ea); sp.
-  generalize (e3 p p ep a1 a2 ea); intro n.
-  apply nuprl_refl in n; sp.
-
-  (* 2 *)
-  intros b b' eq.
-  rw @substc_mkc_pw_vs; simpl; try (complete sp).
-  rw @substc_mkc_pw_vs; simpl; try (complete sp).
-  exists (pweq lib eqp eqa eqb cp ca cb C (lsubstc3 cp p ca a1 cb b C)); sp.
-  apply CL_pw; unfold per_pw; unfold type_pfamily.
-  exists eqp eqa eqb (lsubstc3 cp p ca a1 cb b C) (lsubstc3 cp p ca a1 cb b' C).
-  exists cp cp ca ca cb cb C C; sp.
-  exists P P ap ap A A.
-  exists bp bp ba ba B B; sp; spcast; try (apply computes_to_valc_refl; apply iscvalue_mkc_pw).
-  assert (eqa p p ep a1 a1)
-         as ea1
-         by (eapply equality_eq_refl; eauto).
-  apply e4 with (ep := ep) (ea := ea1).
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a1 ea1); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a1 ea1))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto;
-             allapply nuprl_refl; sp).
-  rw <- eqt; sp.
-
-  (* 3 *)
-  intros b b' eq.
-  rw @substc_mkc_pw_vs; simpl; try (complete sp).
-  apply equality_in_pw.
-  exists eqp eqa eqb; dands; try (complete sp).
-
-  assert (eqa p p ep a1 a1)
-         as ea1
-         by (eapply equality_eq_refl; eauto).
-  apply e4 with (ep := ep) (ea := ea1).
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a1 ea1); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a1 ea1))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto;
-             allapply nuprl_refl; sp).
-  rw <- eqt; sp.
-  eapply equality_eq_refl; eauto.
-
-  apply_hyp.
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a2 ea); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a2 ea))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto;
-             allapply @nuprl_refl; sp).
-  rw <- eqt; sp.
-
-  (* 4 *)
-  intros b b' eq.
-  apply_hyp.
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a2 ea); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a2 ea))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto;
-             allapply @nuprl_refl; sp).
-  rw <- eqt; sp.
-
-  assert (eqa p p ep a1 a1)
-         as ea1
-         by (eapply equality_eq_refl; eauto).
-  apply e4 with (ep := ep) (ea := ea1).
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a1 ea1); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a1 ea1))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto;
-             allapply nuprl_refl; sp).
-  rw <- eqt; sp.
-  eapply equality_eq_refl; eauto.
-
-  generalize (equality_eq lib P p p2 eqp); intro ip.
-  dest_imp ip hyp.
-  apply ip in eqip; clear ip.
-
-  assert (eqa p p2 eqip a1 a2) as eqia.
-  generalize (e2 p p2 eqip); intro n1.
-  generalize (e2 p p ep); intro n2.
-  apply nuprl_uniquely_valued with (eq1 := eqa p p2 eqip) in n2.
-  dup ea as eqia.
-  rw <- n2 in eqia; sp.
-  allapply @nuprl_refl; sp.
-
-  assert (eqb p p2 eqip a1 a2 eqia b b') as eqib.
-  generalize (e3 p p2 eqip a1 a2 eqia); intro n.
-  apply nuprl_refl in n.
-  apply @equality_eq with (a := b) (b := b') in n.
-  rw <- n in eq; sp.
-
-  generalize (e4 p p2 eqip a1 a2 eqia b b' eqib); intro e.
-  exists eqp; sp.
-Qed.
-
-(* This version is the most useful one so far *)
-Lemma param_w_ind3 {o} :
-  forall lib (P : @CTerm o) ap A bp ba B cp ca cb C (Q : CTerm -> CTerm -> CTerm -> CTerm -> [U]),
-    (forall p1 p2 t1 t2 t3 t4,
-       cequivc lib t1 t3 -> cequivc lib t2 t4 -> Q p1 p2 t1 t2 -> Q p1 p2 t3 t4)
-    -> (forall p1 p2 a1 a2 f1 f2 vb,
-          !LIn vb (bound_vars (get_cvterm [cp, ca, cb] C))
-          -> equality lib p1 p2 P
-          -> equality lib a1 a2 (substc p1 ap A)
-          -> equality lib f1 f2 (mkc_function
-                               (lsubstc2 bp p1 ba a1 B)
-                               vb
-                               (mkc_pw_vs [vb]
-                                          P ap A bp ba B cp ca cb C
-                                          (lsubstc3v3 cp p1 ca a1 cb vb C)))
-          -> (forall b1 b2,
-                equality lib b1 b2 (lsubstc2 bp p1 ba a1 B)
-                -> Q (lsubstc3 cp p1 ca a1 cb b1 C)
-                     (lsubstc3 cp p2 ca a2 cb b2 C)
-                     (mkc_apply f1 b1)
-                     (mkc_apply f2 b2))
-          -> Q p1
-               p2
-               (mkc_sup a1 f1)
-               (mkc_sup a2 f2))
-    -> (forall p1 p2 w1 w2,
-          equality lib p1 p2 P
-          -> equality lib w1 w2 (mkc_pw P ap A bp ba B cp ca cb C p1)
-          -> Q p1 p2 w1 w2).
-Proof.
-  introv ceq ind eqip e.
-  apply equality_in_pw in e; exrepnd.
-  revert_dependents p2.
-  induction e0; spcast.
-  introv eqip.
-  apply ceq with (t1 := mkc_sup a1 f1) (t2 := mkc_sup a2 f2);
-    try (complete (apply cequivc_sym; apply computes_to_valc_implies_cequivc; sp)).
-
-  assert (eqa p p ep a2 a2)
-         as ea2
-         by (generalize (e2 p p ep); intro na;
-             apply (equality_eq_refl lib) with (A := substc p ap A) (B := substc p ap A) (b := a1); sp;
-             apply (equality_eq_sym lib) with (A := substc p ap A) (B := substc p ap A); sp).
-
-  assert ({v : NVar, !LIn v (bound_vars (get_cvterm [cp, ca, cb] C))})
-         as ev
-         by (exists (fresh_var (bound_vars (get_cvterm [cp, ca, cb] C)));
-             apply fresh_var_not_in); exrepnd.
-
-  apply ind with (vb := v); try (complete sp); try (complete (exists (eqa p p ep); sp)).
-
-  rw @equality_in_function.
-  dands.
-
-  (* 1 *)
-  exists (eqb p p ep a1 a2 ea); sp.
-  generalize (e3 p p ep a1 a2 ea); intro n.
-  apply nuprl_refl in n; sp.
-
-  (* 2 *)
-  intros b b' eq.
-  rw @substc_mkc_pw_vs; simpl; try (complete sp).
-  rw @substc_mkc_pw_vs; simpl; try (complete sp).
-  exists (pweq lib eqp eqa eqb cp ca cb C (lsubstc3 cp p ca a1 cb b C)); sp.
-  apply CL_pw; unfold per_pw; unfold type_pfamily.
-  exists eqp eqa eqb (lsubstc3 cp p ca a1 cb b C) (lsubstc3 cp p ca a1 cb b' C).
-  exists cp cp ca ca cb cb C C; sp.
-  exists P P ap ap A A.
-  exists bp bp ba ba B B; sp; spcast; try (apply computes_to_valc_refl; apply iscvalue_mkc_pw).
-  assert (eqa p p ep a1 a1)
-         as ea1
-         by (eapply equality_eq_refl; eauto).
-  apply e4 with (ep := ep) (ea := ea1).
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a1 ea1); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a1 ea1))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto; allapply nuprl_refl; sp).
-  rw <- eqt; sp.
-
-  (* 3 *)
-  intros b b' eq.
-  rw @substc_mkc_pw_vs; simpl; try (complete sp).
-  apply equality_in_pw.
-  exists eqp eqa eqb; dands; try (complete sp).
-
-  assert (eqa p p ep a1 a1)
-         as ea1 by (eapply equality_eq_refl; eauto).
-  apply e4 with (ep := ep) (ea := ea1).
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a1 ea1); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a1 ea1))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto;
-             allapply nuprl_refl; sp).
-  rw <- eqt; sp.
-  eapply equality_eq_refl; eauto.
-
-  apply_hyp.
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a2 ea); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a2 ea))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto;
-             allapply @nuprl_refl; sp).
-  rw <- eqt; sp.
-
-  (* 4 *)
-  intros b b' eq.
-  apply_hyp.
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a2 ea); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a2 ea))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto;
-             allapply @nuprl_refl; sp).
-  rw <- eqt; sp.
-
-  assert (eqa p p ep a1 a1)
-         as ea1
-         by (eapply equality_eq_refl; eauto).
-  apply e4 with (ep := ep) (ea := ea1).
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a1 ea1); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a1 ea1))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto;
-             allapply nuprl_refl; sp).
-  rw <- eqt; sp.
-  eapply equality_eq_refl; eauto.
-
-  generalize (equality_eq lib P p p2 eqp); intro ip.
-  dest_imp ip hyp.
-  apply ip in eqip; clear ip.
-
-  assert (eqa p p2 eqip a1 a2) as eqia.
-  generalize (e2 p p2 eqip); intro n1.
-  generalize (e2 p p ep); intro n2.
-  apply nuprl_uniquely_valued with (eq1 := eqa p p2 eqip) in n2.
-  dup ea as eqia.
-  rw <- n2 in eqia; sp.
-  allapply @nuprl_refl; sp.
-
-  assert (eqb p p2 eqip a1 a2 eqia b b') as eqib.
-  generalize (e3 p p2 eqip a1 a2 eqia); intro n.
-  apply nuprl_refl in n.
-  apply @equality_eq with (a := b) (b := b') in n.
-  rw <- n in eq; sp.
-
-  generalize (e4 p p2 eqip a1 a2 eqia b b' eqib); intro e.
-  exists eqp; sp.
-Qed.
-
-(* slightly better than 3 because we can provide a list of variables that
- * v has to be disjoint with *)
-Lemma param_w_ind4 {o} :
-  forall lib (P : @CTerm o) ap A bp ba B cp ca cb C (Q : CTerm -> CTerm -> CTerm -> CTerm -> [U]) vs,
-    (forall p1 p2 t1 t2 t3 t4,
-       cequivc lib t1 t3 -> cequivc lib t2 t4 -> Q p1 p2 t1 t2 -> Q p1 p2 t3 t4)
-    -> (forall p1 p2 a1 a2 f1 f2 vb,
-          !LIn vb vs
-          -> equality lib p1 p2 P
-          -> equality lib a1 a2 (substc p1 ap A)
-          -> equality lib f1 f2 (mkc_function
-                               (lsubstc2 bp p1 ba a1 B)
-                               vb
-                               (mkc_pw_vs [vb]
-                                          P ap A bp ba B cp ca cb C
-                                          (lsubstc3v3 cp p1 ca a1 cb vb C)))
-          -> (forall b1 b2,
-                equality lib b1 b2 (lsubstc2 bp p1 ba a1 B)
-                -> Q (lsubstc3 cp p1 ca a1 cb b1 C)
-                     (lsubstc3 cp p2 ca a2 cb b2 C)
-                     (mkc_apply f1 b1)
-                     (mkc_apply f2 b2))
-          -> Q p1
-               p2
-               (mkc_sup a1 f1)
-               (mkc_sup a2 f2))
-    -> (forall p1 p2 w1 w2,
-          equality lib p1 p2 P
-          -> equality lib w1 w2 (mkc_pw P ap A bp ba B cp ca cb C p1)
-          -> Q p1 p2 w1 w2).
-Proof.
-  introv ceq ind eqip e.
-  apply equality_in_pw in e; exrepnd.
-  revert_dependents p2.
-  induction e0; spcast.
-  introv eqip.
-  apply ceq with (t1 := mkc_sup a1 f1) (t2 := mkc_sup a2 f2);
-    try (complete (apply cequivc_sym; apply computes_to_valc_implies_cequivc; sp)).
-
-  assert (eqa p p ep a2 a2)
-         as ea2
-         by (generalize (e2 p p ep); intro na;
-             apply (equality_eq_refl lib) with (A := substc p ap A) (B := substc p ap A) (b := a1); sp;
-             apply (equality_eq_sym lib) with (A := substc p ap A) (B := substc p ap A); sp).
-
-  assert ({v : NVar, !LIn v (bound_vars (get_cvterm [cp, ca, cb] C) ++ vs)})
-         as ev
-         by (exists (fresh_var (bound_vars (get_cvterm [cp, ca, cb] C) ++ vs));
-             apply fresh_var_not_in); exrepnd.
-
-  allrw in_app_iff.
-
-  apply ind with (vb := v);
-    try (complete sp);
-    try (complete (exists (eqa p p ep); sp)).
-
-  rw @equality_in_function.
-  dands.
-
-  (* 1 *)
-  exists (eqb p p ep a1 a2 ea); sp.
-  generalize (e3 p p ep a1 a2 ea); intro n.
-  apply nuprl_refl in n; sp.
-
-  (* 2 *)
-  intros b b' eq.
-  rw @substc_mkc_pw_vs; simpl; try (complete sp).
-  rw @substc_mkc_pw_vs; simpl; try (complete sp).
-  exists (pweq lib eqp eqa eqb cp ca cb C (lsubstc3 cp p ca a1 cb b C)); sp.
-  apply CL_pw; unfold per_pw; unfold type_pfamily.
-  exists eqp eqa eqb (lsubstc3 cp p ca a1 cb b C) (lsubstc3 cp p ca a1 cb b' C).
-  exists cp cp ca ca cb cb C C; sp.
-  exists P P ap ap A A.
-  exists bp bp ba ba B B; sp; spcast; try (apply computes_to_valc_refl; apply iscvalue_mkc_pw).
-  assert (eqa p p ep a1 a1)
-         as ea1 by (eapply equality_eq_refl; eauto).
-  apply e4 with (ep := ep) (ea := ea1).
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a1 ea1); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a1 ea1))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto; allapply nuprl_refl; sp).
-  rw <- eqt; sp.
-
-  (* 3 *)
-  intros b b' eq.
-  rw @substc_mkc_pw_vs; simpl; try (complete sp).
-  apply equality_in_pw.
-  exists eqp eqa eqb; dands; try (complete sp).
-
-  assert (eqa p p ep a1 a1)
-         as ea1 by (eapply equality_eq_refl; eauto).
-  apply e4 with (ep := ep) (ea := ea1).
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a1 ea1); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a1 ea1))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto; allapply nuprl_refl; sp).
-  rw <- eqt; sp.
-  eapply equality_eq_refl; eauto.
-
-  apply_hyp.
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a2 ea); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a2 ea))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto; allapply @nuprl_refl; sp).
-  rw <- eqt; sp.
-
-  (* 4 *)
-  intros b b' eq.
-  apply_hyp.
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a2 ea); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a2 ea))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto; allapply @nuprl_refl; sp).
-  rw <- eqt; sp.
-
-  assert (eqa p p ep a1 a1)
-         as ea1 by (eapply equality_eq_refl; eauto).
-  apply e4 with (ep := ep) (ea := ea1).
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a1 ea1); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a1 ea1))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto; allapply nuprl_refl; sp).
-  rw <- eqt; sp.
-  eapply equality_eq_refl; eauto.
-
-  generalize (equality_eq lib P p p2 eqp); intro ip.
-  dest_imp ip hyp.
-  apply ip in eqip; clear ip.
-
-  assert (eqa p p2 eqip a1 a2) as eqia.
-  generalize (e2 p p2 eqip); intro n1.
-  generalize (e2 p p ep); intro n2.
-  apply nuprl_uniquely_valued with (eq1 := eqa p p2 eqip) in n2.
-  dup ea as eqia.
-  rw <- n2 in eqia; sp.
-  allapply @nuprl_refl; sp.
-
-  assert (eqb p p2 eqip a1 a2 eqia b b') as eqib.
-  generalize (e3 p p2 eqip a1 a2 eqia); intro n.
-  apply nuprl_refl in n.
-  apply @equality_eq with (a := b) (b := b') in n.
-  rw <- n in eq; sp.
-
-  generalize (e4 p p2 eqip a1 a2 eqia b b' eqib); intro e.
-  exists eqp; sp.
-Qed.
-
-(* Useless *)
-Lemma param_w_ind5 {o} :
-  forall lib (P : @CTerm o) ap A bp ba B cp ca cb C (Q : CTerm -> CTerm -> [U]),
-    (forall p t1 t2,
-       cequivc lib t1 t2 -> Q p t1 -> Q p t2)
-    -> (forall p1 p2 a1 a2 f1 f2 vb,
-          !LIn vb (bound_vars (get_cvterm [cp, ca, cb] C))
-          -> equality lib p1 p2 P
-          -> equality lib a1 a2 (substc p1 ap A)
-          -> equality lib f1 f2 (mkc_function
-                               (lsubstc2 bp p1 ba a1 B)
-                               vb
-                               (mkc_pw_vs [vb]
-                                          P ap A bp ba B cp ca cb C
-                                          (lsubstc3v3 cp p1 ca a1 cb vb C)))
-          -> (forall b1 b2,
-                equality lib b1 b2 (lsubstc2 bp p1 ba a1 B)
-                -> equality lib p1 p2 P
-                -> Q (lsubstc3 cp p1 ca a1 cb b1 C)
-                     (mkc_apply f1 b1))
-          -> Q p1
-               (mkc_sup a1 f1))
-    -> (forall p1 p2 w1 w2,
-          equality lib p1 p2 P
-          -> equality lib w1 w2 (mkc_pw P ap A bp ba B cp ca cb C p1)
-          -> Q p1 w1).
-Proof.
-  introv ceq ind eqip e.
-  apply equality_in_pw in e; exrepnd.
-  revert_dependents p2.
-  induction e0 as [ p t1 t2 ep a1 f1 a2 f2 ea c1 c2 i r ]; spcast.
-  introv eqip.
-  apply ceq with (t1 := mkc_sup a1 f1);
-    try (complete (apply cequivc_sym; apply computes_to_valc_implies_cequivc; sp)).
-
-  assert (eqa p p ep a2 a2)
-         as ea2
-         by (generalize (e2 p p ep); intro na;
-             apply (equality_eq_refl lib) with (A := substc p ap A) (B := substc p ap A) (b := a1); sp;
-             apply (equality_eq_sym lib) with (A := substc p ap A) (B := substc p ap A); sp).
-
-  assert ({v : NVar, !LIn v (bound_vars (get_cvterm [cp, ca, cb] C))})
-         as ev
-         by (exists (fresh_var (bound_vars (get_cvterm [cp, ca, cb] C)));
-             apply fresh_var_not_in); exrepnd.
-
-  apply ind with (vb := v) (p2 := p2) (a2 := a2) (f2 := f2);
-    try (complete sp); try (complete (exists (eqa p p ep); sp)).
-
-  rw @equality_in_function.
-  dands.
-
-  (* 1 *)
-  exists (eqb p p ep a1 a2 ea); sp.
-  generalize (e3 p p ep a1 a2 ea); intro n.
-  apply nuprl_refl in n; sp.
-
-  (* 2 *)
-  intros b b' eq.
-  rw @substc_mkc_pw_vs; simpl; try (complete sp).
-  rw @substc_mkc_pw_vs; simpl; try (complete sp).
-  exists (pweq lib eqp eqa eqb cp ca cb C (lsubstc3 cp p ca a1 cb b C)); sp.
-  apply CL_pw; unfold per_pw; unfold type_pfamily.
-  exists eqp eqa eqb (lsubstc3 cp p ca a1 cb b C) (lsubstc3 cp p ca a1 cb b' C).
-  exists cp cp ca ca cb cb C C; sp.
-  exists P P ap ap A A.
-  exists bp bp ba ba B B; sp; spcast; try (apply computes_to_valc_refl; apply iscvalue_mkc_pw).
-  assert (eqa p p ep a1 a1)
-         as ea1 by (eapply equality_eq_refl; eauto).
-  apply e4 with (ep := ep) (ea := ea1).
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a1 ea1); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a1 ea1))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto; allapply nuprl_refl; sp).
-  rw <- eqt; sp.
-
-  (* 3 *)
-  intros b b' eq.
-  rw @substc_mkc_pw_vs; simpl; try (complete sp).
-  apply equality_in_pw.
-  exists eqp eqa eqb; dands; try (complete sp).
-
-  assert (eqa p p ep a1 a1)
-         as ea1 by (eapply equality_eq_refl; eauto).
-  apply e4 with (ep := ep) (ea := ea1).
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a1 ea1); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a1 ea1))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto; allapply nuprl_refl; sp).
-  rw <- eqt; sp.
-  eapply equality_eq_refl; eauto.
-
-  apply_hyp.
-  unfold equality in eq; exrepnd.
-  generalize (e3 p p ep a1 a2 ea); intro n.
-  assert (eq_term_equals eq0 (eqb p p ep a1 a2 ea))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto; allapply @nuprl_refl; sp).
-  rw <- eqt; sp.
-
-  (* 4 *)
-  intros b b' eib eip.
-  apply r with (b2 := b') (p2 := lsubstc3 cp p2 ca a2 cb b' C).
-  unfold equality in eib; exrepnd.
-  generalize (e3 p p ep a1 a2 ea); intro n.
-  assert (eq_term_equals eq (eqb p p ep a1 a2 ea))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto; allapply @nuprl_refl; sp).
-  rw <- eqt; sp.
-
-  assert (eqa p p ep a1 a1)
-         as ea1 by (eapply equality_eq_refl; eauto).
-  apply e4 with (ep := ep) (ea := ea1).
-  unfold equality in eib; exrepnd.
-  generalize (e3 p p ep a1 a1 ea1); intro n.
-  assert (eq_term_equals eq (eqb p p ep a1 a1 ea1))
-         as eqt
-         by (eapply nuprl_uniquely_valued; eauto; allapply nuprl_refl; sp).
-  rw <- eqt; sp.
-  eapply equality_eq_refl; eauto.
-
-  generalize (equality_eq lib P p p2 eqp); intro ip.
-  dest_imp ip hyp.
-  apply ip in eqip; clear ip.
-
-  assert (eqa p p2 eqip a1 a2) as eqia.
-  generalize (e2 p p2 eqip); intro n1.
-  generalize (e2 p p ep); intro n2.
-  apply nuprl_uniquely_valued with (eq1 := eqa p p2 eqip) in n2.
-  dup ea as eqia.
-  rw <- n2 in eqia; sp.
-  allapply @nuprl_refl; sp.
-
-  assert (eqb p p2 eqip a1 a2 eqia b b') as eqib.
-  generalize (e3 p p2 eqip a1 a2 eqia); intro n.
-  apply nuprl_refl in n.
-  apply @equality_eq with (a := b) (b := b') in n.
-  rw <- n in eib; sp.
-
-  generalize (e4 p p2 eqip a1 a2 eqia b b' eqib); intro e.
-  exists eqp; sp.
-Qed.
-
-Lemma weq_implies {p} :
-  forall lib (eqa1 eqa2 : per(p)) eqb1 eqb2,
-    eq_term_equals eqa1 eqa2
-    -> (forall (a a' : CTerm) (ea1 : eqa1 a a') (ea2 : eqa2 a a'),
-          eq_term_equals (eqb1 a a' ea1) (eqb2 a a' ea2))
-    -> forall t1 t2,
-         weq lib eqa1 eqb1 t1 t2
-         -> weq lib eqa2 eqb2 t1 t2.
-Proof.
-  introv eqia eqib weq1.
-  induction weq1.
-
-  assert (eqa2 a a') as ea2 by (allrw <-; sp).
-
-  apply @weq_cons
-        with
-        (a  := a)
-        (f  := f)
-        (a' := a')
-        (f' := f')
-        (e  := ea2);
-    try (complete sp).
-
-  introv eia.
-
-  apply_hyp.
-  generalize (eqib a a' e ea2); intro eqt; allrw; sp.
-Qed.
-
-Lemma eq_term_equals_weq {p} :
-  forall lib (eqa1 eqa2 : per(p)) eqb1 eqb2,
-    eq_term_equals eqa1 eqa2
-    -> (forall (a a' : CTerm) (ea1 : eqa1 a a') (ea2 : eqa2 a a'),
-          eq_term_equals (eqb1 a a' ea1) (eqb2 a a' ea2))
-    -> eq_term_equals (weq lib eqa1 eqb1)
-                      (weq lib eqa2 eqb2).
-Proof.
-  introv eqia eqib.
-  unfold eq_term_equals; introv; split; intro k.
-  apply @weq_implies with (eqa1 := eqa1) (eqb1 := eqb1); sp.
-
-  apply @weq_implies with (eqa1 := eqa2) (eqb1 := eqb2); sp;
-  apply eq_term_equals_sym; sp.
-Qed.
-
-Lemma equality_in_w_v1 {p} :
-  forall lib A v B (t1 t2 : @CTerm p),
-    equality lib t1 t2 (mkc_w A v B)
-    <=> {a1, a2, f1, f2 : CTerm
-         , t1 ===>(lib) (mkc_sup a1 f1)
-         # t2 ===>(lib) (mkc_sup a2 f2)
-         # equality lib a1 a2 A
-         # equality lib f1 f2 (mkc_fun (substc a1 v B) (mkc_w A v B))
-         # (forall a a', equality lib a a' A -> tequality lib (substc a v B) (substc a' v B))}.
-Proof.
-  introv; split; intro e.
-
-  - unfold equality in e; exrepnd.
-    inversion e1; try not_univ.
-    allunfold @per_w; exrepnd.
-    allunfold @type_family; exrepnd.
-    allfold (@nuprl p lib).
-    computes_to_value_isvalue.
-    allunfold @eq_term_equals; discover.
-    destruct h.
-    exists a a' f f'; sp.
-    exists eqa; sp.
-    rw <- @fold_mkc_fun.
-    rw @equality_in_function; dands.
-
-    exists (eqb a a' e).
-    apply @nuprl_refl with (t2 := substc a' v0 B0); sp.
-
-    intros b1 b2 eib.
-    generalize (equality_eq1 lib (substc a v0 B0) (substc a' v0 B0) b1 b2 (eqb a a' e));
-      intro k; repeat (dest_imp k hyp).
-    discover.
-    allrw @substc_cnewvar.
-    exists eq; sp.
-
-    intros b1 b2 eib.
-    allrw @substc_cnewvar.
-    exists eq; sp.
-    allrw.
-    apply_hyp.
-    generalize (equality_eq1 lib (substc a v0 B0) (substc a' v0 B0) b1 b2 (eqb a a' e));
-      intro k; repeat (dest_imp k hyp).
-    discover; sp.
-
-    allunfold @equality; exrepnd.
-    generalize (nuprl_uniquely_valued lib A0 eq0 eqa); introv k; repeat (dest_imp k hyp).
-    assert (eqa a0 a'0) as ea by (allrw <-; sp).
-    exists (eqb a0 a'0 ea); sp.
-
-  - exrepnd.
-    unfold equality in e3; exrepnd.
-    rename eq into eqa.
-
-    generalize (choice_teq lib A v B v B e1); intro n; exrepnd.
-
-    exists (weq lib eqa (fun a a' ea => f a a' (eq_equality1 lib a a' A eqa ea e3))); dands.
-
-    apply CL_w; unfold per_w.
-    exists eqa.
-    exists (fun a a' ea => f a a' (eq_equality1 lib a a' A eqa ea e3)); sp.
-    unfold type_family.
-    fold (@nuprl p lib).
-    exists A A v v B B; sp;
-    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_w))).
-
-    apply @weq_cons with (a := a1) (f := f1) (a' := a2) (f' := f2) (e := e5); sp.
-    generalize (n0 a1 a2 (eq_equality1 lib a1 a2 A eqa e5 e3)); intro n.
-    rw <- @fold_mkc_fun in e4.
-    rw @equality_in_function in e4; repnd.
-    generalize (e4 b b'); intro k.
-    dest_imp k hyp.
-    exists (f a1 a2 (eq_equality1 lib a1 a2 A eqa e5 e3)); sp.
-    allapply @nuprl_refl; sp.
-    allrw @substc_cnewvar.
-    unfold equality in k; exrepnd.
-    inversion k1; try not_univ.
-    allunfold @per_w; exrepnd.
-    allunfold @type_family; exrepnd; allfold (@nuprl p lib).
-    computes_to_value_isvalue.
-    allunfold @eq_term_equals; discover.
-
-    assert (eq_term_equals eqa0 eqa)
-           as eqta by (eapply nuprl_uniquely_valued; eauto).
-
-    assert (forall (a a' : CTerm) (ea : eqa a a') (ea' : eqa0 a a'),
-              eq_term_equals (f a a' (eq_equality1 lib a a' A0 eqa ea e3)) (eqb a a' ea'))
-           as eqtb.
-    introv.
-    generalize (n0 a a' (eq_equality1 lib a a' A0 eqa ea e3)); intro n1.
-    assert (nuprl lib (substc a v0 B0) (substc a' v0 B0) (eqb a a' ea')) as n2 by sp.
-    apply (nuprl_uniquely_valued lib) with (t := substc a v0 B0); sp; allapply @nuprl_refl; sp.
-    apply weq_implies with (eqa1 := eqa0) (eqb1 := eqb); sp.
-    apply eq_term_equals_sym; sp.
-Qed.
-
-Lemma tequality_mkc_w {p} :
-  forall lib (A1 : @CTerm p) v1 B1
-         A2 v2 B2,
-    tequality lib
-      (mkc_w A1 v1 B1)
-      (mkc_w A2 v2 B2)
-    <=>
-    (tequality lib A1 A2
-     # (forall a1 a2,
-        equality lib a1 a2 A1
-        -> tequality lib (substc a1 v1 B1) (substc a2 v2 B2))).
-Proof.
-  introv; split; intro e; repnd.
-
-  - unfold tequality in e; exrepnd.
-    unfold nuprl in e0.
-    inversion e0; try not_univ.
-    allunfold @per_w; exrepnd.
-    allunfold @type_family; exrepnd; spcast; allfold (@nuprl p lib).
-    computes_to_value_isvalue.
-    dands.
-
-    + allapply @tequality_if_nuprl; sp.
-
-    + introv eia.
-      generalize (equality_eq1 lib A A' a1 a2 eqa); intro i; dest_imp i hyp.
-      rw <- i in eia.
-      exists (eqb a1 a2 eia); sp.
-
-  - unfold tequality.
-    unfold tequality in e0; exrepnd.
-    rename eq into eqa.
-
-    generalize (choice_teq1 lib A1 eqa v1 B1 v2 B2); intro neqb.
-    dest_imp neqb hyp; try (complete (allapply @nuprl_refl; sp)).
-    dest_imp neqb hyp; exrepnd.
-    rename f into eqb.
-
-    exists (weq lib eqa eqb).
-    apply CL_w; unfold per_w.
-    exists eqa eqb; sp.
-    unfold type_family.
-    exists A1 A2 v1 v2 B1 B2; dands;
-    try (complete sp);
-    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_w))).
-Qed.

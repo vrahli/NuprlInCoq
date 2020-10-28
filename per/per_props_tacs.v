@@ -95,6 +95,27 @@ Proof.
 Qed.
 Hint Resolve iscvalue_qtime : slow.
 
+Lemma cequivc_mkc_w_implies {o} :
+  forall lib (T A : @CTerm o) (v : NVar) (B : CVTerm [v]),
+    cequivc lib (mkc_w A v B) T
+    -> {A' : CTerm $ {v' : NVar $ {B' : CVTerm [v'] $
+        computes_to_valc lib T (mkc_w A' v' B')
+        # cequivc lib A A' # bcequivc lib [v] B [v'] B'}}}.
+Proof.
+  introv ceq.
+  eapply cequivc_mkc_w in ceq;[|apply computes_to_valc_refl;eauto 3 with slow];auto.
+Qed.
+
+Lemma ccequivc_ext_mkc_w_implies {o} :
+  forall lib (A A' : @CTerm o) v v' B B',
+    ccequivc_ext lib (mkc_w A v B) (mkc_w A' v' B')
+    -> ccequivc_ext lib A A' # bcequivc_ext lib [v] B [v'] B'.
+Proof.
+  introv ceq; dands; introv ext; apply ceq in ext; simpl in *; spcast;
+    apply cequivc_mkc_w_implies in ext; exrepnd;
+      apply computes_to_valc_isvalue_eq in ext1; eauto 3 with slow; eqconstr ext1; auto.
+Qed.
+
 
 Ltac ccomputes_to_valc_ext_val :=
   match goal with
@@ -105,6 +126,15 @@ Ltac ccomputes_to_valc_ext_val :=
 
   | [ H : ccequivc_ext _ (mkc_function _ _ _) (mkc_function _ _ _) |- _ ] =>
     apply ccequivc_ext_mkc_function_implies in H;
+    repnd
+
+  | [ H : (mkc_w _ _ _) ===>(_) (mkc_w _ _ _) |- _ ] =>
+    apply ccomputes_to_valc_ext_implies_ccequivc_ext in H;
+    apply ccequivc_ext_mkc_w_implies in H;
+    repnd
+
+  | [ H : ccequivc_ext _ (mkc_w _ _ _) (mkc_w _ _ _) |- _ ] =>
+    apply ccequivc_ext_mkc_w_implies in H;
     repnd
 
   | [ H : (mkc_product _ _ _) ===>(_) (mkc_product _ _ _) |- _ ] =>
