@@ -1449,6 +1449,53 @@ Proof.
   exists k0; dands; spcast; eauto 3 with slow.
 Qed.
 
+Lemma implies_member_nat2nat_bar2_iff {o} :
+  forall lib (f : @CTerm o),
+    all_in_ex_bar
+      lib
+      (fun lib =>
+         forall m,
+           all_in_ex_bar
+             lib
+             (fun lib => {k : nat , ccomputes_to_valc lib (mkc_apply f (mkc_nat m)) (mkc_nat k)}))
+    <=> member lib f nat2nat.
+Proof.
+  introv.
+  split; introv h; try apply implies_member_nat2nat_bar2; auto.
+  apply equality_in_fun in h; repnd.
+
+  clear h0 h1.
+  apply in_ext_implies_all_in_ex_bar; introv ext; introv.
+  pose proof (h _ ext) as h.
+  pose proof (h (mkc_nat m) (mkc_nat m)) as h.
+  autodimp h hyp; eauto 3 with slow;[].
+
+  apply equality_in_tnat in h.
+  eapply all_in_ex_bar_modus_ponens1; eauto; clear h; introv xt h.
+  unfold equality_of_nat in h; exrepnd; GC; eauto.
+Qed.
+
+Lemma implies_member_nat2nat_bar2_iff2 {o} :
+  forall lib (f : @CTerm o),
+    (forall m,
+        all_in_ex_bar
+          lib
+          (fun lib => {k : nat , ccomputes_to_valc lib (mkc_apply f (mkc_nat m)) (mkc_nat k)}))
+    <=> member lib f nat2nat.
+Proof.
+  introv.
+  rw <- @implies_member_nat2nat_bar2_iff; split; introv h.
+
+  { apply in_ext_implies_all_in_ex_bar; introv ext; introv.
+    pose proof (h m) as h; eauto 3 with slow. }
+
+  { introv.
+    apply collapse_all_in_ex_bar.
+    eapply all_in_ex_bar_modus_ponens1; eauto; clear h.
+    introv ext h.
+    pose proof (h m) as h; auto. }
+Qed.
+
 Lemma mkc_choice_seq_in_nat2nat {o} :
   forall (lib : @library o) (name : choice_sequence_name),
     compatible_choice_sequence_name 0 name

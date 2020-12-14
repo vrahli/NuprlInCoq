@@ -977,7 +977,7 @@ Proof.
     repeat (autodimp w hyp); eauto 2 with wf.
     applydup w in comp0; clear w; exrepnd.
 
-    eexists; dands;[rw @reduces_in_atmost_k_steps_S;eexists; dands; eauto|].
+    eexists; dands;[apply reduces_in_atmost_k_steps_S;eexists; dands; eauto|].
     eauto 2 with slow.
 Qed.
 
