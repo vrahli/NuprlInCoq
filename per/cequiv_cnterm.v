@@ -34,10 +34,6 @@ Require Export per_props_nat.
 Require Export seq_util.
 
 
-Definition cnterm2cterm {o} (t : @CNTerm o) : CTerm :=
-  let (x,p) := t in
-  mk_ct x (isprog_nout_implies_isprog x p).
-
 Definition cnout_cterm {o} (t : @CNTerm o) : CTerm := cnterm2cterm t.
 Definition cnout_term {o} (t : @CNTerm o) : NTerm := get_cterm (cnout_cterm t).
 

@@ -180,7 +180,807 @@ Inductive per_semantics : term_equality -> NTerm -> NTerm -> Prop :=
 
 (* begin hide *)
 
-Definition term_equality {p} := @CTerm p -> @CTerm p -> [U].
+Definition cterm {o} := @CNTerm o.
+
+Definition cnterm2cterm {o} (t : @CNTerm o) : CTerm :=
+  let (x,p) := t in
+  mk_ct x (isprog_nout_implies_isprog x p).
+
+Definition cterm2CTerm {o} (t : @cterm o) : @CTerm o := cnterm2cterm t.
+(*Coercion cterm2CTerm : cterm >-> CTerm.*)
+
+Definition isprog_nout_vars {o} vs (t : @NTerm o) :=
+  assert (sub_vars (free_vars t) vs) # assert (nullb (get_utokens t)) # wf_term t.
+
+Lemma isprog_nout_vars_implies_isprog_vars {o} :
+  forall vs (t : @NTerm o),
+    isprog_nout_vars vs t
+    -> isprog_vars vs t.
+Proof.
+  introv h.
+  unfold isprog_nout_vars, isprog_vars in *; sp.
+Qed.
+Hint Resolve isprog_nout_vars_implies_isprog_vars : slow.
+
+Definition CVNTerm {o} vs := { t : @NTerm o | isprog_nout_vars vs t }.
+
+Definition cvterm {o} vs := @CVNTerm o vs.
+
+Definition cvnterm2cvterm {o} {vs} (t : @CVNTerm o vs) : @CVTerm o vs :=
+  let (x,p) := t in
+  mk_cvterm vs x (isprog_nout_vars_implies_isprog_vars vs x p).
+
+Definition cvterm2CVTerm {o} {vs} (t : @cvterm o vs) : @CVTerm o vs := cvnterm2cvterm t.
+(*Coercion cvterm2CVTerm : cvterm >-> CVTerm.*)
+
+Definition get_cvnterm {p} {vs} (t : @CVNTerm p vs) := proj1_sig t.
+
+Hint Resolve subst_preserves_wf_term : slow.
+Hint Rewrite assert_andb : slow.
+
+Lemma subst_preserves_isprog_nout {o} :
+  forall (t : @NTerm o) (v : NVar) (u : NTerm),
+    isprog_nout_vars [v] t
+    -> isprog_nout u
+    -> isprog_nout (subst t v u).
+Proof.
+  introv ispt ispu.
+  unfold isprog_nout, isprog_nout_vars in *; repnd; dands; eauto 3 with slow.
+  unfold no_vars_like_b in *; autorewrite with slow in *; repnd.
+  dands; allrw @assert_nullb; simpl in *.
+  { introv i; apply eqset_free_vars_disjoint in i; simpl in *; boolvar; simpl in *;
+      autorewrite with slow in *; try (complete (apply ispt0 in i; tcsp));[].
+    rewrite remove_nvars_cons in i; autorewrite with slow in *.
+    apply in_app_iff in i; repndors;
+      try (complete (apply ispt0 in i; tcsp));
+      try (complete (apply ispu1 in i; tcsp)). }
+  eapply eqset_preserves_null; try apply eqset_sym; try apply get_utokens_subst.
+  boolvar; autorewrite with slow in *; tcsp.
+  apply null_app; dands; auto.
+Qed.
+Hint Resolve subst_preserves_isprog_nout : isprog.
+
+Definition substcn {o} (u : @CNTerm o) (v : NVar) (t : CVNTerm [v]) : CNTerm :=
+  let (a,x) := t in
+  let (b,y) := u in
+  exist isprog_nout (subst a v b) (subst_preserves_isprog_nout a v b x y).
+
+Definition computes_to_valcn {p} lib (t1 t2 : @CNTerm p) :=
+  computes_to_value lib (get_cnterm t1) (get_cnterm t2).
+
+Definition computes_to_exccn {p} lib (a t1 t2 : @CNTerm p) :=
+  computes_to_exception lib (get_cnterm a) (get_cnterm t1) (get_cnterm t2).
+
+Definition cequivcn {p} lib (a b : @CNTerm p) :=
+  cequiv lib (get_cnterm a) (get_cnterm b).
+
+Definition approxcn {p} lib (a b : @CNTerm p) :=
+  approx lib (get_cnterm a) (get_cnterm b).
+
+Definition hasvaluecn {p} lib (t : @CNTerm p) := hasvalue lib (get_cnterm t).
+
+Definition ccomputes_to_valcn {p} lib t1 t2 := Cast (@computes_to_valcn p lib t1 t2).
+Definition ccomputes_to_exccn {p} lib a t e := Cast (@computes_to_exccn p lib a t e).
+Definition ccequivcn {p} lib t1 t2 := Cast (@cequivcn p lib t1 t2).
+Definition capproxcn {p} lib t1 t2 := Cast (@approxcn p lib t1 t2).
+Definition chaltscn {p} lib t := Cast (@hasvaluecn p lib t).
+
+
+Lemma isprog_nout_mk_integer {p} : forall n : Z, @isprog_nout p (mk_integer n).
+Proof.
+  repeat constructor.
+Qed.
+
+Definition mkcn_integer {p} (n : Z) : @CNTerm p :=
+  exist isprog_nout (mk_integer n) (isprog_nout_mk_integer n).
+
+Theorem isprog_nout_int {p} : @isprog_nout p mk_int.
+Proof.
+  repeat constructor.
+Qed.
+
+Definition mkcn_int {p} : @CNTerm p :=
+  exist isprog_nout mk_int isprog_nout_int.
+
+Definition isprog_nout_token {p} :
+  forall s : String.string, @isprog_nout p (mk_token s) := fun _ => (eq_refl,eq_refl).
+
+Definition mkcn_token {p} (s : String.string) : @CNTerm p :=
+  exist isprog_nout (mk_token s) (isprog_nout_token s).
+
+Definition isprog_nout_atom {p} : @isprog_nout p mk_atom := (eq_refl,eq_refl).
+
+Definition mkcn_atom {p} : @CNTerm p :=
+  exist isprog_nout mk_atom isprog_nout_atom.
+
+Theorem isprog_nout_axiom {p} : @isprog_nout p mk_axiom.
+Proof.
+  repeat constructor.
+Qed.
+
+Definition mkcn_axiom {p} : @CNTerm p :=
+  exist isprog_nout mk_axiom isprog_nout_axiom.
+
+Theorem isprog_nout_base {p} : @isprog_nout p mk_base.
+Proof.
+  repeat constructor.
+Qed.
+
+Definition mkcn_base {p} : @CNTerm p :=
+  exist isprog_nout mk_base isprog_nout_base.
+
+Lemma nullb_app :
+  forall {T} (l k : list T),
+    nullb (l ++ k) = nullb l && nullb k.
+Proof.
+  introv; unfold nullb; destruct l; simpl in *; auto.
+Qed.
+Hint Rewrite @nullb_app : slow.
+
+Hint Resolve assert_true : slow.
+Hint Resolve wf_approx : slow.
+Hint Resolve wf_cequiv : slow.
+Hint Resolve wf_equality : slow.
+Hint Resolve wf_refl : slow.
+Hint Resolve wf_tequality : slow.
+Hint Resolve wf_requality : slow.
+Hint Resolve wf_isect : slow.
+Hint Resolve wf_eisect : slow.
+Hint Resolve wf_disect : slow.
+Hint Resolve wf_function : slow.
+Hint Resolve wf_product : slow.
+Hint Resolve wf_set : slow.
+Hint Resolve wf_apply : slow.
+Hint Resolve wf_apply2 : slow.
+Hint Resolve wf_pair : slow.
+Hint Resolve wf_sup : slow.
+Hint Resolve wf_tunion : slow.
+Hint Resolve wf_union : slow.
+Hint Resolve wf_eunion : slow.
+Hint Resolve wf_texc : slow.
+Hint Resolve wf_inl : slow.
+Hint Resolve wf_inr : slow.
+Hint Resolve wf_image : slow.
+Hint Resolve wf_pertype : slow.
+Hint Resolve wf_ipertype : slow.
+Hint Resolve wf_spertype : slow.
+Hint Resolve wf_quotient : slow.
+Hint Resolve wf_partial : slow.
+Hint Resolve wf_fix : slow.
+
+Ltac prove_isprog_nout :=
+  intros;
+  unfold isprog_nout, isprog_nout_vars, no_vars_like_b in *; simpl in *; autorewrite with slow in *;
+  simpl in *; repnd; dands; autorewrite with slow in *; repnd; dands; eauto 3 with slow.
+
+
+Lemma isprog_nout_fix {p} :
+  forall t : @NTerm p, isprog_nout t -> isprog_nout (mk_fix t).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_fix {p} (t : @CNTerm p) :=
+  let (a,x) := t in
+  exist isprog_nout (mk_fix a) (isprog_nout_fix a x).
+
+Lemma isprog_nout_bot {p} : @isprog_nout p mk_bot.
+Proof.
+  repeat constructor.
+Qed.
+
+Definition mkcn_bot {p} : @CNTerm p :=
+  exist isprog_nout mk_bot isprog_nout_bot.
+
+Lemma isprog_nout_pertype {p} :
+  forall (a : @NTerm p), isprog_nout a -> isprog_nout (mk_pertype a).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_pertype {p} (R : @CNTerm p) : CNTerm :=
+  let (a,x) := R in
+  exist isprog_nout (mk_pertype a) (isprog_nout_pertype a x).
+
+Lemma isprog_nout_ipertype {p} :
+  forall (a : @NTerm p), isprog_nout a -> isprog_nout (mk_ipertype a).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_ipertype {p} (R : @CNTerm p) : CNTerm :=
+  let (a,x) := R in
+  exist isprog_nout (mk_ipertype a) (isprog_nout_ipertype a x).
+
+Lemma isprog_nout_spertype {p} :
+  forall (a : @NTerm p), isprog_nout a -> isprog_nout (mk_spertype a).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_spertype {p} (R : @CNTerm p) : CNTerm :=
+  let (a,x) := R in
+  exist isprog_nout (mk_spertype a) (isprog_nout_spertype a x).
+
+Theorem isprog_nout_image {p} :
+  forall (a b : @NTerm p), isprog_nout a -> isprog_nout b -> isprog_nout (mk_image a b).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_image {p} (T F : @CNTerm p) : CNTerm :=
+  let (t,x) := T in
+  let (f,y) := F in
+  exist isprog_nout (mk_image t f) (isprog_nout_image t f x y).
+
+Lemma isprog_nout_inl {p} :
+  forall a : @NTerm p, isprog_nout a -> isprog_nout (mk_inl a).
+Proof.
+  prove_isprog_nout; try apply wf_inl; auto.
+Qed.
+
+Definition mkcn_inl {p} (t : @CNTerm p) : CNTerm :=
+  let (a,x) := t in exist isprog_nout (mk_inl a) (isprog_nout_inl a x).
+
+Lemma isprog_nout_inr {p} :
+  forall a : @NTerm p, isprog_nout a -> isprog_nout (mk_inr a).
+Proof.
+  prove_isprog_nout; try apply wf_inr; auto.
+Qed.
+
+Definition mkcn_inr {p} (t : @CNTerm p) : CNTerm :=
+  let (a,x) := t in exist isprog_nout (mk_inr a) (isprog_nout_inr a x).
+
+Theorem isprog_nout_texc {p} :
+  forall a b : @NTerm p,
+    isprog_nout a -> isprog_nout b -> isprog_nout (mk_texc a b).
+Proof.
+  prove_isprog_nout; try apply wf_texc; auto.
+Qed.
+
+Definition mkcn_texc {p} (t1 t2 : @CNTerm p) : CNTerm :=
+  let (a,x) := t1 in
+  let (b,y) := t2 in
+  exist isprog_nout (mk_texc a b) (isprog_nout_texc a b x y).
+
+Theorem isprog_nout_union {p} :
+  forall a b : @NTerm p,
+    isprog_nout a -> isprog_nout b -> isprog_nout (mk_union a b).
+Proof.
+  prove_isprog_nout; try apply wf_union; auto.
+Qed.
+
+Definition mkcn_union {p} (t1 t2 : @CNTerm p) : CNTerm :=
+  let (a,x) := t1 in
+  let (b,y) := t2 in
+  exist isprog_nout (mk_union a b) (isprog_nout_union a b x y).
+
+Theorem isprog_nout_union2 {p} :
+  forall a b : @NTerm p,
+    isprog_nout a -> isprog_nout b -> isprog_nout (mk_union2 a b).
+Proof.
+  prove_isprog_nout; try apply wf_union; auto.
+Qed.
+
+Definition mkcn_union2 {p} (t1 t2 : @CNTerm p) : CNTerm :=
+  let (a,x) := t1 in
+  let (b,y) := t2 in
+  exist isprog_nout (mk_union2 a b) (isprog_nout_union2 a b x y).
+
+Theorem isprog_nout_eunion {p} :
+  forall a b : @NTerm p,
+    isprog_nout a -> isprog_nout b -> isprog_nout (mk_eunion a b).
+Proof.
+  prove_isprog_nout; try apply wf_eunion; auto.
+Qed.
+
+Definition mkcn_eunion {p} (t1 t2 : @CNTerm p) : CNTerm :=
+  let (a,x) := t1 in
+  let (b,y) := t2 in
+  exist isprog_nout (mk_eunion a b) (isprog_nout_eunion a b x y).
+
+Lemma isprog_nout_tunion {p} :
+  forall (a :@NTerm p) v b,
+    isprog_nout a
+    -> isprog_nout_vars [v] b
+    -> isprog_nout (mk_tunion a v b).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_tunion {p} (T1 : @CNTerm p) (v : NVar) (T2 : CVNTerm [v]) : CNTerm :=
+  let (a,x) := T1 in
+  let (b,y) := T2 in
+  exist isprog_nout (mk_tunion a v b) (isprog_nout_tunion a v b x y).
+
+Lemma isprog_nout_pair {p} :
+  forall a b : @NTerm p, isprog_nout a -> isprog_nout b -> isprog_nout (mk_pair a b).
+Proof.
+  prove_isprog_nout; apply wf_pair; auto.
+Qed.
+
+Definition mkcn_pair {p} (t1 t2 : @CNTerm p) : CNTerm :=
+  let (a,x) := t1 in
+  let (b,y) := t2 in
+  exist isprog_nout (mk_pair a b) (isprog_nout_pair a b x y).
+
+Lemma isprog_nout_sup {p} :
+  forall a b : @NTerm p, isprog_nout a -> isprog_nout b -> isprog_nout (mk_sup a b).
+Proof.
+  prove_isprog_nout; apply wf_sup; auto.
+Qed.
+
+Definition mkcn_sup {p} (t1 t2 : @CNTerm p) : CNTerm :=
+  let (a,x) := t1 in
+  let (b,y) := t2 in
+  exist isprog_nout (mk_sup a b) (isprog_nout_sup a b x y).
+
+Theorem isprog_nout_approx {p} :
+  forall a b : @NTerm p, isprog_nout a -> isprog_nout b -> isprog_nout (mk_approx a b).
+Proof.
+  introv ispa ispb; unfold isprog_nout, no_vars_like_b in *; simpl in *; autorewrite with slow in *.
+  simpl in *; repnd; dands; autorewrite with slow in *; repnd; dands; eauto 3 with slow.
+Qed.
+
+Theorem isprog_nout_cequiv {p} :
+  forall a b : @NTerm p, isprog_nout a -> isprog_nout b -> isprog_nout (mk_cequiv a b).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_approx {p} (t1 t2 : @CNTerm p) : CNTerm :=
+  let (a,x) := t1 in
+  let (b,y) := t2 in
+  exist isprog_nout (mk_approx a b) (isprog_nout_approx a b x y).
+
+Definition mkcn_cequiv {p} (t1 t2 : @CNTerm p) : CNTerm :=
+  let (a,x) := t1 in
+  let (b,y) := t2 in
+  exist isprog_nout (mk_cequiv a b) (isprog_nout_approx a b x y).
+
+Lemma isprog_nout_equality {p} :
+  forall a b T : @NTerm p,
+    isprog_nout a
+    -> isprog_nout b
+    -> isprog_nout T
+    -> isprog_nout (mk_equality a b T).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_equality {p} (t1 t2 T : @CNTerm p) : CNTerm :=
+  let (a,x) := t1 in
+  let (b,y) := t2 in
+  let (c,z) := T in
+  exist isprog_nout (mk_equality a b c) (isprog_nout_equality a b c x y z).
+
+Lemma isprog_nout_refl {p} :
+  forall a : @NTerm p, isprog_nout a -> isprog_nout (mk_refl a).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_refl {p} (t1 : @CNTerm p) : CNTerm :=
+  let (a,x) := t1 in
+    exist isprog_nout (mk_refl a) (isprog_nout_refl a x).
+
+Lemma isprog_nout_tequality {p} :
+  forall a b : @NTerm p, isprog_nout a -> isprog_nout b -> isprog_nout (mk_tequality a b).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_tequality {p} (t1 t2 : @CNTerm p) : CNTerm :=
+  let (a,x) := t1 in
+  let (b,y) := t2 in
+  exist isprog_nout (mk_tequality a b) (isprog_nout_tequality a b x y).
+
+Lemma isprog_nout_requality {p} :
+  forall a b T : @NTerm p,
+    isprog_nout a
+    -> isprog_nout b
+    -> isprog_nout T
+    -> isprog_nout (mk_requality a b T).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_requality {p} (t1 t2 T : @CNTerm p) : CNTerm :=
+  let (a,x) := t1 in
+  let (b,y) := t2 in
+  let (c,z) := T in
+  exist isprog_nout (mk_requality a b c) (isprog_nout_requality a b c x y z).
+
+Lemma isprog_nout_isect {p} :
+  forall (a : @NTerm p) v b,
+    isprog_nout a
+    -> isprog_nout_vars [v] b
+    -> isprog_nout (mk_isect a v b).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_isect {p} (T1 : @CNTerm p) (v : NVar) (T2 : CVNTerm [v]) : CNTerm :=
+  let (a,x) := T1 in
+  let (b,y) := T2 in
+  exist isprog_nout (mk_isect a v b) (isprog_nout_isect a v b x y).
+
+Lemma isprog_nout_eisect {p} :
+  forall (a : @NTerm p) v b,
+    isprog_nout a
+    -> isprog_nout_vars [v] b
+    -> isprog_nout (mk_eisect a v b).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_eisect {p} (T1 : @CNTerm p) (v : NVar) (T2 : CVNTerm [v]) : CNTerm :=
+  let (a,x) := T1 in
+  let (b,y) := T2 in
+  exist isprog_nout (mk_eisect a v b) (isprog_nout_eisect a v b x y).
+
+Lemma isprog_nout_disect {p} :
+  forall (a : @NTerm p) v b,
+    isprog_nout a
+    -> isprog_nout_vars [v] b
+    -> isprog_nout (mk_disect a v b).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_disect {p} (T1 : @CNTerm p) (v : NVar) (T2 : CVNTerm [v]) : CNTerm :=
+  let (a,x) := T1 in
+  let (b,y) := T2 in
+  exist isprog_nout (mk_disect a v b) (isprog_nout_disect a v b x y).
+
+Lemma isprog_nout_function {p} :
+  forall (a : @NTerm p) v b,
+    isprog_nout a
+    -> isprog_nout_vars [v] b
+    -> isprog_nout (mk_function a v b).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_function {p} (T1 : @CNTerm p) (v : NVar) (T2 : CVNTerm [v]) : CNTerm :=
+  let (a,x) := T1 in
+  let (b,y) := T2 in
+  exist isprog_nout (mk_function a v b) (isprog_nout_function a v b x y).
+
+Lemma isprog_nout_product {p} :
+  forall (a : @NTerm p) v b,
+    isprog_nout a
+    -> isprog_nout_vars [v] b
+    -> isprog_nout (mk_product a v b).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_product {p} (T1 : @CNTerm p) (v : NVar) (T2 : CVNTerm [v]) : CNTerm :=
+  let (a,x) := T1 in
+  let (b,y) := T2 in
+  exist isprog_nout (mk_product a v b) (isprog_nout_product a v b x y).
+
+Lemma isprog_nout_set {p} :
+  forall (a :@NTerm p) v b,
+    isprog_nout a
+    -> isprog_nout_vars [v] b
+    -> isprog_nout (mk_set a v b).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_set {p} (T1 : @CNTerm p) (v : NVar) (T2 : CVNTerm [v]) : CNTerm :=
+  let (a,x) := T1 in
+  let (b,y) := T2 in
+  exist isprog_nout (mk_set a v b) (isprog_nout_set a v b x y).
+
+Theorem isprog_nout_apply {p} :
+  forall (a b : @NTerm p), isprog_nout a -> isprog_nout b -> isprog_nout (mk_apply a b).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_apply {p} (t1 t2 : @CNTerm p) : CNTerm :=
+  let (a,x) := t1 in
+  let (b,y) := t2 in
+  exist isprog_nout (mk_apply a b) (isprog_nout_apply a b x y).
+
+Theorem isprog_nout_apply2 {p} :
+  forall (f a b : @NTerm p),
+    isprog_nout f -> isprog_nout a -> isprog_nout b -> isprog_nout (mk_apply2 f a b).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_apply2 {p} (t0 t1 t2 : @CNTerm p) : CNTerm :=
+  let (f,z) := t0 in
+  let (a,x) := t1 in
+  let (b,y) := t2 in
+  exist isprog_nout (mk_apply2 f a b) (isprog_nout_apply2 f a b z x y).
+
+Lemma isprog_nout_quotient {p} :
+  forall (a : @NTerm p) v1 v2 b,
+    isprog_nout a
+    -> isprog_nout_vars [v1,v2] b
+    -> isprog_nout (mk_quotient a v1 v2 b).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_quotient {p} (T1 : @CNTerm p) (v1 v2 : NVar) (T2 : CVNTerm [v1,v2]) : CNTerm :=
+  let (a,x) := T1 in
+  let (b,y) := T2 in
+  exist isprog_nout (mk_quotient a v1 v2 b) (isprog_nout_quotient a v1 v2 b x y).
+
+Theorem isprog_nout_partial {p} :
+  forall (a : @NTerm p), isprog_nout a -> isprog_nout (mk_partial a).
+Proof.
+  prove_isprog_nout.
+Qed.
+
+Definition mkcn_partial {p} (R : @CNTerm p) : CNTerm :=
+  let (a,x) := R in
+  exist isprog_nout (mk_partial a) (isprog_nout_partial a x).
+
+Theorem isprog_nout_mono {p} :
+  forall (a : @NTerm p), isprog_nout a -> isprog_nout (mk_mono a).
+Proof.
+  prove_isprog_nout; try apply wf_mono_iff; auto.
+Qed.
+
+Definition mkcn_mono {p} (R : @CNTerm p) : CNTerm :=
+  let (a,x) := R in
+  exist isprog_nout (mk_mono a) (isprog_nout_mono a x).
+
+Theorem isprog_nout_admiss {p} :
+  forall (a : @NTerm p), isprog_nout a -> isprog_nout (mk_admiss a).
+Proof.
+  prove_isprog_nout; try apply wf_admiss_iff; auto.
+Qed.
+
+Definition mkcn_admiss {p} (R : @CNTerm p) : CNTerm :=
+  let (a,x) := R in
+  exist isprog_nout (mk_admiss a) (isprog_nout_admiss a x).
+
+
+Definition CNSubstitution  {p} : tuniv := lmap NVar (@CNTerm p).
+
+Definition cnsub2sub {p} (sub : @CNSubstitution p) : Substitution :=
+  map (fun x => (fst x, get_cnterm (snd x))) sub.
+
+Definition cnsubst {p} (t : @NTerm p) (sub : CNSubstitution) :=
+  lsubst t (cnsub2sub sub).
+
+Definition dom_cnsub {p} (sub : @CNSubstitution p)  := map (fun x => fst x) sub.
+
+Definition cover_nout_vars {p} (t : @NTerm p) (sub : @CNSubstitution p) :=
+  subvars (free_vars t) (dom_cnsub sub).
+
+Lemma in_cnsub2sub {p} :
+  forall sub : @CNSubstitution p,
+  forall v : NVar,
+  forall u : NTerm,
+    LIn (v, u) (cnsub2sub sub)
+    -> isprogram u.
+Proof.
+  induction sub; simpl; sp; simpl in *; ginv; eauto.
+  destruct a; simpl; eauto 3 with slow.
+Qed.
+
+Definition wf_term_cnsubst {o} :
+  forall (t : @NTerm o) sub,
+    wf_term t
+    -> wf_term (cnsubst t sub).
+Proof.
+  sp; allrw @wf_term_eq.
+  apply isprogram_lsubst1; sp.
+  allapply @in_cnsub2sub; sp.
+Qed.
+Hint Resolve wf_term_cnsubst : slow.
+
+Lemma cover_vars_cvnterm2 {p} :
+  forall v1 v2 t u1 u2,
+    cover_nout_vars (@get_cvnterm p [v1,v2] t) [(v1, u1), (v2, u2)].
+Proof.
+  destruct t; sp; simpl.
+  unfold isprog_nout_vars in *; repnd; auto.
+Qed.
+
+Hint Resolve wf_term_csubst : slow.
+
+Lemma implies_isprog_nout {o} :
+  forall (t : @NTerm o),
+    wf_term t
+    -> closed t
+    -> noutokens t
+    -> isprog_nout t.
+Proof.
+  introv wf cl n.
+  unfold isprog_nout, no_vars_like_b; dands; autorewrite with slow; dands; eauto 3 with slow;
+    apply assert_nullb; apply null_iff_nil; tcsp.
+Qed.
+Hint Resolve implies_isprog_nout : slow.
+
+Lemma closed_lsubst {o} :
+  forall (t : @NTerm o) sub,
+    cl_sub sub
+    -> covered t (dom_sub sub)
+    -> closed (lsubst t sub).
+Proof.
+  introv cl cov.
+  unfold lsubst; boolvar; apply closed_lsubst_aux; auto.
+  unfold covered in *; rewrite free_vars_change_bvars_alpha; auto.
+Qed.
+Hint Resolve closed_lsubst : slow.
+
+Lemma cl_sub_cnsub2sub {o} :
+  forall (sub : @CNSubstitution o),
+    cl_sub (cnsub2sub sub).
+Proof.
+  introv.
+  apply cl_sub_eq; introv i.
+  unfold range, cnsub2sub in *.
+  allrw map_map; unfold compose in *; simpl in *.
+  apply in_map_iff in i; exrepnd; simpl in *; subst.
+  destruct a; simpl in *; eauto 3 with slow.
+Qed.
+Hint Resolve cl_sub_cnsub2sub : slow.
+
+Lemma dom_sub_cnsub2sub_eq_dom_cnsub {o} :
+  forall (sub : @CNSubstitution o),
+    dom_sub (cnsub2sub sub) = dom_cnsub sub.
+Proof.
+  introv; unfold dom_sub, dom_cnsub, dom_lmap, cnsub2sub.
+  allrw map_map; unfold compose; simpl; auto.
+Qed.
+
+Lemma implies_covered_dom_sub_cnsub2sub {o} :
+  forall (t : @NTerm o) sub,
+    cover_nout_vars t sub
+    -> covered t (dom_sub (cnsub2sub sub)).
+Proof.
+  introv cov; rewrite dom_sub_cnsub2sub_eq_dom_cnsub; auto.
+Qed.
+Hint Resolve implies_covered_dom_sub_cnsub2sub : slow.
+
+Lemma implies_closed_cnsubst {o} :
+  forall (t : @NTerm o) sub,
+    cover_nout_vars t sub
+    -> closed (cnsubst t sub).
+Proof.
+  introv cov.
+  apply closed_lsubst; eauto 3 with slow.
+Qed.
+Hint Resolve implies_closed_cnsubst : slow.
+
+Hint Rewrite @get_utokens_sub_cons : slow.
+
+Lemma null_get_utokens_sub_cnsub2sub {o} :
+  forall (sub : @CNSubstitution o),
+    null (get_utokens_sub (cnsub2sub sub)).
+Proof.
+  induction sub; simpl in *; autorewrite with slow; auto.
+  apply null_app; dands; auto.
+  destruct a; simpl; tcsp.
+  destruct c; simpl in *; tcsp.
+  apply isprog_nout_iff in i; repnd.
+  apply null_iff_nil; auto.
+Qed.
+Hint Resolve null_get_utokens_sub_cnsub2sub : slow.
+
+Lemma get_utokens_change_bvars_alpha {o} :
+  forall (t : @NTerm o) vs,
+    get_utokens (change_bvars_alpha vs t) = get_utokens t.
+Proof.
+  introv; apply alphaeq_preserves_utokens; eauto 3 with slow.
+  apply alpha_eq_sym; apply change_bvars_alpha_spec.
+Qed.
+Hint Rewrite @get_utokens_change_bvars_alpha : slow.
+
+Lemma get_utokens_cnsubst {o} :
+  forall (t : @NTerm o) sub,
+    get_utokens (cnsubst t sub) = get_utokens t.
+Proof.
+  introv; unfold cnsubst, lsubst; boolvar;
+    rewrite get_utokens_lsubst_aux_trivial1; autorewrite with slow; eauto 3 with slow.
+Qed.
+Hint Rewrite @get_utokens_cnsubst : slow.
+
+Lemma implies_noutokens_cnsubst {o} :
+  forall (t : @NTerm o) sub,
+    noutokens t
+    -> noutokens (cnsubst t sub).
+Proof.
+  introv h; unfold noutokens in *; autorewrite with slow in *; auto.
+Qed.
+Hint Resolve implies_noutokens_cnsubst : slow.
+
+Lemma isprog_nout_csubst {p} :
+  forall (t : @NTerm p) sub,
+    wf_term t
+    -> noutokens t
+    -> cover_nout_vars t sub
+    -> isprog_nout (cnsubst t sub).
+Proof.
+  introv wf nout cov.
+  apply implies_isprog_nout; eauto 3 with slow.
+Defined.
+
+Lemma assert_nullb_get_utokens_as_noutokens {o} :
+  forall (t : @NTerm o),
+    assert (nullb (get_utokens t)) <=> noutokens t.
+Proof.
+  introv; rw @assert_nullb; apply null_iff_nil.
+Qed.
+
+Lemma isprog_nout_vars_eq {p} :
+  forall (t : @NTerm p) vs,
+    isprog_nout_vars vs t <=> subvars (free_vars t) vs # noutokens t # nt_wf t.
+Proof.
+  unfold isprog_nout_vars; sp.
+  rw @nt_wf_eq; rw @assert_nullb_get_utokens_as_noutokens; sp.
+Qed.
+
+Lemma wf_cvnterm {p} :
+  forall {vs} (t : @CVNTerm p vs),
+    wf_term (get_cvnterm t).
+Proof.
+  destruct t; simpl.
+  rw @isprog_nout_vars_eq in i; sp; eauto 3 with slow.
+Qed.
+
+Lemma noutokens_get_cvnterm {o} :
+  forall {vs} (t : @CVNTerm o vs),
+    noutokens (get_cvnterm t).
+Proof.
+  introv; destruct t; simpl in *.
+  apply isprog_nout_vars_eq in i; tcsp.
+Qed.
+
+Lemma cover_nout_vars_cvnterm3 {p} :
+  forall v1 v2 v3 t u1 u2 u3,
+    cover_nout_vars (@get_cvnterm p [v1,v2,v3] t) [(v1, u1), (v2, u2), (v3, u3)].
+Proof.
+  destruct t; sp; simpl.
+  rw @isprog_nout_vars_eq in i; sp.
+Qed.
+
+Definition lsubstcn {p}
+           (t   : @NTerm p)
+           (w   : wf_term t)
+           (n   : noutokens t)
+           (sub : CNSubstitution)
+           (p   : cover_nout_vars t sub) : CNTerm :=
+  exist isprog_nout
+        (cnsubst t sub)
+        (isprog_nout_csubst t sub w n p).
+
+Definition lsubstcn2 {p}
+           (v1 : NVar) (u1 : @CNTerm p)
+           (v2 : NVar) (u2 : CNTerm)
+           (t : CVNTerm [v1;v2]) :=
+  lsubstcn
+    (get_cvnterm t)
+    (wf_cvnterm t)
+    (noutokens_get_cvnterm t)
+    [(v1,u1),(v2,u2)]
+    (cover_vars_cvnterm2 v1 v2 t u1 u2).
+
+Definition lsubstcn3 {p}
+           (v1 : NVar) (u1 : @CNTerm p)
+           (v2 : NVar) (u2 : CNTerm)
+           (v3 : NVar) (u3 : CNTerm)
+           (t : CVNTerm [v1;v2;v3]) :=
+  lsubstcn
+    (get_cvnterm t)
+    (wf_cvnterm t)
+    (noutokens_get_cvnterm t)
+    [(v1,u1),(v2,u2),(v3,u3)]
+    (cover_nout_vars_cvnterm3 v1 v2 v3 t u1 u2 u3).
+
+
+Definition term_equality {p} := @cterm p -> @cterm p -> [U].
 
 (* end hide *)
 
@@ -192,8 +992,9 @@ Definition term_equality {p} := @CTerm p -> @CTerm p -> [U].
 
  *)
 
-Notation per := (CTerm -> CTerm -> [U]).
-Notation "per( p )" := (@CTerm p -> @CTerm p -> [U]).
+
+Notation per := (cterm -> cterm -> [U]).
+Notation "per( p )" := (@cterm p -> @cterm p -> [U]).
 
 (**
 
@@ -237,7 +1038,7 @@ Notation "per( p )" := (@CTerm p -> @CTerm p -> [U]).
  *)
 
 Definition eq_term_equals {p} (eq1 eq2 : per) :=
-  forall t1 t2 : @CTerm p, eq1 t1 t2 <=> eq2 t1 t2.
+  forall t1 t2 : @cterm p, eq1 t1 t2 <=> eq2 t1 t2.
 
 Notation "eq1 <=2=> eq2" := (eq_term_equals eq1 eq2) (at level 0).
 
@@ -277,7 +1078,7 @@ Proof. sp. Qed.
 
 (* begin hide *)
 
-Definition candidate_type_system {p} := @CTerm p -> @CTerm p -> per(p) -> [U].
+Definition candidate_type_system {p} := @cterm p -> @cterm p -> per(p) -> [U].
 
 (* end hide *)
 
@@ -292,21 +1093,21 @@ Definition candidate_type_system {p} := @CTerm p -> @CTerm p -> per(p) -> [U].
  *)
 
 Notation "candidate-type-system" :=
-  (CTerm -> CTerm -> per -> [U]).
+  (cterm -> cterm -> per -> [U]).
 
-Notation cts := (CTerm -> CTerm -> per -> [U]).
-Notation "cts( p )" := (@CTerm p -> @CTerm p -> per(p) -> [U]).
+Notation cts := (cterm -> cterm -> per -> [U]).
+Notation "cts( p )" := (@cterm p -> @cterm p -> per(p) -> [U]).
 
 (* begin hide *)
 
-Notation "a ~<~ b" := (capproxc a b) (at level 0).
-Notation "a ~<~( lib ) b" := (capproxc lib a b) (at level 0).
-Notation "a ~=~ b" := (ccequivc a b) (at level 0).
-Notation "a ~=~( lib ) b" := (ccequivc lib a b) (at level 0).
-Notation "a ===> b" := (ccomputes_to_valc a b) (at level 0).
-Notation "a ===>( lib ) b" := (ccomputes_to_valc lib a b) (at level 0).
-Notation "a ===e>( lib , e ) b" := (ccomputes_to_excc lib e a b) (at level 0).
-Notation "T [[ v \\ a ]]" := (substc a v T) (at level 0).
+Notation "a ~<~ b" := (capproxcn a b) (at level 0).
+Notation "a ~<~( lib ) b" := (capproxcn lib a b) (at level 0).
+Notation "a ~=~ b" := (ccequivcn a b) (at level 0).
+Notation "a ~=~( lib ) b" := (ccequivcn lib a b) (at level 0).
+Notation "a ===> b" := (ccomputes_to_valcn a b) (at level 0).
+Notation "a ===>( lib ) b" := (ccomputes_to_valcn lib a b) (at level 0).
+Notation "a ===e>( lib , e ) b" := (ccomputes_to_exccn lib e a b) (at level 0).
+Notation "T [[ v \\ a ]]" := (substcn a v T) (at level 0).
 
 (* end hide *)
 
@@ -347,13 +1148,13 @@ Notation "T [[ v \\ a ]]" := (substc a v T) (at level 0).
 
  *)
 
-Definition equality_of_int {p} lib (n m : @CTerm p) :=
-  {k : Z , n ===>(lib) (mkc_integer k)
-         # m ===>(lib) (mkc_integer k)}.
+Definition equality_of_int {p} lib (n m : @cterm p) :=
+  {k : Z , n ===>(lib) (mkcn_integer k)
+         # m ===>(lib) (mkcn_integer k)}.
 
-Definition per_int {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
-  T1 ===>(lib) mkc_int
-  # T2 ===>(lib) mkc_int
+Definition per_int {p} lib (ts : cts(p)) (T1 T2 : @cterm p) (eq : per(p)) : [U] :=
+  T1 ===>(lib) mkcn_int
+  # T2 ===>(lib) mkcn_int
   # forall t t', eq t t' <=> equality_of_int lib t t'.
 
 (**
@@ -363,24 +1164,26 @@ Definition per_int {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : [U] 
 
 *)
 
-Definition equality_of_atom {p} lib (a b : @CTerm p) :=
-  {s : String.string , a ===>(lib) (mkc_token s)
-                     # b ===>(lib) (mkc_token s)}.
+Definition equality_of_atom {p} lib (a b : @cterm p) :=
+  {s : String.string , a ===>(lib) (mkcn_token s)
+                     # b ===>(lib) (mkcn_token s)}.
 
-Definition per_atom {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
-  T1 ===>(lib) mkc_atom
-  # T2 ===>(lib) mkc_atom
+Definition per_atom {p} lib (ts : cts(p)) (T1 T2 : @cterm p) (eq : per(p)) : [U] :=
+  T1 ===>(lib) mkcn_atom
+  # T2 ===>(lib) mkcn_atom
   # eq <=2=> (equality_of_atom lib).
 
 
-Definition equality_of_uatom {p} lib (a b : @CTerm p) :=
+(*
+Definition equality_of_uatom {p} lib (a b : @cterm p) :=
   {u : get_patom_set p , a ===>(lib) (mkc_utoken u)
                        # b ===>(lib) (mkc_utoken u)}.
 
-Definition per_uatom {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_uatom {p} lib (ts : cts(p)) (T1 T2 : @cterm p) (eq : per(p)) : [U] :=
   T1 ===>(lib) mkc_uatom
   # T2 ===>(lib) mkc_uatom
   # eq <=2=> (equality_of_uatom lib).
+*)
 
 
 (**
@@ -390,17 +1193,18 @@ Definition per_uatom {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : [U
 
 *)
 
+(*
 Definition per_ffatom_eq {p}
            lib
            (eqa : per)
            (u : get_patom_set p)
-           (x t1 t2 : @CTerm p) :=
-    t1 ===>(lib) mkc_axiom
-  # t2 ===>(lib) mkc_axiom
-  # {y : CTerm , eqa x y # !LIn u (getc_utokens y)}.
+           (x t1 t2 : @cterm p) :=
+    t1 ===>(lib) mkcn_axiom
+  # t2 ===>(lib) mkcn_axiom
+  # {y : cterm , eqa x y # !LIn u (getc_utokens y)}.
 
-Definition per_ffatom {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
-   {A1 , A2 , x1 , x2 , a1 , a2 : CTerm
+Definition per_ffatom {p} lib (ts : cts(p)) (T1 T2 : @cterm p) (eq : per(p)) : [U] :=
+   {A1 , A2 , x1 , x2 , a1 , a2 : cterm
    , {eqa : per
    , {u : get_patom_set p
       , T1 ===>(lib) (mkc_free_from_atom A1 x1 a1)
@@ -411,9 +1215,9 @@ Definition per_ffatom {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : [
       # a2 ===>(lib) (mkc_utoken u)
       # eq <=2=> (per_ffatom_eq lib eqa u x1)}}}.
 
-Definition name_not_in_upto {o} lib (a x : @CTerm o) (eqa : per) :=
+Definition name_not_in_upto {o} lib (a x : @cterm o) (eqa : per) :=
   {u : get_patom_set o
-   , {y : CTerm
+   , {y : cterm
    , a ===>(lib) (mkc_utoken u)
    # eqa x y
    # !LIn u (getc_utokens y)}}.
@@ -421,13 +1225,13 @@ Definition name_not_in_upto {o} lib (a x : @CTerm o) (eqa : per) :=
 Definition per_effatom_eq {p}
            lib
            (eqa : per)
-           (a x t1 t2 : @CTerm p) :=
+           (a x t1 t2 : @cterm p) :=
     t1 ===>(lib) mkc_axiom
   # t2 ===>(lib) mkc_axiom
   # name_not_in_upto lib a x eqa.
 
-Definition per_effatom {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
-   {A1 , A2 , x1 , x2 , a1 , a2 : CTerm
+Definition per_effatom {p} lib (ts : cts(p)) (T1 T2 : @cterm p) (eq : per(p)) : [U] :=
+   {A1 , A2 , x1 , x2 , a1 , a2 : cterm
    , {eqa : per
       , T1 ===>(lib) (mkc_efree_from_atom A1 x1 a1)
       # T2 ===>(lib) (mkc_efree_from_atom A2 x2 a2)
@@ -435,24 +1239,25 @@ Definition per_effatom {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : 
       # (name_not_in_upto lib a1 x1 eqa <=> name_not_in_upto lib a2 x2 eqa)
       # eq <=2=> (per_effatom_eq lib eqa a1 x1)}}.
 
-Definition noutokensc {o} (t : @CTerm o) := noutokens (get_cterm t).
+Definition noutokensc {o} (t : @cterm o) := noutokens (get_cterm t).
 
 Definition per_ffatoms_eq {p}
            lib
            (eqa : per)
-           (x t1 t2 : @CTerm p) :=
+           (x t1 t2 : @cterm p) :=
     t1 ===>(lib) mkc_axiom
   # t2 ===>(lib) mkc_axiom
-  # {y : @CTerm p , eqa x y # noutokensc y}.
+  # {y : @cterm p , eqa x y # noutokensc y}.
 
-Definition per_ffatoms {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
-   {A1 , A2 , x1 , x2 : CTerm
+Definition per_ffatoms {p} lib (ts : cts(p)) (T1 T2 : @cterm p) (eq : per(p)) : [U] :=
+   {A1 , A2 , x1 , x2 : cterm
    , {eqa : per
       , T1 ===>(lib) (mkc_free_from_atoms A1 x1)
       # T2 ===>(lib) (mkc_free_from_atoms A2 x2)
       # ts A1 A2 eqa
       # eqa x1 x2
       # eq <=2=> (per_ffatoms_eq lib eqa x1)}}.
+*)
 
 
 (*
@@ -470,9 +1275,9 @@ Print Universes.
 
 *)
 
-Definition per_base {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
-  T1 ===>(lib) mkc_base
-  # T2 ===>(lib) mkc_base
+Definition per_base {p} lib (ts : cts(p)) (T1 T2 : @cterm p) (eq : per(p)) : [U] :=
+  T1 ===>(lib) mkcn_base
+  # T2 ===>(lib) mkcn_base
   # forall t t', eq t t' <=> t ~=~(lib) t'.
 
 (**
@@ -505,15 +1310,15 @@ Definition per_base {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : [U]
 Definition per_approx {p}
            lib
            (ts : cts(p))
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per(p)) : [U] :=
-  {a, b, c, d : CTerm
-   , T1 ===>(lib) (mkc_approx a b)
-   # T2 ===>(lib) (mkc_approx c d)
+  {a, b, c, d : cterm
+   , T1 ===>(lib) (mkcn_approx a b)
+   # T2 ===>(lib) (mkcn_approx c d)
    # (a ~<~(lib) b <=> c ~<~(lib) d)
    # (forall t t',
-        eq t t' <=> (t ===>(lib) mkc_axiom
-                       # t' ===>(lib) mkc_axiom
+        eq t t' <=> (t ===>(lib) mkcn_axiom
+                       # t' ===>(lib) mkcn_axiom
                        # a ~<~(lib) b)) }.
 
 (**
@@ -531,29 +1336,31 @@ Definition per_approx {p}
 Definition per_cequiv {p}
            lib
            (ts : cts(p))
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per(p)) : [U] :=
-  {a, b, c, d : CTerm
-   , T1 ===>(lib) (mkc_cequiv a b)
-   # T2 ===>(lib) (mkc_cequiv c d)
+  {a, b, c, d : cterm
+   , T1 ===>(lib) (mkcn_cequiv a b)
+   # T2 ===>(lib) (mkcn_cequiv c d)
    # (a ~=~(lib) b <=> c ~=~(lib) d)
    # (forall t t',
-        eq t t' <=> (t ===>(lib) mkc_axiom
-                       # t' ===>(lib) mkc_axiom
+        eq t t' <=> (t ===>(lib) mkcn_axiom
+                       # t' ===>(lib) mkcn_axiom
                        # a ~=~(lib) b)) }.
 
 (* begin hide *)
 
-Definition per_compute {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
-  {a, b, n, m : CTerm
-   , T1 ===>(lib) (mkc_compute a b n)
-   # T2 ===>(lib) (mkc_compute a b m)
+(*
+Definition per_compute {p} lib (ts : cts(p)) (T1 T2 : @cterm p) (eq : per(p)) : [U] :=
+  {a, b, n, m : cterm
+   , T1 ===>(lib) (mkcn_compute a b n)
+   # T2 ===>(lib) (mkcn_compute a b m)
    # ccequivc lib n m
    # (forall t t', eq t t'
                       <=>
                       t ===>(lib) mkc_axiom
                       # t' ===>(lib) mkc_axiom
                       # compute_1step lib a b) }.
+*)
 
 (* end hide *)
 
@@ -564,7 +1371,7 @@ Definition per_compute {p} lib (ts : cts(p)) (T1 T2 : @CTerm p) (eq : per(p)) : 
  *)
 
 Definition eqorceq {p} lib (eq : per(p)) a b : [U] := eq a b {+} a ~=~(lib) b.
-Definition eqindomain {p}  (eq : per(p)) a b : [U] := 
+Definition eqindomain {p}  (eq : per(p)) a b : [U] :=
    ((eq a a) <=> (eq b b)) #
    ((eq a a) -> (eq a b)).
 
@@ -615,29 +1422,29 @@ Definition eqindomain {p}  (eq : per(p)) a b : [U] :=
  *)
 
 Definition per_eq {p} lib (ts : cts(p)) T1 T2 (eq : per(p)) : [U] :=
-  {A, B, a1, a2, b1, b2 : CTerm
+  {A, B, a1, a2, b1, b2 : cterm
    , {eqa : per
-      , T1 ===>(lib) (mkc_equality a1 a2 A)
-      # T2 ===>(lib) (mkc_equality b1 b2 B)
+      , T1 ===>(lib) (mkcn_equality a1 a2 A)
+      # T2 ===>(lib) (mkcn_equality b1 b2 B)
       # ts A B eqa
       # eqindomain  eqa a1 b1
       # eqindomain  eqa a2 b2
       # (forall t t',
-            eq t t' <=> (t ===>(lib) mkc_axiom # t' ===>(lib) mkc_axiom # eqa a1 a2)) }}.
+            eq t t' <=> (t ===>(lib) mkcn_axiom # t' ===>(lib) mkcn_axiom # eqa a1 a2)) }}.
 
-Definition per_req_eq {o} lib (a1 a2 : @CTerm o) (eqa : per) (t t' : @CTerm o) :=
-  { x1 , x2 : CTerm
-  , (t ===>(lib) (mkc_refl x1))
-  # (t' ===>(lib) (mkc_refl x2))
+Definition per_req_eq {o} lib (a1 a2 : @cterm o) (eqa : per) (t t' : @cterm o) :=
+  { x1 , x2 : cterm
+  , (t ===>(lib) (mkcn_refl x1))
+  # (t' ===>(lib) (mkcn_refl x2))
   # eqa a1 a2
   # eqa a1 x1
   # eqa a2 x2}.
 
 Definition per_req {p} lib (ts : cts(p)) T1 T2 (eq : per(p)) : [U] :=
-  {A, B, a1, a2, b1, b2 : CTerm
+  {A, B, a1, a2, b1, b2 : cterm
    , {eqa : per
-   , T1 ===>(lib) (mkc_requality a1 a2 A)
-   # T2 ===>(lib) (mkc_requality b1 b2 B)
+   , T1 ===>(lib) (mkcn_requality a1 a2 A)
+   # T2 ===>(lib) (mkcn_requality b1 b2 B)
    # ts A B eqa
    # eqorceq lib eqa a1 b1
    # eqorceq lib eqa a2 b2
@@ -652,13 +1459,13 @@ Definition per_req {p} lib (ts : cts(p)) T1 T2 (eq : per(p)) : [U] :=
 
  *)
 
-Definition true_per {p} (t t' : @CTerm p) := True.
+Definition true_per {p} (t t' : @cterm p) := True.
 
 Definition per_teq {p} lib (ts : cts(p)) T1 T2 (eq : per(p)) : [U] :=
-  {a1, a2, b1, b2 : CTerm
+  {a1, a2, b1, b2 : cterm
    , {eqa : per
-      , T1 ===>(lib) (mkc_tequality a1 a2)
-      # T2 ===>(lib) (mkc_tequality b1 b2)
+      , T1 ===>(lib) (mkcn_tequality a1 a2)
+      # T2 ===>(lib) (mkcn_tequality b1 b2)
       # ts a1 b1 eqa
       # ts a2 b2 eqa
       # ts a1 a2 eqa
@@ -680,8 +1487,8 @@ Definition per_teq {p} lib (ts : cts(p)) T1 T2 (eq : per(p)) : [U] :=
 Notation "per-fam ( eqa )" :=
   (forall a a' (p : eqa a a'), per) (at level 0).
 
-Definition type_family {p} lib TyCon (ts : cts(p)) (T1 T2 : @CTerm p) eqa eqb : [U]:=
-  {A, A' : CTerm , {v, v' : NVar , {B : CVTerm [v] , {B' : CVTerm [v'] ,
+Definition type_family {p} lib TyCon (ts : cts(p)) (T1 T2 : @cterm p) eqa eqb : [U]:=
+  {A, A' : cterm , {v, v' : NVar , {B : cvterm [v] , {B' : cvterm [v'] ,
      T1 ===>(lib) (TyCon A v B)
      # T2 ===>(lib) (TyCon A' v' B')
      # ts A A' eqa
@@ -702,11 +1509,11 @@ Definition type_family {p} lib TyCon (ts : cts(p)) (T1 T2 : @CTerm p) eqa eqb : 
 Definition per_isect {p}
            lib
            (ts : cts(p))
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per(p)) : [U] :=
   {eqa : per
    , {eqb : per-fam(eqa)
-      , type_family lib mkc_isect ts T1 T2 eqa eqb
+      , type_family lib mkcn_isect ts T1 T2 eqa eqb
       # (forall t t',
            eq t t'
               <=>
@@ -727,11 +1534,11 @@ Definition per_isect {p}
 Definition per_disect {p}
            lib
            (ts : cts(p))
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per(p)) : [U] :=
   {eqa : per
    , {eqb : per-fam(eqa)
-      , type_family lib mkc_disect ts T1 T2 eqa eqb
+      , type_family lib mkcn_disect ts T1 T2 eqa eqb
       # (forall t t', eq t t' <=> {e : eqa t t' , eqb t t' e t t'}) }}.
 
 (**
@@ -749,12 +1556,12 @@ Definition per_disect {p}
 Definition per_func {p} lib (ts : cts(p)) T1 T2 (eq : per(p)) : [U] :=
   {eqa : per
    , {eqb : per-fam(eqa)
-      , type_family lib mkc_function ts T1 T2 eqa eqb
+      , type_family lib mkcn_function ts T1 T2 eqa eqb
       # (forall t t',
            eq t t'
            <=>
            (forall a a' (e : eqa a a'),
-              (eqb a a' e) (mkc_apply t a) (mkc_apply t' a')))}}.
+              (eqb a a' e) (mkcn_apply t a) (mkcn_apply t' a')))}}.
 
 (**
 
@@ -768,21 +1575,21 @@ Definition per_product_eq {p}
            (eqa : per(p))
            (eqb : per-fam(eqa))
            t t' : [U] :=
-  {a, a', b, b' : CTerm
+  {a, a', b, b' : cterm
    , {e : eqa a a'
-      , t ===>(lib) (mkc_pair a b)
-      # t' ===>(lib) (mkc_pair a' b')
+      , t ===>(lib) (mkcn_pair a b)
+      # t' ===>(lib) (mkcn_pair a' b')
       # eqa a a'
       # eqb a a' e b b'}}.
 
 Definition per_product {p}
            lib
            (ts : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per) : [U] :=
   {eqa : per
    , {eqb : per-fam(eqa)
-      , type_family lib mkc_product ts T1 T2 eqa eqb
+      , type_family lib mkcn_product ts T1 T2 eqa eqb
       # eq <=2=> (per_product_eq lib eqa eqb)}}.
 
 
@@ -791,7 +1598,7 @@ Definition per_product {p}
 Inductive per_tunion_eq {p}
           (eqa : per(p))
           (eqb : per-fam(eqa))
-          (t1 t2 : @CTerm p) : [U] :=
+          (t1 t2 : @cterm p) : [U] :=
 | tunion_eq_cl :
     forall t,
       per_tunion_eq eqa eqb t1 t
@@ -805,11 +1612,11 @@ Inductive per_tunion_eq {p}
 Definition per_tunion {p}
            lib
            (ts : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per) : [U] :=
   {eqa : per
    , {eqb : per-fam(eqa)
-      , type_family lib mkc_tunion ts T1 T2 eqa eqb
+      , type_family lib mkcn_tunion ts T1 T2 eqa eqb
       # eq <=2=> (per_tunion_eq eqa eqb)}}.
 
 
@@ -822,7 +1629,7 @@ Definition per_tunion {p}
  *)
 
 Definition per_texc_eq {p} lib (eqn eqe : per(p)) t t' : [U] :=
-  {n1, n2, e1, e2 : CTerm
+  {n1, n2, e1, e2 : cterm
    , t ===e>(lib,n1) e1
    # t' ===e>(lib,n2) e2
    # eqn n1 n2
@@ -831,12 +1638,12 @@ Definition per_texc_eq {p} lib (eqn eqe : per(p)) t t' : [U] :=
 Definition per_texc {p}
            lib
            (ts : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per(p)) : [U] :=
   {eqn, eqe : per
-   , {N1, N2, E1, E2 : CTerm
-      , T1 ===>(lib) (mkc_texc N1 E1)
-      # T2 ===>(lib) (mkc_texc N2 E2)
+   , {N1, N2, E1, E2 : cterm
+      , T1 ===>(lib) (mkcn_texc N1 E1)
+      # T2 ===>(lib) (mkcn_texc N2 E2)
       # ts N1 N2 eqn
       # ts E1 E2 eqe
       # eq <=2=> (per_texc_eq lib eqn eqe)}}.
@@ -857,29 +1664,29 @@ Definition per_texc {p}
  *)
 
 Definition per_union_eq_L {p} lib (eq : per(p)) t t' : [U] :=
-  {x, y : CTerm
-   , t ===>(lib) (mkc_inl x)
-     # t' ===>(lib) (mkc_inl y)
+  {x, y : cterm
+   , t ===>(lib) (mkcn_inl x)
+     # t' ===>(lib) (mkcn_inl y)
      # eq x y}.
 
 Definition per_union_eq_R {p} lib (eq : per(p)) t t' : [U] :=
-  {x, y : CTerm
-   , t ===>(lib) (mkc_inr x)
-     # t' ===>(lib) (mkc_inr y)
+  {x, y : cterm
+   , t ===>(lib) (mkcn_inr x)
+     # t' ===>(lib) (mkcn_inr y)
      # eq x y}.
 
-Definition per_union_eq {p} lib (eqa eqb : per) (t t' : @CTerm p) : [U] :=
+Definition per_union_eq {p} lib (eqa eqb : per) (t t' : @cterm p) : [U] :=
   per_union_eq_L lib eqa t t' {+} per_union_eq_R lib eqb t t'.
 
 Definition per_union {p}
            lib
            (ts : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per(p)) : [U] :=
   {eqa, eqb : per
-   , {A1, A2, B1, B2 : CTerm
-      , T1 ===>(lib) (mkc_union A1 B1)
-      # T2 ===>(lib) (mkc_union A2 B2)
+   , {A1, A2, B1, B2 : cterm
+      , T1 ===>(lib) (mkcn_union A1 B1)
+      # T2 ===>(lib) (mkcn_union A2 B2)
       # ts A1 A2 eqa
       # ts B1 B2 eqb
       # eq <=2=> (per_union_eq lib eqa eqb)}}.
@@ -888,19 +1695,19 @@ Definition per_union {p}
 (* extensional union type *)
 
 Definition per_or {p} (eq1 eq2 : per) : per :=
-  fun t1 t2 : @CTerm p => eq1 t1 t2 {+} eq2 t1 t2.
+  fun t1 t2 : @cterm p => eq1 t1 t2 {+} eq2 t1 t2.
 
 Notation "eq1 +2+ eq2" := (per_or eq1 eq2) (at level 0).
 
 Definition per_eunion {p}
            lib
            (ts : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per(p)) : [U] :=
   {eqa1, eqa2, eqb1, eqb2 : per
-   , {A1, A2, B1, B2 : CTerm
-   , T1 ===>(lib) (mkc_eunion A1 B1)
-   # T2 ===>(lib) (mkc_eunion A2 B2)
+   , {A1, A2, B1, B2 : cterm
+   , T1 ===>(lib) (mkcn_eunion A1 B1)
+   # T2 ===>(lib) (mkcn_eunion A2 B2)
    # ((eqa1 +2+ eqb1) <=2=> (eqa2 +2+ eqb2))
    # ts A1 A1 eqa1
    # ts A2 A2 eqa2
@@ -911,19 +1718,19 @@ Definition per_eunion {p}
 (* begin hide *)
 
 Definition per_union2_eq_L {o} lib (ts : cts(o)) T1 T2 t t' : [U] :=
-  {x, y : CTerm
+  {x, y : cterm
    , {eq : per(o)
    , ts T1 T2 eq
-   # t ===>(lib) (mkc_inl x)
-   # t' ===>(lib) (mkc_inl y)
+   # t ===>(lib) (mkcn_inl x)
+   # t' ===>(lib) (mkcn_inl y)
    # eq x y}}.
 
 Definition per_union2_eq_R {o} lib (ts : cts(o)) T1 T2 t t' : [U] :=
-  {x, y : CTerm
+  {x, y : cterm
    , {eq : per(o)
    , ts T1 T2 eq
-   # t ===>(lib) (mkc_inr x)
-   # t' ===>(lib) (mkc_inr y)
+   # t ===>(lib) (mkcn_inr x)
+   # t' ===>(lib) (mkcn_inr y)
    # eq x y}}.
 
 Definition per_union2_eq {p} lib (ts : cts(p)) A1 A2 B1 B2 t1 t2 :=
@@ -932,12 +1739,12 @@ Definition per_union2_eq {p} lib (ts : cts(p)) A1 A2 B1 B2 t1 t2 :=
 Definition per_union2 {o}
            lib
            (ts : cts)
-           (T1 T2 : @CTerm o)
+           (T1 T2 : @cterm o)
            (eq : per(o)) : [U] :=
    {eqa : per(o)
-   , {A1, A2, B1, B2 : CTerm
-   , T1 ===>(lib) (mkc_union2 A1 B1)
-   # T2 ===>(lib) (mkc_union2 A2 B2)
+   , {A1, A2, B1, B2 : cterm
+   , T1 ===>(lib) (mkcn_union2 A1 B1)
+   # T2 ===>(lib) (mkcn_union2 A2 B2)
    # eq <=2=> (per_union2_eq lib ts A1 A2 B1 B2)
   }}.
 
@@ -958,14 +1765,14 @@ Definition per_union2 {o}
  *)
 
 (*
-Definition per_image_eq1 (eqa : per(p)) (f t1 t2 : @CTerm p) : [U] :=
-  {a1, a2 : CTerm
+Definition per_image_eq1 (eqa : per(p)) (f t1 t2 : @cterm p) : [U] :=
+  {a1, a2 : cterm
    , eqa a1 a2
    # t1 ~=~ (mkc_apply f a1)
    # t2 ~=~ (mkc_apply f a2)}.
 *)
 
-Inductive per_image_eq {p} lib (eqa : per(p)) (f t1 t2 : @CTerm p) : [U] :=
+Inductive per_image_eq {p} lib (eqa : per(p)) (f t1 t2 : @cterm p) : [U] :=
 | image_eq_cl :
     forall t,
       per_image_eq lib eqa f t1 t
@@ -974,19 +1781,19 @@ Inductive per_image_eq {p} lib (eqa : per(p)) (f t1 t2 : @CTerm p) : [U] :=
 | image_eq_eq :
     forall a1 a2,
       eqa a1 a2
-      -> t1 ~=~(lib) (mkc_apply f a1)
-      -> t2 ~=~(lib) (mkc_apply f a2)
+      -> t1 ~=~(lib) (mkcn_apply f a1)
+      -> t2 ~=~(lib) (mkcn_apply f a2)
       -> per_image_eq lib eqa f t1 t2.
 
 Definition per_image {p}
            lib
            (ts : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per) : [U] :=
   {eqa : per
-   , {A1, A2, f1, f2 : CTerm
-      , T1 ===>(lib) (mkc_image A1 f1)
-      # T2 ===>(lib) (mkc_image A2 f2)
+   , {A1, A2, f1, f2 : cterm
+      , T1 ===>(lib) (mkcn_image A1 f1)
+      # T2 ===>(lib) (mkcn_image A2 f2)
       # ts A1 A2 eqa
       # f1 ~=~(lib) f2
       # eq <=2=> (per_image_eq lib eqa f1)}}.
@@ -1018,33 +1825,33 @@ Definition eisect_eq {p} (eqa eqa' : per(p)) (eqb : per-efam(eqa,eqa')) : per(p)
 
 Definition etype_family1 {p}
            lib
-           (C   : CTerm -> forall (v : NVar), CVTerm [v] -> CTerm)
+           (C   : cterm -> forall (v : NVar), cvterm [v] -> cterm)
            (ts  : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eqa eqa' : per(p))
            (eqb : per-efam(eqa,eqa')) : [U] :=
-  {A, A' : CTerm
+  {A, A' : cterm
    , {v, v' : NVar
-   , {B : CVTerm [v]
-   , {B' : CVTerm [v']
+   , {B : cvterm [v]
+   , {B' : cvterm [v']
       , T1 ===>(lib) (C A v B)
       # T2 ===>(lib) (C A' v' B')
       # ts A A eqa
       # ts A' A' eqa'
       # (forall a (e : eqa a a),
-           {a' : CTerm , {e' : eqa' a' a'
-            , ts (substc a v B) (substc a' v' B') (eqb a a' e e')}})
+           {a' : cterm , {e' : eqa' a' a'
+            , ts (substcn a v B) (substcn a' v' B') (eqb a a' e e')}})
       # (forall a' (e' : eqa' a' a'),
-           {a : CTerm , {e : eqa a a
-            , ts (substc a v B) (substc a' v' B') (eqb a a' e e')}}) }}}}.
+           {a : cterm , {e : eqa a a
+            , ts (substcn a v B) (substcn a' v' B') (eqb a a' e e')}}) }}}}.
 
 Definition per_eisect1 {p}
            lib
            (ts : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per) : [U] :=
   {eqa, eqa' : per , {eqb : per-efam(eqa,eqa')
-      , etype_family1 lib mkc_eisect ts T1 T2 eqa eqa' eqb
+      , etype_family1 lib mkcn_eisect ts T1 T2 eqa eqa' eqb
       # eq <=2=> (eisect_eq eqa eqa' eqb) }}.
 
 (*
@@ -1052,8 +1859,8 @@ Definition mk_eqb
              (ts )
              (eqa eqa' : per(p))
              (eqb : forall a a', eqa a a -> eqa' a' a' -> per)
-             (f : forall a (e : eqa a a), {a' : CTerm , eqa' a' a'})
-             (a : @CTerm p)
+             (f : forall a (e : eqa a a), {a' : cterm , eqa' a' a'})
+             (a : @cterm p)
              (e : eqa a a) : per :=
   match f a e with
       | ex_intro a' e' =>
@@ -1065,7 +1872,7 @@ Definition mk_eqb
 
 (** term selector *)
 Notation "t-sel ( eqa )" :=
-  (forall a (e : eqa a a), CTerm) (at level 0).
+  (forall a (e : eqa a a), cterm) (at level 0).
 
 (** equality selector *)
 Notation "e-sel ( eqa , eqa' , f )" :=
@@ -1073,15 +1880,15 @@ Notation "e-sel ( eqa , eqa' , f )" :=
 
 Definition etype_family {p}
            lib
-           (C   : CTerm -> forall (v : NVar), CVTerm [v] -> CTerm)
+           (C   : cterm -> forall (v : NVar), cvterm [v] -> cterm)
            (ts  : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eqa eqa' : per(p))
            (eqb : per-efam(eqa,eqa')) : [U] :=
-  {A, A' : CTerm
+  {A, A' : cterm
    , {v, v' : NVar
-   , {B  : CVTerm [v]
-   , {B' : CVTerm [v']
+   , {B  : cvterm [v]
+   , {B' : cvterm [v']
    , {f  : t-sel(eqa)
    , {g  : e-sel(eqa,eqa',f)
    , {f' : t-sel(eqa')
@@ -1091,12 +1898,12 @@ Definition etype_family {p}
       # ts A A eqa
       # ts A' A' eqa'
       # (forall a (e : eqa a a),
-           ts (substc a v B)
-              (substc (f a e) v' B')
+           ts (substcn a v B)
+              (substcn (f a e) v' B')
               (eqb a (f a e) e (g a e)))
       # (forall a' (e' : eqa' a' a'),
-           ts (substc (f' a' e') v B)
-              (substc a' v' B')
+           ts (substcn (f' a' e') v B)
+              (substcn a' v' B')
               (eqb (f' a' e') a' (g' a' e') e')) }}}}}}}}.
 
 (**
@@ -1164,10 +1971,10 @@ Definition etype_family {p}
 Definition per_eisect {p}
            lib
            (ts : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per) : [U] :=
   {eqa, eqa' : per , {eqb : per-efam(eqa,eqa')
-      , etype_family lib mkc_eisect ts T1 T2 eqa eqa' eqb
+      , etype_family lib mkcn_eisect ts T1 T2 eqa eqa' eqb
       # eq <=2=> (eisect_eq eqa eqa' eqb) }}.
 
 (**
@@ -1201,9 +2008,9 @@ Definition per_eisect {p}
 
  *)
 
-Definition inhabited {p} (R : per(p)) := { t : CTerm , R t t }.
+Definition inhabited {p} (R : per(p)) := { t : cterm , R t t }.
 
-Definition is_per {p} (R : @CTerm p -> @CTerm p -> per(p)) :=
+Definition is_per {p} (R : @cterm p -> @cterm p -> per(p)) :=
   (forall x y, inhabited (R x y) -> inhabited (R y x))
     # (forall x y z, inhabited (R x y)
                       -> inhabited (R y z)
@@ -1223,17 +2030,17 @@ Definition is_per {p} (R : @CTerm p -> @CTerm p -> per(p)) :=
 Definition per_pertype {p}
            lib
            (ts : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per) : [U] :=
-  {R1, R2 : CTerm
-   , {eq1, eq2 : CTerm -> CTerm -> per
-      , T1 ===>(lib) (mkc_pertype R1)
-      # T2 ===>(lib) (mkc_pertype R2)
-      # (forall x y, ts (mkc_apply2 R1 x y)
-                        (mkc_apply2 R1 x y)
+  {R1, R2 : cterm
+   , {eq1, eq2 : cterm -> cterm -> per
+      , T1 ===>(lib) (mkcn_pertype R1)
+      # T2 ===>(lib) (mkcn_pertype R2)
+      # (forall x y, ts (mkcn_apply2 R1 x y)
+                        (mkcn_apply2 R1 x y)
                         (eq1 x y))
-      # (forall x y, ts (mkc_apply2 R2 x y)
-                        (mkc_apply2 R2 x y)
+      # (forall x y, ts (mkcn_apply2 R2 x y)
+                        (mkcn_apply2 R2 x y)
                         (eq2 x y))
       # (forall x y, inhabited (eq1 x y) <=> inhabited (eq2 x y))
       # is_per eq1
@@ -1245,16 +2052,16 @@ Definition per_pertype {p}
 
  *)
 
-Definition pertype_eq {p} (eq : @CTerm p -> @CTerm p -> per(p)) t t' :=
+Definition pertype_eq {p} (eq : @cterm p -> @cterm p -> per(p)) t t' :=
   inhabited (eq t t').
 
-Definition per_ipertype {p} lib (ts : cts) (T1 T2 : @CTerm p) (eq : per) :=
-  {R1, R2 : CTerm
-   , {eq1 : CTerm -> CTerm -> per
-      , T1 ===>(lib) (mkc_ipertype R1)
-      # T2 ===>(lib) (mkc_ipertype R2)
-      # (forall x y, ts (mkc_apply2 R1 x y)
-                        (mkc_apply2 R2 x y)
+Definition per_ipertype {p} lib (ts : cts) (T1 T2 : @cterm p) (eq : per) :=
+  {R1, R2 : cterm
+   , {eq1 : cterm -> cterm -> per
+      , T1 ===>(lib) (mkcn_ipertype R1)
+      # T2 ===>(lib) (mkcn_ipertype R2)
+      # (forall x y, ts (mkcn_apply2 R1 x y)
+                        (mkcn_apply2 R2 x y)
                         (eq1 x y))
       # is_per eq1
       # eq <=2=> (pertype_eq eq1) }}.
@@ -1265,19 +2072,19 @@ Definition per_ipertype {p} lib (ts : cts) (T1 T2 : @CTerm p) (eq : per) :=
 
  *)
 
-Definition per_spertype {p} lib (ts : cts) (T1 T2 : @CTerm p) (eq : per) :=
-  {R1, R2 : CTerm
-   , {eq1 : CTerm -> CTerm -> per
-      , T1 ===>(lib) (mkc_spertype R1)
-      # T2 ===>(lib) (mkc_spertype R2)
+Definition per_spertype {p} lib (ts : cts) (T1 T2 : @cterm p) (eq : per) :=
+  {R1, R2 : cterm
+   , {eq1 : cterm -> cterm -> per
+      , T1 ===>(lib) (mkcn_spertype R1)
+      # T2 ===>(lib) (mkcn_spertype R2)
       # (forall x y,
-           ts (mkc_apply2 R1 x y) (mkc_apply2 R2 x y) (eq1 x y))
+           ts (mkcn_apply2 R1 x y) (mkcn_apply2 R2 x y) (eq1 x y))
       # (forall x y z,
            inhabited (eq1 x z)
-           -> ts (mkc_apply2 R1 x y) (mkc_apply2 R1 z y) (eq1 x y))
+           -> ts (mkcn_apply2 R1 x y) (mkcn_apply2 R1 z y) (eq1 x y))
       # (forall x y z,
            inhabited (eq1 y z)
-           -> ts (mkc_apply2 R1 x y) (mkc_apply2 R1 x z) (eq1 x y))
+           -> ts (mkcn_apply2 R1 x y) (mkcn_apply2 R1 x z) (eq1 x y))
       # is_per eq1
       # eq <=2=> (pertype_eq eq1) }}.
 
@@ -1288,39 +2095,41 @@ Definition per_spertype {p} lib (ts : cts) (T1 T2 : @CTerm p) (eq : per) :=
  *)
 
 Definition quot_rel_eq {p} (eqa : per) :=
-  forall (a1 a2 : @CTerm p)
+  forall (a1 a2 : @cterm p)
          (ea : eqa a1 a2)
-         (b1 b2 : @CTerm p)
+         (b1 b2 : @cterm p)
          (eb : eqa b1 b2),
     per(p).
 
 Definition per_quotient_eq {p}
            (eqa : per)
            (eqe : quot_rel_eq eqa)
-           (t t' : @CTerm p) :=
+           (t t' : @cterm p) :=
   {e : eqa t t , {e' : eqa t' t' , inhabited (eqe t t e t' t' e')}}.
+
+Locate lsubstc2.
 
 Definition per_quotient {p}
            lib
            (ts : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per) : [U] :=
-  {A1, A2 : CTerm
+  {A1, A2 : cterm
    , {x1, x2, y1, y2 : NVar
-   , {E1 : CVTerm [x1,y1]
-   , {E2 : CVTerm [x2,y2]
+   , {E1 : cvterm [x1,y1]
+   , {E2 : cvterm [x2,y2]
    , {eqa : per
    , {eqe1, eqe2 : quot_rel_eq eqa
-      , T1 ===>(lib) (mkc_quotient A1 x1 y1 E1)
-      # T2 ===>(lib) (mkc_quotient A2 x2 y2 E2)
+      , T1 ===>(lib) (mkcn_quotient A1 x1 y1 E1)
+      # T2 ===>(lib) (mkcn_quotient A2 x2 y2 E2)
       # ts A1 A2 eqa
       # (forall a1 a2 b1 b2 (ea : eqa a1 a2) (eb : eqa b1 b2),
-           ts (lsubstc2 x1 a1 y1 b1 E1)
-              (lsubstc2 x1 a2 y1 b2 E1)
+           ts (lsubstcn2 x1 a1 y1 b1 E1)
+              (lsubstcn2 x1 a2 y1 b2 E1)
               (eqe1 a1 a2 ea b1 b2 eb))
       # (forall a1 a2 b1 b2 (ea : eqa a1 a2) (eb : eqa b1 b2),
-           ts (lsubstc2 x2 a1 y2 b1 E2)
-              (lsubstc2 x2 a2 y2 b2 E2)
+           ts (lsubstcn2 x2 a1 y2 b1 E2)
+              (lsubstcn2 x2 a2 y2 b2 E2)
               (eqe2 a1 a2 ea b1 b2 eb))
       # (forall a1 a2 b1 b2 (ea : eqa a1 a2) (eb : eqa b1 b2),
            inhabited (eqe1 a1 a2 ea b1 b2 eb)
@@ -1348,11 +2157,11 @@ Definition per_quotient {p}
 Definition per_set {p}
            lib
            (ts : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per) : [U] :=
   {eqa : per
    , {eqb : per-fam(eqa)
-      , type_family lib mkc_set ts T1 T2 eqa eqb
+      , type_family lib mkcn_set ts T1 T2 eqa eqb
       # (forall t t', eq t t' <=> {e : eqa t t' , inhabited (eqb t t' e)})}}.
 
 (**
@@ -1365,16 +2174,16 @@ Definition per_set {p}
 
  *)
 
-Definition per_partial_eq {p} lib (eqa : per) (t t' : @CTerm p) : [U] :=
-  (chaltsc lib t <=> chaltsc lib t')
-  # (chaltsc lib t -> eqa t t').
+Definition per_partial_eq {p} lib (eqa : per) (t t' : @cterm p) : [U] :=
+  (chaltscn lib t <=> chaltscn lib t')
+  # (chaltscn lib t -> eqa t t').
 
 Definition per_partial {p} lib (ts : cts) T1 T2 (eq : per(p)) : [U] :=
-  {A1, A2 : @CTerm p , {eqa : per
-      , T1 ===>(lib) (mkc_partial A1)
-      # T2 ===>(lib) (mkc_partial A2)
+  {A1, A2 : @cterm p , {eqa : per
+      , T1 ===>(lib) (mkcn_partial A1)
+      # T2 ===>(lib) (mkcn_partial A2)
       # ts A1 A2 eqa
-      # (forall a, eqa a a -> chaltsc lib a)
+      # (forall a, eqa a a -> chaltscn lib a)
       # eq <=2=> (per_partial_eq lib eqa) }}.
 
 (** %\noindent% One of the main ways to prove membership
@@ -1398,19 +2207,19 @@ Definition per_partial {p} lib (ts : cts) T1 T2 (eq : per(p)) : [U] :=
 
 *)
 
-Fixpoint fix_approxc {p} (n : nat) (f : @CTerm p) : CTerm :=
+Fixpoint fix_approxc {p} (n : nat) (f : @cterm p) : cterm :=
   match n with
-    | 0 => mkc_bot
-    | S n => mkc_apply f (fix_approxc n f)
+    | 0 => mkcn_bot
+    | S n => mkcn_apply f (fix_approxc n f)
   end.
 
 Definition subst_fapproxc {p} {v:NVar}
-           (e : CVTerm [v]) (f : @CTerm p) (n : nat) : CTerm :=
-  substc (fix_approxc n f) v e.
+           (e : cvterm [v]) (f : @cterm p) (n : nat) : cterm :=
+  substcn (fix_approxc n f) v e.
 
 Definition subst_fixc {p} {v:NVar}
-           (e : CVTerm [v]) (f : @CTerm p) : CTerm :=
-  substc (mkc_fix f) v e.
+           (e : cvterm [v]) (f : @cterm p) : cterm :=
+  substcn (mkcn_fix f) v e.
 
 (** %\noindent%
   First, we define the Crary's more inuitive Mono-hood property. Intuitively,
@@ -1420,36 +2229,36 @@ Definition subst_fixc {p} {v:NVar}
   that are Mono *)
 
 Definition mono_equality {p} lib (eq : per) :=
-  forall (t t' : @CTerm p),
+  forall (t t' : @cterm p),
     eq t t
-    -> approxc lib t t'
+    -> approxcn lib t t'
     -> eq t t'.
 
 (** %\noindent% Crary the defined a stronger condition called
     admissibility. It is defined below *)
 
-Definition per_mono_eq {p} lib (eqa : per(p)) (t t' : @CTerm p) : [U] :=
-  t ===>(lib) mkc_axiom
-  # t' ===>(lib) mkc_axiom
+Definition per_mono_eq {p} lib (eqa : per(p)) (t t' : @cterm p) : [U] :=
+  t ===>(lib) mkcn_axiom
+  # t' ===>(lib) mkcn_axiom
   # mono_equality lib eqa.
 
 Definition per_mono {p}
            lib
            (ts : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per(p)) : [U] :=
-  {A1, A2 : CTerm ,
+  {A1, A2 : cterm ,
     {eqa : per ,
-        T1 ===>(lib) (mkc_mono A1)
-        # T2 ===>(lib) (mkc_mono A2)
+        T1 ===>(lib) (mkcn_mono A1)
+        # T2 ===>(lib) (mkcn_mono A2)
         # ts A1 A2 eqa
         # eq <=2=> (per_mono_eq lib eqa)}}.
 
 Definition cofinite_subst_fapprox_eqc {p}
            (eq : per)
            {v: NVar}
-           (e e' : CVTerm [v])
-           (f : @CTerm p) :=
+           (e e' : cvterm [v])
+           (f : @cterm p) :=
     {j : nat
      , forall (k :nat),
          k>j -> eq (subst_fapproxc e f k) (subst_fapproxc e' f k)}.
@@ -1457,35 +2266,35 @@ Definition cofinite_subst_fapprox_eqc {p}
 Definition subst_fix_eqc {p}
            (eq : per)
            {v: NVar}
-           (e e' : CVTerm [v])
-           (f : @CTerm p) :=
+           (e e' : cvterm [v])
+           (f : @cterm p) :=
   eq (subst_fixc e f)  (subst_fixc e' f).
 
 Definition admissible_equality {p} (eq : per) :=
-  forall v (e e' : CVTerm [v]) (f : @CTerm p),
+  forall v (e e' : cvterm [v]) (f : @cterm p),
     cofinite_subst_fapprox_eqc eq e e' f
     -> subst_fix_eqc eq e e' f.
 
-Definition per_admiss_eq {p} lib (eqa : per(p)) (t t' : @CTerm p) : [U] :=
-  t ===>(lib) mkc_axiom
-  # t' ===>(lib) mkc_axiom
+Definition per_admiss_eq {p} lib (eqa : per(p)) (t t' : @cterm p) : [U] :=
+  t ===>(lib) mkcn_axiom
+  # t' ===>(lib) mkcn_axiom
   # admissible_equality eqa.
 
 Definition per_admiss {p}
            lib
            (ts : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per(p)) : [U] :=
-  {A1, A2 : CTerm ,
+  {A1, A2 : cterm ,
     {eqa : per ,
-        T1 ===>(lib) (mkc_admiss A1)
-      # T2 ===>(lib) (mkc_admiss A2)
+        T1 ===>(lib) (mkcn_admiss A1)
+      # T2 ===>(lib) (mkcn_admiss A2)
       # ts A1 A2 eqa
       # eq <=2=> (per_admiss_eq lib eqa)}}.
 
 (*
-Definition per_esquash (ts : cts) (T1 T2 : @CTerm p) (eq : per(p)) :=
-  {A1, A2 : CTerm
+Definition per_esquash (ts : cts) (T1 T2 : @cterm p) (eq : per(p)) :=
+  {A1, A2 : cterm
    $ {eq1, eq2 : per
       $ ccomputes_to_valc T1 (mkc_esquash A1)
       # ccomputes_to_valc T2 (mkc_esquash A2)
@@ -1510,15 +2319,15 @@ Inductive weq {p}
           lib
           (eqa : per)
           (eqb : per-fam(eqa))
-          (t t' : @CTerm p) : [U] :=
+          (t t' : @cterm p) : [U] :=
 | weq_cons :
-    forall a f a' f' : CTerm,
+    forall a f a' f' : cterm,
     forall e : eqa a a',
-      t ===>(lib) (mkc_sup a f)
-      -> t' ===>(lib) (mkc_sup a' f')
+      t ===>(lib) (mkcn_sup a f)
+      -> t' ===>(lib) (mkcn_sup a' f')
       -> (forall b b',
             eqb a a' e b b'
-            -> weq lib eqa eqb (mkc_apply f b) (mkc_apply f' b'))
+            -> weq lib eqa eqb (mkcn_apply f b) (mkcn_apply f' b'))
       -> weq lib eqa eqb t t'.
 
 Definition per_w {p} lib (ts : cts) T1 T2 (eq : per(p)) : [U] :=
@@ -1537,9 +2346,9 @@ CoInductive meq {p}
             lib
             (eqa : per)
             (eqb : per-fam(eqa))
-            (t t' : @CTerm p) : [U] :=
+            (t t' : @cterm p) : [U] :=
 | meq_cons :
-    forall a f a' f' : CTerm,
+    forall a f a' f' : cterm,
     forall e : eqa a a',
       t ===>(lib) (mkc_sup a f)
       -> t' ===>(lib) (mkc_sup a' f')
@@ -1551,7 +2360,7 @@ CoInductive meq {p}
 Definition per_m {p}
            lib
            (ts : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per) : [U] :=
   {eqa : per
    , {eqb : per-fam(eqa)
@@ -1575,20 +2384,20 @@ Definition per_m {p}
  *)
 
 Definition pfam_type {pp} :=
-  forall P : @CTerm pp,
+  forall P : @cterm pp,
   forall ap : NVar,
-  forall A : @CVTerm pp [ap],
+  forall A : @cvterm pp [ap],
   forall bp ba : NVar,
-  forall B : @CVTerm pp [bp,ba],
+  forall B : @cvterm pp [bp,ba],
   forall cp ca cb : NVar,
-  forall C : @CVTerm pp [cp,ca,cb],
-  forall p : @CTerm pp,
-    @CTerm pp.
+  forall C : @cvterm pp [cp,ca,cb],
+  forall p : @cterm pp,
+    @cterm pp.
 
 Notation "per-fam-fam ( eqp , eqa )" :=
-  (forall p p' : CTerm,
+  (forall p p' : cterm,
    forall ep : eqp p p',
-   forall a a' : CTerm,
+   forall a a' : cterm,
    forall ea : eqa p p' ep a a',
      per)
     (at level 0).
@@ -1597,23 +2406,23 @@ Definition type_pfamily {p}
            lib
            (Cons : pfam_type)
            (ts  : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eqp : per(p))
            (eqa : per-fam(eqp))
            (eqb : per-fam-fam(eqp,eqa))
            (cp1 ca1 cb1 : NVar)
-           (C1 : CVTerm [cp1;ca1;cb1])
+           (C1 : cvterm [cp1;ca1;cb1])
            (cp2 ca2 cb2 : NVar)
-           (C2 : CVTerm [cp2;ca2;cb2])
-           (p1 p2 : @CTerm p): [U] :=
-  {P1, P2 : CTerm
+           (C2 : cvterm [cp2;ca2;cb2])
+           (p1 p2 : @cterm p): [U] :=
+  {P1, P2 : cterm
    , {ap1, ap2 : NVar
-   , {A1 : CVTerm [ap1]
-   , {A2 : CVTerm [ap2]
+   , {A1 : cvterm [ap1]
+   , {A2 : cvterm [ap2]
    , {bp1, bp2 : NVar
    , {ba1, ba2 : NVar
-   , {B1 : CVTerm [bp1, ba1]
-   , {B2 : CVTerm [bp2, ba2]
+   , {B1 : cvterm [bp1, ba1]
+   , {B2 : cvterm [bp2, ba2]
       , T1 ===>(lib) (Cons P1 ap1 A1 bp1 ba1 B1 cp1 ca1 cb1 C1 p1)
       # T2 ===>(lib) (Cons P2 ap2 A2 bp2 ba2 B2 cp2 ca2 cb2 C2 p2)
       # ts P1 P2 eqp
@@ -1651,12 +2460,12 @@ Inductive pweq {pp}
           (eqa : per-fam(eqp))
           (eqb : per-fam-fam(eqp,eqa))
           (cp ca cb : NVar)
-          (C : CVTerm [cp;ca;cb])
-          (p : CTerm)
-          (t1 t2 : @CTerm pp) : [U] :=
+          (C : cvterm [cp;ca;cb])
+          (p : cterm)
+          (t1 t2 : @cterm pp) : [U] :=
 | pweq_cons :
     forall ep : eqp p p,
-    forall a1 f1 a2 f2 : CTerm,
+    forall a1 f1 a2 f2 : cterm,
     forall ea : eqa p p ep a1 a2,
       t1 ===>(lib) (mkc_sup a1 f1)
       -> t2 ===>(lib) (mkc_sup a2 f2)
@@ -1672,15 +2481,15 @@ Inductive pweq {pp}
 Definition per_pw {p}
            lib
            (ts : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per) : [U] :=
   {eqp : per
    , {eqa : per-fam(eqp)
    , {eqb : per-fam-fam(eqp,eqa)
-   , {p1, p2 : CTerm
+   , {p1, p2 : cterm
    , {cp1, cp2, ca1, ca2, cb1, cb2 : NVar
-   , {C1 : CVTerm [cp1, ca1, cb1]
-   , {C2 : CVTerm [cp2, ca2, cb2]
+   , {C1 : cvterm [cp1, ca1, cb1]
+   , {C2 : cvterm [cp2, ca2, cb2]
       , type_pfamily lib mkc_pw ts T1 T2 eqp eqa eqb
                      cp1 ca1 cb1
                      C1
@@ -1786,12 +2595,12 @@ CoInductive pmeq {pp}
             (eqa : per-fam(eqp))
             (eqb : per-fam-fam(eqp,eqa))
             (cp ca cb : NVar)
-            (C : CVTerm [cp;ca;cb])
-            (p : @CTerm pp)
-            (t1 t2 : @CTerm pp) : [U] :=
+            (C : cvterm [cp;ca;cb])
+            (p : @cterm pp)
+            (t1 t2 : @cterm pp) : [U] :=
 | pmeq_cons :
     forall ep : eqp p p,
-    forall a1 f1 a2 f2 : CTerm,
+    forall a1 f1 a2 f2 : cterm,
     forall ea : eqa p p ep a1 a2,
       t1 ===>(lib) (mkc_sup a1 f1)
       -> t2 ===>(lib) (mkc_sup a2 f2)
@@ -1807,15 +2616,15 @@ CoInductive pmeq {pp}
 Definition per_pm {p}
            lib
            (ts : cts)
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per) : [U] :=
   {eqp : per
    , {eqa : per-fam(eqp)
    , {eqb : per-fam-fam(eqp,eqa)
-   , {p1, p2 : CTerm
+   , {p1, p2 : cterm
    , {cp1, cp2, ca1, ca2, cb1, cb2 : NVar
-   , {C1 : CVTerm [cp1, ca1, cb1]
-   , {C2 : CVTerm [cp2, ca2, cb2]
+   , {C1 : cvterm [cp1, ca1, cb1]
+   , {C2 : cvterm [cp2, ca2, cb2]
       , type_pfamily lib mkc_pm ts T1 T2 eqp eqa eqb
                      cp1 ca1 cb1
                      C1
@@ -1825,13 +2634,43 @@ Definition per_pm {p}
       # eq <=2=> (pmeq lib eqp eqa eqb cp1 ca1 cb1 C1 p1)
        }}}}}}}.
 
+Definition isper {p} (R : per(p)) : [U] :=
+  (forall x y, R x y -> R y x)
+    # (forall x y z, R x y -> R y z -> R x z).
+
+Definition imp_per {p} (eq1 eq2 : per) :=
+  forall t1 t2 : @cterm p, eq1 t1 t2 -> eq2 t1 t2.
+
+Notation "eq1 =2=> eq2" := (imp_per eq1 eq2) (at level 0).
+
+Definition monoperfun {o} (f : per(o) -> per(o)) : [U] :=
+  (forall p : per, isper p -> isper (f p))
+  /\ (forall (p1 p2 : per(o)), (p1 =2=> p2) -> ((f p1) =2=> (f p2))).
+
+Definition per_rec {o}
+           (lib : @library o)
+           (ts : cts)
+           (T1 T2 : @cterm o)
+           (eq : per(o)) : [U] :=
+  {F : @cterm o
+  , {G : @cterm o
+  , {f : per(o) -> per(o)
+  , monoperfun f
+(*  # T1 ===>(lib) (mkc_rec F)*)
+(*  # T2 ===>(lib) (mkc_rec G)*)
+  # (forall (A B : cterm) (eqa : per),
+        ts A B eqa
+        -> ts (mkc_apply F A) (mkc_apply F B) (f eqa)
+           # ts (mkc_apply G A) (mkc_apply G B) (f eqa))
+(*  # eq <=2=> (per_rec_per f)*) }}}.
+
 (*
-Definition per_rec (ts : cts) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
+Definition per_rec (ts : cts) (T1 T2 : @cterm p) (eq : per(p)) : [U] :=
   {v1, v2 : NVar
-   , {F1 : CVTerm [v1]
-   , {F2 : CVTerm [v2]
+   , {F1 : cvterm [v1]
+   , {F2 : cvterm [v2]
    , {eqc : per
-   , {eqb : forall a1 a2 : CTerm,
+   , {eqb : forall a1 a2 : cterm,
             forall eqa : per,
             forall e : ts a1 a2 eqa,
               per
@@ -1850,8 +2689,8 @@ Definition per_rec (ts : cts) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
 
 (** close the different constructors with that and remove ccomputes_to_valc
  * from the per definitions *)
-Definition close_compute {p} lib (ts : cts) (T1 T2 : @CTerm p) (eq : per(p)) :=
-  {T3, T4 : CTerm
+Definition close_compute {p} lib (ts : cts) (T1 T2 : @cterm p) (eq : per(p)) :=
+  {T3, T4 : cterm
    $ ccomputes_to_valc lib T1 T3
    # ccomputes_to_valc lib T2 T4
    # ts T3 T4 eq}.
@@ -1869,7 +2708,7 @@ Definition close_compute {p} lib (ts : cts) (T1 T2 : @CTerm p) (eq : per(p)) :=
 
  *)
 
-Inductive close {p} lib (ts : cts) (T T' : @CTerm p) (eq : per(p)) : [U] :=
+Inductive close {p} lib (ts : cts) (T T' : @cterm p) (eq : per(p)) : [U] :=
   | CL_init     : ts T T' eq -> close lib ts T T' eq
   | CL_int      : per_int      lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_atom     : per_atom     lib (close lib ts) T T' eq -> close lib ts T T' eq
@@ -1904,7 +2743,8 @@ Inductive close {p} lib (ts : cts) (T T' : @CTerm p) (eq : per(p)) : [U] :=
   | CL_ffatoms  : per_ffatoms  lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_set      : per_set      lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_tunion   : per_tunion   lib (close lib ts) T T' eq -> close lib ts T T' eq
-  | CL_product  : per_product  lib (close lib ts) T T' eq -> close lib ts T T' eq.
+  | CL_product  : per_product  lib (close lib ts) T T' eq -> close lib ts T T' eq
+(*  | CL_rec      : per_rec      lib (close lib ts) T T' eq -> close lib ts T T' eq*).
 Hint Constructors close.
 
 Arguments CL_init     {p} [lib] [ts] [T] [T'] [eq] _.
@@ -1986,43 +2826,43 @@ Definition close_ind' {pp}
            lib
   (P : cts -> cts)
   (init : forall (ts : cts)
-                 (T T' : @CTerm pp)
+                 (T T' : @cterm pp)
                  (eq : per),
             ts T T' eq -> P ts T T' eq)
   (int  : forall (ts : cts)
-                 (T T' : @CTerm pp)
+                 (T T' : @cterm pp)
                  (eq : per)
                  (per : per_int lib (close lib ts) T T' eq),
             P ts T T' eq)
   (atom : forall (ts : cts)
-                 (T T' : @CTerm pp)
+                 (T T' : @cterm pp)
                  (eq : per)
                  (per : per_atom lib (close lib ts) T T' eq),
             P ts T T' eq)
   (uatom : forall (ts : cts)
-                 (T T' : @CTerm pp)
+                 (T T' : @cterm pp)
                  (eq : per)
                  (per : per_uatom lib (close lib ts) T T' eq),
             P ts T T' eq)
   (base : forall (ts : cts)
-                 (T T' : @CTerm pp)
+                 (T T' : @cterm pp)
                  (eq : per)
                  (per : per_base lib (close lib ts) T T' eq),
             P ts T T' eq)
   (aprx : forall (ts : cts)
-                 (T T' : @CTerm pp)
+                 (T T' : @cterm pp)
                  (eq : per)
                  (per : per_approx lib (close lib ts) T T' eq),
               P ts T T' eq)
   (ceq : forall (ts : cts)
-                (T T' : @CTerm pp)
+                (T T' : @cterm pp)
                 (eq : per)
                 (per : per_cequiv lib (close lib ts) T T' eq),
            P ts T T' eq)
   (equ  : forall (ts : cts)
-                 (T T' : @CTerm pp)
+                 (T T' : @cterm pp)
                  (eq : per)
-                 (A B a1 a2 b1 b2 : @CTerm pp)
+                 (A B a1 a2 b1 b2 : @cterm pp)
                  (eqa : per)
                  (c1 : T ===>(lib) (mkc_equality a1 a2 A))
                  (c2 : T' ===>(lib) (mkc_equality b1 b2 B))
@@ -2038,9 +2878,9 @@ Definition close_ind' {pp}
                  (per : per_eq lib (close lib ts) T T' eq),
             P ts T T' eq)
   (requ : forall (ts : cts)
-                 (T T' : @CTerm pp)
+                 (T T' : @cterm pp)
                  (eq : per)
-                 (A B a1 a2 b1 b2 : @CTerm pp)
+                 (A B a1 a2 b1 b2 : @cterm pp)
                  (eqa : per)
                  (c1 : T ===>(lib) (mkc_requality a1 a2 A))
                  (c2 : T' ===>(lib) (mkc_requality b1 b2 B))
@@ -2052,9 +2892,9 @@ Definition close_ind' {pp}
                  (per : per_req lib (close lib ts) T T' eq),
             P ts T T' eq)
   (tequ : forall (ts : cts)
-                 (T T' : @CTerm pp)
+                 (T T' : @cterm pp)
                  (eq : per)
-                 (a1 a2 b1 b2 : @CTerm pp)
+                 (a1 a2 b1 b2 : @cterm pp)
                  (eqa : per)
                  (c1 : T ===>(lib) (mkc_tequality a1 a2))
                  (c2 : T' ===>(lib) (mkc_tequality b1 b2))
@@ -2068,14 +2908,14 @@ Definition close_ind' {pp}
                  (per : per_teq lib (close lib ts) T T' eq),
             P ts T T' eq)
   (isect : forall (ts : cts)
-                  (T T' : @CTerm pp)
+                  (T T' : @cterm pp)
                   (eq : per)
-                  (A A' : @CTerm pp)
+                  (A A' : @cterm pp)
                   (v v' : NVar)
-                  (B : CVTerm [v])
-                  (B' : CVTerm [v'])
+                  (B : cvterm [v])
+                  (B' : cvterm [v'])
                   (eqa : per)
-                  (eqb : forall a a' : CTerm, forall e : eqa a a', per)
+                  (eqb : forall a a' : cterm, forall e : eqa a a', per)
                   (c1 : T ===>(lib) (mkc_isect A v B))
                   (c2 : T' ===>(lib) (mkc_isect A' v' B'))
                   (cla : close lib ts A A' eqa)
@@ -2086,14 +2926,14 @@ Definition close_ind' {pp}
                   (per : per_isect lib (close lib ts) T T' eq),
              P ts T T' eq)
   (func : forall (ts : cts)
-                  (T T' : @CTerm pp)
+                  (T T' : @cterm pp)
                   (eq : per)
-                  (A A' : @CTerm pp)
+                  (A A' : @cterm pp)
                   (v v' : NVar)
-                  (B : CVTerm [v])
-                  (B' : CVTerm [v'])
+                  (B : cvterm [v])
+                  (B' : cvterm [v'])
                   (eqa : per)
-                  (eqb : forall a a' : CTerm, forall e : eqa a a', per)
+                  (eqb : forall a a' : cterm, forall e : eqa a a', per)
                   (c1 : T ===>(lib) (mkc_function A v B))
                   (c2 : T' ===>(lib) (mkc_function A' v' B'))
                   (cla : close lib ts A A' eqa)
@@ -2110,14 +2950,14 @@ Definition close_ind' {pp}
                   (per : per_func lib (close lib ts) T T' eq),
             P ts T T' eq)
   (disect : forall (ts : cts)
-                   (T T' : @CTerm pp)
+                   (T T' : @cterm pp)
                    (eq : per)
-                   (A A' : @CTerm pp)
+                   (A A' : @cterm pp)
                    (v v' : NVar)
-                   (B : CVTerm [v])
-                   (B' : CVTerm [v'])
+                   (B : cvterm [v])
+                   (B' : cvterm [v'])
                    (eqa : per)
-                   (eqb : forall a a' : CTerm, forall e : eqa a a', per)
+                   (eqb : forall a a' : cterm, forall e : eqa a a', per)
                    (c1 : T ===>(lib) (mkc_disect A v B))
                    (c2 : T' ===>(lib) (mkc_disect A' v' B'))
                    (cla : close lib ts A A' eqa)
@@ -2128,10 +2968,10 @@ Definition close_ind' {pp}
                    (per : per_disect lib (close lib ts) T T' eq),
               P ts T T' eq)
   (pertype : forall (ts : cts)
-                    (T T' : @CTerm pp)
+                    (T T' : @cterm pp)
                     (eq : per)
-                    (R1 R2 : @CTerm pp)
-                    (eq1 eq2 : CTerm -> CTerm -> per)
+                    (R1 R2 : @cterm pp)
+                    (eq1 eq2 : cterm -> cterm -> per)
                     (c1 : T ===>(lib) (mkc_pertype R1))
                     (c2 : T' ===>(lib) (mkc_pertype R2))
                     (cl1 : forall x y, close lib ts
@@ -2156,10 +2996,10 @@ Definition close_ind' {pp}
                     (per : per_pertype lib (close lib ts) T T' eq),
                P ts T T' eq)
   (ipertype : forall (ts : cts)
-                     (T T' : @CTerm pp)
+                     (T T' : @cterm pp)
                      (eq : per)
-                     (R1 R2 : @CTerm pp)
-                     (eq1 : CTerm -> CTerm -> per)
+                     (R1 R2 : @cterm pp)
+                     (eq1 : cterm -> cterm -> per)
                      (c1 : T ===>(lib) (mkc_ipertype R1))
                      (c2 : T' ===>(lib) (mkc_ipertype R2))
                      (cl1 : forall x y, close lib ts
@@ -2175,10 +3015,10 @@ Definition close_ind' {pp}
                      (per : per_ipertype lib (close lib ts) T T' eq),
                 P ts T T' eq)
   (spertype : forall (ts : cts)
-                     (T T' : @CTerm pp)
+                     (T T' : @cterm pp)
                      (eq : per)
-                     (R1 R2 : @CTerm pp)
-                     (eq1 : CTerm -> CTerm -> per)
+                     (R1 R2 : @cterm pp)
+                     (eq1 : cterm -> cterm -> per)
                      (c1 : T ===>(lib) (mkc_spertype R1))
                      (c2 : T' ===>(lib) (mkc_spertype R2))
                      (cl1 : forall x y,
@@ -2202,14 +3042,14 @@ Definition close_ind' {pp}
                      (per : per_spertype lib (close lib ts) T T' eq),
                 P ts T T' eq)
   (w     : forall (ts : cts)
-                  (T T' : @CTerm pp)
+                  (T T' : @cterm pp)
                   (eq : per)
-                  (A A' : @CTerm pp)
+                  (A A' : @cterm pp)
                   (v v' : NVar)
-                  (B : CVTerm [v])
-                  (B' : CVTerm [v'])
+                  (B : cvterm [v])
+                  (B' : cvterm [v'])
                   (eqa : per)
-                  (eqb : forall a a' : CTerm, forall e : eqa a a', per)
+                  (eqb : forall a a' : cterm, forall e : eqa a a', per)
                   (c1 : T ===>(lib) (mkc_w A v B))
                   (c2 : T' ===>(lib) (mkc_w A' v' B'))
                   (cla : close lib ts A A' eqa)
@@ -2220,14 +3060,14 @@ Definition close_ind' {pp}
                   (per : per_w lib (close lib ts) T T' eq),
             P ts T T' eq)
   (m     : forall (ts : cts)
-                  (T T' : @CTerm pp)
+                  (T T' : @cterm pp)
                   (eq : per)
-                  (A A' : @CTerm pp)
+                  (A A' : @cterm pp)
                   (v v' : NVar)
-                  (B : CVTerm [v])
-                  (B' : CVTerm [v'])
+                  (B : cvterm [v])
+                  (B' : cvterm [v'])
                   (eqa : per)
-                  (eqb : forall a a' : CTerm, forall e : eqa a a', per)
+                  (eqb : forall a a' : cterm, forall e : eqa a a', per)
                   (c1 : T ===>(lib) (mkc_m A v B))
                   (c2 : T' ===>(lib) (mkc_m A' v' B'))
                   (cla : close lib ts A A' eqa)
@@ -2238,24 +3078,24 @@ Definition close_ind' {pp}
                   (per : per_m lib (close lib ts) T T' eq),
             P ts T T' eq)
   (pw    : forall (ts : cts)
-                  (T T' : @CTerm pp)
+                  (T T' : @cterm pp)
                   (eq : per)
-                  (Pr Pr' : @CTerm pp)
+                  (Pr Pr' : @cterm pp)
                   (ap ap' : NVar)
-                  (A : CVTerm [ap])
-                  (A' : CVTerm [ap'])
+                  (A : cvterm [ap])
+                  (A' : cvterm [ap'])
                   (bp bp' ba ba' : NVar)
-                  (B : CVTerm [bp,ba])
-                  (B' : CVTerm [bp',ba'])
+                  (B : cvterm [bp,ba])
+                  (B' : cvterm [bp',ba'])
                   (cp cp' ca ca' cb cb' : NVar)
-                  (C : CVTerm [cp,ca,cb])
-                  (C' : CVTerm [cp',ca',cb'])
-                  (p p' : @CTerm pp)
+                  (C : cvterm [cp,ca,cb])
+                  (C' : cvterm [cp',ca',cb'])
+                  (p p' : @cterm pp)
                   (eqp : per)
-                  (eqa : forall p p' : CTerm, forall e : eqp p p', per)
-                  (eqb : forall p p' : CTerm,
+                  (eqa : forall p p' : cterm, forall e : eqp p p', per)
+                  (eqb : forall p p' : cterm,
                          forall ep : eqp p p',
-                         forall a a' : CTerm,
+                         forall a a' : cterm,
                          forall ea : eqa p p' ep a a',
                            per)
                   (c1 : T ===>(lib) (mkc_pw Pr ap A bp ba B cp ca cb C p))
@@ -2297,24 +3137,24 @@ Definition close_ind' {pp}
                   (per : per_pw lib (close lib ts) T T' eq),
             P ts T T' eq)
   (pm    : forall (ts : cts)
-                  (T T' : @CTerm pp)
+                  (T T' : @cterm pp)
                   (eq : per)
-                  (Pr Pr' : @CTerm pp)
+                  (Pr Pr' : @cterm pp)
                   (ap ap' : NVar)
-                  (A : CVTerm [ap])
-                  (A' : CVTerm [ap'])
+                  (A : cvterm [ap])
+                  (A' : cvterm [ap'])
                   (bp bp' ba ba' : NVar)
-                  (B : CVTerm [bp,ba])
-                  (B' : CVTerm [bp',ba'])
+                  (B : cvterm [bp,ba])
+                  (B' : cvterm [bp',ba'])
                   (cp cp' ca ca' cb cb' : NVar)
-                  (C : CVTerm [cp,ca,cb])
-                  (C' : CVTerm [cp',ca',cb'])
-                  (p p' : @CTerm pp)
+                  (C : cvterm [cp,ca,cb])
+                  (C' : cvterm [cp',ca',cb'])
+                  (p p' : @cterm pp)
                   (eqp : per)
-                  (eqa : forall p p' : CTerm, forall e : eqp p p', per)
-                  (eqb : forall p p' : CTerm,
+                  (eqa : forall p p' : cterm, forall e : eqp p p', per)
+                  (eqb : forall p p' : cterm,
                          forall ep : eqp p p',
-                         forall a a' : CTerm,
+                         forall a a' : cterm,
                          forall ea : eqa p p' ep a a',
                            per)
                   (c1 : T ===>(lib) (mkc_pm Pr ap A bp ba B cp ca cb C p))
@@ -2356,9 +3196,9 @@ Definition close_ind' {pp}
                   (per : per_pm lib (close lib ts) T T' eq),
             P ts T T' eq)
   (texc : forall (ts : cts)
-                  (T T' : @CTerm pp)
+                  (T T' : @cterm pp)
                   (eq : per)
-                  (N N' E E' : @CTerm pp)
+                  (N N' E E' : @cterm pp)
                   (eqn eqe : per)
                   (c1 : T ===>(lib) (mkc_texc N E))
                   (c2 : T' ===>(lib) (mkc_texc N' E'))
@@ -2370,9 +3210,9 @@ Definition close_ind' {pp}
                   (per : per_texc lib (close lib ts) T T' eq),
             P ts T T' eq)
   (union : forall (ts : cts)
-                  (T T' : @CTerm pp)
+                  (T T' : @cterm pp)
                   (eq : per)
-                  (A A' B B' : @CTerm pp)
+                  (A A' B B' : @cterm pp)
                   (eqa eqb : per)
                   (c1 : T ===>(lib) (mkc_union A B))
                   (c2 : T' ===>(lib) (mkc_union A' B'))
@@ -2384,9 +3224,9 @@ Definition close_ind' {pp}
                   (per : per_union lib (close lib ts) T T' eq),
             P ts T T' eq)
 (*  (eunion : forall (ts : cts)
-                  (T T' : @CTerm pp)
+                  (T T' : @cterm pp)
                   (eq : per)
-                  (A A' B B' : @CTerm pp)
+                  (A A' B B' : @cterm pp)
                   (eqa1 eqa2 eqb1 eqb2 : per)
                   (c1 : T ===>(lib) (mkc_eunion A B))
                   (c2 : T' ===>(lib) (mkc_eunion A' B'))
@@ -2404,9 +3244,9 @@ Definition close_ind' {pp}
                   (per : per_eunion lib (close lib ts) T T' eq),
             P ts T T' eq)*)
 (*  (union2 : forall (ts : cts)
-                  (T T' : @CTerm pp)
+                  (T T' : @cterm pp)
                   (eq : per)
-                  (A A' B B' : @CTerm pp)
+                  (A A' B B' : @cterm pp)
                   (eqa : per)
                   (c1 : T ===>(lib) (mkc_union2 A B))
                   (c2 : T' ===>(lib) (mkc_union2 A' B'))
@@ -2418,9 +3258,9 @@ Definition close_ind' {pp}
                   (per : per_union2 lib (close lib ts) T T' eq),
             P ts T T' eq)*)
   (image : forall (ts : cts)
-                  (T T' : @CTerm pp)
+                  (T T' : @cterm pp)
                   (eq : per)
-                  (A A' f f' : @CTerm pp)
+                  (A A' f f' : @cterm pp)
                   (eqa : per)
                   (c1 : T ===>(lib) (mkc_image A f))
                   (c2 : T' ===>(lib) (mkc_image A' f'))
@@ -2431,15 +3271,15 @@ Definition close_ind' {pp}
                   (per : per_image lib (close lib ts) T T' eq),
             P ts T T' eq)
 (*  (eisect : forall (ts : cts)
-                   (T T' : @CTerm pp)
+                   (T T' : @cterm pp)
                    (eq : per)
                    (eqa : per)
                    (eqa' : per)
                    (eqb : per-efam(eqa,eqa'))
-                   (A A' : @CTerm pp)
+                   (A A' : @cterm pp)
                    (v v' : NVar)
-                   (B : CVTerm [v])
-                   (B' : CVTerm [v'])
+                   (B : cvterm [v])
+                   (B' : cvterm [v'])
                    (f  : t-sel(eqa))
                    (g  : e-sel(eqa,eqa',f))
                    (f' : t-sel(eqa'))
@@ -2474,9 +3314,9 @@ Definition close_ind' {pp}
                    (per : per_eisect lib (close lib ts) T T' eq),
               P ts T T' eq)*)
   (partial : forall (ts : cts)
-                    (T T' : @CTerm pp)
+                    (T T' : @cterm pp)
                     (eq : per)
-                    (A1 A2 : @CTerm pp)
+                    (A1 A2 : @cterm pp)
                     (eqa : per)
                     (c1 : T ===>(lib) (mkc_partial A1))
                     (c2 : T' ===>(lib) (mkc_partial A2))
@@ -2487,37 +3327,37 @@ Definition close_ind' {pp}
                     (per : per_partial lib (close lib ts) T T' eq),
                P ts T T' eq)
   (admiss : forall (ts : cts)
-                    (T T' : @CTerm pp)
+                    (T T' : @cterm pp)
                     (eq : per)
-                    (A1 A2 : @CTerm pp)
+                    (A1 A2 : @cterm pp)
                     (eqa : per)
                     (c1 : T ===>(lib) (mkc_admiss A1))
                     (c2 : T' ===>(lib) (mkc_admiss A2))
                     (cla : close lib ts A1 A2 eqa)
                     (reca : P ts A1 A2 eqa)
-                    (eqiff : (forall t t' : CTerm,
+                    (eqiff : (forall t t' : cterm,
                       eq t t' <=>
                         (t) ===>(lib) (mkc_axiom) # (t') ===>(lib) (mkc_axiom) # admissible_equality eqa))
                     (per : per_admiss lib (close lib ts) T T' eq),
                P ts T T' eq)
   (mono : forall (ts : cts)
-                    (T T' : @CTerm pp)
+                    (T T' : @cterm pp)
                     (eq : per)
-                    (A1 A2 : @CTerm pp)
+                    (A1 A2 : @cterm pp)
                     (eqa : per)
                     (c1 : T ===>(lib) (mkc_mono A1))
                     (c2 : T' ===>(lib) (mkc_mono A2))
                     (cla : close lib ts A1 A2 eqa)
                     (reca : P ts A1 A2 eqa)
-                    (eqiff : (forall t t' : CTerm,
+                    (eqiff : (forall t t' : cterm,
                       eq t t' <=>
                         (t) ===>(lib) (mkc_axiom) # (t') ===>(lib) (mkc_axiom) # mono_equality lib eqa))
                     (per : per_mono lib (close lib ts) T T' eq),
                P ts T T' eq)
   (ffatom : forall (ts : cts)
-                    (T T' : @CTerm pp)
+                    (T T' : @cterm pp)
                     (eq : per)
-                    (A1 A2 x1 x2 a1 a2 : @CTerm pp)
+                    (A1 A2 x1 x2 a1 a2 : @cterm pp)
                     (eqa : per)
                     (u : get_patom_set pp)
                     (c1 : T ===>(lib) (mkc_free_from_atom A1 x1 a1))
@@ -2531,9 +3371,9 @@ Definition close_ind' {pp}
                     (per : per_ffatom lib (close lib ts) T T' eq),
                P ts T T' eq)
   (effatom : forall (ts : cts)
-                    (T T' : @CTerm pp)
+                    (T T' : @cterm pp)
                     (eq : per)
-                    (A1 A2 x1 x2 a1 a2 : @CTerm pp)
+                    (A1 A2 x1 x2 a1 a2 : @cterm pp)
                     (eqa : per)
                     (c1 : T ===>(lib) (mkc_efree_from_atom A1 x1 a1))
                     (c2 : T' ===>(lib) (mkc_efree_from_atom A2 x2 a2))
@@ -2544,9 +3384,9 @@ Definition close_ind' {pp}
                     (per : per_effatom lib (close lib ts) T T' eq),
                P ts T T' eq)
   (ffatoms : forall (ts : cts)
-                    (T T' : @CTerm pp)
+                    (T T' : @cterm pp)
                     (eq : per)
-                    (A1 A2 x1 x2 : @CTerm pp)
+                    (A1 A2 x1 x2 : @cterm pp)
                     (eqa : per)
                     (c1 : T ===>(lib) (mkc_free_from_atoms A1 x1))
                     (c2 : T' ===>(lib) (mkc_free_from_atoms A2 x2))
@@ -2557,14 +3397,14 @@ Definition close_ind' {pp}
                     (per : per_ffatoms lib (close lib ts) T T' eq),
                P ts T T' eq)
   (subset : forall (ts : cts)
-                   (T T' : @CTerm pp)
+                   (T T' : @cterm pp)
                    (eq : per)
-                   (A A' : @CTerm pp)
+                   (A A' : @cterm pp)
                    (v v' : NVar)
-                   (B : CVTerm [v])
-                   (B' : CVTerm [v'])
+                   (B : cvterm [v])
+                   (B' : cvterm [v'])
                    (eqa : per)
-                   (eqb : forall a a' : CTerm, forall e : eqa a a', per)
+                   (eqb : forall a a' : cterm, forall e : eqa a a', per)
                    (c1 : T ===>(lib) (mkc_set A v B))
                    (c2 : T' ===>(lib) (mkc_set A' v' B'))
                    (cla : close lib ts A A' eqa)
@@ -2575,14 +3415,14 @@ Definition close_ind' {pp}
                    (per : per_set lib (close lib ts) T T' eq),
               P ts T T' eq)
   (tunion : forall (ts : cts)
-                   (T T' : @CTerm pp)
+                   (T T' : @cterm pp)
                    (eq : per)
-                   (A A' : @CTerm pp)
+                   (A A' : @cterm pp)
                    (v v' : NVar)
-                   (B : CVTerm [v])
-                   (B' : CVTerm [v'])
+                   (B : cvterm [v])
+                   (B' : cvterm [v'])
                    (eqa : per)
-                   (eqb : forall a a' : CTerm, forall e : eqa a a', per)
+                   (eqb : forall a a' : cterm, forall e : eqa a a', per)
                    (c1 : T ===>(lib) (mkc_tunion A v B))
                    (c2 : T' ===>(lib) (mkc_tunion A' v' B'))
                    (cla : close lib ts A A' eqa)
@@ -2593,14 +3433,14 @@ Definition close_ind' {pp}
                    (per : per_tunion lib (close lib ts) T T' eq),
               P ts T T' eq)
   (product : forall (ts : cts)
-                  (T T' : @CTerm pp)
+                  (T T' : @cterm pp)
                   (eq : per)
-                  (A A' : @CTerm pp)
+                  (A A' : @cterm pp)
                   (v v' : NVar)
-                  (B : CVTerm [v])
-                  (B' : CVTerm [v'])
+                  (B : cvterm [v])
+                  (B' : cvterm [v'])
                   (eqa : per)
-                  (eqb : forall a a' : CTerm, forall e : eqa a a', per)
+                  (eqb : forall a a' : cterm, forall e : eqa a a', per)
                   (c1 : T ===>(lib) (mkc_product A v B))
                   (c2 : T' ===>(lib) (mkc_product A' v' B'))
                   (cla : close lib ts A A' eqa)
@@ -2611,9 +3451,9 @@ Definition close_ind' {pp}
                   (per : per_product lib (close lib ts) T T' eq),
             P ts T T' eq)
 (*  (esquash : forall (ts : cts)
-                    (T T' : @CTerm pp)
+                    (T T' : @cterm pp)
                     (eq : per)
-                    (A1 A2 : @CTerm pp)
+                    (A1 A2 : @cterm pp)
                     (eq1 eq2 : per)
                     (c1 : ccomputes_to_valc T  (mkc_esquash A1))
                     (c2 : ccomputes_to_valc T' (mkc_esquash A2))
@@ -2630,12 +3470,12 @@ Definition close_ind' {pp}
                     (per : per_esquash lib (close lib ts) T T' eq),
                P ts T T' eq)*)
    : forall (ts : cts)
-            (T T' : @CTerm pp)
+            (T T' : @cterm pp)
             (eq : per)
             (t : close lib ts T T' eq),
             P ts T T' eq :=
  fix rec (ts : cts)
-         (T T' : @CTerm pp)
+         (T T' : @cterm pp)
          (eq : per)
          (t : close lib ts T T' eq)
          : P ts T T' eq :=
