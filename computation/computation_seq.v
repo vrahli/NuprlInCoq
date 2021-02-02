@@ -710,9 +710,6 @@ Proof.
 Qed.
 Hint Resolve hasvalue_sterm : slow.
 
-Definition CNTerm {p} := { t : @NTerm p | isprog_nout t }.
-Definition get_cnterm {p} (t : @CNTerm p) := let (a,_) := t in a.
-
 Definition ntseqc {o} : Type := nat -> @CNTerm o.
 
 Definition ntseqc2seq {o} (f : @ntseqc o) :=

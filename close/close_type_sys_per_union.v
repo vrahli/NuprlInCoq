@@ -101,7 +101,7 @@ Lemma per_union_eq_cequiv {p} :
     -> term_equality_symmetric eqb
     -> term_equality_transitive eqa
     -> term_equality_transitive eqb
-    -> cequivc lib t1 t2
+    -> cequivcn lib t1 t2
     -> per_union_eq lib eqa eqb t1 t1
     -> per_union_eq lib eqa eqb t1 t2.
 Proof.
@@ -109,16 +109,16 @@ Proof.
   introv resa resb syma symb tra trb ceq per; repdors; exrepnd.
 
   left; spcast.
-  generalize (cequivc_mkc_inl lib t1 t2 x); introv k;
+  generalize (cequivcn_mkcn_inl lib t1 t2 x); introv k;
   repeat (autodimp k hyp); exrepnd.
-  exists x b; sp; spcast; sp.
+  exists x a'; sp; spcast; sp.
   apply resa; spcast; sp.
   apply tra with (t2 := y); sp.
 
   right; spcast.
-  generalize (cequivc_mkc_inr lib t1 t2 x); introv k;
+  generalize (cequivcn_mkcn_inr lib t1 t2 x); introv k;
   repeat (autodimp k hyp); exrepnd.
-  exists x b; sp; spcast; sp.
+  exists x a'; sp; spcast; sp.
   apply resb; spcast; sp.
   apply trb with (t2 := y); sp.
 Qed.
@@ -131,13 +131,13 @@ Lemma close_type_system_union {p} :
          A1 A2 B1 B2 eqa eqb,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_union A1 B1)
-    -> computes_to_valc lib T' (mkc_union A2 B2)
+    -> computes_to_valcn lib T (mkcn_union A1 B1)
+    -> computes_to_valcn lib T' (mkcn_union A2 B2)
     -> close lib ts A1 A2 eqa
     -> type_sys_props lib (close lib ts) A1 A2 eqa
     -> close lib ts B1 B2 eqb
     -> type_sys_props lib (close lib ts) B1 B2 eqb
-    -> (forall t t' : CTerm, eq t t' <=> per_union_eq lib eqa eqb t t')
+    -> (forall t t' : cterm, eq t t' <=> per_union_eq lib eqa eqb t t')
     -> per_union lib (close lib ts) T T' eq
     -> type_sys_props lib (close lib ts) T T' eq.
 Proof.
@@ -175,13 +175,13 @@ Proof.
     apply CL_union; unfold per_union.
 
     (* 1 *)
-    generalize (cequivc_mkc_union lib T T3 A1 B1); introv k; repeat (autodimp k hyp); exrepnd.
+    generalize (cequivcn_mkcn_union lib T T3 A1 B1); introv k; repeat (autodimp k hyp); exrepnd.
     exists eqa eqb A1 a' B1 b'; sp; spcast; sp.
     generalize (type_sys_props_cequivc lib (close lib ts) A1 A2 a' eqa); sp.
     generalize (type_sys_props_cequivc lib (close lib ts) B1 B2 b' eqb); sp.
 
     (* 2 *)
-    generalize (cequivc_mkc_union lib T' T3 A2 B2); introv k; repeat (autodimp k hyp); exrepnd.
+    generalize (cequivcn_mkcn_union lib T' T3 A2 B2); introv k; repeat (autodimp k hyp); exrepnd.
     exists eqa eqb A2 a' B2 b'; sp; spcast; sp.
     apply type_sys_props_sym in reca.
     generalize (type_sys_props_cequivc lib (close lib ts) A2 A1 a' eqa); sp.
@@ -261,4 +261,3 @@ Proof.
         apply type_sys_props_sym in recb.
         generalize (type_sys_props_ts_trans4 lib (close lib ts) B4 B2 B3 B1 eqb1 eqb0 eqb); sp.
 Qed.
-

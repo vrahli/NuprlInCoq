@@ -65,11 +65,11 @@ Proof.
 Qed.
 *)
 
-Definition eqAs {p} (ap1 : NVar) (A1 : @CVTerm p [ap1])
-                (ap2 : NVar) (A2 : @CVTerm p [ap2]) :=
+Definition eqAs {p} (ap1 : NVar) (A1 : @cvterm p [ap1])
+                (ap2 : NVar) (A2 : @cvterm p [ap2]) :=
   match eq_var_dec ap1 ap2 with
     | left e =>
-        (match e in _ = v return CVTerm [v] with eq_refl => A1 end) = A2
+        (match e in _ = v return cvterm [v] with eq_refl => A1 end) = A2
     | _ => False
   end.
 
@@ -85,24 +85,24 @@ Proof.
   auto.
 Qed.
 
-Definition eqBs {p} (bp1 ba1 : NVar) (B1 : @CVTerm p [bp1,ba1])
-                (bp2 ba2 : NVar) (B2 : @CVTerm p [bp2,ba2]) :=
+Definition eqBs {p} (bp1 ba1 : NVar) (B1 : @cvterm p [bp1,ba1])
+                (bp2 ba2 : NVar) (B2 : @cvterm p [bp2,ba2]) :=
   match eq_var_dec bp1 bp2, eq_var_dec ba1 ba2 with
     | left e1, left e2 =>
-        (match e1 in _ = v1 return CVTerm [v1,ba2] with
-             eq_refl => match e2 in _ = v2 return CVTerm [_,v2] with eq_refl => B1 end
+        (match e1 in _ = v1 return cvterm [v1,ba2] with
+             eq_refl => match e2 in _ = v2 return cvterm [_,v2] with eq_refl => B1 end
          end)
       = B2
     | _, _ => False
   end.
 
-Definition eqCs {p} (cp1 ca1 cb1 : NVar) (C1 : @CVTerm p [cp1,ca1,cb1])
-                (cp2 ca2 cb2 : NVar) (C2 : @CVTerm p [cp2,ca2,cb2]) :=
+Definition eqCs {p} (cp1 ca1 cb1 : NVar) (C1 : @cvterm p [cp1,ca1,cb1])
+                (cp2 ca2 cb2 : NVar) (C2 : @cvterm p [cp2,ca2,cb2]) :=
   match eq_var_dec cp1 cp2, eq_var_dec ca1 ca2, eq_var_dec cb1 cb2 with
     | left ep, left ea, left eb =>
-        (match ep in _ = vp return CVTerm [vp,ca2,cb2] with
-             eq_refl => match ea in _ = va return CVTerm [_,va,cb2] with
-                            eq_refl => match eb in _ = vb return CVTerm [_,_,vb] with
+        (match ep in _ = vp return cvterm [vp,ca2,cb2] with
+             eq_refl => match ea in _ = va return cvterm [_,va,cb2] with
+                            eq_refl => match eb in _ = vb return cvterm [_,_,vb] with
                                            eq_refl => C1
                                        end
                         end
@@ -218,7 +218,7 @@ Qed.
 Hint Immediate eqCs_refl.
 
 Definition eq_type_pfamilies {p} (C : pfam_type) :=
-  forall P1 ap1 A1 bp1 ba1 B1 cp1 ca1 cb1 C1 (p1 : @CTerm p)
+  forall P1 ap1 A1 bp1 ba1 B1 cp1 ca1 cb1 C1 (p1 : @cterm p)
          P2 ap2 A2 bp2 ba2 B2 cp2 ca2 cb2 C2 p2,
     C P1 ap1 A1 bp1 ba1 B1 cp1 ca1 cb1 C1 p1
     = C P2 ap2 A2 bp2 ba2 B2 cp2 ca2 cb2 C2 p2
@@ -231,47 +231,47 @@ Definition eq_type_pfamilies {p} (C : pfam_type) :=
        # eqBs bp1 ba1 B1 bp2 ba2 B2
        # eqCs cp1 ca1 cb1 C1 cp2 ca2 cb2 C2.
 
-Lemma eq_type_pfamilies_mkc_pw {p} : @eq_type_pfamilies p mkc_pw.
+Lemma eq_type_pfamilies_mkc_pw {p} : @eq_type_pfamilies p mkcn_pw.
 Proof.
   unfold eq_type_pfamilies; dands; introv e.
-  applydup @mkc_pw_eq1 in e as f; repnd; subst.
-  apply mkc_pw_eq2 in e; repnd; subst; sp.
+  applydup @mkcn_pw_eq1 in e as f; repnd; subst.
+  apply mkcn_pw_eq2 in e; repnd; subst; sp.
 Qed.
 Hint Immediate eq_type_pfamilies_mkc_pw.
 
-Lemma eq_type_pfamilies_mkc_pm {p} : @eq_type_pfamilies p mkc_pm.
+Lemma eq_type_pfamilies_mkc_pm {p} : @eq_type_pfamilies p mkcn_pm.
 Proof.
   unfold eq_type_pfamilies; dands; introv e.
-  applydup @mkc_pm_eq1 in e as f; repnd; subst.
-  apply mkc_pm_eq2 in e; repnd; subst; sp.
+  applydup @mkcn_pm_eq1 in e as f; repnd; subst.
+  apply mkcn_pm_eq2 in e; repnd; subst; sp.
 Qed.
 Hint Immediate eq_type_pfamilies_mkc_pm.
 
 Definition term_equality_symmetric_fam {pp} (eqp : per) eqa :=
-  forall (p p' : @CTerm pp) (ep : eqp p p'),
+  forall (p p' : @cterm pp) (ep : eqp p p'),
     @term_equality_symmetric pp (eqa p p' ep).
 
 Definition term_equality_transitive_fam {pp} (eqp : per) eqa :=
-  forall (p p' : @CTerm pp) (ep : eqp p p'),
+  forall (p p' : @cterm pp) (ep : eqp p p'),
     @term_equality_transitive pp (eqa p p' ep).
 
 Definition term_equality_symmetric_fam_fam {pp} (eqp : per) eqa eqb :=
-  forall (p p' : @CTerm pp) (ep : eqp p p'),
+  forall (p p' : @cterm pp) (ep : eqp p p'),
     @term_equality_symmetric_fam pp (eqa p p' ep) (eqb p p' ep).
 
 Definition term_equality_transitive_fam_fam {pp} (eqp : per) eqa eqb :=
-  forall (p p' : @CTerm pp) (ep : eqp p p'),
+  forall (p p' : @cterm pp) (ep : eqp p p'),
     @term_equality_transitive_fam pp (eqa p p' ep) (eqb p p' ep).
 
 Definition eq_fam_respects_eq_term_equals {p} (eqp : per) eqa :=
-  forall (p1 p2 p3 p4 : @CTerm p) (e1 : eqp p1 p3) (e2 : eqp p2 p4),
+  forall (p1 p2 p3 p4 : @cterm p) (e1 : eqp p1 p3) (e2 : eqp p2 p4),
     eqp p1 p2
     -> eqp p3 p4
     -> @eq_term_equals p (eqa p1 p3 e1) (eqa p2 p4 e2).
 
 Definition eq_fam_fam_respects_eq_term_equals {p} (eqp : per) eqa eqb :=
-  forall (p1 p2 p3 p4 : @CTerm p) (ep1 : eqp p1 p3) (ep2 : eqp p2 p4)
-         (a1 a2 a3 a4 : @CTerm p) (ea1 : eqa p1 p3 ep1 a1 a3) (ea2 : eqa p2 p4 ep2 a2 a4)
+  forall (p1 p2 p3 p4 : @cterm p) (ep1 : eqp p1 p3) (ep2 : eqp p2 p4)
+         (a1 a2 a3 a4 : @cterm p) (ea1 : eqa p1 p3 ep1 a1 a3) (ea2 : eqa p2 p4 ep2 a2 a4)
          (e1 : eqp p1 p2)
          (e2 : eqp p3 p4),
     eqa p1 p2 e1 a1 a2
@@ -279,15 +279,15 @@ Definition eq_fam_fam_respects_eq_term_equals {p} (eqp : per) eqa eqb :=
     -> @eq_term_equals p (eqb p1 p3 ep1 a1 a3 ea1) (eqb p2 p4 ep2 a2 a4 ea2).
 
 Definition eq_fam_refl_left {pp} (eqp : per) eqa :=
-  forall (p p' : @CTerm pp) (ep : eqp p p') (ep' : eqp p p),
+  forall (p p' : @cterm pp) (ep : eqp p p') (ep' : eqp p p),
     @eq_term_equals pp (eqa p p' ep) (eqa p p ep').
 
 Definition eq_fam_refl_right {pp} (eqp : per) eqa :=
-  forall (p p' : @CTerm pp) (ep : eqp p p') (ep' : eqp p' p'),
+  forall (p p' : @cterm pp) (ep : eqp p p') (ep' : eqp p' p'),
     @eq_term_equals pp (eqa p p' ep) (eqa p' p' ep').
 
 Definition eq_fam_sym {pp} (eqp : per) eqa :=
-  forall (p p' : @CTerm pp) (ep : eqp p p') (ep' : eqp p' p),
+  forall (p p' : @cterm pp) (ep : eqp p p') (ep' : eqp p' p),
     @eq_term_equals pp (eqa p p' ep) (eqa p' p ep').
 
 Lemma eq_fam_refl_left_if_respects_eq {p} :
@@ -314,18 +314,18 @@ Proof.
 Qed.
 
 Definition eq_fam_fam_refl_left {pp} eqp eqa eqb :=
-  forall (p p' : @CTerm pp) (ep : eqp p p') (ep' : eqp p p)
-         (a a' : @CTerm pp) (ea : eqa p p' ep a a') (ea' : eqa p p ep' a a),
+  forall (p p' : @cterm pp) (ep : eqp p p') (ep' : eqp p p)
+         (a a' : @cterm pp) (ea : eqa p p' ep a a') (ea' : eqa p p ep' a a),
     @eq_term_equals pp (eqb p p' ep a a' ea) (eqb p p ep' a a ea').
 
 Definition eq_fam_fam_refl_right {pp} eqp eqa eqb :=
-  forall (p p' : @CTerm pp) (ep : eqp p p') (ep' : eqp p' p')
-         (a a' : @CTerm pp) (ea : eqa p p' ep a a') (ea' : eqa p' p' ep' a' a'),
+  forall (p p' : @cterm pp) (ep : eqp p p') (ep' : eqp p' p')
+         (a a' : @cterm pp) (ea : eqa p p' ep a a') (ea' : eqa p' p' ep' a' a'),
     @eq_term_equals pp (eqb p p' ep a a' ea) (eqb p' p' ep' a' a' ea').
 
 Definition eq_fam_fam_sym {pp} eqp eqa eqb :=
-  forall (p p' : @CTerm pp) (ep : eqp p p') (ep' : eqp p' p)
-         (a a' : @CTerm pp) (ea : eqa p p' ep a a') (ea' : eqa p' p ep' a' a),
+  forall (p p' : @cterm pp) (ep : eqp p p') (ep' : eqp p' p)
+         (a a' : @cterm pp) (ea : eqa p p' ep a a') (ea' : eqa p' p ep' a' a),
     @eq_term_equals pp (eqb p p' ep a a' ea) (eqb p' p ep' a' a ea').
 
 Lemma eq_fam_fam_refl_left_if_respects_eq {pp} :
@@ -360,25 +360,25 @@ Qed.
 Definition type_sys_props_fam {pp} lib (ts : cts(pp)) (eqp : per) ap A ap' A' eqa :=
   forall p p' (ep : eqp p p'),
     type_sys_props lib ts
-                   (substc p ap A)
-                   (substc p' ap' A')
+                   (substcn p ap A)
+                   (substcn p' ap' A')
                    (eqa p p' ep).
 
 Definition type_sys_props_fam_fam {pp} lib (ts : cts(pp)) (eqp : per) eqa bp ba B bp' ba' B' eqb :=
   forall p p' (ep : eqp p p') a a' (ea : eqa p p' ep a a'),
     type_sys_props lib ts
-                   (lsubstc2 bp p ba a B)
-                   (lsubstc2 bp' p' ba' a' B')
+                   (lsubstcn2 bp p ba a B)
+                   (lsubstcn2 bp' p' ba' a' B')
                    (eqb p p' ep a a' ea).
 
 Definition eq_term_equals_fam {q} (eqp : per) eqa eqp1 eqa1 :=
-  forall (p p' : @CTerm q) (ep : eqp p p') (ep1 : eqp1 p p'),
+  forall (p p' : @cterm q) (ep : eqp p p') (ep1 : eqp1 p p'),
     @eq_term_equals q (eqa p p' ep) (eqa1 p p' ep1).
 
 Definition eq_term_equals_fam_fam {q}
              (eqp  : per) (eqa  : per-fam(eqp))  eqb
              (eqp1 : per) (eqa1 : per-fam(eqp1)) eqb1 :=
-  forall (p p' : @CTerm q) (ep : eqp p p') (ep1 : eqp1 p p'),
+  forall (p p' : @cterm q) (ep : eqp p p') (ep1 : eqp1 p p'),
          @eq_term_equals_fam q (eqa p p' ep)
                             (eqb p p' ep)
                             (eqa1 p p' ep1)
@@ -536,16 +536,16 @@ Proof.
   generalize (tspf p p ep1); introv tsp2.
   onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-  apply uv2 with (T3 := substc p ap' A'); sp.
+  apply uv2 with (T3 := substcn p ap' A'); sp.
 
   generalize (tspf p' p ep'); introv tsp1.
   generalize (tspf p p ep1); introv tsp2.
   onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-  generalize (tygs2 (substc p' ap A) (substc p ap' A') (eqa p' p ep'));
+  generalize (tygs2 (substcn p' ap A) (substcn p ap' A') (eqa p' p ep'));
     intro k; dest_imp k hyp.
   applydup k in tygt2.
-  apply uv1 with (T3 := substc p' ap A); sp.
+  apply uv1 with (T3 := substcn p' ap A); sp.
 Qed.
 
 Lemma tsp_implies_eq_fam_refl_left {o} :
@@ -560,7 +560,7 @@ Proof.
   generalize (tes p p ep'); intro tsp2.
   onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-  generalize (uv2 (substc p ap' A') (eqa p p ep')); intro k; repeat (autodimp k hyp).
+  generalize (uv2 (substcn p ap' A') (eqa p p ep')); intro k; repeat (autodimp k hyp).
 Qed.
 
 Lemma tsp_implies_eq_fam_refl_right {o} :
@@ -575,7 +575,7 @@ Proof.
   generalize (tes p' p' ep'); intro tsp2.
   onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-  generalize (uv2 (substc p' ap A) (eqa p' p' ep')); intro k; repeat (autodimp k hyp).
+  generalize (uv2 (substcn p' ap A) (eqa p' p' ep')); intro k; repeat (autodimp k hyp).
   right.
   apply tygs1; auto.
 Qed.
@@ -591,7 +591,7 @@ Proof.
   generalize (tes p p ep' a a ea'); intro tsp2.
   onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-  generalize (uv2 (lsubstc2 bp' p ba' a B') (eqb p p ep' a a ea'));
+  generalize (uv2 (lsubstcn2 bp' p ba' a B') (eqb p p ep' a a ea'));
     intro k; repeat (autodimp k hyp).
 Qed.
 
@@ -606,7 +606,7 @@ Proof.
   generalize (tes p' p' ep' a' a' ea'); intro tsp2.
   onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-  generalize (uv2 (lsubstc2 bp p' ba a' B) (eqb p' p' ep' a' a' ea'));
+  generalize (uv2 (lsubstcn2 bp p' ba a' B) (eqb p' p' ep' a' a' ea'));
     intro k; repeat (autodimp k hyp).
   right.
   apply tygs1; auto.
@@ -835,7 +835,7 @@ Lemma type_pfamily_eq_term_equals {o} :
          P' eqp
          ap' A' eqa
          bp' ba' B' eqb,
-    computes_to_valc lib T (TC P ap A bp ba B cp ca cb C p)
+    computes_to_valcn lib T (TC P ap A bp ba B cp ca cb C p)
     -> eq_type_pfamilies TC
     -> type_sys_props lib ts P P' eqp
     -> type_sys_props_fam lib ts eqp ap A ap' A' eqa
@@ -904,7 +904,7 @@ Proof.
   generalize (tpf11 p0 p' ep1); intro e1.
   generalize (tspA p0 p' ep); intro tsp.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  apply uv with (T3 := substc p' ap3 A3); sp.
+  apply uv with (T3 := substcn p' ap3 A3); sp.
 
   prove_and eqa_2.
 
@@ -912,7 +912,7 @@ Proof.
   generalize (tpf5 p0 p' ep1); intro e2.
   generalize (tspA p0 p' ep); intro tsp.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  apply uv with (T3 := substc p' ap2 A2); sp.
+  apply uv with (T3 := substcn p' ap2 A2); sp.
 
   prove_and eqa_1_2.
 
@@ -932,7 +932,7 @@ Proof.
   generalize (tpf12 p0 p' ep1 a a' ea1); intro e1.
   generalize (tspB p0 p' ep a a' ea); intro tsp.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  apply uv with (T3 := lsubstc2 bp3 p' ba3 a' B3); sp.
+  apply uv with (T3 := lsubstcn2 bp3 p' ba3 a' B3); sp.
 
   prove_and eqb_2.
 
@@ -941,7 +941,7 @@ Proof.
   generalize (tpf6 p0 p' ep1 a a' ea1); intro e2.
   generalize (tspB p0 p' ep a a' ea); intro tsp.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  apply uv with (T3 := lsubstc2 bp2 p' ba2 a' B2); sp.
+  apply uv with (T3 := lsubstcn2 bp2 p' ba2 a' B2); sp.
 
   (* last one *)
   intros p0 p' ep ep1.
@@ -1007,33 +1007,33 @@ Proof.
 Qed.
 
 Definition equal_Cparams {o} (eqp : per(o)) eqa eqb cp ca cb C cp' ca' cb' C' : [U] :=
-  forall (p p' : CTerm) (ep : eqp p p')
-         (a a' : CTerm) (ea : eqa p p' ep a a')
-         (b b' : CTerm),
+  forall (p p' : cterm) (ep : eqp p p')
+         (a a' : cterm) (ea : eqa p p' ep a a')
+         (b b' : cterm),
     eqb p p' ep a a' ea b b'
-    -> eqp (lsubstc3 cp p ca a cb b C) (lsubstc3 cp' p' ca' a' cb' b' C').
+    -> eqp (lsubstcn3 cp p ca a cb b C) (lsubstcn3 cp' p' ca' a' cb' b' C').
 
 Definition equal_fams {o} (ts : cts(o)) eqp ap1 A1 ap2 A2 eqa :=
   forall p1 p2,
   forall ep : eqp p1 p2,
-    ts (substc p1 ap1 A1) (substc p2 ap2 A2) (eqa p1 p2 ep).
+    ts (substcn p1 ap1 A1) (substcn p2 ap2 A2) (eqa p1 p2 ep).
 
 Definition equal_fams_fams {o} (ts : cts(o)) eqp eqa bp1 ba1 B1 bp2 ba2 B2 eqb :=
   forall p1 p2,
   forall ep : eqp p1 p2,
   forall a1 a2,
   forall ea : eqa p1 p2 ep a1 a2,
-    ts (lsubstc2 bp1 p1 ba1 a1 B1)
-       (lsubstc2 bp2 p2 ba2 a2 B2)
+    ts (lsubstcn2 bp1 p1 ba1 a1 B1)
+       (lsubstcn2 bp2 p2 ba2 a2 B2)
        (eqb p1 p2 ep a1 a2 ea).
 
 Lemma fold_equal_Cparams {o} :
   forall (eqp : per(o)) eqa eqb cp ca cb C cp' ca' cb' C',
-    (forall (p p' : CTerm) (ep : eqp p p')
-            (a a' : CTerm) (ea : eqa p p' ep a a')
-            (b b' : CTerm),
+    (forall (p p' : cterm) (ep : eqp p p')
+            (a a' : cterm) (ea : eqa p p' ep a a')
+            (b b' : cterm),
        eqb p p' ep a a' ea b b'
-       -> eqp (lsubstc3 cp p ca a cb b C) (lsubstc3 cp' p' ca' a' cb' b' C'))
+       -> eqp (lsubstcn3 cp p ca a cb b C) (lsubstcn3 cp' p' ca' a' cb' b' C'))
     = equal_Cparams eqp eqa eqb cp ca cb C cp' ca' cb' C'.
 Proof. sp. Qed.
 
@@ -1041,7 +1041,7 @@ Lemma fold_equal_fams {o} :
   forall (ts : cts(o)) eqp ap1 A1 ap2 A2 eqa,
     (forall p1 p2,
      forall ep : eqp p1 p2,
-       ts (substc p1 ap1 A1) (substc p2 ap2 A2) (eqa p1 p2 ep))
+       ts (substcn p1 ap1 A1) (substcn p2 ap2 A2) (eqa p1 p2 ep))
     = equal_fams ts eqp ap1 A1 ap2 A2 eqa.
 Proof. sp. Qed.
 
@@ -1051,8 +1051,8 @@ Lemma fold_equal_fams_fams {o} :
      forall ep : eqp p1 p2,
      forall a1 a2,
      forall ea : eqa p1 p2 ep a1 a2,
-       ts (lsubstc2 bp1 p1 ba1 a1 B1)
-          (lsubstc2 bp2 p2 ba2 a2 B2)
+       ts (lsubstcn2 bp1 p1 ba1 a1 B1)
+          (lsubstcn2 bp2 p2 ba2 a2 B2)
           (eqb p1 p2 ep a1 a2 ea))
     = equal_fams_fams ts eqp eqa bp1 ba1 B1 bp2 ba2 B2 eqb.
 Proof. sp. Qed.
@@ -1149,7 +1149,7 @@ Lemma type_pfamily_sym {o} :
          eqp eqa eqb
          P' ap' A' bp' ba' B' cp' ca' cb' C',
     eq_type_pfamilies TC
-    -> computes_to_valc lib T1 (TC P ap A bp ba B cp ca cb C p)
+    -> computes_to_valcn lib T1 (TC P ap A bp ba B cp ca cb C p)
     -> type_sys_props lib ts P P' eqp
     -> type_sys_props_fam lib ts eqp ap A ap' A' eqa
     -> type_sys_props_fam_fam lib ts eqp eqa bp ba B bp' ba' B' eqb
@@ -1207,7 +1207,7 @@ Proof.
   generalize (tpf4 p0 p' ep1); intro e1.
   generalize (tspA p0 p' ep); intro tsp.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  apply uv with (T3 := substc p' ap2 A2); sp.
+  apply uv with (T3 := substcn p' ap2 A2); sp.
 
 
   (* eqb = eqb1 *)
@@ -1217,7 +1217,7 @@ Proof.
   generalize (tpf5 p0 p' ep1 a a' ea1); intro e1.
   generalize (tspB p0 p' ep a a' ea); intro tsp.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  apply uv with (T3 := lsubstc2 bp2 p' ba2 a' B2); sp.
+  apply uv with (T3 := lsubstcn2 bp2 p' ba2 a' B2); sp.
 
 
   (* eqa refl left *)
@@ -1228,7 +1228,7 @@ Proof.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
   assert (eqp1 p0 p0) as ep1' by (apply eqps; sp).
   generalize (tpf4 p0 p0 ep1'); intro e1.
-  generalize (uv (substc p0 ap2 A2) (eqa1 p0 p0 ep1')); intro eqt1.
+  generalize (uv (substcn p0 ap2 A2) (eqa1 p0 p0 ep1')); intro eqt1.
   dest_imp eqt1 hyp.
   generalize (eqas p0 p0 ep' ep1'); intro eqt2.
   apply eq_term_equals_trans with (eq2 := eqa1 p0 p0 ep1'); sp.
@@ -1249,7 +1249,8 @@ Proof.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
   generalize (tspA p0 p0 ep1'); intro tsp.
   onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1.
-  apply uv1 with (T3 := substc p0 ap' A'); sp.
+  apply uv1 with (T3 := substcn p0 ap' A'); sp.
+  right; apply tyvr; tcsp; eauto 3 with slow.
 
 
   (* eqb refl left *)
@@ -1259,7 +1260,7 @@ Proof.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
   generalize (tspB p0 p0 ep' a a ea'); introv tsp1.
   onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1.
-  generalize (uv (lsubstc2 bp' p0 ba' a B') (eqb p0 p0 ep' a a ea')); introv k.
+  generalize (uv (lsubstcn2 bp' p0 ba' a B') (eqb p0 p0 ep' a a ea')); introv k.
   dest_imp k hyp.
 
 
@@ -1284,7 +1285,8 @@ Proof.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
   generalize (tspB p0 p0 ep1' a a ea1); intro tsp1.
   onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1.
-  apply uv1 with (T3 := lsubstc2 bp' p0 ba' a B'); sp.
+  apply uv1 with (T3 := lsubstcn2 bp' p0 ba' a B'); sp.
+  right; apply tyvr; tcsp; eauto 3 with slow.
 
 
   (* type_pfamily sym *)
@@ -1314,7 +1316,7 @@ Proof.
   generalize (tpf4 p0 p1 ep1'); intro e1; sp.
   generalize (tspA p0 p1 ep'); intro tsp.
   apply (type_sys_props_change_equality2 lib)
-    with (C := substc p1 ap' A') (eq1 := eqa1 p0 p1 ep1') (eq2 := eqa p0 p1 ep'); sp.
+    with (C := substcn p1 ap' A') (eq1 := eqa1 p0 p1 ep1') (eq2 := eqa p0 p1 ep'); sp.
   apply eq_term_equals_trans with (eq2 := eqa p1 p0 ep2'); sp.
 
   prove_and eqB.
@@ -1348,7 +1350,7 @@ Proof.
 
   generalize (tpf5 p0 p1 ep1_01 a2 a1 ea1_21); intro ts1.
   apply (type_sys_props_change_equality2 lib)
-    with (C := lsubstc2 bp' p1 ba' a1 B')
+    with (C := lsubstcn2 bp' p1 ba' a1 B')
            (eq1 := eqb1 p0 p1 ep1_01 a2 a1 ea1_21)
            (eq2 := eqb p0 p1 ep_01 a2 a1 ea_21); sp.
   apply eq_term_equals_trans with (eq2 := eqb p1 p0 ep_10 a1 a2 ea_12); sp.
@@ -1406,7 +1408,7 @@ Lemma type_pfamily_computes {o} :
          cp2 ca2 cb2 C2
          p1 p2
          P ap A bp ba B cp ca cb C p,
-    computes_to_valc lib T1 (TC P ap A bp ba B cp ca cb C p)
+    computes_to_valcn lib T1 (TC P ap A bp ba B cp ca cb C p)
     -> type_pfamily lib TC ts T1 T2 eqp1 eqa1 eqb1
                     cp1 ca1 cb1 C1
                     cp2 ca2 cb2 C2
@@ -1430,7 +1432,7 @@ Lemma type_pfamily_computes2 {o} :
          cp2 ca2 cb2 C2
          p1 p2
          P ap A bp ba B cp ca cb C p,
-    computes_to_valc lib T2 (TC P ap A bp ba B cp ca cb C p)
+    computes_to_valcn lib T2 (TC P ap A bp ba B cp ca cb C p)
     -> type_pfamily lib TC ts T1 T2 eqp1 eqa1 eqb1
                     cp1 ca1 cb1 C1
                     cp2 ca2 cb2 C2
@@ -1449,7 +1451,7 @@ Qed.
 
 Ltac sp_pfam_step :=
   match goal with
-      [ H1 : computes_to_valc ?lib ?T1 (?TC ?P ?ap ?A ?bp ?ba ?B ?cp ?ca ?cb ?C ?p),
+      [ H1 : computes_to_valcn ?lib ?T1 (?TC ?P ?ap ?A ?bp ?ba ?B ?cp ?ca ?cb ?C ?p),
         H2 : type_pfamily ?lib ?TC ?ts ?T1 ?T2 ?eqp1 ?eqa1 ?eqb1
                           ?cp1 ?ca1 ?cb1 ?C1
                           ?cp2 ?ca2 ?cb2 ?C2
@@ -1472,7 +1474,7 @@ Ltac sp_pfam_step :=
                 try (complete (apply eq_type_pfamilies_mkc_pm));
                 repnd; subst; red_eqTs; subst; GC)
 
-    | [ H1 : computes_to_valc ?lib ?T2 (?TC ?P ?ap ?A ?bp ?ba ?B ?cp ?ca ?cb ?C ?p),
+    | [ H1 : computes_to_valcn ?lib ?T2 (?TC ?P ?ap ?A ?bp ?ba ?B ?cp ?ca ?cb ?C ?p),
         H2 : type_pfamily ?lib ?TC ?ts ?T1 ?T2 ?eqp1 ?eqa1 ?eqb1
                           ?cp1 ?ca1 ?cb1 ?C1
                           ?cp2 ?ca2 ?cb2 ?C2
@@ -1508,8 +1510,8 @@ Lemma type_pfamily_trans {o} :
          cp1 ca1 cb1 C1 p1
          cp2 ca2 cb2 C2 p2
          cp3 ca3 cb3 C3 p3,
-    computes_to_valc lib T1 (TC P ap A bp ba B cp ca cb C p)
-    -> computes_to_valc lib T2 (TC P' ap' A' bp' ba' B' cp' ca' cb' C' p')
+    computes_to_valcn lib T1 (TC P ap A bp ba B cp ca cb C p)
+    -> computes_to_valcn lib T2 (TC P' ap' A' bp' ba' B' cp' ca' cb' C' p')
     -> eq_type_pfamilies TC
     -> type_sys_props lib ts P P' eqp
     -> type_sys_props_fam lib ts eqp ap A ap' A' eqa
@@ -1594,7 +1596,7 @@ Proof.
   generalize (tf5 p1 p2 ep1); intro eq1.
   generalize (tf11 p2 p2 e22); intro eq2.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  generalize (dum (substc p2 ap' A') (substc p1 ap A) (substc p2 ap3 A3) (eqa1 p1 p2 ep1) (eqa2 p2 p2 e22));
+  generalize (dum (substcn p2 ap' A') (substcn p1 ap A) (substcn p2 ap3 A3) (eqa1 p1 p2 ep1) (eqa2 p2 p2 e22));
     intro k; repeat (autodimp k hyp); sp.
 
 
@@ -1637,9 +1639,9 @@ Proof.
 
   generalize (tspb p1 p2 ep12 a1 a2 ea'); intro tsp.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  generalize (dum (lsubstc2 bp' p2 ba' a2 B')
-                  (lsubstc2 bp p1 ba a1 B)
-                  (lsubstc2 bp3 p2 ba3 a2 B3)
+  generalize (dum (lsubstcn2 bp' p2 ba' a2 B')
+                  (lsubstcn2 bp p1 ba a1 B)
+                  (lsubstcn2 bp3 p2 ba3 a2 B3)
                   (eqb1 p1 p2 ep a1 a2 ea)
                   (eqb2 p2 p2 ep22' a2 a2 ea2));
     intro k; repeat (autodimp k hyp); sp.
@@ -1696,7 +1698,7 @@ Proof.
   apply k5.
   apply k5 in e1.
   apply j11 in e2.
-  apply transp with (t2 := lsubstc3 cp' p2 ca' a2 cb' b2 C'); sp.
+  apply transp with (t2 := lsubstcn3 cp' p2 ca' a2 cb' b2 C'); sp.
 
 
   (* equality of the ps *)
@@ -1728,7 +1730,7 @@ Proof.
 
   generalize (eqfamsa p p' ep1); intro e.
   apply tygs in e; sp.
-  generalize (uv (substc p ap1 A1) (eqa1 p p' ep1)); intro eqt; repeat (autodimp eqt hyp).
+  generalize (uv (substcn p ap1 A1) (eqa1 p p' ep1)); intro eqt; repeat (autodimp eqt hyp).
   apply eq_term_equals_trans with (eq2 := eqa p' p ep'); sp.
 
   apply @type_sys_props_fam_implies_eq_fam_sym with (P := P) (P' := P') in tspa; sp.
@@ -1777,7 +1779,7 @@ Proof.
   generalize (tspb p' p ep' a' a ea'); intro tsp.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
   apply tygs in e1; sp.
-  generalize (uv (lsubstc2 bp1 p ba1 a B1)
+  generalize (uv (lsubstcn2 bp1 p ba1 a B1)
                  (eqb1 p p' ep1 a a' ea1)).
   intro eqt; repeat (autodimp eqt hyp).
 Qed.
@@ -1814,10 +1816,10 @@ Proof.
   generalize (tspf p1 p2 ep); intro tsp.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
   applydup tygs in tygt; auto.
-  generalize (dum (substc p1 ap2 A2) (substc p2 ap1 A1) (substc p2 ap' A')
+  generalize (dum (substcn p1 ap2 A2) (substcn p2 ap1 A1) (substcn p2 ap' A')
                   (eqa p2 p1 ep') (eqa p1 p2 ep));
     intro k; repeat (dest_imp k hyp); repnd.
-  generalize (dum (substc p2 ap' A') (substc p2 ap1 A1) (substc p1 ap2 A2)
+  generalize (dum (substcn p2 ap' A') (substcn p2 ap1 A1) (substcn p1 ap2 A2)
                   (eqa p1 p2 ep) (eqa p1 p2 ep));
     intro j; repeat (dest_imp j hyp); repnd.
   apply tygs in j1; sp.
@@ -1865,15 +1867,15 @@ Proof.
   generalize (tspff p1 p2 ep a1 a2 ea); intro tsp.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
   applydup tygs in tygt; auto.
-  generalize (dum (lsubstc2 bp2 p1 ba2 a1 B2)
-                  (lsubstc2 bp1 p2 ba1 a2 B1)
-                  (lsubstc2 bp' p2 ba' a2 B')
+  generalize (dum (lsubstcn2 bp2 p1 ba2 a1 B2)
+                  (lsubstcn2 bp1 p2 ba1 a2 B1)
+                  (lsubstcn2 bp' p2 ba' a2 B')
                   (eqb p2 p1 ep' a2 a1 ea')
                   (eqb p1 p2 ep a1 a2 ea));
     intro k; repeat (dest_imp k hyp); repnd.
-  generalize (dum (lsubstc2 bp' p2 ba' a2 B')
-                  (lsubstc2 bp1 p2 ba1 a2 B1)
-                  (lsubstc2 bp2 p1 ba2 a1 B2)
+  generalize (dum (lsubstcn2 bp' p2 ba' a2 B')
+                  (lsubstcn2 bp1 p2 ba1 a2 B1)
+                  (lsubstcn2 bp2 p1 ba2 a1 B2)
                   (eqb p1 p2 ep a1 a2 ea)
                   (eqb p1 p2 ep a1 a2 ea));
     intro j; repeat (dest_imp j hyp); repnd.
@@ -1985,7 +1987,7 @@ Lemma type_pfamily_sym2 {o} :
          eqp eqa eqb
          P' ap' A' bp' ba' B' cp' ca' cb' C',
     eq_type_pfamilies TC
-    -> computes_to_valc lib T2 (TC P ap A bp ba B cp ca cb C p)
+    -> computes_to_valcn lib T2 (TC P ap A bp ba B cp ca cb C p)
     -> type_sys_props lib ts P P' eqp
     -> type_sys_props_fam lib ts eqp ap A ap' A' eqa
     -> type_sys_props_fam_fam lib ts eqp eqa bp ba B bp' ba' B' eqb
@@ -2173,7 +2175,7 @@ Proof.
   generalize (f2 p2 p2 ep''); intro e2.
   generalize (tspa p2 p2 ep'); intro tsp.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  generalize (dum (substc p2 ap A) (substc p1 ap1 A1) (substc p2 ap2 A2) (eqa p1 p2 ep) (eqa' p2 p2 ep'')); intro k.
+  generalize (dum (substcn p2 ap A) (substcn p1 ap1 A1) (substcn p2 ap2 A2) (eqa p1 p2 ep) (eqa' p2 p2 ep'')); intro k.
   repeat (dest_imp k hyp); try (complete (apply tygs; auto)); repnd.
 Qed.
 
@@ -2200,9 +2202,9 @@ Proof.
   generalize (f2 p2 p2 ep'' a2 a2 ea''); intro e2.
   generalize (tspb p2 p2 ep' a2 a2 ea'); intro tsp.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  generalize (dum (lsubstc2 bp p2 ba a2 B)
-                  (lsubstc2 bp1 p1 ba1 a1 B1)
-                  (lsubstc2 bp2 p2 ba2 a2 B2)
+  generalize (dum (lsubstcn2 bp p2 ba a2 B)
+                  (lsubstcn2 bp1 p1 ba1 a1 B1)
+                  (lsubstcn2 bp2 p2 ba2 a2 B2)
                   (eqb p1 p2 ep a1 a2 ea)
                   (eqb' p2 p2 ep'' a2 a2 ea'')); intro k.
   repeat (dest_imp k hyp); try (complete (apply tygs; auto)); repnd.
@@ -2241,7 +2243,7 @@ Proof.
   generalize (ecs2 p' p' ep'' a' a' ea'' b' b' eb''); intro e2.
   apply eqps in e2.
   apply type_sys_props_implies_term_eq_trans in tspp.
-  apply tspp with (t2 := lsubstc3 cp p' ca a' cb b' C); sp.
+  apply tspp with (t2 := lsubstcn3 cp p' ca a' cb b' C); sp.
 Qed.
 
 (* This is like type_pfamily_trans, but we only know what T2 computes to *)
@@ -2255,7 +2257,7 @@ Lemma type_pfamily_trans2 {o} :
          cp1 ca1 cb1 C1 p1
          cp2 ca2 cb2 C2 p2
          cp3 ca3 cb3 C3 p3,
-    computes_to_valc lib T2 (TC P ap A bp ba B cp ca cb C p)
+    computes_to_valcn lib T2 (TC P ap A bp ba B cp ca cb C p)
     -> eq_type_pfamilies TC
     -> type_sys_props lib ts P P' eqp
     -> type_sys_props_fam lib ts eqp ap A ap' A' eqa
@@ -2397,7 +2399,7 @@ Lemma type_pfamily_refl_right {o} :
          eqp eqa eqb
          P' ap' A' bp' ba' B' cp' ca' cb' C',
     eq_type_pfamilies TC
-    -> computes_to_valc lib T1 (TC P ap A bp ba B cp ca cb C p)
+    -> computes_to_valcn lib T1 (TC P ap A bp ba B cp ca cb C p)
     -> type_sys_props lib ts P P' eqp
     -> type_sys_props_fam lib ts eqp ap A ap' A' eqa
     -> type_sys_props_fam_fam lib ts eqp eqa bp ba B bp' ba' B' eqb
@@ -2469,7 +2471,7 @@ Proof.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
   generalize (tspa p2 p2 ep2); intro tsp2.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-  generalize (dum (substc p2 ap2 A2) (substc p1 ap1 A1) (substc p2 ap1 A1)
+  generalize (dum (substcn p2 ap2 A2) (substcn p1 ap1 A1) (substcn p2 ap1 A1)
                   (eqa p1 p2 ep) (eqa p2 p2 ep2)); intro k.
   repeat (dest_imp k hyp).
   apply tygs2; sp.
@@ -2477,14 +2479,14 @@ Qed.
 
 Lemma equal_fams_cequivc {o} :
   forall lib (ts : cts(o)) eqp eqa P P' ap1 A1 ap2 A2 ap A,
-    bcequivc lib [ap1] A1 [ap2] A2
+    bcequivcn lib [ap1] A1 [ap2] A2
     -> type_sys_props lib ts P P' eqp
     -> type_sys_props_fam lib ts eqp ap1 A1 ap A eqa
     -> equal_fams ts eqp ap1 A1 ap2 A2 eqa.
 Proof.
   introv bceq tspp tspa.
   introv.
-  assert (ts (substc p1 ap1 A1) (substc p2 ap1 A1) (eqa p1 p2 ep))
+  assert (ts (substcn p1 ap1 A1) (substcn p2 ap1 A1) (eqa p1 p2 ep))
     as e1
       by (revert p1 p2 ep; rw @fold_equal_fams;
           apply (equal_fams_refl lib) with (ap2 := ap) (A2 := A); sp;
@@ -2498,11 +2500,11 @@ Proof.
           apply trans with (t2 := p1); sp).
 
   generalize (tspa p2 p2 ep2); intro tsp.
-  generalize (bcequivc1 lib ap1 ap2 A1 A2 bceq p2); intro ceq.
+  generalize (bcequivcn1 lib ap1 ap2 A1 A2 bceq p2); intro ceq.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  generalize (tyvr (substc p2 ap1 A1) (substc p2 ap2 A2)); intro k.
+  generalize (tyvr (substcn p2 ap1 A1) (substcn p2 ap2 A2)); intro k.
   repeat (autodimp k hyp).
-  generalize (dum (substc p2 ap1 A1) (substc p1 ap1 A1) (substc p2 ap2 A2)
+  generalize (dum (substcn p2 ap1 A1) (substcn p1 ap1 A1) (substcn p2 ap2 A2)
                   (eqa p1 p2 ep) (eqa p2 p2 ep2)); sp.
 Qed.
 
@@ -2524,9 +2526,9 @@ Proof.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
   generalize (tspb p2 p2 ep' a2 a2 ea'); intro tsp2.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-  generalize (dum (lsubstc2 bp2 p2 ba2 a2 B2)
-                  (lsubstc2 bp1 p1 ba1 a1 B1)
-                  (lsubstc2 bp1 p2 ba1 a2 B1)
+  generalize (dum (lsubstcn2 bp2 p2 ba2 a2 B2)
+                  (lsubstcn2 bp1 p1 ba1 a1 B1)
+                  (lsubstcn2 bp1 p2 ba1 a2 B1)
                   (eqb p1 p2 ep a1 a2 ea)
                   (eqb p2 p2 ep' a2 a2 ea')); intro k.
   repeat (dest_imp k hyp).
@@ -2535,47 +2537,43 @@ Qed.
 
 Lemma bcequivc2 {o} :
   forall lib v1 u1 t1 v2 u2 t2,
-    @bcequivc o lib [v1,u1] t1 [v2,u2] t2
+    @bcequivcn o lib [v1,u1] t1 [v2,u2] t2
     -> forall v u,
-         cequivc lib (lsubstc2 v1 v u1 u t1) (lsubstc2 v2 v u2 u t2).
+         cequivcn lib (lsubstcn2 v1 v u1 u t1) (lsubstcn2 v2 v u2 u t2).
 Proof.
-  unfold bcequivc, cequivc, get_cvterm, substc.
+  unfold bcequivcn, cequivcn, bcequivc, cequivc, get_cvterm, substcn.
   introv Hbc.
   intros v u.
-  destruct_cterms; allsimpl.
-  unfold csubst; simpl.
-  apply blift_cequiv_approx in Hbc; repnd.
-  allrw @isprog_eq.
-  allrw <- @isprog_vars_isprogrambt.
-  apply approxbt_lsubst_prog with (lnt:=[x0,x]) in Hbc;  spcls; [| allsimpl; repdors; spcf].
-  apply approxbt_lsubst_prog with (lnt:=[x0,x]) in Hbc0; spcls; [| allsimpl; repdors; spcf].
+  destruct_cnterms; allsimpl.
+  unfold cnsubst; simpl.
+  apply blift_cequiv_approx in Hbc; repnd; simpl in *.
+  apply approxbt_lsubst_prog with (lnt:=[x0,x]) in Hbc;  spcls; simpl in *; repndors; subst; eauto 2 with slow; spcf.
+  apply approxbt_lsubst_prog with (lnt:=[x0,x]) in Hbc0; spcls; simpl in *; repndors; subst; eauto 2 with slow; spcf.
   unfold subst. allsimpl.
   split; spc.
 Qed.
 
 Lemma bcequivc3 {o} :
   forall lib v1 u1 w1 t1 v2 u2 w2 t2,
-    @bcequivc o lib [v1,u1,w1] t1 [v2,u2,w2] t2
+    @bcequivcn o lib [v1,u1,w1] t1 [v2,u2,w2] t2
     -> forall v u w,
-         cequivc lib (lsubstc3 v1 v u1 u w1 w t1) (lsubstc3 v2 v u2 u w2 w t2).
+         cequivcn lib (lsubstcn3 v1 v u1 u w1 w t1) (lsubstcn3 v2 v u2 u w2 w t2).
 Proof.
-  unfold bcequivc, cequivc, get_cvterm, substc.
+  unfold bcequivcn, cequivcn, bcequivc, cequivc, get_cvterm, substcn.
   introv Hbc.
   intros v u w.
-  destruct_cterms; allsimpl.
-  unfold csubst; simpl.
+  destruct_cnterms; allsimpl.
+  unfold cnsubst; simpl.
   apply blift_cequiv_approx in Hbc; repnd.
-  allrw @isprog_eq.
-  allrw <- @isprog_vars_isprogrambt.
-  apply approxbt_lsubst_prog with (lnt:=[x1,x0,x]) in Hbc;  spcls; [| allsimpl; repdors; spcf].
-  apply approxbt_lsubst_prog with (lnt:=[x1,x0,x]) in Hbc0; spcls; [| allsimpl; repdors; spcf].
+  apply approxbt_lsubst_prog with (lnt:=[x1,x0,x]) in Hbc;  spcls; simpl in *; repndors; subst; eauto 2 with slow; spcf.
+  apply approxbt_lsubst_prog with (lnt:=[x1,x0,x]) in Hbc0; spcls; simpl in *; repndors; subst; eauto 2 with slow; spcf.
   unfold subst. allsimpl.
   split; spc.
 Qed.
 
 Lemma equal_fams_fams_cequivc {o} :
   forall lib (ts : cts(o)) eqp eqa P P' ap A ap' A' bp1 ba1 B1 bp2 ba2 B2 bp ba B eqb,
-    bcequivc lib [bp1, ba1] B1 [bp2, ba2] B2
+    bcequivcn lib [bp1, ba1] B1 [bp2, ba2] B2
     -> type_sys_props lib ts P P' eqp
     -> type_sys_props_fam lib ts eqp ap A ap' A' eqa
     -> type_sys_props_fam_fam lib ts eqp eqa bp1 ba1 B1 bp ba B eqb
@@ -2601,11 +2599,11 @@ Proof.
   generalize (tspb p2 p2 ep2 a2 a2 ea2); intro tsp.
 
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  generalize (tyvr(lsubstc2 bp1 p2 ba1 a2 B1) (lsubstc2 bp2 p2 ba2 a2 B2));
+  generalize (tyvr(lsubstcn2 bp1 p2 ba1 a2 B1) (lsubstcn2 bp2 p2 ba2 a2 B2));
     intro e2; repeat (autodimp e2 hyp).
-  generalize (dum (lsubstc2 bp1 p2 ba1 a2 B1)
-                  (lsubstc2 bp1 p1 ba1 a1 B1)
-                  (lsubstc2 bp2 p2 ba2 a2 B2)
+  generalize (dum (lsubstcn2 bp1 p2 ba1 a2 B1)
+                  (lsubstcn2 bp1 p1 ba1 a1 B1)
+                  (lsubstcn2 bp2 p2 ba2 a2 B2)
                   (eqb p1 p2 ep a1 a2 ea)
                   (eqb p2 p2 ep2 a2 a2 ea2)); sp.
 Qed.
@@ -2621,7 +2619,7 @@ Proof.
   generalize (tspa p p' ep1); intro tsp2.
   onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-  apply uv2 with (T3 := substc p' ap2 A2); sp.
+  apply uv2 with (T3 := substcn p' ap2 A2); sp.
 Qed.
 
 Lemma eq_term_equals_fam_fam_refl {o} :
@@ -2635,7 +2633,7 @@ Proof.
   generalize (tspb p p' ep' a a' ea'); intro tsp2.
   onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-  apply uv2 with (T3 := lsubstc2 bp2 p' ba2 a' B2); sp.
+  apply uv2 with (T3 := lsubstcn2 bp2 p' ba2 a' B2); sp.
 Qed.
 
 Lemma equal_Cparams_refl {o} :
@@ -2671,7 +2669,7 @@ Lemma equal_Cparams_cequivc {o} :
   forall lib (ts : cts(o)) eqp eqa eqb
          P P' ap A ap' A' bp ba B bp' ba' B'
          cp1 ca1 cb1 C1 cp2 ca2 cb2 C2 cp ca cb C,
-    bcequivc lib [cp1, ca1, cb1] C1 [cp2, ca2, cb2] C2
+    bcequivcn lib [cp1, ca1, cb1] C1 [cp2, ca2, cb2] C2
     -> type_sys_props lib ts P P' eqp
     -> type_sys_props_fam lib ts eqp ap A ap' A' eqa
     -> type_sys_props_fam_fam lib ts eqp eqa bp ba B bp' ba' B' eqb
@@ -2698,12 +2696,12 @@ Proof.
   generalize (bcequivc3 lib cp1 ca1 cb1 C1 cp2 ca2 cb2 C2 bceq p2 a2 b2); intro ceq.
 
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  generalize (tevr (lsubstc3 cp1 p2 ca1 a2 cb1 b2 C1)
-                   (lsubstc3 cp2 p2 ca2 a2 cb2 b2 C2)); intro j.
+  generalize (tevr (lsubstcn3 cp1 p2 ca1 a2 cb1 b2 C1)
+                   (lsubstcn3 cp2 p2 ca2 a2 cb2 b2 C2)); intro j.
   repeat (dest_imp j hyp).
-  apply tet with (t2 := lsubstc3 cp1 p1 ca1 a1 cb1 b1 C1); sp.
+  apply tet with (t2 := lsubstcn3 cp1 p1 ca1 a1 cb1 b1 C1); sp.
   spcast; sp.
-  apply tet with (t2 := lsubstc3 cp1 p2 ca1 a2 cb1 b2 C1); sp.
+  apply tet with (t2 := lsubstcn3 cp1 p2 ca1 a2 cb1 b2 C1); sp.
 Qed.
 
 Lemma type_pfamily_cequivc {o} :
@@ -2711,13 +2709,13 @@ Lemma type_pfamily_cequivc {o} :
          P1 ap1 A1 bp1 ba1 B1 cp1 ca1 cb1 C1 p1
          P2 ap2 A2 bp2 ba2 B2 cp2 ca2 cb2 C2 p2
          P ap A bp ba B cp ca cb C p,
-    computes_to_valc lib T1 (TC P1 ap1 A1 bp1 ba1 B1 cp1 ca1 cb1 C1 p1)
-    -> computes_to_valc lib T2 (TC P2 ap2 A2 bp2 ba2 B2 cp2 ca2 cb2 C2 p2)
-    -> cequivc lib P1 P2
-    -> bcequivc lib [ap1] A1 [ap2] A2
-    -> bcequivc lib [bp1, ba1] B1 [bp2, ba2] B2
-    -> bcequivc lib [cp1, ca1, cb1] C1 [cp2, ca2, cb2] C2
-    -> cequivc lib p1 p2
+    computes_to_valcn lib T1 (TC P1 ap1 A1 bp1 ba1 B1 cp1 ca1 cb1 C1 p1)
+    -> computes_to_valcn lib T2 (TC P2 ap2 A2 bp2 ba2 B2 cp2 ca2 cb2 C2 p2)
+    -> cequivcn lib P1 P2
+    -> bcequivcn lib [ap1] A1 [ap2] A2
+    -> bcequivcn lib [bp1, ba1] B1 [bp2, ba2] B2
+    -> bcequivcn lib [cp1, ca1, cb1] C1 [cp2, ca2, cb2] C2
+    -> cequivcn lib p1 p2
     -> type_sys_props lib ts P1 P eqp
     -> type_sys_props_fam lib ts eqp ap1 A1 ap A eqa
     -> type_sys_props_fam_fam lib ts eqp eqa bp1 ba1 B1 bp ba B eqb

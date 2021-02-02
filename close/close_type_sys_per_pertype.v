@@ -36,29 +36,29 @@ Lemma close_type_system_pertype {p} :
          R1 R2 eq1 eq2,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_pertype R1)
-    -> computes_to_valc lib T' (mkc_pertype R2)
-    -> (forall x y : CTerm,
-          close lib ts (mkc_apply2 R1 x y) (mkc_apply2 R1 x y) (eq1 x y))
-    -> (forall x y : CTerm,
+    -> computes_to_valcn lib T (mkcn_pertype R1)
+    -> computes_to_valcn lib T' (mkcn_pertype R2)
+    -> (forall x y : cterm,
+          close lib ts (mkcn_apply2 R1 x y) (mkcn_apply2 R1 x y) (eq1 x y))
+    -> (forall x y : cterm,
           type_system lib ts
           -> defines_only_universes lib ts
           -> type_sys_props lib (close lib ts)
-                            (mkc_apply2 R1 x y)
-                            (mkc_apply2 R1 x y)
+                            (mkcn_apply2 R1 x y)
+                            (mkcn_apply2 R1 x y)
                             (eq1 x y))
-    -> (forall x y : CTerm,
-          close lib ts (mkc_apply2 R2 x y) (mkc_apply2 R2 x y) (eq2 x y))
-    -> (forall x y : CTerm,
+    -> (forall x y : cterm,
+          close lib ts (mkcn_apply2 R2 x y) (mkcn_apply2 R2 x y) (eq2 x y))
+    -> (forall x y : cterm,
           type_system lib ts
           -> defines_only_universes lib ts
           -> type_sys_props lib (close lib ts)
-                            (mkc_apply2 R2 x y)
-                            (mkc_apply2 R2 x y)
+                            (mkcn_apply2 R2 x y)
+                            (mkcn_apply2 R2 x y)
                             (eq2 x y))
-    -> (forall x y : CTerm, inhabited (eq1 x y) <=> inhabited (eq2 x y))
+    -> (forall x y : cterm, inhabited (eq1 x y) <=> inhabited (eq2 x y))
     -> is_per eq1
-    -> (forall t t' : CTerm, eq t t' <=> inhabited (eq1 t t'))
+    -> (forall t t' : cterm, eq t t' <=> inhabited (eq1 t t'))
     -> per_pertype lib (close lib ts) T T' eq
     -> type_sys_props lib (close lib ts) T T' eq.
 Proof.
@@ -81,7 +81,7 @@ Proof.
     generalize (c3 t1 t2); intro clt1.
     generalize (rec1 t1 t2); sp.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-    implies_ts_or (mkc_apply2 R1 t1 t2) clt1.
+    implies_ts_or (mkcn_apply2 R1 t1 t2) clt1.
     apply uv in clt1.
     unfold eq_term_equals in clt1.
     unfold inhabited; split; sp.
@@ -103,32 +103,32 @@ Proof.
     apply CL_pertype; unfold per_pertype.
 
     (* 1 *)
-    apply cequivc_mkc_pertype with (a := R1) in X1; sp.
-    exists R1 b eq1 eq1; sp; spcast; sp.
+    apply cequivcn_mkcn_pertype with (a := R1) in X1; sp.
+    exists R1 a' eq1 eq1; sp; spcast; sp.
     generalize (cl1 x y); intro clt1.
     generalize (rec1 x y); sp.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tyvr (mkc_apply2 R1 x y) (mkc_apply2 b x y)); intro imp1.
+    generalize (tyvr (mkcn_apply2 R1 x y) (mkcn_apply2 a' x y)); intro imp1.
     repeat (autodimp imp1 hyp).
-    repeat (rw @mkc_apply2_eq).
-    repeat (apply sp_implies_cequivc_apply); auto.
+    repeat (rw @mkcn_apply2_eq).
+    repeat (apply sp_implies_cequivcn_apply); auto.
 
-    generalize (tyt (mkc_apply2 b x y) (eq1 x y)); sp.
+    generalize (tyt (mkcn_apply2 a' x y) (eq1 x y)); sp.
 
     (* 2 *)
-    apply @cequivc_mkc_pertype with (a := R2) in X1; sp.
-    exists R2 b eq2 eq2; sp; spcast; sp.
+    apply @cequivcn_mkcn_pertype with (a := R2) in X1; sp.
+    exists R2 a' eq2 eq2; sp; spcast; sp.
     generalize (cl2 x y); intro clt1.
     generalize (rec2 x y); sp.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tyvr (mkc_apply2 R2 x y) (mkc_apply2 b x y)); intro imp1.
+    generalize (tyvr (mkcn_apply2 R2 x y) (mkcn_apply2 a' x y)); intro imp1.
     repeat (autodimp imp1 hyp).
-    repeat (rw @mkc_apply2_eq).
-    repeat (apply sp_implies_cequivc_apply); auto.
+    repeat (rw @mkcn_apply2_eq).
+    repeat (apply sp_implies_cequivcn_apply); auto.
 
-    generalize (tyt (mkc_apply2 b x y) (eq2 x y)); sp.
+    generalize (tyt (mkcn_apply2 a' x y) (eq2 x y)); sp.
 
-    apply @is_per_iff with (eq1 := eq1); auto.
+    eapply @is_per_iff with (eq1 := eq1); auto.
 
     rw eqiff; sp.
 
@@ -150,14 +150,14 @@ Proof.
     assert (eq_term_equals (eq1 t t') (eq1 t t)) as eqteq.
     generalize (rec1 t t); sp.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tyvr (mkc_apply2 R1 t t) (mkc_apply2 R1 t t')); intro i; repeat (autodimp i h).
-    repeat (rw @mkc_apply2_eq).
-    apply implies_cequivc_apply; sp.
+    generalize (tyvr (mkcn_apply2 R1 t t) (mkcn_apply2 R1 t t')); intro i; repeat (autodimp i h).
+    repeat (rw @mkcn_apply2_eq).
+    apply implies_cequivcn_apply; sp; eauto 3 with slow.
     generalize (rec1 t t'); sp.
     onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 tymt2.
-    generalize (tygs (mkc_apply2 R1 t t) (mkc_apply2 R1 t t') (eq1 t t)); intro k; repeat (autodimp k h).
+    generalize (tygs (mkcn_apply2 R1 t t) (mkcn_apply2 R1 t t') (eq1 t t)); intro k; repeat (autodimp k h).
     rw k in i.
-    generalize (uv2 (mkc_apply2 R1 t t) (eq1 t t)); intro j; repeat (autodimp j h).
+    generalize (uv2 (mkcn_apply2 R1 t t) (eq1 t t)); intro j; repeat (autodimp j h).
 
     apply eq_term_equals_implies_inhabited in eqteq.
     rw eqteq; sp.
@@ -263,4 +263,3 @@ Proof.
         apply @eq_term_equals_trans with (eq2 := eq2 t5 t'); sp.
         apply eq_term_equals_sym; sp.
 Qed.
-

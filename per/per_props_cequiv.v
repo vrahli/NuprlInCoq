@@ -35,11 +35,11 @@ Require Export choice.
 Require Export cvterm.
 
 
-Lemma mkc_cequiv_equality_in_uni {p} :
-  forall lib (a b c d : @CTerm p) i,
-    equality lib (mkc_cequiv a b) (mkc_cequiv c d) (mkc_uni i)
+Lemma mkcn_cequiv_equality_in_uni {p} :
+  forall lib (a b c d : @cterm p) i,
+    equality lib (mkcn_cequiv a b) (mkcn_cequiv c d) (mkcn_uni i)
     <=>
-    (ccequivc lib a b <=> ccequivc lib c d).
+    (ccequivcn lib a b <=> ccequivcn lib c d).
 Proof.
   sp; sp_iff Case; intro e.
 
@@ -58,18 +58,18 @@ Proof.
     apply CL_init.
     exists (S i); simpl; left; sp;
     spcast; try computes_to_value_refl.
-    exists (fun t t' : @CTerm p => t ===>(lib) mkc_axiom
-                      # t' ===>(lib) mkc_axiom
-                      # ccequivc lib a b).
+    exists (fun t t' : @cterm p => t ===>(lib) mkcn_axiom
+                      # t' ===>(lib) mkcn_axiom
+                      # ccequivcn lib a b).
     apply CL_cequiv; unfold per_cequiv.
     exists a b c d; sp; spcast; try computes_to_value_refl.
 Qed.
 
-Lemma mkc_approx_equality_in_uni {p} :
-  forall lib (a b c d : @CTerm p) i,
-    equality lib (mkc_approx a b) (mkc_approx c d) (mkc_uni i)
+Lemma mkcn_approx_equality_in_uni {p} :
+  forall lib (a b c d : @cterm p) i,
+    equality lib (mkcn_approx a b) (mkcn_approx c d) (mkcn_uni i)
     <=>
-    (capproxc lib a b <=> capproxc lib c d).
+    (capproxcn lib a b <=> capproxcn lib c d).
 Proof.
   sp; sp_iff Case; intro e.
 
@@ -88,37 +88,37 @@ Proof.
     apply CL_init.
     exists (S i); simpl; left; sp;
     spcast; try computes_to_value_refl.
-    exists (fun t t' : @CTerm p => t ===>(lib) mkc_axiom
-                      # t' ===>(lib) mkc_axiom
-                      # capproxc lib a b).
+    exists (fun t t' : @cterm p => t ===>(lib) mkcn_axiom
+                      # t' ===>(lib) mkcn_axiom
+                      # capproxcn lib a b).
     apply CL_approx; unfold per_approx.
     exists a b c d; sp; spcast; try computes_to_value_refl.
 Qed.
 
 Lemma member_approx_refl {p} :
-  forall lib t, @member p lib mkc_axiom (mkc_approx t t).
+  forall lib t, @member p lib mkcn_axiom (mkcn_approx t t).
 Proof.
   intros.
   unfold member, equality.
-  exists (fun (a b : @CTerm p) => a ===>(lib) mkc_axiom
-                  # b ===>(lib) mkc_axiom
-                  # capproxc lib t t).
+  exists (fun (a b : @cterm p) => a ===>(lib) mkcn_axiom
+                  # b ===>(lib) mkcn_axiom
+                  # capproxcn lib t t).
   unfold nuprl; sp; spcast; try computes_to_value_refl.
   apply CL_approx.
   unfold per_approx.
   exists t t t t; sp; spcast; computes_to_value_refl.
-  apply approxc_refl; auto.
+  apply approxcn_refl; auto.
 Qed.
 
 Lemma member_cequiv_refl {p} :
-  forall lib t, @member p lib mkc_axiom (mkc_cequiv t t).
+  forall lib t, @member p lib mkcn_axiom (mkcn_cequiv t t).
 Proof.
   intros.
   unfold member, equality.
-  exists (fun (a b : @CTerm p) => a ===>(lib) mkc_axiom
-                  # b ===>(lib) mkc_axiom
-                  # ccequivc lib t t).
-  unfold nuprl; sp; spcast; try computes_to_value_refl; sp.
+  exists (fun (a b : @cterm p) => a ===>(lib) mkcn_axiom
+                  # b ===>(lib) mkcn_axiom
+                  # ccequivcn lib t t).
+  unfold nuprl; sp; spcast; try computes_to_value_refl; eauto 2 with slow.
   apply CL_cequiv.
   unfold per_cequiv.
   exists t t t t; sp; spcast; try computes_to_value_refl.
@@ -126,55 +126,55 @@ Qed.
 
 Lemma equal_approx {p} :
   forall lib t u,
-    @tequality p lib (mkc_approx t t) (mkc_approx u u).
+    @tequality p lib (mkcn_approx t t) (mkcn_approx u u).
 Proof.
   intros.
   unfold tequality.
-  exists (fun (a b : @CTerm p) => a ===>(lib) mkc_axiom
-                  # b ===>(lib) mkc_axiom
-                  # capproxc lib t t).
+  exists (fun (a b : @cterm p) => a ===>(lib) mkcn_axiom
+                  # b ===>(lib) mkcn_axiom
+                  # capproxcn lib t t).
   unfold nuprl.
   apply CL_approx.
   unfold per_approx.
   exists t t u u; sp; spcast; try computes_to_value_refl.
-  split; sp; spcast; apply approxc_refl; sp.
+  split; sp; spcast; apply approxcn_refl; sp.
 Qed.
 
 Lemma equal_cequiv {p} :
   forall lib t u,
-    @tequality p lib (mkc_cequiv t t) (mkc_cequiv u u).
+    @tequality p lib (mkcn_cequiv t t) (mkcn_cequiv u u).
 Proof.
   intros.
   unfold tequality.
-  exists (fun (a b : @CTerm p) => a ===>(lib) mkc_axiom
-                  # b ===>(lib) mkc_axiom
-                  # ccequivc lib t t).
+  exists (fun (a b : @cterm p) => a ===>(lib) mkcn_axiom
+                  # b ===>(lib) mkcn_axiom
+                  # ccequivcn lib t t).
   unfold nuprl.
   apply CL_cequiv.
   unfold per_cequiv.
   exists t t u u; sp; spcast; try computes_to_value_refl;
-  try (split; sp; spcast; sp).
+  try (split; sp; spcast; sp; eauto 2 with slow).
 Qed.
 
 Lemma member_base {p} :
-  forall lib t, @member p lib t mkc_base.
+  forall lib t, @member p lib t mkcn_base.
 Proof.
   unfold member, equality; sp.
-  exists (fun t t' => @ccequivc p lib t t').
-  unfold nuprl; sp; spcast; sp.
+  exists (fun t t' => @ccequivcn p lib t t').
+  unfold nuprl; sp; spcast; sp; eauto 2 with slow.
   apply CL_base.
   unfold per_base; sp; spcast; try computes_to_value_refl.
 Qed.
 
 Lemma member_cequiv {p} :
   forall lib t1 t2,
-    @cequivc p lib t1 t2
-    -> member lib mkc_axiom (mkc_cequiv t1 t2).
+    @cequivcn p lib t1 t2
+    -> member lib mkcn_axiom (mkcn_cequiv t1 t2).
 Proof.
   unfold member, equality; sp.
-  exists (fun (t t' : @CTerm p) => t ===>(lib) mkc_axiom
-                      # t' ===>(lib) mkc_axiom
-                      # ccequivc lib t1 t2);
+  exists (fun (t t' : @cterm p) => t ===>(lib) mkcn_axiom
+                      # t' ===>(lib) mkcn_axiom
+                      # ccequivcn lib t1 t2);
     sp; spcast; try computes_to_value_refl; sp.
   apply CL_cequiv.
   unfold per_cequiv.
@@ -183,13 +183,13 @@ Qed.
 
 Lemma member_approx {p} :
   forall lib t1 t2,
-    @approxc p lib t1 t2
-    -> member lib mkc_axiom (mkc_approx t1 t2).
+    @approxcn p lib t1 t2
+    -> member lib mkcn_axiom (mkcn_approx t1 t2).
 Proof.
   unfold member, equality; sp.
-  exists (fun (t t' : @CTerm p) => t ===>(lib) mkc_axiom
-                      # t' ===>(lib) mkc_axiom
-                      # capproxc lib t1 t2);
+  exists (fun (t t' : @cterm p) => t ===>(lib) mkcn_axiom
+                      # t' ===>(lib) mkcn_axiom
+                      # capproxcn lib t1 t2);
     sp; spcast; try computes_to_value_refl; sp.
   apply CL_approx.
   unfold per_approx.
@@ -197,9 +197,9 @@ Proof.
 Qed.
 
 Lemma member_approx_iff {p} :
-  forall lib (t1 t2 : @CTerm p),
-    capproxc lib t1 t2
-    <=> member lib mkc_axiom (mkc_approx t1 t2).
+  forall lib (t1 t2 : @cterm p),
+    capproxcn lib t1 t2
+    <=> member lib mkcn_axiom (mkcn_approx t1 t2).
 Proof.
   sp; split; intro e.
   spcast; apply member_approx; sp.
@@ -212,34 +212,36 @@ Proof.
 Qed.
 
 Lemma member_halts_iff {p} :
-  forall lib (t : @CTerm p),
-    chaltsc lib t
-    <=> member lib mkc_axiom (mkc_halts t).
+  forall lib (t : @cterm p),
+    chaltscn lib t
+    <=> member lib mkcn_axiom (mkcn_halts t).
 Proof.
-  sp; rewrite <- fold_mkc_halts.
-  generalize (member_approx_iff lib mkc_axiom (mkc_cbv t nvarx (mkcv_axiom nvarx))) as i; sp.
+  sp; rewrite <- fold_mkcn_halts.
+  generalize (member_approx_iff lib mkcn_axiom (mkcn_cbv t nvarx (mkcvn_axiom nvarx))) as i; sp.
   rw <- i; clear i.
-  destruct t; unfold hasvaluec, approxc, mkc_cbv; simpl.
+  destruct_cnterms; unfold hasvaluecn, approxcn, mkcn_cbv; simpl.
 
   sp_iff Case.
 
   - Case "->".
     intro hv.
-    spcast; allunfold @approxc; allunfold @hasvaluec; allsimpl.
+    spcast; allunfold @approxcn; allunfold @hasvaluecn; allsimpl.
     allrw @isprog_eq.
-    generalize (hasvalue_as_approx lib x i); intro e.
+    assert (isprogram x) as isp by eauto 2 with slow.
+    generalize (hasvalue_as_approx lib x isp); intro e.
     allrw <-; sp.
 
   - Case "<-".
     intro a; spcast; allunfold @approxc; allunfold @hasvaluec; allsimpl.
     allrw @isprog_eq.
-    generalize (hasvalue_as_approx lib x i); intro e.
+    assert (isprogram x) as isp by eauto 2 with slow.
+    generalize (hasvalue_as_approx lib x isp); intro e.
     allrw; sp.
 Qed.
 
 Lemma equality_in_base {p} :
-  forall lib (t1 t2 : @CTerm p),
-    equality lib t1 t2 mkc_base -> ccequivc lib t1 t2.
+  forall lib (t1 t2 : @cterm p),
+    equality lib t1 t2 mkcn_base -> ccequivcn lib t1 t2.
 Proof.
   unfold equality, nuprl; introv e; exrepnd.
   inversion e1; subst; try not_univ.
@@ -249,35 +251,33 @@ Proof.
 Qed.
 
 Lemma equality_in_base_iff {p} :
-  forall lib (t1 t2 : @CTerm p),
-    equality lib t1 t2 mkc_base <=> ccequivc lib t1 t2.
+  forall lib (t1 t2 : @cterm p),
+    equality lib t1 t2 mkcn_base <=> ccequivcn lib t1 t2.
 Proof.
   intros; split; intro i; try (apply equality_in_base; sp).
   unfold equality, nuprl.
-  exists (fun a b : @CTerm p => ccequivc lib a b); sp.
+  exists (fun a b : @cterm p => ccequivcn lib a b); sp.
   apply CL_base; unfold per_base; sp;
   spcast; apply computes_to_value_isvalue_refl; repeat constructor; simpl; sp.
 Qed.
 
 Lemma tequality_base {p} :
-  forall lib, @tequality p lib mkc_base mkc_base.
+  forall lib, @tequality p lib mkcn_base mkcn_base.
 Proof.
   introv.
   unfold tequality.
-  exists (fun a b : @CTerm p => ccequivc lib a b).
+  exists (fun a b : @cterm p => ccequivcn lib a b).
   unfold nuprl.
   apply CL_base.
-  unfold per_base; sp; spcast;
-  try (apply computes_to_valc_refl);
-  try (apply iscvalue_mkc_base; auto).
+  unfold per_base; sp; spcast; try (apply computes_to_valcn_refl); eauto 2 with slow.
 Qed.
 Hint Immediate tequality_base.
 
-Lemma tequality_mkc_approx {p} :
-  forall lib (a b c d : @CTerm p),
-    tequality lib (mkc_approx a b) (mkc_approx c d)
+Lemma tequality_mkcn_approx {p} :
+  forall lib (a b c d : @cterm p),
+    tequality lib (mkcn_approx a b) (mkcn_approx c d)
     <=>
-    (capproxc lib a b <=> capproxc lib c d).
+    (capproxcn lib a b <=> capproxcn lib c d).
 Proof.
   unfold tequality, nuprl; sp; split; intro k; exrepnd.
 
@@ -285,55 +285,55 @@ Proof.
   try (inversion X; sp);
   try (computes_to_value_isvalue).
 
-  exists (fun x y : @CTerm p => x ===>(lib) mkc_axiom
-                     # y ===>(lib) mkc_axiom
-                     # capproxc lib a b).
+  exists (fun x y : @cterm p => x ===>(lib) mkcn_axiom
+                     # y ===>(lib) mkcn_axiom
+                     # capproxcn lib a b).
   apply CL_approx.
   unfold per_approx.
   exists a b c d; sp;
-  spcast; apply computes_to_valc_refl; apply iscvalue_mkc_approx; auto.
+  spcast; apply computes_to_valcn_refl; eauto 3 with slow.
 Qed.
 
-Lemma chasvaluec_as_capproxc {p} :
-  forall lib (a : @CTerm p),
-    chaltsc lib a
+Lemma chasvaluec_as_capproxcn {p} :
+  forall lib (a : @cterm p),
+    chaltscn lib a
     <=>
-    capproxc lib mkc_axiom (mkc_cbv a nvarx (mkcv_axiom nvarx)).
+    capproxcn lib mkcn_axiom (mkcn_cbv a nvarx (mkcvn_axiom nvarx)).
 Proof.
   introv; split; intro k; spcast.
-  rw <- @hasvaluec_as_approxc; sp.
-  allrw @hasvaluec_as_approxc; sp.
+  rw <- @hasvaluecn_as_approxcn; sp.
+  allrw @hasvaluecn_as_approxcn; sp.
 Qed.
 
-Lemma tequality_mkc_halts {p} :
-  forall lib (a b : @CTerm p),
-    tequality lib (mkc_halts a) (mkc_halts b)
+Lemma tequality_mkcn_halts {p} :
+  forall lib (a b : @cterm p),
+    tequality lib (mkcn_halts a) (mkcn_halts b)
     <=>
-    (chaltsc lib a <=> chaltsc lib b).
+    (chaltscn lib a <=> chaltscn lib b).
 Proof.
-  intros; repeat (rewrite <- fold_mkc_halts).
-  rw @tequality_mkc_approx.
-  allrw @chasvaluec_as_capproxc; sp.
+  intros; repeat (rewrite <- fold_mkcn_halts).
+  rw @tequality_mkcn_approx.
+  allrw @chasvaluec_as_capproxcn; sp.
 Qed.
 
 (*
-Lemma tequality_mkc_halts :
+Lemma tequality_mkcn_halts :
   forall a b,
-    tequality lib (mkc_halts a) (mkc_halts b)
+    tequality lib (mkcn_halts a) (mkcn_halts b)
     <->
     (hasvaluec a <-> hasvaluec b).
 Proof.
   sp.
-  repeat (rewrite <- fold_mkc_halts).
-  rewrite tequality_mkc_approx.
+  repeat (rewrite <- fold_mkcn_halts).
+  rewrite tequality_mkcn_approx.
   repeat (rewrite <- hasvaluec_as_approxc); sp.
 Qed.
 *)
 
 Lemma member_approx_is_axiom {p} :
-  forall lib (t t1 t2 : @CTerm p),
-    member lib t (mkc_approx t1 t2)
-    -> t ===>(lib) mkc_axiom.
+  forall lib (t t1 t2 : @cterm p),
+    member lib t (mkcn_approx t1 t2)
+    -> t ===>(lib) mkcn_axiom.
 Proof.
   introv m.
   unfold member, equality, nuprl in m; exrepnd.
@@ -343,9 +343,9 @@ Proof.
 Qed.
 
 Lemma member_cequiv_iff {p} :
-  forall lib (t1 t2 : @CTerm p),
-    ccequivc lib t1 t2
-    <=> member lib mkc_axiom (mkc_cequiv t1 t2).
+  forall lib (t1 t2 : @cterm p),
+    ccequivcn lib t1 t2
+    <=> member lib mkcn_axiom (mkcn_cequiv t1 t2).
 Proof.
   sp; split; intro e.
   spcast; apply member_cequiv; sp.
@@ -357,11 +357,11 @@ Proof.
   discover; sp.
 Qed.
 
-Lemma tequality_mkc_cequiv {p} :
-  forall lib (a b c d : @CTerm p),
-    tequality lib (mkc_cequiv a b) (mkc_cequiv c d)
+Lemma tequality_mkcn_cequiv {p} :
+  forall lib (a b c d : @cterm p),
+    tequality lib (mkcn_cequiv a b) (mkcn_cequiv c d)
     <=>
-    (ccequivc lib a b <=> ccequivc lib c d).
+    (ccequivcn lib a b <=> ccequivcn lib c d).
 Proof.
   unfold tequality, nuprl; sp; split; intro k; exrepnd.
 
@@ -372,26 +372,26 @@ Proof.
   computes_to_value_isvalue.
 *)
 
-  exists (fun x y : @CTerm p => x ===>(lib) mkc_axiom
-                     # y ===>(lib) mkc_axiom
-                     # ccequivc lib a b).
+  exists (fun x y : @cterm p => x ===>(lib) mkcn_axiom
+                     # y ===>(lib) mkcn_axiom
+                     # ccequivcn lib a b).
   apply CL_cequiv.
   unfold per_cequiv.
   exists a b c d; sp;
-  spcast; apply computes_to_valc_refl; apply iscvalue_mkc_cequiv; auto.
+  spcast; apply computes_to_valcn_refl; eauto 3 with slow.
 Qed.
 
 Lemma equality_in_approx {p} :
-  forall lib (a b t1 t2 : @CTerm p),
-    (capproxc lib t1 t2 # a ===>(lib) mkc_axiom # b ===>(lib) mkc_axiom)
-    <=> equality lib a b (mkc_approx t1 t2).
+  forall lib (a b t1 t2 : @cterm p),
+    (capproxcn lib t1 t2 # a ===>(lib) mkcn_axiom # b ===>(lib) mkcn_axiom)
+    <=> equality lib a b (mkcn_approx t1 t2).
 Proof.
   sp; split; intro e.
 
   - unfold member, equality; sp.
-    exists (fun t t' : @CTerm p => t ===>(lib) mkc_axiom
-                                          # t' ===>(lib) mkc_axiom
-                                          # capproxc lib t1 t2);
+    exists (fun t t' : @cterm p => t ===>(lib) mkcn_axiom
+                                          # t' ===>(lib) mkcn_axiom
+                                          # capproxcn lib t1 t2);
       sp; spcast; try computes_to_value_refl; sp.
     apply CL_approx.
     unfold per_approx.
@@ -404,12 +404,12 @@ Proof.
     discover; sp.
 Qed.
 
-Lemma equality_in_mkc_cequiv {o} :
-  forall lib a b (t1 t2 : @CTerm o),
-    equality lib a b (mkc_cequiv t1 t2)
-             <=> (a ===>(lib) mkc_axiom
-                    # b ===>(lib) mkc_axiom
-                    # ccequivc lib t1 t2).
+Lemma equality_in_mkcn_cequiv {o} :
+  forall lib a b (t1 t2 : @cterm o),
+    equality lib a b (mkcn_cequiv t1 t2)
+             <=> (a ===>(lib) mkcn_axiom
+                    # b ===>(lib) mkcn_axiom
+                    # ccequivcn lib t1 t2).
 Proof.
   introv; split; intro h.
 
@@ -424,9 +424,9 @@ Proof.
     dands; spcast; auto.
 
   - unfold equality.
-    exists (fun (t t' : CTerm) => t ===>(lib) mkc_axiom
-                      # t' ===>(lib) mkc_axiom
-                      # ccequivc lib t1 t2);
+    exists (fun (t t' : cterm) => t ===>(lib) mkcn_axiom
+                      # t' ===>(lib) mkcn_axiom
+                      # ccequivcn lib t1 t2);
       sp; spcast; try computes_to_value_refl; sp.
     apply CL_cequiv.
     unfold per_cequiv.
@@ -434,82 +434,82 @@ Proof.
 Qed.
 
 Lemma inhabited_cequiv {o} :
-  forall lib (t1 t2 : @CTerm o),
-    inhabited_type lib (mkc_cequiv t1 t2) <=> ccequivc lib t1 t2.
+  forall lib (t1 t2 : @cterm o),
+    inhabited_type lib (mkcn_cequiv t1 t2) <=> ccequivcn lib t1 t2.
 Proof.
   unfold inhabited_type.
   introv; split; intro h; exrepnd.
-  - rw @equality_in_mkc_cequiv in h0; tcsp.
-  - exists (@mkc_axiom o).
+  - rw @equality_in_mkcn_cequiv in h0; tcsp.
+  - exists (@mkcn_axiom o).
     apply member_cequiv_iff; auto.
 Qed.
 
 Lemma inhabited_halts {p} :
-  forall lib (t : @CTerm p), chaltsc lib t <=> inhabited_type lib (mkc_halts t).
+  forall lib (t : @cterm p), chaltscn lib t <=> inhabited_type lib (mkcn_halts t).
 Proof.
   introv; split; intro h.
 
-  rw @member_halts_iff in h; exists (@mkc_axiom p); auto.
+  rw @member_halts_iff in h; exists (@mkcn_axiom p); auto.
 
   unfold inhabited_type in h; exrepnd.
   unfold member, equality in h0; exrepnd.
-  rewrite <- fold_mkc_halts in h0.
+  rewrite <- fold_mkcn_halts in h0.
   inversion h0; subst; try not_univ.
   allunfold @per_approx; exrepnd.
   computes_to_value_isvalue.
   discover; repnd; spcast.
-  destruct_cterms; allsimpl.
-  unfold hasvaluec; simpl.
-  allunfold @approxc; allsimpl.
-  assert (isprogram x0) as isp by (apply isprogram_eq; auto).
+  destruct_cnterms; allsimpl.
+  unfold hasvaluecn; simpl.
+  allunfold @approxcn; allsimpl.
+  assert (isprogram x0) as isp by eauto 2 with slow.
   generalize (hasvalue_as_approx lib x0 isp); intro e.
   apply e; auto.
 Qed.
 
-Lemma type_mkc_halts {p} :
-  forall lib (a : @CTerm p), type lib (mkc_halts a).
+Lemma type_mkcn_halts {p} :
+  forall lib (a : @cterm p), type lib (mkcn_halts a).
 Proof.
-  introv; rw @tequality_mkc_halts; sp.
+  introv; rw @tequality_mkcn_halts; sp.
 Qed.
-Hint Immediate type_mkc_halts.
+Hint Immediate type_mkcn_halts.
 
 Lemma equality_in_halts {p} :
-  forall lib (a b t : @CTerm p),
-    (chaltsc lib t # a ===>(lib) mkc_axiom # b ===>(lib) mkc_axiom)
-    <=> equality lib a b (mkc_halts t).
+  forall lib (a b t : @cterm p),
+    (chaltscn lib t # a ===>(lib) mkcn_axiom # b ===>(lib) mkcn_axiom)
+    <=> equality lib a b (mkcn_halts t).
 Proof.
-  introv; rewrite <- fold_mkc_halts; rw <- @equality_in_approx;
+  introv; rewrite <- fold_mkcn_halts; rw <- @equality_in_approx;
   split; intro k; repnd; spcast; dands; spcast; auto;
-  destruct_cterms; allunfold @hasvaluec; allunfold @approxc; allsimpl;
-  assert (isprogram x) as isp by (apply isprogram_eq; auto);
+  destruct_cnterms; allunfold @hasvaluecn; allunfold @approxcn; allsimpl;
+  assert (isprogram x) as isp by eauto 2 with slow;
   generalize (hasvalue_as_approx lib x isp); intro e; apply e; auto.
 Qed.
 
-Lemma type_mkc_unit {p} : forall lib, @type p lib mkc_unit.
+Lemma type_mkcn_unit {p} : forall lib, @type p lib mkcn_unit.
 Proof.
-  introv; rw @mkc_unit_eq.
+  introv; rw @mkcn_unit_eq.
   apply equal_approx.
 Qed.
-Hint Immediate type_mkc_unit.
-Hint Resolve type_mkc_unit : slow.
+Hint Immediate type_mkcn_unit.
+Hint Resolve type_mkcn_unit : slow.
 
 Lemma tequality_unit {o} :
-  forall lib, @tequality o lib mkc_unit mkc_unit.
+  forall lib, @tequality o lib mkcn_unit mkcn_unit.
 Proof.
-  introv; allrw @mkc_unit_eq.
-  rw @tequality_mkc_approx; sp.
+  introv; allrw @mkcn_unit_eq.
+  rw @tequality_mkcn_approx; sp.
 Qed.
 
 Lemma equality_in_unit {o} :
-  forall lib (a b : @CTerm o),
-    equality lib a b mkc_unit
-    <=> (a ===>(lib) mkc_axiom # b ===>(lib) mkc_axiom).
+  forall lib (a b : @cterm o),
+    equality lib a b mkcn_unit
+    <=> (a ===>(lib) mkcn_axiom # b ===>(lib) mkcn_axiom).
 Proof.
   introv.
-  allrw @mkc_unit_eq.
+  allrw @mkcn_unit_eq.
   rw <- @equality_in_approx; split; sp.
   spcast; sp.
-  apply approxc_refl.
+  apply approxcn_refl.
 Qed.
 
 Lemma resp_cvc_approxc {p} :
@@ -522,44 +522,44 @@ Proof.
 Qed.
 Hint Resolve resp_cvc_approxc : respects.
 
-Lemma equality_in_uni_mkc_halts {p} :
-  forall lib i (a b : @CTerm p),
-    equality lib (mkc_halts a) (mkc_halts b) (mkc_uni i)
+Lemma equality_in_uni_mkcn_halts {p} :
+  forall lib i (a b : @cterm p),
+    equality lib (mkcn_halts a) (mkcn_halts b) (mkcn_uni i)
     <=>
-    (chaltsc lib a <=> chaltsc lib b).
+    (chaltscn lib a <=> chaltscn lib b).
 Proof.
-  intros; repeat (rewrite <- fold_mkc_halts).
-  rw @mkc_approx_equality_in_uni.
-  allrw @chasvaluec_as_capproxc; sp.
+  intros; repeat (rewrite <- fold_mkcn_halts).
+  rw @mkcn_approx_equality_in_uni.
+  allrw @chasvaluec_as_capproxcn; sp.
 Qed.
 
-Lemma cequorsq_mkc_halts_implies {p} :
-  forall lib i (a b : @CTerm p),
-    equorsq lib (mkc_halts a) (mkc_halts b) (mkc_uni i)
-    -> (chaltsc lib a <=> chaltsc lib b).
+Lemma cequorsq_mkcn_halts_implies {p} :
+  forall lib i (a b : @cterm p),
+    equorsq lib (mkcn_halts a) (mkcn_halts b) (mkcn_uni i)
+    -> (chaltscn lib a <=> chaltscn lib b).
 Proof.
   unfold equorsq; intros; sp;
-  allrw @equality_in_uni_mkc_halts; sp.
-  uncast; allrw @cequivc_decomp_halts; sp;
-  split; sp; spcast; discover; sp.
+  allrw @equality_in_uni_mkcn_halts; sp.
+  uncast; allrw @cequivcn_decomp_halts; sp;
+    split; sp; spcast; discover; sp; eauto 3 with slow.
 Qed.
 
-Lemma cequorsq_mkc_halts {p} :
-  forall lib i (a b : @CTerm p),
-    equorsq lib (mkc_halts a) (mkc_halts b) (mkc_uni i)
+Lemma cequorsq_mkcn_halts {p} :
+  forall lib i (a b : @cterm p),
+    equorsq lib (mkcn_halts a) (mkcn_halts b) (mkcn_uni i)
     <=>
-    (chaltsc lib a <=> chaltsc lib b).
+    (chaltscn lib a <=> chaltscn lib b).
 Proof.
   unfold equorsq; intros; split; sp; try right;
-  allrw @equality_in_uni_mkc_halts; sp; uncast;
-  allrw @cequivc_decomp_halts; try split; sp; spcast;
+  allrw @equality_in_uni_mkcn_halts; sp; uncast;
+  allrw @cequivcn_decomp_halts; try split; sp; spcast;
   discover; sp.
 Abort.
 (* This is not true in Prop with Cast around hasvalue *)
 (*Qed.*)
 
 Lemma member_in_base_iff {o} :
-  forall lib (t : @CTerm o), member lib t mkc_base <=> True.
+  forall lib (t : @cterm o), member lib t mkcn_base <=> True.
 Proof.
   intros; split; intro; auto; apply member_base.
 Qed.

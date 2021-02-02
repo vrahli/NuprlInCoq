@@ -39,9 +39,11 @@ Definition is_spcan_not_atom {o} lib (t : @CTerm o) a : Type :=
 Definition noc_bterms {o} (t : @CTerm o) :=
   get_bterms (get_cterm t) = [].
 
+Definition isccancn {o} (t : @CNTerm o) := isccan (get_cnterm t).
+
 Definition cis_spcan_not_atom {o} lib (t : @CTerm o) a :=
   {x : CTerm
-   , t ===>(lib) x
+   , ccomputes_to_valc lib t x
    # isccanc x
    # noc_bterms x
    # !LIn a (getc_utokens x)}.
@@ -85,10 +87,3 @@ Proof.
     unfold computes_to_can; dands; simpl; auto. }
   { allunfold @isccanc; allsimpl; tcsp. }
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/")
-*** End:
-*)

@@ -35,7 +35,7 @@ Require Import dest_close.
 
 
 Lemma eq_term_equals_preserves_per_req_eq {o} :
-  forall lib (a1 a2 : @CTerm o) eqa1 eqa2,
+  forall lib (a1 a2 : @cterm o) eqa1 eqa2,
     (eqa1 <=2=> eqa2)
     -> (per_req_eq lib a1 a2 eqa1) <=2=> (per_req_eq lib a1 a2 eqa2).
 Proof.
@@ -53,12 +53,12 @@ Proof.
 Qed.
 
 Lemma per_req_eq_respects_cequivc {o} :
-  forall lib (a1 a2 b1 b2 : @CTerm o) eqa,
+  forall lib (a1 a2 b1 b2 : @cterm o) eqa,
     term_equality_symmetric eqa
     -> term_equality_transitive eqa
     -> term_equality_respecting lib eqa
-    -> cequivc lib a1 b1
-    -> cequivc lib a2 b2
+    -> cequivcn lib a1 b1
+    -> cequivcn lib a2 b2
     -> (per_req_eq lib a1 a2 eqa) <=2=> (per_req_eq lib b1 b2 eqa).
 Proof.
   introv sym trans resp ceq1 ceq2; introv; unfold per_req_eq; split; intro h; exrepnd; spcast.
@@ -88,25 +88,25 @@ Proof.
 
     + apply (trans _ b1).
 
-      * apply sym; apply resp;[|spcast; apply cequivc_sym;auto].
+      * apply sym; apply resp;[|spcast; apply cequivcn_sym;auto].
         apply (trans _ b2); auto.
 
       * apply (trans _ b2); auto.
-        apply resp;[|spcast;apply cequivc_sym;auto].
+        apply resp;[|spcast;apply cequivcn_sym;auto].
         apply (trans _ b1); auto.
 
     + apply (trans _ b1); auto.
       apply sym.
-      apply resp;[|spcast; apply cequivc_sym;auto].
+      apply resp;[|spcast; apply cequivcn_sym;auto].
       apply (trans _ b2); auto.
 
     + apply (trans _ b2); auto.
-      apply sym;apply resp;[|spcast;apply cequivc_sym;auto].
+      apply sym;apply resp;[|spcast;apply cequivcn_sym;auto].
       apply (trans _ b1); auto.
 Qed.
 
 Lemma per_req_eq_respects_eqorceq {o} :
-  forall lib (a1 a2 b1 b2 : @CTerm o) eqa,
+  forall lib (a1 a2 b1 b2 : @cterm o) eqa,
     term_equality_symmetric eqa
     -> term_equality_transitive eqa
     -> term_equality_respecting lib eqa
@@ -153,8 +153,8 @@ Lemma close_type_system_req {p} :
   forall T T' (eq : per) A B a1 a2 b1 b2 eqa,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_requality a1 a2 A)
-    -> computes_to_valc lib T' (mkc_requality b1 b2 B)
+    -> computes_to_valcn lib T (mkcn_requality a1 a2 A)
+    -> computes_to_valcn lib T' (mkcn_requality b1 b2 B)
     -> close lib ts A B eqa
     -> eqorceq lib eqa a1 b1
     -> eqorceq lib eqa a2 b2
@@ -200,17 +200,17 @@ Proof.
 
     {
       duplicate comp1 as c0.
-      apply cequivc_mkc_requality with (t' := T3) in c0; sp.
-      exists A T'0 a1 a2 a' b' eqa; sp; spcast; sp; try (complete (right; spcast; sp)).
+      apply cequivcn_mkcn_requality with (t' := T3) in c0; sp.
+      exists A c' a1 a2 a' b' eqa; sp; spcast; sp; try (complete (right; spcast; sp)).
 
       unfold type_sys_props in tysysa; repnd.
-      pose proof (tysysa4 A T'0) as q; repeat (autodimp q hyp).
+      pose proof (tysysa4 A c') as q; repeat (autodimp q hyp).
     }
 
     {
       duplicate comp2 as c0.
-      apply cequivc_mkc_requality with (t' := T3) in c0; sp.
-      exists B T'0 b1 b2 a' b' eqa; sp; spcast; sp; try (complete (right; spcast; sp)).
+      apply cequivcn_mkcn_requality with (t' := T3) in c0; sp.
+      exists B c' b1 b2 a' b' eqa; sp; spcast; sp; try (complete (right; spcast; sp)).
 
       { unfold type_sys_props in tysysa; repnd.
         apply tysysa4; auto. }
@@ -243,7 +243,7 @@ Proof.
     introv e ceq; spcast.
     apply eqiff in e; apply eqiff.
     unfold per_req_eq in e; unfold per_req_eq; exrepnd; spcast; computes_to_eqval.
-    eapply cequivc_mkc_refl in ceq;[|eauto]; exrepnd.
+    eapply cequivcn_mkcn_refl in ceq;[|eauto]; exrepnd.
     exists x1 a'; dands; spcast; auto.
 
     unfold type_sys_props in tysysa; repnd.

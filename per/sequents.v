@@ -1063,26 +1063,32 @@ Definition ctype {o} (c : @conclusion o) :=
 
 Definition extract {o} (c : @conclusion o) :=
   match c with
-    | concl_ext t e => Some e
-    | concl_typ t => None
+  | concl_ext t e => Some e
+  | concl_typ t => None
   end.
 
 Definition wf_term_op {o} (top : option (@NTerm o)) :=
   match top with
-    | Some t => wf_term t
-    | None => true = true
+  | Some t => wf_term t
+  | None => true = true
   end.
 
 Definition covered_op {o} (top : option (@NTerm o)) vs :=
   match top with
-    | Some t => covered t vs
-    | None => true = true
+  | Some t => covered t vs
+  | None => true = true
   end.
 
 Definition cover_vars_op {o} (top : option (@NTerm o)) sub :=
   match top with
-    | Some t => cover_vars t sub
-    | None => true = true
+  | Some t => cover_vars t sub
+  | None => true = true
+  end.
+
+Definition noutokens_op {o} (top : option (@NTerm o)) :=
+  match top with
+  | Some t => noutokens t
+  | None => true = true
   end.
 
 (* begin hide *)
@@ -1180,7 +1186,8 @@ Qed.
 *)
 
 Definition wf_concl {p} (c : @conclusion p) : Type :=
-  wf_term (ctype c) # wf_term_op (extract c).
+  wf_term (ctype c)
+  # wf_term_op (extract c).
 
 (**
 
@@ -1191,7 +1198,8 @@ Definition wf_concl {p} (c : @conclusion p) : Type :=
  *)
 
 Definition closed_type {p} (hs : @barehypotheses p) (c : @conclusion p) : Type :=
-  covered (ctype c) (vars_hyps hs).
+  covered (ctype c) (vars_hyps hs)
+  # noutokens (ctype c).
 
 (**
 
@@ -1201,7 +1209,8 @@ Definition closed_type {p} (hs : @barehypotheses p) (c : @conclusion p) : Type :
  *)
 
 Definition closed_extract {p} (hs : @barehypotheses p) (c : @conclusion p) : Type :=
-  covered_op (extract c) (nh_vars_hyps hs).
+  covered_op (extract c) (nh_vars_hyps hs)
+  # noutokens_op (extract c).
 
 (* begin hide *)
 
@@ -1229,11 +1238,9 @@ Lemma closed_extract_proof_irrelevance {p} :
     x = y.
 Proof.
   intros.
-  destruct c; allsimpl.
-  apply UIP_dec.
-  apply bool_dec.
-  apply UIP_dec.
-  apply bool_dec.
+  unfold closed_extract in *; repnd.
+  destruct c; allsimpl; f_equal; apply UIP_dec; try apply bool_dec.
+  apply list_eq_dec; apply (patom p).
 Qed.
 
 Hint Extern 0 =>
@@ -1249,15 +1256,16 @@ Lemma closed_type_proof_irrelevance {p} :
     x = y.
 Proof.
   intros.
-  apply UIP_dec.
-  apply bool_dec.
+  unfold closed_type in *; repnd.
+  destruct c; allsimpl; f_equal; apply UIP_dec; try apply bool_dec;
+    apply list_eq_dec; apply (patom p).
 Qed.
 
 Hint Extern 0 =>
 let h := fresh "h" in
 match goal with
-  | [ H1 : closed_type ?hs ?c , H2 : closed_type ?hs ?c |- _ ] =>
-    pose proof (closed_type_proof_irrelevance hs c H2 H1) as h; subst
+| [ H1 : closed_type ?hs ?c , H2 : closed_type ?hs ?c |- _ ] =>
+  pose proof (closed_type_proof_irrelevance hs c H2 H1) as h; subst
 end : pi.
 
 (* end hide *)
@@ -1529,21 +1537,42 @@ match goal with
     pose proof (wf_csequent_proof_irrelevance s H2 H1) as h; subst
 end : pi.
 
+Lemma noutokens_op_proof_irrelevance {p} :
+  forall c,
+  forall x y : @noutokens_op p c,
+    x = y.
+Proof.
+  intros.
+  destruct c; allsimpl; clear_irr; auto.
+  apply UIP_dec; apply bool_dec.
+Qed.
+
+Hint Extern 0 =>
+let h := fresh "h" in
+match goal with
+| [ H1 : noutokens_op ?c , H2 : noutokens_op ?c |- _ ] =>
+  pose proof (noutokens_op_proof_irrelevance c H2 H1) as h; subst
+end : pi.
+
 
 Ltac proof_irr :=
   repeat (first
             [ progress clear_irr
             | match goal with
-                | [ H1 : wf_concl ?a,           H2 : wf_concl ?a           |- _ ] => assert (H2 = H1) by apply wf_concl_proof_irrelevance; subst
-                | [ H1 : wf_term_op ?a,         H2 : wf_term_op ?a         |- _ ] => assert (H2 = H1) by apply wf_term_op_proof_irrelevance; subst
-                | [ H1 : covered_op ?a ?b,      H2 : covered_op ?a ?b      |- _ ] => assert (H2 = H1) by apply covered_op_proof_irrelevance; subst
-                | [ H1 : cover_vars_op ?a ?b,   H2 : cover_vars_op ?a ?b   |- _ ] => assert (H2 = H1) by apply covered_op_proof_irrelevance; subst
-                | [ H1 : closed_extract ?a ?b,  H2 : closed_extract ?a ?b  |- _ ] => assert (H2 = H1) by apply closed_extract_proof_irrelevance; subst
-                | [ H1 : closed_type ?a ?b,     H2 : closed_type ?a ?b     |- _ ] => assert (H2 = H1) by apply closed_type_proof_irrelevance; subst
-                (*| [ H1 : wf_hypotheses ?a,      H2 : wf_hypotheses ?a      |- _ ] => assert (H2 = H1) by apply wf_hypotheses_proof_irrelevance; subst*)
-                | [ H1 : vswf_hypotheses ?a ?b, H2 : vswf_hypotheses ?a ?b |- _ ] => assert (H2 = H1) by apply vswf_hypotheses_proof_irrelevance; subst
-                (*| [ H1 : wf_sequent ?a,         H2 : wf_sequent ?a         |- _ ] => assert (H2 = H1) by apply wf_sequent_proof_irrelevance; subst*)
-                (*| [ H1 : wf_csequent ?a,        H2 : wf_csequent ?a        |- _ ] => assert (H2 = H1) by apply wf_csequent_proof_irrelevance; subst*)
+              | [ H1 : wf_concl ?a,           H2 : wf_concl ?a           |- _ ] => assert (H2 = H1) by apply wf_concl_proof_irrelevance; subst
+              | [ H1 : wf_term_op ?a,         H2 : wf_term_op ?a         |- _ ] => assert (H2 = H1) by apply wf_term_op_proof_irrelevance; subst
+
+              | [ H1 : noutokens ?a,           H2 : noutokens ?a         |- _ ] => assert (H2 = H1) by apply noutokens_proof_irrelevance; subst
+              | [ H1 : noutokens_op ?a,        H2 : noutokens_op ?a      |- _ ] => assert (H2 = H1) by apply noutokens_op_proof_irrelevance; subst
+
+              | [ H1 : covered_op ?a ?b,      H2 : covered_op ?a ?b      |- _ ] => assert (H2 = H1) by apply covered_op_proof_irrelevance; subst
+              | [ H1 : cover_vars_op ?a ?b,   H2 : cover_vars_op ?a ?b   |- _ ] => assert (H2 = H1) by apply covered_op_proof_irrelevance; subst
+              | [ H1 : closed_extract ?a ?b,  H2 : closed_extract ?a ?b  |- _ ] => assert (H2 = H1) by apply closed_extract_proof_irrelevance; subst
+              | [ H1 : closed_type ?a ?b,     H2 : closed_type ?a ?b     |- _ ] => assert (H2 = H1) by apply closed_type_proof_irrelevance; subst
+              (*| [ H1 : wf_hypotheses ?a,      H2 : wf_hypotheses ?a      |- _ ] => assert (H2 = H1) by apply wf_hypotheses_proof_irrelevance; subst*)
+              | [ H1 : vswf_hypotheses ?a ?b, H2 : vswf_hypotheses ?a ?b |- _ ] => assert (H2 = H1) by apply vswf_hypotheses_proof_irrelevance; subst
+              (*| [ H1 : wf_sequent ?a,         H2 : wf_sequent ?a         |- _ ] => assert (H2 = H1) by apply wf_sequent_proof_irrelevance; subst*)
+              (*| [ H1 : wf_csequent ?a,        H2 : wf_csequent ?a        |- _ ] => assert (H2 = H1) by apply wf_csequent_proof_irrelevance; subst*)
               end
          ]).
 
@@ -1692,8 +1721,8 @@ Definition mk_rule {p}
 *)
 
 Fixpoint mk_hs_subst {p}
-           (ts : list CTerm)
-           (hs : @barehypotheses p) : @CSub p :=
+           (ts : list cterm)
+           (hs : @barehypotheses p) : @CNSub p :=
   match ts, hs with
   | nil, _ => nil
   | _, nil => nil
@@ -1747,46 +1776,45 @@ Qed.
 Lemma dom_mk_hs_subst {p} :
   forall G ts,
     length ts = length G
-    -> @vars_hyps p G = dom_csub (mk_hs_subst ts G).
+    -> @vars_hyps p G = dom_cnsub (mk_hs_subst ts G).
 Proof.
   induction G; simpl; sp; destruct ts; allsimpl; auto; inversion H.
   apply IHG in H1.
   rewrite H1; auto.
 Qed.
 
-Lemma cover_vars_mk_hs_subst {p} :
+Lemma cover_nout_vars_mk_hs_subst {p} :
   forall t ts hs,
     length ts = length hs
-    -> (cover_vars t (@mk_hs_subst p ts hs) <=> covered t (vars_hyps hs)).
+    -> (cover_nout_vars t (@mk_hs_subst p ts hs) <=> covered t (vars_hyps hs)).
 Proof.
   intros.
-  rw @cover_vars_eq.
+  rw @cover_nout_vars_eq.
   unfold covered.
   rewrite <- dom_mk_hs_subst; sp.
 Qed.
 
-Lemma cover_vars_sub {p} :
+Lemma cover_nout_vars_sub {p} :
   forall t s hs,
-    @vars_hyps p hs = dom_csub s
-    -> (cover_vars t s <=> cover_vars t (mk_hs_subst (crange s) hs)).
+    @vars_hyps p hs = dom_cnsub s
+    -> (cover_nout_vars t s <=> cover_nout_vars t (mk_hs_subst (cnrange s) hs)).
 Proof.
   sp.
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   symm. (* huh??? *)
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   rewrite <- dom_mk_hs_subst.
   rewrite H; sp.
   rewrite <- vars_hyps_length.
   rewrite H.
-  rewrite dom_csub_length.
-  rewrite <- crange_length.
-  rewrite crange_length; sp.
+  rewrite dom_cnsub_length.
+  rewrite cnrange_length; sp.
 Qed.
 
 Lemma mk_hs_subst_crange {p} :
   forall hs s,
-    @vars_hyps p hs = dom_csub s
-    -> mk_hs_subst (crange s) hs = s.
+    @vars_hyps p hs = dom_cnsub s
+    -> mk_hs_subst (cnrange s) hs = s.
 Proof.
   induction hs; simpl; sp; destruct s; allsimpl; sp; inversion H; subst; allsimpl.
   apply IHhs in H2.
@@ -1807,9 +1835,9 @@ Lemma wf_hypotheses_disj_subst {p} :
     length ts1 = length G
     -> length ts2 = length J
     -> wf_hypotheses (snoc G (@mk_hyp p x A) ++ J)
-    -> disjoint (free_vars A) (dom_csub (mk_hs_subst ts2 J))
-       # disjoint (free_vars (@mk_var p x)) (dom_csub (mk_hs_subst ts2 J))
-       # disjoint (free_vars (@mk_var p x)) (dom_csub (mk_hs_subst ts1 G))
+    -> disjoint (free_vars A) (dom_cnsub (mk_hs_subst ts2 J))
+       # disjoint (free_vars (@mk_var p x)) (dom_cnsub (mk_hs_subst ts2 J))
+       # disjoint (free_vars (@mk_var p x)) (dom_cnsub (mk_hs_subst ts1 G))
        # !LIn x (free_vars A).
 Proof.
   intros.
@@ -1819,19 +1847,19 @@ Proof.
 Qed.
 
 (** mk_hyps_subst is the same as mk_hs_subst but on wf hypotheses *)
-Definition mk_hyps_subst {p} (ts : list (@CTerm p)) (hyps : hypotheses) : CSub :=
+Definition mk_hyps_subst {p} (ts : list (@cterm p)) (hyps : hypotheses) : CNSub :=
   mk_hs_subst ts (projT1 hyps).
 
 (** substitute_hyp applies a substitution to the type of an hypothesis *)
-Definition substitute_hyp {p} (sub : @CSub p) (h : hypothesis) : hypothesis :=
+Definition substitute_hyp {p} (sub : @CNSub p) (h : hypothesis) : hypothesis :=
   match h with
   | {| hvar := hv; hidden := hi; htyp := ht; lvl := l |} =>
-      {| hvar := hv; hidden := hi; htyp := csubst ht sub; lvl := l |}
+      {| hvar := hv; hidden := hi; htyp := cnsubst ht sub; lvl := l |}
   end.
 
 (** substitute_hyps applies a substitution to all the types of a list of
  * hypotheses. *)
-Fixpoint substitute_hyps {p} (sub : @CSub p) (hs : barehypotheses) : barehypotheses :=
+Fixpoint substitute_hyps {p} (sub : @CNSub p) (hs : barehypotheses) : barehypotheses :=
   match hs with
     | [] => []
     | h :: hs => substitute_hyp sub h :: substitute_hyps sub hs
@@ -1850,7 +1878,7 @@ Lemma substitute_hyp_nil_sub {p} :
 Proof.
   intro; unfold substitute_hyp.
   destruct h.
-  rewrite csubst_nil; auto.
+  rewrite cnsubst_nil; auto.
 Qed.
 
 Lemma substitute_hyps_nil_sub {p} :
@@ -1897,7 +1925,7 @@ Hint Rewrite @hvar_substitute_hyp : core.
 
 Lemma htyp_substitute_hyp {p} :
   forall sub a,
-    htyp (@substitute_hyp p sub a) = csubst (htyp a) sub.
+    htyp (@substitute_hyp p sub a) = cnsubst (htyp a) sub.
 Proof.
   destruct a; sp.
 Qed.
@@ -1953,9 +1981,9 @@ Lemma substitute_hyp_snoc_sub_weak {p} :
        = substitute_hyp sub h.
 Proof.
   destruct h; unfold hyp_free_vars; simpl; sp.
-  assert (csubst htyp0 (snoc sub (v, t)) = csubst htyp0 sub) as eq;
+  assert (cnsubst htyp0 (snoc sub (v, t)) = cnsubst htyp0 sub) as eq;
     try (rewrite eq); sp.
-  apply subset_free_vars_csub_snoc; sp.
+  apply subset_free_vars_cnsub_snoc; sp.
 Qed.
 
 Lemma substitute_hyps_snoc_sub_weak {p} :
@@ -1998,16 +2026,17 @@ Qed.
 
  *)
 
-Inductive similarity {o} (lib : @library o) : @CSub o -> @CSub o -> @bhyps o -> [U] :=
+Inductive similarity {o} (lib : @library o) : @CNSub o -> @CNSub o -> @bhyps o -> [U] :=
   | sim_nil : similarity lib nil nil nil
   | sim_cons :
-      forall t1 t2 : CTerm,
-      forall s1 s2 : CSubstitution,
+      forall t1 t2 : cterm,
+      forall s1 s2 : CNSubstitution,
       forall h   : hypothesis,
       forall hs  : barehypotheses,
       forall w   : wf_term (htyp h),
-      forall p   : cover_vars (htyp h) s1,
-      forall e   : equality lib t1 t2 (lsubstc (htyp h) w s1 p),
+      forall n   : noutokens (htyp h),
+      forall p   : cover_nout_vars (htyp h) s1,
+      forall e   : equality lib t1 t2 (lsubstcn (htyp h) w n s1 p),
       forall sim : similarity lib s1 s2 hs,
         similarity lib
                    (snoc s1 (hvar h, t1))
@@ -2027,7 +2056,7 @@ Proof.
   inversion sim; subst; allsimpl; cpx.
 
   discover.
-  apply @sim_cons with (w := w) (p := p); sp.
+  apply @sim_cons with (w := w) (n := n) (p := p); sp.
   rewrite member_eq.
   apply @equality_refl with (t2 := t2); sp.
 Qed.
@@ -2035,51 +2064,51 @@ Qed.
 Lemma similarity_dom {o} :
   forall lib (hs : @bhyps o) s1 s2,
     similarity lib s1 s2 hs
-    -> dom_csub s1 = vars_hyps hs
-       # dom_csub s2 = vars_hyps hs.
+    -> dom_cnsub s1 = vars_hyps hs
+       # dom_cnsub s2 = vars_hyps hs.
 Proof.
   induction hs using rev_list_indT; simpl; introv sim;
   inversion sim; subst; allsimpl; cpx.
 
-  repeat (rewrite dom_csub_snoc); simpl.
+  repeat (rewrite dom_cnsub_snoc); simpl.
   rewrite vars_hyps_snoc.
   discover; repnd; allrw; sp.
 Qed.
 
-Lemma similarity_cover_vars {o} :
+Lemma similarity_cover_nout_vars {o} :
   forall lib (hs : @bhyps o) s1 s2 t,
     similarity lib s1 s2 hs
-    -> cover_vars t s1
-    -> cover_vars t s2.
+    -> cover_nout_vars t s1
+    -> cover_nout_vars t s2.
 Proof.
   introv sim c.
   apply similarity_dom in sim; repd.
-  allrw @cover_vars_eq.
+  allrw @cover_nout_vars_eq.
   rw e0; rw <- e; sp.
 Qed.
 
-Lemma similarity_cover_vars_upto {o} :
+Lemma similarity_cover_nout_vars_upto {o} :
   forall lib (hs : @bhyps o) s1 s2 vs t,
     similarity lib s1 s2 hs
-    -> cover_vars_upto t (csub_filter s1 vs) vs
-    -> cover_vars_upto t (csub_filter s2 vs) vs.
+    -> cover_nout_vars_upto t (cnsub_filter s1 vs) vs
+    -> cover_nout_vars_upto t (cnsub_filter s2 vs) vs.
 Proof.
   introv sim c.
   apply similarity_dom in sim; repd.
-  allunfold @cover_vars_upto.
-  allrw @dom_csub_csub_filter.
+  allunfold @cover_nout_vars_upto.
+  allrw @dom_cnsub_cnsub_filter.
   rw e0; rw <- e; sp.
 Qed.
 
-Lemma subvars_if_cover_vars_sim {o} :
+Lemma subvars_if_cover_nout_vars_sim {o} :
   forall lib t s1 s2 (H : @bhyps o),
-    cover_vars t s1
+    cover_nout_vars t s1
     -> similarity lib s1 s2 H
     -> subvars (free_vars t) (vars_hyps H).
 Proof.
   introv cv sim.
   allapply @similarity_dom; repnd.
-  allrw @cover_vars_eq.
+  allrw @cover_nout_vars_eq.
   provesv.
   rw <- sim0; sp.
 Qed.
@@ -2099,7 +2128,7 @@ Lemma similarity_app {o} :
   forall lib (hs1 hs2 : @bhyps o) s1 s2,
     similarity lib s1 s2 (hs1 ++ hs2)
     <=>
-    {s1a, s1b, s2a, s2b : CSub ,
+    {s1a, s1b, s2a, s2b : CNSub ,
       s1 = s1a ++ s1b
       # s2 = s2a ++ s2b
       # length s1a = length hs1
@@ -2120,7 +2149,7 @@ Proof.
   - rewrite app_nil_r; split; intro k; exrepnd; subst.
 
     + allapplydup @similarity_length; repnd.
-      exists s1 (nil : @CSub o) s2 (nil : @CSub o); simpl; sp;
+      exists s1 (nil : @CNSub o) s2 (nil : @CNSub o); simpl; sp;
       allrewrite app_nil_r; auto.
 
     + inversion k1; subst; allrewrite app_nil_r; auto; cpx.
@@ -2140,16 +2169,19 @@ Proof.
       assert (wf_term (htyp (substitute_hyp s1a a)))
         as w0
           by (destruct a; allsimpl;
-              apply csubst_preserves_wf_term; sp;
+              apply cnsubst_preserves_wf_term; sp;
               allapply in_csub2sub; allunfold isprogram; rw wf_term_eq; sp).
 
-      assert (cover_vars (htyp (substitute_hyp s1a a)) s1b)
+      assert (cover_nout_vars (htyp (substitute_hyp s1a a)) s1b)
         as c0
-          by (destruct a; allsimpl; rw <- @cover_vars_csubst; auto).
+          by (destruct a; allsimpl; rw <- @cover_nout_vars_cnsubst; auto).
 
-      apply @sim_cons with (w := w0) (p := c0); sp.
+      assert (noutokens (htyp (substitute_hyp s1a a)))
+        as n0 by (destruct a; simpl in *; eauto 2 with slow).
+
+      apply @sim_cons with (w := w0) (n := n0) (p := c0); sp.
       destruct a; allsimpl.
-      rewrite lsubstc_csubst_eq with (w' := w) (p' := p); auto.
+      rewrite lsubstcn_cnsubst_eq with (w' := w) (n' := n) (p' := p); auto.
 
     + allrewrite @substitute_hyps_snoc.
       inversion k1; subst; cpx.
@@ -2160,19 +2192,25 @@ Proof.
         as w0
           by (destruct a; allsimpl;
               clear_dependents w;
-              apply csubst_wf_term in w; auto).
+              apply cnsubst_wf_term in w; auto).
 
-      assert (cover_vars (htyp a) (s1a ++ s1))
+      assert (noutokens (htyp a))
+        as n0
+          by (destruct a; simpl in *;
+              clear e; apply noutokens_cnsubst_implies in n; auto).
+
+      assert (cover_nout_vars (htyp a) (s1a ++ s1))
         as c0
           by (destruct a; allsimpl;
-              allrw @cover_vars_csubst; sp).
+              allrw @cover_nout_vars_cnsubst; sp).
 
-      apply @sim_cons with (w := w0) (p := c0); sp.
+      apply @sim_cons with (w := w0) (n := n0) (p := c0); sp.
 
       revert_dependents w.
+      revert_dependents n.
       revert_dependents p.
       rw @htyp_substitute_hyp; introv e.
-      rewrite lsubstc_csubst_eq with (w' := w0) (p' := c0) in e; sp.
+      rewrite lsubstcn_cnsubst_eq with (w' := w0) (n' := n0) (p' := c0) in e; sp.
 
       rw IHhs2.
       exists s1a s1 s2a s2; sp.
@@ -2182,33 +2220,36 @@ Lemma similarity_snoc {o} :
   forall lib (hs : @bhyps o) h s1 s2,
     similarity lib s1 s2 (snoc hs h)
     <=>
-    {s1a, s2a : CSub
-     , {t1, t2 : CTerm
+    {s1a, s2a : CNSub
+     , {t1, t2 : cterm
      , {w : wf_term (htyp h)
-     , {p : cover_vars (htyp h) s1a
+     , {n : noutokens (htyp h)
+     , {p : cover_nout_vars (htyp h) s1a
         , s1 = snoc s1a (hvar h, t1)
         # s2 = snoc s2a (hvar h, t2)
         # similarity lib s1a s2a hs
-        # equality lib t1 t2 (lsubstc (htyp h) w s1a p)}}}}.
+        # equality lib t1 t2 (lsubstcn (htyp h) w n s1a p)}}}}}.
 Proof.
   sp.
   rewrite snoc_as_append.
   rw @similarity_app; simpl; split; intro k; exrepnd; subst.
 
-  - inversion k1 as [| t1 t2 h0 hs0 h1 hs1 w p e sim]; subst.
+  - inversion k1 as [| t1 t2 h0 hs0 h1 hs1 w n p e sim]; subst.
     destruct hs1; allsimpl; cpx.
     inversion sim; subst; allsimpl; cpx.
-    revert_dependents w; revert_dependents p.
+    revert_dependents w; revert_dependents n; revert_dependents p.
     rewrite htyp_substitute_hyp; introv e.
 
     duplicate w as w0.
-    apply csubst_wf_term in w.
+    apply cnsubst_wf_term in w.
+    duplicate n as n0.
+    apply noutokens_cnsubst_implies in n.
     duplicate p as p0.
-    rw <- @cover_vars_csubst in p.
-    rewrite lsubstc_csubst_eq with (w' := w) (p' := p) in e.
+    rw <- @cover_nout_vars_cnsubst in p.
+    rewrite lsubstcn_cnsubst_eq with (w' := w) (n' := n) (p' := p) in e.
     revert_dependents p.
     rewrite app_nil_r; sp.
-    exists s1a s2a t1 t2 w p.
+    exists s1a s2a t1 t2 w n p.
     repeat (rewrite <- snoc_as_append).
     rewrite hvar_substitute_hyp; sp.
 
@@ -2225,22 +2266,27 @@ Proof.
 
     assert (wf_term (htyp (substitute_hyp s1a h)))
       as w0
-        by (rewrite htyp_substitute_hyp; apply wf_term_csubst; sp).
+        by (rewrite htyp_substitute_hyp; apply wf_term_cnsubst; sp).
 
-    assert (cover_vars (htyp (substitute_hyp s1a h)) [])
+    assert (noutokens (htyp (substitute_hyp s1a h)))
+      as n0 by (rewrite htyp_substitute_hyp; apply implies_noutokens_cnsubst; auto).
+
+    assert (cover_nout_vars (htyp (substitute_hyp s1a h)) [])
       as c0
         by (rewrite htyp_substitute_hyp;
-            rw <- @cover_vars_csubst;
+            rw <- @cover_nout_vars_cnsubst;
             rewrite app_nil_r; sp).
 
-    apply @sim_cons with (w := w0) (p := c0); sp; try constructor.
-    revert w0 c0.
+    apply @sim_cons with (w := w0) (n := n0) (p := c0); sp; try constructor.
+    revert w0 n0 c0.
     rewrite htyp_substitute_hyp; sp.
 
-    assert (cover_vars (htyp h) (s1a ++ [])) as p1 by (rewrite app_nil_r; sp).
-    rewrite lsubstc_csubst_eq with (w' := w) (p' := p1).
+    assert (cover_nout_vars (htyp h) (s1a ++ [])) as p1 by (rewrite app_nil_r; sp).
+    rewrite lsubstcn_cnsubst_eq with (w' := w) (n' := n) (p' := p1).
     revert p1; rewrite app_nil_r; sp.
     clear_irr; sp.
+
+Locate clear_irr.
 Qed.
 
 Lemma similarity_hhyp {o} :
@@ -2274,18 +2320,19 @@ Qed.
  *)
 
 Inductive equal_terms_in_hyps {o} (lib : @library o) :
-  list (@CTerm o)
-  -> list (@CTerm o)
+  list (@cterm o)
+  -> list (@cterm o)
   -> (@bhyps o) -> [U] :=
 | EqInHyps_nil : equal_terms_in_hyps lib nil nil nil
 | EqInHyps_cons :
-    forall t1  t2  : CTerm,
-    forall ts1 ts2 : list CTerm,
+    forall t1  t2  : cterm,
+    forall ts1 ts2 : list cterm,
     forall h       : hypothesis,
     forall hs      : barehypotheses,
     forall w       : wf_term (htyp h),
-    forall p       : cover_vars (htyp h) (mk_hs_subst ts1 hs),
-    forall e       : equality lib t1 t2 (lsubstc (htyp h) w (mk_hs_subst ts1 hs) p),
+    forall n       : noutokens (htyp h),
+    forall p       : cover_nout_vars (htyp h) (mk_hs_subst ts1 hs),
+    forall e       : equality lib t1 t2 (lsubstcn (htyp h) w n (mk_hs_subst ts1 hs) p),
     forall eqt     : equal_terms_in_hyps lib ts1 ts2 hs,
       equal_terms_in_hyps lib (snoc ts1 t1) (snoc ts2 t2) (snoc hs h).
 
@@ -2303,7 +2350,7 @@ Qed.
 Lemma equal_terms_in_hyps_app {o} :
   forall lib (hs1 hs2 : @bhyps o) ts1 ts2,
     equal_terms_in_hyps lib ts1 ts2 (hs1 ++ hs2)
-    -> {ts1a, ts1b, ts2a, ts2b : list CTerm ,
+    -> {ts1a, ts1b, ts2a, ts2b : list cterm ,
          ts1 = ts1a ++ ts1b
          # ts2 = ts2a ++ ts2b
          # length ts1a = length hs1
@@ -2321,7 +2368,7 @@ Lemma equal_terms_in_hyps_app {o} :
 Proof.
   induction hs2 using rev_list_indT; simpl; introv e.
 
-  - exists ts1 (nil : list (@CTerm o)) ts2 (nil : list (@CTerm o)); simpl; sp;
+  - exists ts1 (nil : list (@cterm o)) ts2 (nil : list (@cterm o)); simpl; sp;
            allrewrite app_nil_r; auto.
            apply equal_terms_in_hyps_length in e; sp.
            apply equal_terms_in_hyps_length in e; sp.
@@ -2344,26 +2391,30 @@ Proof.
     rewrite substitute_hyps_snoc.
 
     assert (wf_term (htyp (substitute_hyp (mk_hs_subst ts1a hs1) a))) as w'.
-    destruct a; allsimpl.
-    apply lsubst_preserves_wf_term; sp.
-    allapply @in_csub2sub; allunfold @isprogram; allrw @nt_wf_eq; sp.
+    { destruct a; allsimpl.
+      apply lsubst_preserves_wf_term; sp; eauto 3 with slow.
+      apply wf_sub_cnsub2sub. }
 
-    assert (cover_vars (htyp (substitute_hyp (mk_hs_subst ts1a hs1) a))
+    assert (noutokens (htyp (substitute_hyp (mk_hs_subst ts1a hs1) a))) as n'.
+    { destruct a; allsimpl.
+      apply implies_noutokens_cnsubst; auto. }
+
+    assert (cover_nout_vars (htyp (substitute_hyp (mk_hs_subst ts1a hs1) a))
                        (mk_hs_subst ts1b (substitute_hyps (mk_hs_subst ts1a hs1) hs2))) as c.
-    destruct a; allsimpl.
-    rw <- @cover_vars_csubst.
-    rewrite mk_hs_subst_substitute_hyps.
-    clear_dependents p.
-    rewrite mk_hs_subst_app in p; auto.
+    { destruct a; allsimpl.
+      rw <- @cover_nout_vars_cnsubst.
+      rewrite mk_hs_subst_substitute_hyps.
+      clear_dependents p.
+      rewrite mk_hs_subst_app in p; auto. }
 
-    apply @EqInHyps_cons with (w := w') (p := c); auto.
+    apply @EqInHyps_cons with (w := w') (n := n') (p := c); auto.
 
-    revert w' c.
+    revert w' n' c.
     rw @mk_hs_subst_substitute_hyps.
     rw @htyp_substitute_hyp; sp.
     revert_dependents p.
     rewrite mk_hs_subst_app; sp.
-    rewrite @lsubstc_csubst_eq with (w' := w) (p' := p); sp.
+    rewrite @lsubstcn_cnsubst_eq with (w' := w) (n' := n) (p' := p); sp.
 Qed.
 
 Lemma equal_terms_in_hyps_app_implies {o} :
@@ -2386,9 +2437,10 @@ Proof.
     repeat (rewrite app_nil_r); auto.
 
   - allrw @substitute_hyps_snoc.
-    inversion e2 as [| t1 t2 ts1 ts2 h hs w p e etih ]; subst; cpx; clear e2.
+    inversion e2 as [| t1 t2 ts1 ts2 h hs w n p e etih ]; subst; cpx; clear e2.
     repeat (rewrite snoc_append_l).
     revert_dependents w.
+    revert_dependents n.
     revert_dependents p.
     allrw @htyp_substitute_hyp.
     rw @mk_hs_subst_substitute_hyps.
@@ -2399,23 +2451,29 @@ Proof.
       as wf
         by (destruct a; allsimpl;
             clear_dependents w;
-            apply csubst_wf_term in w; auto).
+            apply cnsubst_wf_term in w; auto).
 
-    assert (cover_vars (htyp a) (mk_hs_subst (ts1a ++ ts1) (hs1 ++ hs2)))
+    assert (noutokens (htyp a))
+      as nout
+           by (destruct a; allsimpl;
+               clear_dependents n;
+               apply noutokens_cnsubst_implies in n; auto).
+
+    assert (cover_nout_vars (htyp a) (mk_hs_subst (ts1a ++ ts1) (hs1 ++ hs2)))
       as cv
         by (destruct a; allsimpl;
             clear_dependents p;
-            rw <- @cover_vars_csubst in p;
+            rw <- @cover_nout_vars_cnsubst in p;
             rw @mk_hs_subst_app; auto).
 
-    assert (cover_vars (htyp a) (mk_hs_subst ts1a hs1 ++ mk_hs_subst ts1 hs2))
+    assert (cover_nout_vars (htyp a) (mk_hs_subst ts1a hs1 ++ mk_hs_subst ts1 hs2))
       as cv2
         by (clear e; destruct a; allsimpl;
             rw <- @mk_hs_subst_app; sp).
 
-    apply @EqInHyps_cons with (w := wf) (p := cv); sp.
+    apply @EqInHyps_cons with (w := wf) (n := nout) (p := cv); sp.
 
-    rewrite lsubstc_csubst_eq with (w' := wf) (p' := cv2) in e; auto.
+    rewrite lsubstcn_cnsubst_eq with (w' := wf) (n' := nout) (p' := cv2) in e; auto.
     revert cv.
     rw @mk_hs_subst_app; sp; clear_irr; sp.
 Qed.
@@ -2423,18 +2481,19 @@ Qed.
 Lemma equal_terms_in_hyps_cons {o} :
   forall lib h (hs : @bhyps o) ts1 ts2,
     equal_terms_in_hyps lib ts1 ts2 (h :: hs)
-    -> {t1, t2 : CTerm
-        , {ts1', ts2' : list CTerm
+    -> {t1, t2 : cterm
+        , {ts1', ts2' : list cterm
         , {w : wf_term (htyp h)
-        , {p : cover_vars (htyp h) []
+        , {n : noutokens (htyp h)
+        , {p : cover_nout_vars (htyp h) []
            , ts1 = t1 :: ts1'
            # ts2 = t2 :: ts2'
-           # equality lib t1 t2 (lsubstc (htyp h) w [] p)
+           # equality lib t1 t2 (lsubstcn (htyp h) w n [] p)
            # equal_terms_in_hyps
                lib
                ts1'
                ts2'
-               (substitute_hyps [(hvar h, t1)] hs)}}}}.
+               (substitute_hyps [(hvar h, t1)] hs)}}}}}.
 Proof.
   introv e.
   rewrite cons_as_app in e.
@@ -2443,29 +2502,31 @@ Proof.
   exists x0 x ts1b ts2b; simpl; sp.
   inversion e5; allsimpl; cpx.
   revert_dependents w.
+  revert_dependents n.
   revert_dependents p.
   rewrite mk_hs_subst_nil_ts; sp.
-  exists w p; sp.
+  exists w n p; sp.
 Qed.
 
 Lemma equal_terms_in_hyps_snoc {o} :
   forall lib h (hs : @bhyps o) ts1 ts2,
     equal_terms_in_hyps lib ts1 ts2 (snoc hs h)
-    -> {t1, t2 : CTerm
-        , {ts1', ts2' : list CTerm
+    -> {t1, t2 : cterm
+        , {ts1', ts2' : list cterm
         , {w : wf_term (htyp (substitute_hyp (mk_hs_subst ts1' hs) h))
-        , {p : cover_vars (htyp (substitute_hyp (mk_hs_subst ts1' hs) h)) []
+        , {n : noutokens (htyp (substitute_hyp (mk_hs_subst ts1' hs) h))
+        , {p : cover_nout_vars (htyp (substitute_hyp (mk_hs_subst ts1' hs) h)) []
            , ts1 = snoc ts1' t1
            # ts2 = snoc ts2' t2
            # equal_terms_in_hyps lib ts1' ts2' hs
-           # equality lib t1 t2 (lsubstc (htyp (substitute_hyp (mk_hs_subst ts1' hs) h)) w [] p)}}}}.
+           # equality lib t1 t2 (lsubstcn (htyp (substitute_hyp (mk_hs_subst ts1' hs) h)) w n [] p)}}}}}.
 Proof.
   introv e.
   allrewrite snoc_as_append.
   apply equal_terms_in_hyps_app in e; exrepnd; allsimpl; subst.
   allapplydup @equal_terms_in_hyps_length; allsimpl; sp; cpx.
   inversion e1; cpx.
-  exists x0 x ts1a ts2a w p; repeat (rewrite snoc_as_append); sp.
+  exists x0 x ts1a ts2a w n p; repeat (rewrite snoc_as_append); sp.
 Qed.
 
 (* end hide *)
@@ -2486,23 +2547,24 @@ Qed.
 
  *)
 
-Inductive pw_assign_eq {o} (lib : @library o) : @CSub o -> @CSub o -> @bhyps o -> [U] :=
+Inductive pw_assign_eq {o} (lib : @library o) : @CNSub o -> @CNSub o -> @bhyps o -> [U] :=
   | pw_eq_nil : pw_assign_eq lib [] [] []
   | pw_eq_cons :
-      forall t1 t2 : CTerm,
-      forall s1 s2 : CSubstitution,
+      forall t1 t2 : cterm,
+      forall s1 s2 : CNSubstitution,
       forall h  : hypothesis,
       forall hs : barehypotheses,
       forall w  : wf_term (htyp h),
-      forall p  : cover_vars (htyp h) s1,
-      forall e  : equality lib t1 t2 (lsubstc (htyp h) w s1 p),
-      forall hf : (forall s' : CSubstitution,
-                   forall p' : cover_vars (htyp h) s',
+      forall n  : noutokens (htyp h),
+      forall p  : cover_nout_vars (htyp h) s1,
+      forall e  : equality lib t1 t2 (lsubstcn (htyp h) w n s1 p),
+      forall hf : (forall s' : CNSubstitution,
+                   forall p' : cover_nout_vars (htyp h) s',
                      similarity lib s1 s' hs
                      -> eqtypes lib
                                 (lvl h)
-                                (lsubstc (htyp h) w s1 p)
-                                (lsubstc (htyp h) w s' p')),
+                                (lsubstcn (htyp h) w n s1 p)
+                                (lsubstcn (htyp h) w n s' p')),
       forall pw : pw_assign_eq lib s1 s2 hs,
         pw_assign_eq lib
                      (snoc s1 (hvar h, t1))
@@ -2514,13 +2576,13 @@ Inductive pw_assign_eq {o} (lib : @library o) : @CSub o -> @CSub o -> @bhyps o -
 Lemma pw_assign_eq_dom {o} :
   forall lib (hs : @bhyps o) s1 s2,
     pw_assign_eq lib s1 s2 hs
-    -> vars_hyps hs = dom_csub s1
-       # vars_hyps hs = dom_csub s2.
+    -> vars_hyps hs = dom_cnsub s1
+       # vars_hyps hs = dom_cnsub s2.
 Proof.
   induction hs using rev_list_indT; simpl; introv pw;
   inversion pw; subst; allsimpl; sp; cpx;
   rewrite vars_hyps_snoc;
-  rewrite dom_csub_snoc; simpl;
+  rewrite dom_cnsub_snoc; simpl;
   discover; sp;
   allrw <-; sp.
 Qed.
@@ -2534,7 +2596,7 @@ Proof.
   intros.
   allapply @pw_assign_eq_dom; repd.
   rewrite <- vars_hyps_length.
-  repeat (rewrite <- dom_csub_length).
+  repeat (rewrite <- dom_cnsub_length).
   rewrite <- e; rewrite <- e0; sp.
 Qed.
 
@@ -2551,26 +2613,27 @@ Qed.
 
  *)
 
-Inductive eq_hyps {o} (lib : @library o) : @CSub o -> @CSub o -> @bhyps o -> [U] :=
+Inductive eq_hyps {o} (lib : @library o) : @CNSub o -> @CNSub o -> @bhyps o -> [U] :=
   | eq_hyps_nil : eq_hyps lib [] [] []
   | eq_hyps_cons :
-      forall t1 t2 : CTerm,
-      forall s1 s2 : CSubstitution,
+      forall t1 t2 : cterm,
+      forall s1 s2 : CNSubstitution,
       forall h  : hypothesis,
       forall hs : barehypotheses,
       forall w  : wf_term (htyp h),
-      forall p1 : cover_vars (htyp h) s1,
-      forall p2 : cover_vars (htyp h) s2,
+      forall n  : noutokens (htyp h),
+      forall p1 : cover_nout_vars (htyp h) s1,
+      forall p2 : cover_nout_vars (htyp h) s2,
       forall eqt : eqtypes lib
                            (lvl h)
-                           (lsubstc (htyp h) w s1 p1)
-                           (lsubstc (htyp h) w s2 p2),
+                           (lsubstcn (htyp h) w n s1 p1)
+                           (lsubstcn (htyp h) w n s2 p2),
       forall eqh : eq_hyps lib s1 s2 hs,
         eq_hyps lib (snoc s1 (hvar h, t1)) (snoc s2 (hvar h, t2)) (snoc hs h).
 Hint Constructors eq_hyps.
 
-Definition hyps_functionality {o} lib (s : @CSub o) (H : @bhyps o) :=
-  forall s' : CSubstitution,
+Definition hyps_functionality {o} lib (s : @CNSub o) (H : @bhyps o) :=
+  forall s' : CNSubstitution,
     similarity lib s s' H -> eq_hyps lib s s' H.
 
 (* begin hide *)
@@ -2578,25 +2641,26 @@ Definition hyps_functionality {o} lib (s : @CSub o) (H : @bhyps o) :=
 (** We now generalize Aleksey's definition to handle extra substitutions.
  * This is needed to state eq_hyps_app. *)
 Inductive sub_eq_hyps {o} (lib : @library o) :
-  @CSub o -> @CSub o
-  -> @CSub o -> @CSub o
+  @CNSub o -> @CNSub o
+  -> @CNSub o -> @CNSub o
   -> @bhyps o
   -> [U] :=
 | sub_eq_hyps_nil : forall s1 s2, sub_eq_hyps lib s1 s2 [] [] []
 | sub_eq_hyps_cons :
-    forall t1 t2 : CTerm,
-    forall s1 s2 s3 s4 : CSubstitution,
+    forall t1 t2 : cterm,
+    forall s1 s2 s3 s4 : CNSubstitution,
     forall h  : hypothesis,
     forall hs : barehypotheses,
     forall w  : wf_term (htyp h),
-    forall p1 : cover_vars (htyp h) (s3 ++ s1),
-    forall p2 : cover_vars (htyp h) (s4 ++ s2),
+    forall n  : noutokens (htyp h),
+    forall p1 : cover_nout_vars (htyp h) (s3 ++ s1),
+    forall p2 : cover_nout_vars (htyp h) (s4 ++ s2),
     (*        tequality (lsubstc (htyp h) w (s3 ++ s1) p1)
                   (lsubstc (htyp h) w (s4 ++ s2) p2)*)
     forall eqt : eqtypes lib
                          (lvl h)
-                         (lsubstc (htyp h) w (s3 ++ s1) p1)
-                         (lsubstc (htyp h) w (s4 ++ s2) p2),
+                         (lsubstcn (htyp h) w n (s3 ++ s1) p1)
+                         (lsubstcn (htyp h) w n (s4 ++ s2) p2),
     forall seh : sub_eq_hyps lib s3 s4 s1 s2 hs,
       sub_eq_hyps lib s3 s4 (snoc s1 (hvar h, t1)) (snoc s2 (hvar h, t2)) (snoc hs h).
 Hint Constructors sub_eq_hyps.
@@ -2620,18 +2684,18 @@ Lemma eq_hyps_refl {o} :
 Proof.
   induction hs using rev_list_indT; simpl; introv eh; inversion eh; subst; allsimpl; cpx.
   discover.
-  apply @eq_hyps_cons with (w := w) (p1 := p1) (p2 := p1); sp.
+  apply @eq_hyps_cons with (w := w) (n := n) (p1 := p1) (p2 := p1); sp.
   allapply @eqtypes_refl; sp.
 Qed.
 
 Lemma eq_hyps_dom {o} :
   forall lib (hs : @bhyps o) s1 s2,
     eq_hyps lib s1 s2 hs
-    -> dom_csub s1 = vars_hyps hs
-       # dom_csub s2 = vars_hyps hs.
+    -> dom_cnsub s1 = vars_hyps hs
+       # dom_cnsub s2 = vars_hyps hs.
 Proof.
   induction hs using rev_list_indT; simpl; introv eh; inversion eh; subst; allsimpl; cpx.
-  repeat (rewrite dom_csub_snoc); simpl.
+  repeat (rewrite dom_cnsub_snoc); simpl.
   rewrite vars_hyps_snoc.
   discover; repnd.
   allrw; sp.
@@ -2640,25 +2704,25 @@ Qed.
 Lemma sub_eq_hyps_dom {o} :
   forall lib (hs : @bhyps o) s1 s2 s3 s4,
     sub_eq_hyps lib s3 s4 s1 s2 hs
-    -> dom_csub s1 = vars_hyps hs
-       # dom_csub s2 = vars_hyps hs.
+    -> dom_cnsub s1 = vars_hyps hs
+       # dom_cnsub s2 = vars_hyps hs.
 Proof.
   induction hs using rev_list_indT; simpl; introv seh; inversion seh; subst; allsimpl; cpx.
-  repeat (rewrite dom_csub_snoc); simpl.
+  repeat (rewrite dom_cnsub_snoc); simpl.
   rewrite vars_hyps_snoc.
   discover; repnd.
   allrw; sp.
 Qed.
 
-Lemma subvars_if_cover_vars_eq_hyps {o} :
+Lemma subvars_if_cover_nout_vars_eq_hyps {o} :
   forall lib t s1 s2 (H : @bhyps o),
-    cover_vars t s1
+    cover_nout_vars t s1
     -> eq_hyps lib s1 s2 H
     -> subvars (free_vars t) (vars_hyps H).
 Proof.
   introv cv eqh.
   allapply @eq_hyps_dom; repnd.
-  allrw @cover_vars_eq.
+  allrw @cover_nout_vars_eq.
   provesv.
   rw <- eqh0; sp.
 Qed.
@@ -2672,50 +2736,53 @@ Proof.
   induction hs using rev_list_indT; simpl; introv nih seh;
   inversion seh; subst; cpx.
 
-  assert (cover_vars (htyp a) (snoc s1 (x, t1) ++ s0))
-    as p1' by (apply cover_vars_weak; sp).
+  assert (cover_nout_vars (htyp a) (snoc s1 (x, t1) ++ s0))
+    as p1' by (apply cover_nout_vars_weak; sp).
 
-  assert (cover_vars (htyp a) (snoc s2 (x, t2) ++ s5))
-    as p2' by (apply cover_vars_weak; sp).
+  assert (cover_nout_vars (htyp a) (snoc s2 (x, t2) ++ s5))
+    as p2' by (apply cover_nout_vars_weak; sp).
 
   allrewrite @hyps_free_vars_snoc.
   allrw in_app_iff.
 
-  apply @sub_eq_hyps_cons with (w := w) (p1 := p1') (p2 := p2').
-  generalize (lsubstc_csubst_ex2 (htyp a) (snoc s1 (x, t1)) s0 w p1'); sp.
+  apply @sub_eq_hyps_cons with (w := w) (n := n) (p1 := p1') (p2 := p2').
+  generalize (lsubstcn_cnsubst_ex2 (htyp a) (snoc s1 (x, t1)) s0 w n p1'); sp.
   rewrite <- e.
-  generalize (lsubstc_csubst_ex2 (htyp a) (snoc s2 (x, t2)) s5 w p2'); sp.
+  generalize (lsubstcn_cnsubst_ex2 (htyp a) (snoc s2 (x, t2)) s5 w n p2'); sp.
   rewrite <- e0.
 
-  assert (wf_term (csubst (htyp a) s1)) as w1.
-  apply wf_term_csubst; sp.
-  assert (wf_term (csubst (htyp a) s2)) as w2.
-  apply wf_term_csubst; sp.
-  assert (cover_vars (csubst (htyp a) s1) s0) as c1.
-  rw <- @cover_vars_csubst; sp.
-  assert (cover_vars (csubst (htyp a) s2) s5) as c2.
-  rw <- @cover_vars_csubst; sp.
+  assert (wf_term (cnsubst (htyp a) s1)) as w1.
+  { apply wf_term_cnsubst; sp. }
+  assert (noutokens (cnsubst (htyp a) s1)) as n1 by eauto 2 with slow.
+  assert (wf_term (cnsubst (htyp a) s2)) as w2.
+  { apply wf_term_cnsubst; sp. }
+  assert (noutokens (cnsubst (htyp a) s2)) as n2 by eauto 2 with slow.
+  assert (cover_nout_vars (cnsubst (htyp a) s1) s0) as c1.
+  { rw <- @cover_nout_vars_cnsubst; sp. }
+  assert (cover_nout_vars (cnsubst (htyp a) s2) s5) as c2.
+  { rw <- @cover_nout_vars_cnsubst; sp. }
 
-  assert (lsubstc (csubst (htyp a) (snoc s1 (x, t1))) w' s0 p'
-          = lsubstc (csubst (htyp a) s1) w1 s0 c1) as eq1.
-  apply lsubstc_eq; sp.
-  apply subset_free_vars_csub_snoc; sp.
+  assert (lsubstcn (cnsubst (htyp a) (snoc s1 (x, t1))) w' n' s0 p'
+          = lsubstcn (cnsubst (htyp a) s1) w1 n1 s0 c1) as eq1.
+  apply lsubstcn_eq; sp.
+  apply subset_free_vars_cnsub_snoc; sp.
   rewrite eq1.
 
-  assert (lsubstc (csubst (htyp a) (snoc s2 (x, t2))) w'0 s5 p'0
-          = lsubstc (csubst (htyp a) s2) w2 s5 c2) as eq2.
-  apply lsubstc_eq; sp.
-  apply subset_free_vars_csub_snoc; sp.
+  assert (lsubstcn (cnsubst (htyp a) (snoc s2 (x, t2))) w'0 n'0 s5 p'0
+          = lsubstcn (cnsubst (htyp a) s2) w2 n2 s5 c2) as eq2.
+  apply lsubstcn_eq; sp.
+  apply subset_free_vars_cnsub_snoc; sp.
   rewrite eq2.
 
-  generalize (lsubstc_csubst_ex (htyp a) s1 s0 w1 c1); sp.
-  generalize (lsubstc_csubst_ex (htyp a) s2 s5 w2 c2); sp.
+  generalize (lsubstcn_cnsubst_ex (htyp a) s1 s0 w1 n1 c1); sp.
+  generalize (lsubstcn_cnsubst_ex (htyp a) s2 s5 w2 n2 c2); sp.
   rewrite e1; rewrite e2.
 
   clear_irr; sp.
 
   apply IHhs; sp.
 Qed.
+
 
 Lemma sub_eq_hyps_snoc_weak2 {o} :
   forall lib (hs : @bhyps o) s1 s2 s3 s4 x t1 t2,
@@ -2730,41 +2797,43 @@ Proof.
   allrw in_app_iff.
   allrw not_over_or; repd.
 
-  assert (cover_vars (htyp a) (s1 ++ s0))
-    as p1' by (apply cover_vars_add with (v := x) (t := t1); sp).
+  assert (cover_nout_vars (htyp a) (s1 ++ s0))
+    as p1' by (apply cover_nout_vars_add with (v := x) (t := t1); sp).
 
-  assert (cover_vars (htyp a) (s2 ++ s5))
-    as p2' by (apply cover_vars_add with (v := x) (t := t2); sp).
+  assert (cover_nout_vars (htyp a) (s2 ++ s5))
+    as p2' by (apply cover_nout_vars_add with (v := x) (t := t2); sp).
 
-  apply @sub_eq_hyps_cons with (w := w) (p1 := p1') (p2 := p2').
-  generalize (lsubstc_csubst_ex2 (htyp a) (snoc s1 (x, t1)) s0 w p1); sp.
+  apply @sub_eq_hyps_cons with (w := w) (n := n) (p1 := p1') (p2 := p2').
+  generalize (lsubstcn_cnsubst_ex2 (htyp a) (snoc s1 (x, t1)) s0 w n p1); sp.
   rw <- e in eqt.
-  generalize (lsubstc_csubst_ex2 (htyp a) (snoc s2 (x, t2)) s5 w p2); sp.
+  generalize (lsubstcn_cnsubst_ex2 (htyp a) (snoc s2 (x, t2)) s5 w n p2); sp.
   rw <- e0 in eqt.
 
-  assert (wf_term (csubst (htyp a) s1)) as w1 by (apply wf_term_csubst; sp).
-  assert (wf_term (csubst (htyp a) s2)) as w2 by (apply wf_term_csubst; sp).
-  assert (cover_vars (csubst (htyp a) s1) s0) as c1 by (rw <- @cover_vars_csubst; sp).
-  assert (cover_vars (csubst (htyp a) s2) s5) as c2 by (rw <- @cover_vars_csubst; sp).
+  assert (wf_term (cnsubst (htyp a) s1)) as w1 by (apply wf_term_cnsubst; sp).
+  assert (wf_term (cnsubst (htyp a) s2)) as w2 by (apply wf_term_cnsubst; sp).
+  assert (noutokens (cnsubst (htyp a) s1)) as no1 by (eauto 3 with slow).
+  assert (noutokens (cnsubst (htyp a) s2)) as no2 by (eauto 3 with slow).
+  assert (cover_nout_vars (cnsubst (htyp a) s1) s0) as c1 by (rw <- @cover_nout_vars_cnsubst; sp).
+  assert (cover_nout_vars (cnsubst (htyp a) s2) s5) as c2 by (rw <- @cover_nout_vars_cnsubst; sp).
 
-  assert (lsubstc (csubst (htyp a) (snoc s1 (x, t1))) w' s0 p'
-          = lsubstc (csubst (htyp a) s1) w1 s0 c1)
+  assert (lsubstcn (cnsubst (htyp a) (snoc s1 (x, t1))) w' n' s0 p'
+          = lsubstcn (cnsubst (htyp a) s1) w1 no1 s0 c1)
     as eq1
-      by (apply lsubstc_eq; sp;
-          apply subset_free_vars_csub_snoc; sp;
+      by (apply lsubstcn_eq; sp;
+          apply subset_free_vars_cnsub_snoc; sp;
           allrw eq1).
   rw eq1 in eqt.
 
-  assert (lsubstc (csubst (htyp a) (snoc s2 (x, t2))) w'0 s5 p'0
-          = lsubstc (csubst (htyp a) s2) w2 s5 c2)
+  assert (lsubstcn (cnsubst (htyp a) (snoc s2 (x, t2))) w'0 n'0 s5 p'0
+          = lsubstcn (cnsubst (htyp a) s2) w2 no2 s5 c2)
     as eq2
-      by (apply lsubstc_eq; sp;
-          apply subset_free_vars_csub_snoc; sp;
+      by (apply lsubstcn_eq; sp;
+          apply subset_free_vars_cnsub_snoc; sp;
           allrw eq2).
   rw eq2 in eqt.
 
-  generalize (lsubstc_csubst_ex (htyp a) s1 s0 w1 c1); sp.
-  generalize (lsubstc_csubst_ex (htyp a) s2 s5 w2 c2); sp.
+  generalize (lsubstcn_cnsubst_ex (htyp a) s1 s0 w1 no1 c1); sp.
+  generalize (lsubstcn_cnsubst_ex (htyp a) s2 s5 w2 no2 c2); sp.
   rw e1 in eqt.
   rw e2 in eqt.
   clear_irr; auto.
@@ -2787,28 +2856,29 @@ Lemma eq_hyps_snoc {o} :
   forall lib (hs : @bhyps o) h s1 s2,
     eq_hyps lib s1 s2 (snoc hs h)
     <=>
-    {s1a, s2a : CSub
-     , {t1, t2 : CTerm
+    {s1a, s2a : CNSub
+     , {t1, t2 : cterm
      , {w : wf_term (htyp h)
-     , {p1 : cover_vars (htyp h) s1a
-     , {p2 : cover_vars (htyp h) s2a
+     , {n : noutokens (htyp h)
+     , {p1 : cover_nout_vars (htyp h) s1a
+     , {p2 : cover_nout_vars (htyp h) s2a
         , s1 = snoc s1a (hvar h, t1)
         # s2 = snoc s2a (hvar h, t2)
         # eq_hyps lib s1a s2a hs
-        # eqtypes lib (lvl h) (lsubstc (htyp h) w s1a p1) (lsubstc (htyp h) w s2a p2)}}}}}.
+        # eqtypes lib (lvl h) (lsubstcn (htyp h) w n s1a p1) (lsubstcn (htyp h) w n s2a p2)}}}}}}.
 Proof.
   introv; split; intro k; exrepnd; subst.
   inversion k; subst; cpx.
-  exists s0 s3 t1 t2 w.
+  exists s0 s3 t1 t2 w n.
   exists p1 p2; sp.
-  apply @eq_hyps_cons with (w := w) (p1 := p1) (p2 := p2); sp.
+  eapply eq_hyps_cons; eauto.
 Qed.
 
 Lemma eq_hyps_app {o} :
   forall lib (hs1 hs2 : @bhyps o) s1 s2,
     eq_hyps lib s1 s2 (hs1 ++ hs2)
     <=>
-    {s1a, s1b, s2a, s2b : CSub
+    {s1a, s1b, s2a, s2b : CNSub
       , s1 = s1a ++ s1b
       # s2 = s2a ++ s2b
       # length s1a = length hs1
@@ -2820,7 +2890,7 @@ Proof.
 
   rewrite app_nil_r; split; intro k; exrepnd; subst.
   applydup @eq_hyps_length in k; sp.
-  exists s1 (nil : (@CSub o)) s2 (nil : (@CSub o)); simpl; sp;
+  exists s1 (nil : (@CNSub o)) s2 (nil : (@CNSub o)); simpl; sp;
   allrewrite app_nil_r; auto.
   inversion k1; subst; allrewrite app_nil_r; auto; cpx.
 
@@ -2832,11 +2902,11 @@ Proof.
   exists s1a (snoc s1b (hvar a, t1)) s2a (snoc s2b (hvar a, t2)).
   repeat (rewrite snoc_append_l); sp.
 
-  apply @sub_eq_hyps_cons with (w := w) (p1 := p1) (p2 := p2); sp.
+  eapply sub_eq_hyps_cons; eauto.
 
   inversion k1; cpx.
   repeat (rewrite snoc_append_l).
-  apply @eq_hyps_cons with (w := w) (p1 := p1) (p2 := p2); sp.
+  eapply eq_hyps_cons; eauto.
   rw IHhs2.
   exists s1a s1 s2a s2; sp.
 Qed.
@@ -2888,9 +2958,9 @@ Proof.
 Qed.
 
 Lemma hyps_functionality_init_seg_snoc {o} :
-  forall lib s t t' (H : @bhyps o) h w c,
+  forall lib s t t' (H : @bhyps o) h w n c,
     hyps_functionality lib (snoc s (hvar h, t)) (snoc H h)
-    -> equality lib t t' (lsubstc (htyp h) w s c)
+    -> equality lib t t' (lsubstcn (htyp h) w n s c)
     -> hyps_functionality lib s H.
 Proof.
   introv.
@@ -2902,36 +2972,38 @@ Proof.
   assert (hvar h = hvar (substitute_hyp s h)) as e by (destruct h; simpl; sp).
   rw e.
   assert (wf_term (htyp (substitute_hyp s h)))
-    as w' by (destruct h; allsimpl; apply wf_term_csubst; sp).
-  assert (cover_vars (htyp (substitute_hyp s h)) [])
-    as c' by (destruct h; allsimpl; rw <- @cover_vars_csubst; rw app_nil_r; sp).
-  apply @sim_cons with (w := w') (p := c'); sp.
+    as w' by (destruct h; allsimpl; apply wf_term_cnsubst; sp).
+  assert (noutokens (htyp (substitute_hyp s h)))
+    as n' by (destruct h; allsimpl; apply implies_noutokens_cnsubst; sp).
+  assert (cover_nout_vars (htyp (substitute_hyp s h)) [])
+    as c' by (destruct h; allsimpl; rw <- @cover_nout_vars_cnsubst; rw app_nil_r; sp).
+  apply @sim_cons with (w := w') (n := n') (p := c'); sp.
   destruct h; allsimpl.
-  generalize (lsubstc_csubst_ex htyp0 s [] w' c').
+  generalize (lsubstcn_cnsubst_ex htyp0 s [] w' n' c').
   rw app_nil_r; sp; clear_irr.
   rw e0; sp.
 Qed.
 
 Lemma hyps_functionality_init_seg_snoc2 {o} :
-  forall lib s t t' (H : @bhyps o) v u w c,
+  forall lib s t t' (H : @bhyps o) v u w n c,
     hyps_functionality lib (snoc s (v, t)) (snoc H (mk_hyp v u))
-    -> equality lib t t' (lsubstc u w s c)
+    -> equality lib t t' (lsubstcn u w n s c)
     -> hyps_functionality lib s H.
 Proof.
   introv hf e sim.
   generalize (hf (snoc s' (v, t'))); intro eqh.
   dest_imp eqh hyp.
   rw @similarity_snoc; simpl.
-  exists s s' t t' w c; sp.
+  exists s s' t t' w n c; sp.
   rw @eq_hyps_snoc in eqh; exrepnd; cpx.
 Qed.
 
 Lemma hyps_functionality_snoc {o} :
   forall lib (H : @bhyps o) h s t,
-    (forall t' s' w c c',
-       equality lib t t' (lsubstc (htyp h) w s c)
+    (forall t' s' w n c c',
+       equality lib t t' (lsubstcn (htyp h) w n s c)
        -> similarity lib s s' H
-       -> eqtypes lib (lvl h) (lsubstc (htyp h) w s c) (lsubstc (htyp h) w s' c'))
+       -> eqtypes lib (lvl h) (lsubstcn (htyp h) w n s c) (lsubstcn (htyp h) w n s' c'))
     -> hyps_functionality lib s H
     -> hyps_functionality lib (snoc s (hvar h, t)) (snoc H h).
 Proof.
@@ -2939,22 +3011,22 @@ Proof.
   rw @similarity_snoc in sim; exrepnd; subst; cpx.
   rw @eq_hyps_snoc; simpl.
 
-  assert (cover_vars (htyp h) s2a)
+  assert (cover_nout_vars (htyp h) s2a)
     as c
-      by (clear sim1;
-          allrw @cover_vars_covered; allapply @similarity_dom; exrepnd; allrw; sp;
+      by (clear sim0;
+          allrw @cover_nout_vars_covered; allapply @similarity_dom; exrepnd; allrw; sp;
           rw <- sim0; sp).
 
-  exists s1a s2a t1 t2 w p c; sp.
+  exists s1a s2a t1 t2 w n p c; sp.
   apply imp with (t' := t2); sp.
 Qed.
 
 Lemma hyps_functionality_snoc2 {o} :
   forall lib (H : @bhyps o) h s t v,
-    (forall t' s' w c c',
-       equality lib t t' (lsubstc (htyp h) w s c)
+    (forall t' s' w n c c',
+       equality lib t t' (lsubstcn (htyp h) w n s c)
        -> similarity lib s s' H
-       -> eqtypes lib (lvl h) (lsubstc (htyp h) w s c) (lsubstc (htyp h) w s' c'))
+       -> eqtypes lib (lvl h) (lsubstcn (htyp h) w n s c) (lsubstcn (htyp h) w n s' c'))
     -> hyps_functionality lib s H
     -> v = hvar h
     -> hyps_functionality lib (snoc s (v, t)) (snoc H h).
@@ -2973,9 +3045,9 @@ Proof.
   inversion eqh; subst; allsimpl; cpx.
   inversion sim; cpx.
   apply IHhs in sim0; auto; clear_irr.
-  apply @sim_cons with (w := w) (p := p2); sp.
+  apply @sim_cons with (w := w) (n := n) (p := p2); sp.
 
-  apply eqtypes_preserving_equality with (B := lsubstc (htyp a) w s3 p2) (l := lvl a) in e; auto.
+  apply eqtypes_preserving_equality with (B := lsubstcn (htyp a) w n s3 p2) (l := lvl a) in e; auto.
   apply equality_sym; auto.
 Qed.
 
@@ -2989,7 +3061,7 @@ Proof.
   inversion sim1; subst; allsimpl; cpx.
   inversion sim2; cpx.
   apply IHhs with (s1 := s0) in sim0; auto.
-  apply @sim_cons with (w := w0) (p := p); sp.
+  apply @sim_cons with (w := w0) (n := n0) (p := p); sp.
 Abort.
 
 Lemma similarity_trans {o} :
@@ -3004,8 +3076,8 @@ Proof.
   inversion sim2; cpx.
   inversion eqh; cpx.
   apply IHhs with (s1 := s0) in sim0; auto; clear_irr.
-  apply @sim_cons with (w := w) (p := p); sp.
-  apply eqtypes_preserving_equality with (B := lsubstc (htyp a) w s0 p) (l := lvl a) in e0.
+  apply @sim_cons with (w := w) (n := n) (p := p); sp.
+  apply eqtypes_preserving_equality with (B := lsubstcn (htyp a) w n s0 p) (l := lvl a) in e0.
   apply @equality_trans with (t2 := t2); auto.
   apply eqtypes_sym; auto.
 Qed.
@@ -3020,8 +3092,8 @@ Proof.
   inversion eqh1; subst; allsimpl; cpx.
   inversion eqh2; cpx.
   apply IHhs with (s1 := s0) in eqh0; auto; clear_irr.
-  apply @eq_hyps_cons with (w := w) (p1 := p1) (p2 := p3); sp.
-  apply @eqtypes_trans with (t2 := lsubstc (htyp a) w s4 p2); sp.
+  apply @eq_hyps_cons with (w := w) (n := n) (p1 := p1) (p2 := p3); sp.
+  apply @eqtypes_trans with (t2 := lsubstcn (htyp a) w n s4 p2); sp.
 Qed.
 
 Lemma eq_hyps_sym {o} :
@@ -3032,7 +3104,7 @@ Proof.
   induction hs using rev_list_indT; simpl; introv eqh;
   inversion eqh; subst; allsimpl; cpx.
   apply IHhs in eqh0; auto; clear_irr.
-  apply @eq_hyps_cons with (w := w) (p1 := p2) (p2 := p1); sp.
+  apply @eq_hyps_cons with (w := w) (n := n) (p1 := p2) (p2 := p1); sp.
   apply eqtypes_sym; auto.
 Qed.
 
@@ -3052,13 +3124,14 @@ Proof.
   apply eq_hyps_sym; auto.
 Qed.
 
+(*
 (** This lemma is just wrong because the last clause is false.
  * Instead we have to use sub_eq_hyps. *)
 Lemma wrong_eq_hyps_app {o} :
   forall lib (hs1 hs2 : @bhyps o) s1 s2,
     eq_hyps lib s1 s2 (hs1 ++ hs2)
     <=>
-    {s1a, s1b, s2a, s2b : CSub
+    {s1a, s1b, s2a, s2b : CNSub
       , s1 = s1a ++ s1b
       # s2 = s2a ++ s2b
       # length s1a = length hs1
@@ -3078,7 +3151,7 @@ Proof.
 
   rewrite app_nil_r; split; intro k; exrepnd; subst.
   allapplydup @eq_hyps_length; exrepnd.
-  exists s1 (nil : (@CSub o)) s2 (nil : (@CSub o)); simpl; sp;
+  exists s1 (nil : (@CNSub o)) s2 (nil : (@CNSub o)); simpl; sp;
   allrewrite app_nil_r; auto.
   inversion k1; subst; allrewrite app_nil_r; cpx.
 
@@ -3098,18 +3171,18 @@ Proof.
   assert (wf_term (htyp (substitute_hyp s1a a))) as w0
     by (destruct a; allsimpl;
         apply lsubst_preserves_wf_term; sp;
-        apply in_csub2sub in X2; destruct X2; rw wf_term_eq; sp).
+        apply in_cnsub2sub in X2; destruct X2; rw wf_term_eq; sp).
 
-  assert (cover_vars (htyp (substitute_hyp s1a a)) s1b) as c1
+  assert (cover_nout_vars (htyp (substitute_hyp s1a a)) s1b) as c1
     by (destruct a; allsimpl;
-        rw <- @cover_vars_csubst; auto).
+        rw <- @cover_nout_vars_cnsubst; auto).
 
-  assert (cover_vars (htyp (substitute_hyp s1a a)) s2b) as c2
+  assert (cover_nout_vars (htyp (substitute_hyp s1a a)) s2b) as c2
     by (allrewrite @htyp_substitute_hyp;
-        rw <- @cover_vars_csubst;
-        rw <- @cover_vars_csubst in c1;
-        allrw @cover_vars_covered;
-        allrewrite @dom_csub_app;
+        rw <- @cover_nout_vars_cnsubst;
+        rw <- @cover_nout_vars_cnsubst in c1;
+        allrw @cover_nout_vars_covered;
+        allrewrite @dom_cnsub_app;
         allapply @eq_hyps_dom; sp;
         rewrite eqh1;
         rewrite <- eqh0; auto).
@@ -3119,22 +3192,23 @@ Proof.
   rewrite htyp_substitute_hyp; sp.
 
   duplicate c2.
-  rw <- @cover_vars_csubst in c2.
-  rewrite lsubstc_csubst_eq with (w' := w) (p' := p1).
-  rewrite lsubstc_csubst_eq with (w' := w) (p' := c2).
+  rw <- @cover_nout_vars_cnsubst in c2.
+  rewrite lsubstcn_cnsubst_eq with (w' := w) (p' := p1).
+  rewrite lsubstcn_cnsubst_eq with (w' := w) (p' := c2).
 Abort.
+*)
 
 (*
 Definition sub_weak (ts : candidate_type_system) :=
   forall t  : NTerm,
-  forall s1a s1b s2a s2b : CSub,
+  forall s1a s1b s2a s2b : CNSub,
   forall eq : term_equality,
   forall w  : wf_term t,
-  forall p1 : cover_vars t (s1a ++ s1b),
-  forall p2 : cover_vars t (s2a ++ s2b),
-  forall p3 : cover_vars t (s1a ++ s2b),
-    dom_csub s1a = dom_csub s2a
-    -> dom_csub s1b = dom_csub s2b
+  forall p1 : cover_nout_vars t (s1a ++ s1b),
+  forall p2 : cover_nout_vars t (s2a ++ s2b),
+  forall p3 : cover_nout_vars t (s1a ++ s2b),
+    dom_cnsub s1a = dom_cnsub s2a
+    -> dom_cnsub s1b = dom_cnsub s2b
     -> ts (lsubstc t w (s1a ++ s1b) p1)
           (lsubstc t w (s2a ++ s2b) p2)
           eq
@@ -3188,9 +3262,9 @@ Abort.
 Lemma tequality_weak :
   forall t s1a s1b s2a s2b,
   forall w : wf_term t,
-  forall p1 : cover_vars t (s1a ++ s1b),
-  forall p2 : cover_vars t (s2a ++ s2b),
-  forall p3 : cover_vars t (s1a ++ s2b),
+  forall p1 : cover_nout_vars t (s1a ++ s1b),
+  forall p2 : cover_nout_vars t (s2a ++ s2b),
+  forall p3 : cover_nout_vars t (s1a ++ s2b),
     length s1a = length s2a
     -> tequality (lsubstc t w (s1a ++ s1b) p1)
                  (lsubstc t w (s2a ++ s2b) p2)
@@ -3200,10 +3274,10 @@ Proof.
 Abort.
 
 (*
-  rewrite lsubstc_csubst_eq with (w' := w) (p' := p2); sp.
+  rewrite lsubstcn_cnsubst_eq with (w' := w) (p' := p2); sp.
 
   destruct a; allsimpl.
-  rewrite lsubstc_csubst_eq with (w' := w) (p' := p); auto.
+  rewrite lsubstcn_cnsubst_eq with (w' := w) (p' := p); auto.
 
   rewrite substitute_hyps_snoc in H4.
   inversion H4; subst.
@@ -3215,16 +3289,16 @@ Abort.
   assert (wf_term (htyp a)) as w0
     by (destruct a; allsimpl;
         clear H0;
-        apply csubst_wf_term in w; auto).
+        apply cnsubst_wf_term in w; auto).
 
-  assert (cover_vars (htyp a) (s1a ++ s1)) as c0
+  assert (cover_nout_vars (htyp a) (s1a ++ s1)) as c0
     by (destruct a; allsimpl;
-        allrewrite cover_vars_csubst; sp).
+        allrewrite cover_nout_vars_cnsubst; sp).
 
   apply sim_cons with (w := w0) (p := c0); sp.
   revert w p H0.
   rewrite htyp_substitute_hyp; sp.
-  rewrite lsubstc_csubst_eq with (w' := w0) (p' := c0) in H0; sp.
+  rewrite lsubstcn_cnsubst_eq with (w' := w0) (p' := c0) in H0; sp.
 
   rewrite IHhs2.
   exists s1a s1 s2a s2; sp.
@@ -3234,19 +3308,20 @@ Qed.
 
 
 (** Now we combine eq_hyps and similarity into one relation *)
-Inductive eqhyps {o} (lib : @library o) : @CSub o -> @CSub o -> @bhyps o -> [U] :=
+Inductive eqhyps {o} (lib : @library o) : @CNSub o -> @CNSub o -> @bhyps o -> [U] :=
   | eqhyps_nil : eqhyps lib [] [] []
   | eqhyps_cons :
-      forall t1 t2 : CTerm,
-      forall s1 s2 : CSubstitution,
+      forall t1 t2 : cterm,
+      forall s1 s2 : CNSubstitution,
       forall h  : hypothesis,
       forall hs : barehypotheses,
       forall w  : wf_term (htyp h),
-      forall p1 : cover_vars (htyp h) s1,
-      forall p2 : cover_vars (htyp h) s2,
-      forall e  : equality lib t1 t2 (lsubstc (htyp h) w s1 p1),
+      forall n  : noutokens (htyp h),
+      forall p1 : cover_nout_vars (htyp h) s1,
+      forall p2 : cover_nout_vars (htyp h) s2,
+      forall e  : equality lib t1 t2 (lsubstcn (htyp h) w n s1 p1),
 (*        -> tequality (lsubstc (htyp h) w s1 p1) (lsubstc (htyp h) w s2 p2)*)
-      forall eqt : eqtypes lib (lvl h) (lsubstc (htyp h) w s1 p1) (lsubstc (htyp h) w s2 p2),
+      forall eqt : eqtypes lib (lvl h) (lsubstcn (htyp h) w n s1 p1) (lsubstcn (htyp h) w n s2 p2),
       forall eqh : eqhyps lib s1 s2 hs,
         eqhyps lib (snoc s1 (hvar h, t1)) (snoc s2 (hvar h, t2)) (snoc hs h).
 
@@ -3259,7 +3334,7 @@ Proof.
   inversion eqh; subst; allsimpl; cpx.
 
   apply IHhs in eqh0; repd.
-  apply @eqhyps_cons with (w := w) (p1 := p1) (p2 := p1); sp.
+  apply @eqhyps_cons with (w := w) (n := n) (p1 := p1) (p2 := p1); sp.
   rewrite member_eq.
   apply @equality_refl with (t2 := t2); sp.
   allapply @eqtypes_refl; sp.
@@ -3273,7 +3348,7 @@ Proof.
   induction hs using rev_list_indT; simpl; introv eqh;
   inversion eqh; subst; allsimpl; cpx.
   apply_in_hyp p; repd.
-  apply @sim_cons with (w := w) (p := p1); sp.
+  apply @sim_cons with (w := w) (n := n) (p := p1); sp.
 Qed.
 
 Lemma eqhyps_implies_eq_hyps {o} :
@@ -3284,7 +3359,7 @@ Proof.
   induction hs using rev_list_indT; simpl; introv eqh;
   inversion eqh; subst; allsimpl; cpx.
   apply_in_hyp p; repd.
-  apply @eq_hyps_cons with (w := w) (p1 := p1) (p2 := p2); sp.
+  apply @eq_hyps_cons with (w := w) (n := n) (p1 := p1) (p2 := p2); sp.
 Qed.
 
 Lemma eqhyps_if {o} :
@@ -3296,15 +3371,15 @@ Proof.
   induction hs using rev_list_indT; simpl; introv sim eqh;
   inversion sim; subst; allsimpl; cpx.
   inversion eqh; cpx.
-  apply @eqhyps_cons with (w := w) (p1 := p1) (p2 := p2); sp.
+  apply @eqhyps_cons with (w := w) (n := n) (p1 := p1) (p2 := p2); sp.
   clear_irr; sp. clear_irr; sp.
 Qed.
 
 Lemma eqhyps_dom {o} :
   forall lib (hs : @bhyps o) s1 s2,
     eqhyps lib s1 s2 hs
-    -> dom_csub s1 = vars_hyps hs
-       # dom_csub s2 = vars_hyps hs.
+    -> dom_cnsub s1 = vars_hyps hs
+       # dom_cnsub s2 = vars_hyps hs.
 Proof.
   intros; allapply @eqhyps_implies_similarity.
   allapply @similarity_dom; sp.
@@ -3330,24 +3405,25 @@ Qed.
 
  *)
 
-Inductive hyps_true_at {o} (lib : @library o) : @bhyps o -> list (@CTerm o) -> [U] :=
+Inductive hyps_true_at {o} (lib : @library o) : @bhyps o -> list (@cterm o) -> [U] :=
   | InHyp_nil : hyps_true_at lib [] []
   | InHyp_cons :
-      forall t  : CTerm,
-      forall ts : list CTerm,
+      forall t  : cterm,
+      forall ts : list cterm,
       forall h  : hypothesis,
       forall hs : barehypotheses,
       forall w  : wf_term (htyp h),
-      forall p  : cover_vars (htyp h) (mk_hs_subst ts hs),
-      forall m  : member lib t (lsubstc (htyp h) w (mk_hs_subst ts hs) p),
+      forall n  : noutokens (htyp h),
+      forall p  : cover_nout_vars (htyp h) (mk_hs_subst ts hs),
+      forall m  : member lib t (lsubstcn (htyp h) w n (mk_hs_subst ts hs) p),
       forall hf :
-             (forall ts' : list CTerm,
-              forall p'  : cover_vars (htyp h) (mk_hs_subst ts' hs),
+             (forall ts' : list cterm,
+              forall p'  : cover_nout_vars (htyp h) (mk_hs_subst ts' hs),
                 equal_terms_in_hyps lib ts ts' hs
                 -> eqtypes lib
                            (lvl h)
-                           (lsubstc (htyp h) w (mk_hs_subst ts hs)  p)
-                           (lsubstc (htyp h) w (mk_hs_subst ts' hs) p')),
+                           (lsubstcn (htyp h) w n (mk_hs_subst ts hs)  p)
+                           (lsubstcn (htyp h) w n (mk_hs_subst ts' hs) p')),
       forall hta : hyps_true_at lib hs ts,
         hyps_true_at lib (snoc hs h) (snoc ts t).
 Hint Constructors hyps_true_at.
@@ -3365,7 +3441,7 @@ Qed.
 Lemma hyps_true_at_app {o} :
   forall lib (hs1 hs2 : @bhyps o) ts,
     hyps_true_at lib (hs1 ++ hs2) ts
-    -> {ts1, ts2 : list CTerm
+    -> {ts1, ts2 : list cterm
          , ts = ts1 ++ ts2
          # length ts1 = length hs1
          # length ts2 = length hs2
@@ -3374,7 +3450,7 @@ Proof.
   induction hs2 using rev_list_indT; simpl; introv hta.
 
   allrw app_nil_r.
-  exists ts ([] : list (@CTerm o)); sp.
+  exists ts ([] : list (@cterm o)); sp.
   rewrite app_nil_r; auto.
   allapplydup @hyps_true_at_length; auto.
 
@@ -3397,13 +3473,13 @@ Lemma hyps_true_at_implies_equal {o} :
     -> equal_terms_in_hyps lib ts ts hs.
 Proof.
   induction hs using rev_list_indT; introv hta; inversion hta; cpx.
-  apply @EqInHyps_cons with (w := w) (p := p); sp.
+  apply @EqInHyps_cons with (w := w) (n := n) (p := p); sp.
 Qed.
 
 Lemma hyps_true_at_app2 {o} :
   forall lib (hs1 hs2 : @bhyps o) ts,
     hyps_true_at lib (hs1 ++ hs2) ts
-    -> {ts1, ts2 : list CTerm
+    -> {ts1, ts2 : list cterm
          , ts = ts1 ++ ts2
          # length ts1 = length hs1
          # length ts2 = length hs2
@@ -3413,7 +3489,7 @@ Proof.
   induction hs2 using rev_list_indT; simpl; introv hta.
 
   allrw app_nil_r.
-  exists ts ([] : list (@CTerm o)); sp; auto.
+  exists ts ([] : list (@cterm o)); sp; auto.
   rewrite app_nil_r; auto.
   allapplydup @hyps_true_at_length; auto.
 
@@ -3431,34 +3507,37 @@ Proof.
   rewrite substitute_hyps_snoc.
 
   assert (wf_term (htyp (substitute_hyp (mk_hs_subst ts1 hs1) a))) as wh
-    by (destruct a; allsimpl; apply wf_term_csubst; auto).
+    by (destruct a; allsimpl; apply wf_term_cnsubst; auto).
 
-  assert (cover_vars (htyp (substitute_hyp (mk_hs_subst ts1 hs1) a))
+  assert (noutokens (htyp (substitute_hyp (mk_hs_subst ts1 hs1) a))) as nh
+    by (destruct a; allsimpl; apply implies_noutokens_cnsubst; auto).
+
+  assert (cover_nout_vars (htyp (substitute_hyp (mk_hs_subst ts1 hs1) a))
                      (mk_hs_subst ts2 (substitute_hyps (mk_hs_subst ts1 hs1) hs2))) as ph
     by (destruct a; allsimpl;
         rewrite mk_hs_subst_substitute_hyps;
         clear_dependents p;
         rewrite mk_hs_subst_app in p; auto;
-        rw <- @cover_vars_csubst; auto).
+        rw <- @cover_nout_vars_cnsubst; auto).
 
-  apply @InHyp_cons with (w := wh) (p := ph); sp.
-  revert wh ph; rewrite htyp_substitute_hyp; rewrite mk_hs_subst_substitute_hyps; sp.
+  apply @InHyp_cons with (w := wh) (n := nh) (p := ph); sp.
+  revert wh nh ph; rewrite htyp_substitute_hyp; rewrite mk_hs_subst_substitute_hyps; sp.
   duplicate p.
   rewrite mk_hs_subst_app in p; sp.
-  rewrite lsubstc_csubst_eq with (w' := w) (p' := p).
+  rewrite lsubstcn_cnsubst_eq with (w' := w) (n' := n) (p' := p).
   revert p.
   rewrite <- mk_hs_subst_app; sp.
   clear_irr; sp.
 
-  revert wh ph p'.
+  revert wh nh ph p'.
   rewrite htyp_substitute_hyp; repeat (rewrite mk_hs_subst_substitute_hyps); sp.
 
   duplicate ph.
-  rw <- @cover_vars_csubst in ph.
+  rw <- @cover_nout_vars_cnsubst in ph.
   duplicate p'.
-  rw <- @cover_vars_csubst in p'.
-  rewrite @lsubstc_csubst_eq with (w' := w) (p' := ph).
-  rewrite @lsubstc_csubst_eq with (w' := w) (p' := p').
+  rw <- @cover_nout_vars_cnsubst in p'.
+  rewrite @lsubstcn_cnsubst_eq with (w' := w) (n' := n) (p' := ph).
+  rewrite @lsubstcn_cnsubst_eq with (w' := w) (n' := n) (p' := p').
   revert ph p'.
   repeat (rewrite <- mk_hs_subst_app); sp.
   clear_irr; sp.
@@ -3502,14 +3581,14 @@ Proof.
   rewrite htyp_substitute_hyp; sp.
 
   duplicate w.
-  apply csubst_wf_term in w.
+  apply cnsubst_wf_term in w.
   duplicate p.
-  rewrite <- cover_vars_csubst in p.
+  rewrite <- cover_nout_vars_cnsubst in p.
   rewrite mk_hs_subst_substitute_hyps in p.
 
   revert p0 H5.
   rewrite mk_hs_subst_substitute_hyps; sp.
-  rewrite lsubstc_csubst_eq with (w' := w) (p' := p) in H5.
+  rewrite lsubstcn_cnsubst_eq with (w' := w) (p' := p) in H5.
   clear w0 p0.
   revert p H5.
   rewrite <- mk_hs_subst_app; sp.
@@ -3564,9 +3643,9 @@ Proof.
     xxx
 
       (* follows from p': *)
-      assert (cover_vars (csubst (htyp a) (mk_hs_subst ts2a hs1))
+      assert (cover_nout_vars (cnsubst (htyp a) (mk_hs_subst ts2a hs1))
                          (mk_hs_subst ts2b hs2)) as p2
-      by (rewrite <- cover_vars_csubst;
+      by (rewrite <- cover_nout_vars_cnsubst;
           rewrite <- mk_hs_subst_app; auto).
     generalize (H0 p2); sp.
 *)
@@ -3586,28 +3665,29 @@ Qed.
 Lemma hyps_true_at_snoc {o} :
   forall lib h (hs : @bhyps o) ts,
     hyps_true_at lib (snoc hs h) ts
-    -> {t : CTerm
-        , {ts1 : list CTerm
+    -> {t : cterm
+        , {ts1 : list cterm
         , {w : wf_term (htyp h)
-        , {p : cover_vars (htyp h) (mk_hs_subst ts1 hs)
+        , {n : noutokens (htyp h)
+        , {p : cover_nout_vars (htyp h) (mk_hs_subst ts1 hs)
            , ts = snoc ts1 t
-           # member lib t (lsubstc (htyp h) w (mk_hs_subst ts1 hs) p)
-           # (forall ts2 : list CTerm,
-              forall p2  : cover_vars (htyp h) (mk_hs_subst ts2 hs),
+           # member lib t (lsubstcn (htyp h) w n (mk_hs_subst ts1 hs) p)
+           # (forall ts2 : list cterm,
+              forall p2  : cover_nout_vars (htyp h) (mk_hs_subst ts2 hs),
                 equal_terms_in_hyps lib ts1 ts2 hs
                 -> eqtypes lib
                            (lvl h)
-                           (lsubstc (htyp h) w (mk_hs_subst ts1 hs) p)
-                           (lsubstc (htyp h) w (mk_hs_subst ts2 hs) p2)
+                           (lsubstcn (htyp h) w n (mk_hs_subst ts1 hs) p)
+                           (lsubstcn (htyp h) w n (mk_hs_subst ts2 hs) p2)
 (*                -> tequality (lsubstc (htyp h) w (mk_hs_subst ts1 hs) p)
                              (lsubstc (htyp h) w (mk_hs_subst ts2 hs) p2)*))
-           # hyps_true_at lib hs ts1}}}}.
+           # hyps_true_at lib hs ts1}}}}}.
 Proof.
   introv hta.
   rev_list_dest ts.
   allapplydup @hyps_true_at_length; allsimpl; cpx.
   inversion hta; cpx.
-  exists v u w p; sp.
+  exists v u w n p; sp.
 Qed.
 
 
@@ -3629,7 +3709,7 @@ Qed.
 Definition hypotheses_true_at {o}
            (lib : library)
            (hyps : hypotheses)
-           (ts : list (@CTerm o)) : Type :=
+           (ts : list (@cterm o)) : Type :=
   hyps_true_at lib (projT1 hyps) ts.
 
 Lemma hypotheses_true_at_length {o} :
@@ -3661,8 +3741,8 @@ Proof.
   apply snoc_inj in H1; sp; subst.
   apply IHhs with (ts' := ts2') in H6; sp.
 
-  assert (cover_vars (htyp a) (mk_hs_subst ts2' hs)).
-  allunfold cover_vars; allunfold over_vars.
+  assert (cover_nout_vars (htyp a) (mk_hs_subst ts2' hs)).
+  allunfold cover_nout_vars; allunfold over_vars.
   clear H2 H5.
   apply hyps_true_at_length in H6.
   apply equal_terms_in_hyps_length in H3; sp.
@@ -3678,11 +3758,11 @@ Qed.
 
 (* --- Hypotheses covered by terms *)
 
-Definition cover_hyps {o} (ts : list (@CTerm o)) (hyps : @bhyps o) :=
+Definition cover_hyps {o} (ts : list (@cterm o)) (hyps : @bhyps o) :=
   length ts = length hyps.
 
 (*
-Definition cover_hypotheses (ts : list CTerm) (hyps : hypotheses) :=
+Definition cover_hypotheses (ts : list cterm) (hyps : hypotheses) :=
   cover_hyps ts (projT1 hyps).
 *)
 
@@ -3709,24 +3789,24 @@ Proof.
 Qed.
 *)
 
-Definition cover_sequent {o} (ts : list CTerm) (S : @sequent o) :=
+Definition cover_sequent {o} (ts : list cterm) (S : @sequent o) :=
   cover_hyps ts (hyps (projT1 S)).
 
-Definition cover_ctsequent {o} (ts : list CTerm) (S : @ctsequent o) :=
+Definition cover_ctsequent {o} (ts : list cterm) (S : @ctsequent o) :=
   cover_sequent ts (projT1 S).
 
-Definition cover_csequent {o} (ts : list CTerm) (S : @csequent o) :=
+Definition cover_csequent {o} (ts : list cterm) (S : @csequent o) :=
   cover_ctsequent ts (projT1 S).
 
 (*
 Lemma cover_hypotheses_member :
   forall (hs : @bhyps o) : barehypotheses,
-  forall ts : list CTerm,
+  forall ts : list cterm,
   forall p  : wf_hypotheses hs,
   forall v  : NVar,
     cover_hypotheses ts (mk_hyps hs p)
     -> LIn v (vars_hyps hs)
-    -> {u : CTerm & LIn (v, u) (mk_hs_subst ts hs)}.
+    -> {u : cterm & LIn (v, u) (mk_hs_subst ts hs)}.
 Proof.
   unfold cover_hypotheses, length_hs; simpl.
   induction hs using rev_list_indT; simpl; sp.
@@ -3779,9 +3859,9 @@ Qed.
 
 Lemma seq_cover :
   forall s  : csequent,
-  forall ts : list CTerm,
+  forall ts : list cterm,
     hyps_true_at (hyps (projT1 (projT1 (projT1 s)))) ts
-    -> cover_vars (ctype (concl (projT1 (projT1 (projT1 s)))))
+    -> cover_nout_vars (ctype (concl (projT1 (projT1 (projT1 s)))))
                   (mk_hs_subst ts (hyps (projT1 (projT1 (projT1 s))))).
 Proof.
   destruct s.
@@ -3789,16 +3869,16 @@ Proof.
   destruct x.
   destruct x.
   unfold_closed; sp.
-  rw cover_vars_covered.
+  rw cover_nout_vars_covered.
   rw <- dom_mk_hs_subst; sp.
   allapply hyps_true_at_length; sp.
 Qed.
 
 Lemma seq_cover_ex :
   forall s  : csequent,
-  forall ts : list CTerm,
+  forall ts : list cterm,
     hyps_true_at (hyps (projT1 (projT1 (projT1 s)))) ts
-    -> cover_vars_op (extract (concl (projT1 (projT1 (projT1 s)))))
+    -> cover_nout_vars_op (extract (concl (projT1 (projT1 (projT1 s)))))
                      (mk_hs_subst ts (hyps (projT1 (projT1 (projT1 s))))).
 Proof.
   destruct s.
@@ -3806,7 +3886,7 @@ Proof.
   destruct x.
   destruct x.
   unfold_closed; sp.
-  rw cover_vars_op_covered_op.
+  rw cover_nout_vars_op_covered_op.
   rw <- dom_mk_hs_subst; sp.
   apply covered_op_subvars with (vs1 := nh_vars_hyps hyps0); sp.
   allapply hyps_true_at_length; sp.
@@ -3814,30 +3894,30 @@ Qed.
 
 Lemma seq_cover2 :
   forall s : csequent,
-  forall ts ts' : list CTerm,
+  forall ts ts' : list cterm,
     hyps_true_at (hyps (projT1 (projT1 (projT1 s)))) ts
     -> equal_terms_in_hyps ts ts' (hyps (projT1 (projT1 (projT1 s))))
-    -> cover_vars (ctype (concl (projT1 (projT1 (projT1 s)))))
+    -> cover_nout_vars (ctype (concl (projT1 (projT1 (projT1 s)))))
                   (mk_hs_subst ts' (hyps (projT1 (projT1 (projT1 s))))).
 Proof.
   destruct s; destruct x; destruct x; destruct x.
   unfold_closed; sp.
-  rw cover_vars_covered.
+  rw cover_nout_vars_covered.
   rw <- dom_mk_hs_subst; sp.
   allapply equal_terms_in_hyps_length; sp.
 Qed.
 
 Lemma seq_cover2_ex :
   forall s : csequent,
-  forall ts ts' : list CTerm,
+  forall ts ts' : list cterm,
     hyps_true_at (hyps (projT1 (projT1 (projT1 s)))) ts
     -> equal_terms_in_hyps ts ts' (hyps (projT1 (projT1 (projT1 s))))
-    -> cover_vars_op (extract (concl (projT1 (projT1 (projT1 s)))))
+    -> cover_nout_vars_op (extract (concl (projT1 (projT1 (projT1 s)))))
                      (mk_hs_subst ts' (hyps (projT1 (projT1 (projT1 s))))).
 Proof.
   destruct s; destruct x; destruct x; destruct x.
   unfold_closed; sp.
-  rw cover_vars_op_covered_op.
+  rw cover_nout_vars_op_covered_op.
   rw <- dom_mk_hs_subst; sp.
   apply covered_op_subvars with (vs1 := nh_vars_hyps hyps0); sp.
   allapply equal_terms_in_hyps_length; sp.
@@ -3845,39 +3925,39 @@ Qed.
 
 Lemma scover1 :
   forall seq : csequent,
-  forall s1 s2 : CSubstitution,
+  forall s1 s2 : CNSubstitution,
     pw_assign_eq s1 s2 (hyps (projT1 (projT1 (projT1 seq))))
-    -> cover_vars (ctype (concl (projT1 (projT1 (projT1 seq))))) s1.
+    -> cover_nout_vars (ctype (concl (projT1 (projT1 (projT1 seq))))) s1.
 Proof.
   destruct seq; destruct x; destruct x; destruct x; destruct w.
   unfold_closed; sp.
-  rw cover_vars_covered.
+  rw cover_nout_vars_covered.
   allapply pw_assign_eq_dom; sp.
   rw <- X0; sp.
 Qed.
 
 Lemma scover2 :
   forall seq : csequent,
-  forall s1 s2 : CSubstitution,
+  forall s1 s2 : CNSubstitution,
     pw_assign_eq s1 s2 (hyps (projT1 (projT1 (projT1 seq))))
-    -> cover_vars (ctype (concl (projT1 (projT1 (projT1 seq))))) s2.
+    -> cover_nout_vars (ctype (concl (projT1 (projT1 (projT1 seq))))) s2.
 Proof.
   destruct seq; destruct x; destruct x; destruct x; destruct w.
   unfold_closed; sp.
-  rw cover_vars_covered.
+  rw cover_nout_vars_covered.
   allapply pw_assign_eq_dom; sp.
   rw <- X; sp.
 Qed.
 
 Lemma scover_ex1 :
   forall seq : csequent,
-  forall s1 s2 : CSubstitution,
+  forall s1 s2 : CNSubstitution,
     pw_assign_eq s1 s2 (hyps (projT1 (projT1 (projT1 seq))))
-    -> cover_vars_op (extract (concl (projT1 (projT1 (projT1 seq))))) s1.
+    -> cover_nout_vars_op (extract (concl (projT1 (projT1 (projT1 seq))))) s1.
 Proof.
   destruct seq; destruct x; destruct x; destruct x; destruct w.
   unfold_closed; sp.
-  rw cover_vars_op_covered_op.
+  rw cover_nout_vars_op_covered_op.
   allapply pw_assign_eq_dom; sp.
   rw <- X0; sp.
   apply covered_op_subvars with (vs1 := nh_vars_hyps hyps0); sp.
@@ -3885,13 +3965,13 @@ Qed.
 
 Lemma scover_ex2 :
   forall seq : csequent,
-  forall s1 s2 : CSubstitution,
+  forall s1 s2 : CNSubstitution,
     pw_assign_eq s1 s2 (hyps (projT1 (projT1 (projT1 seq))))
-    -> cover_vars_op (extract (concl (projT1 (projT1 (projT1 seq))))) s2.
+    -> cover_nout_vars_op (extract (concl (projT1 (projT1 (projT1 seq))))) s2.
 Proof.
   destruct seq; destruct x; destruct x; destruct x; destruct w.
   unfold_closed; sp.
-  rw cover_vars_op_covered_op.
+  rw cover_nout_vars_op_covered_op.
   allapply pw_assign_eq_dom; sp.
   rw <- X; sp.
   apply covered_op_subvars with (vs1 := nh_vars_hyps hyps0); sp.
@@ -3899,39 +3979,39 @@ Qed.
 
 Lemma s_cover1 :
   forall seq : csequent,
-  forall s1 s2 : CSubstitution,
+  forall s1 s2 : CNSubstitution,
     similarity lib s1 s2 (hyps (projT1 (projT1 (projT1 seq))))
-    -> cover_vars (ctype (concl (projT1 (projT1 (projT1 seq))))) s1.
+    -> cover_nout_vars (ctype (concl (projT1 (projT1 (projT1 seq))))) s1.
 Proof.
   destruct seq; destruct x; destruct x; destruct x; destruct w.
   unfold_closed; sp.
-  rw cover_vars_covered.
+  rw cover_nout_vars_covered.
   allapply similarity_dom; sp.
   allrw; sp.
 Qed.
 
 Lemma s_cover2 :
   forall seq : csequent,
-  forall s1 s2 : CSubstitution,
+  forall s1 s2 : CNSubstitution,
     similarity lib s1 s2 (hyps (projT1 (projT1 (projT1 seq))))
-    -> cover_vars (ctype (concl (projT1 (projT1 (projT1 seq))))) s2.
+    -> cover_nout_vars (ctype (concl (projT1 (projT1 (projT1 seq))))) s2.
 Proof.
   destruct seq; destruct x; destruct x; destruct x; destruct w.
   unfold_closed; sp.
-  rw cover_vars_covered.
+  rw cover_nout_vars_covered.
   allapply similarity_dom; sp.
   allrw; sp.
 Qed.
 
 Lemma s_cover_ex1 :
   forall seq : csequent,
-  forall s1 s2 : CSubstitution,
+  forall s1 s2 : CNSubstitution,
     similarity lib s1 s2 (hyps (projT1 (projT1 (projT1 seq))))
-    -> cover_vars_op (extract (concl (projT1 (projT1 (projT1 seq))))) s1.
+    -> cover_nout_vars_op (extract (concl (projT1 (projT1 (projT1 seq))))) s1.
 Proof.
   destruct seq; destruct x; destruct x; destruct x; destruct w.
   unfold_closed; sp.
-  rw cover_vars_op_covered_op.
+  rw cover_nout_vars_op_covered_op.
   allapply similarity_dom; sp.
   allrw; sp.
   apply covered_op_subvars with (vs1 := nh_vars_hyps hyps0); sp.
@@ -3939,13 +4019,13 @@ Qed.
 
 Lemma s_cover_ex2 :
   forall seq : csequent,
-  forall s1 s2 : CSubstitution,
+  forall s1 s2 : CNSubstitution,
     similarity lib s1 s2 (hyps (projT1 (projT1 (projT1 seq))))
-    -> cover_vars_op (extract (concl (projT1 (projT1 (projT1 seq))))) s2.
+    -> cover_nout_vars_op (extract (concl (projT1 (projT1 (projT1 seq))))) s2.
 Proof.
   destruct seq; destruct x; destruct x; destruct x; destruct w.
   unfold_closed; sp.
-  rw cover_vars_op_covered_op.
+  rw cover_nout_vars_op_covered_op.
   allapply similarity_dom; sp.
   allrw; sp.
   apply covered_op_subvars with (vs1 := nh_vars_hyps hyps0); sp.
@@ -3953,39 +4033,39 @@ Qed.
 
 Lemma s_cover_1 :
   forall seq : csequent,
-  forall s1 s2 : CSubstitution,
+  forall s1 s2 : CNSubstitution,
     eqhyps lib s1 s2 (hyps (projT1 (projT1 (projT1 seq))))
-    -> cover_vars (ctype (concl (projT1 (projT1 (projT1 seq))))) s1.
+    -> cover_nout_vars (ctype (concl (projT1 (projT1 (projT1 seq))))) s1.
 Proof.
   destruct seq; destruct x; destruct x; destruct x; destruct w.
   unfold_closed; sp.
-  rw cover_vars_covered.
+  rw cover_nout_vars_covered.
   allapply eqhyps_dom; sp.
   allrw; sp.
 Qed.
 
 Lemma s_cover_2 :
   forall seq : csequent,
-  forall s1 s2 : CSubstitution,
+  forall s1 s2 : CNSubstitution,
     eqhyps lib s1 s2 (hyps (projT1 (projT1 (projT1 seq))))
-    -> cover_vars (ctype (concl (projT1 (projT1 (projT1 seq))))) s2.
+    -> cover_nout_vars (ctype (concl (projT1 (projT1 (projT1 seq))))) s2.
 Proof.
   destruct seq; destruct x; destruct x; destruct x; destruct w.
   unfold_closed; sp.
-  rw cover_vars_covered.
+  rw cover_nout_vars_covered.
   allapply eqhyps_dom; sp.
   allrw; sp.
 Qed.
 
 Lemma s_cover_ex_1 :
   forall seq : csequent,
-  forall s1 s2 : CSubstitution,
+  forall s1 s2 : CNSubstitution,
     eqhyps lib s1 s2 (hyps (projT1 (projT1 (projT1 seq))))
-    -> cover_vars_op (extract (concl (projT1 (projT1 (projT1 seq))))) s1.
+    -> cover_nout_vars_op (extract (concl (projT1 (projT1 (projT1 seq))))) s1.
 Proof.
   destruct seq; destruct x; destruct x; destruct x; destruct w.
   unfold_closed; sp.
-  rw cover_vars_op_covered_op.
+  rw cover_nout_vars_op_covered_op.
   allapply eqhyps_dom; sp.
   allrw; sp.
   apply covered_op_subvars with (vs1 := nh_vars_hyps hyps0); sp.
@@ -3993,13 +4073,13 @@ Qed.
 
 Lemma s_cover_ex_2 :
   forall seq : csequent,
-  forall s1 s2 : CSubstitution,
+  forall s1 s2 : CNSubstitution,
     eqhyps lib s1 s2 (hyps (projT1 (projT1 (projT1 seq))))
-    -> cover_vars_op (extract (concl (projT1 (projT1 (projT1 seq))))) s2.
+    -> cover_nout_vars_op (extract (concl (projT1 (projT1 (projT1 seq))))) s2.
 Proof.
   destruct seq; destruct x; destruct x; destruct x; destruct w.
   unfold_closed; sp.
-  rw cover_vars_op_covered_op.
+  rw cover_nout_vars_op_covered_op.
   allapply eqhyps_dom; sp.
   allrw; sp.
   apply covered_op_subvars with (vs1 := nh_vars_hyps hyps0); sp.
@@ -4072,17 +4152,19 @@ Qed.
 Definition extract_op_to_op_extract {o}
            (top : option (@NTerm o))
            (vs : list NVar) : wf_term_op top
+                              -> noutokens_op top
                               -> covered_op top vs
-                              -> option {t : NTerm & wf_term t # covered t vs} :=
+                              -> option {t : NTerm & wf_term t # noutokens t # covered t vs} :=
   match top
         as o
         return (wf_term_op o
+                -> noutokens_op o
                 -> covered_op o vs
-                -> option {t : NTerm & wf_term t # covered t vs}) with
+                -> option {t : NTerm & wf_term t # noutokens t # covered t vs}) with
     | Some n =>
-      fun (w : wf_term n) (c : covered n vs) =>
-        Some (existT (fun t : NTerm => wf_term t # covered t vs) n (w, c))
-    | None => fun (_ : true = true) (_ : true = true) => None
+      fun (w : wf_term n) (z : noutokens n) (c : covered n vs) =>
+        Some (existT (fun t : NTerm => wf_term t # noutokens t # covered t vs) n (w, (z, c)))
+    | None => fun (_ : true = true) (_ : true = true) (_ : true = true) => None
   end.
 
 Inductive csequent_components {o} :=
@@ -4091,8 +4173,9 @@ Inductive csequent_components {o} :=
     forall (T  : @NTerm o),
     forall (wh : wf_hypotheses hs),
     forall (wt : wf_term T),
+    forall (nt : noutokens T),
     forall (ct : covered T (vars_hyps hs)),
-    forall (ec : option {t : @NTerm o & wf_term t # covered t (nh_vars_hyps hs)}),
+    forall (ec : option {t : @NTerm o & wf_term t # noutokens t # covered t (nh_vars_hyps hs)}),
       csequent_components.
 
 Definition destruct_csequent {o} (cs : @csequent o) : csequent_components :=
@@ -4101,21 +4184,23 @@ Definition destruct_csequent {o} (cs : @csequent o) : csequent_components :=
     (ctype (concl (projT1 (projT1 (projT1 cs)))))
     (vswf_hypotheses_nil_implies (hyps (projT1 (projT1 (projT1 cs)))) (fst (projT2 (projT1 (projT1 cs)))))
     (fst (snd (projT2 (projT1 (projT1 cs)))))
-    (projT2 (projT1 cs))
+    (snd (projT2 (projT1 cs)))
+    (fst (projT2 (projT1 cs)))
     (extract_op_to_op_extract
        (extract (concl (projT1 (projT1 (projT1 cs)))))
        (nh_vars_hyps (hyps (projT1 (projT1 (projT1 cs)))))
        (snd (snd (projT2 (projT1 (projT1 cs)))))
-       (projT2 cs)).
+       (snd (projT2 cs))
+       (fst (projT2 cs))).
 
 Lemma seq_cover_typ1 {o} :
   forall lib t ts ts' (hs : @bhyps o),
     covered t (vars_hyps hs)
     -> equal_terms_in_hyps lib ts ts' hs
-    -> cover_vars t (mk_hs_subst ts hs).
+    -> cover_nout_vars t (mk_hs_subst ts hs).
 Proof.
   introv cv eqt.
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   rw <- @dom_mk_hs_subst; sp.
   allapply @equal_terms_in_hyps_length; sp.
 Qed.
@@ -4124,10 +4209,10 @@ Lemma seq_cover_typ2 {o} :
   forall lib t ts ts' (hs : @bhyps o),
     covered t (vars_hyps hs)
     -> equal_terms_in_hyps lib ts ts' hs
-    -> cover_vars t (mk_hs_subst ts' hs).
+    -> cover_nout_vars t (mk_hs_subst ts' hs).
 Proof.
   introv cv eqt.
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   rw <- @dom_mk_hs_subst; sp.
   allapply @equal_terms_in_hyps_length; sp.
 Qed.
@@ -4136,10 +4221,10 @@ Lemma seq_cover_ex1 {o} :
   forall lib e ts ts' (hs : @bhyps o),
     covered e (nh_vars_hyps hs)
     -> equal_terms_in_hyps lib ts ts' hs
-    -> cover_vars e (mk_hs_subst ts hs).
+    -> cover_nout_vars e (mk_hs_subst ts hs).
 Proof.
   introv cv eqt; sp; allsimpl.
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   rw <- @dom_mk_hs_subst; sp.
   apply covered_subvars with (vs1 := nh_vars_hyps hs); sp.
   allapply @equal_terms_in_hyps_length; sp.
@@ -4149,10 +4234,10 @@ Lemma seq_cover_ex2 {o} :
   forall lib e ts ts' (hs : @bhyps o),
     covered e (nh_vars_hyps hs)
     -> equal_terms_in_hyps lib ts ts' hs
-    -> cover_vars e (mk_hs_subst ts' hs).
+    -> cover_nout_vars e (mk_hs_subst ts' hs).
 Proof.
   introv cv eqt; sp; allsimpl.
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   rw <- @dom_mk_hs_subst; sp.
   apply covered_subvars with (vs1 := nh_vars_hyps hs); sp.
   allapply @equal_terms_in_hyps_length; sp.
@@ -4176,43 +4261,43 @@ Qed.
 Definition sequent_true_at {o}
            (lib : library)
            (S : @csequent o)
-           (ts : list CTerm) : Type :=
-  forall ts' : list CTerm,
+           (ts : list cterm) : Type :=
+  forall ts' : list cterm,
     match destruct_csequent S with
-      | cseq_comps hs T wh wt ct ec =>
+      | cseq_comps hs T wh wt nt ct ec =>
           forall p : hyps_true_at lib hs ts,
           forall e : equal_terms_in_hyps lib ts ts' hs,
             let sub1 := mk_hs_subst ts  hs in
             let sub2 := mk_hs_subst ts' hs in
               (
                 tequality lib
-                  (lsubstc T wt sub1 (seq_cover_typ1 lib T ts ts' hs ct e))
-                  (lsubstc T wt sub2 (seq_cover_typ2 lib T ts ts' hs ct e))
+                  (lsubstcn T wt nt sub1 (seq_cover_typ1 lib T ts ts' hs ct e))
+                  (lsubstcn T wt nt sub2 (seq_cover_typ2 lib T ts ts' hs ct e))
                 #
                 match ec with
-                  | Some (existT _ ext (we, ce)) =>
+                  | Some (existT _ ext (we, (ne, ce))) =>
                       equality lib
-                        (lsubstc ext we sub1 (seq_cover_ex1 lib ext ts ts' hs ce e))
-                        (lsubstc ext we sub2 (seq_cover_ex2 lib ext ts ts' hs ce e))
-                        (lsubstc T wt sub1 (seq_cover_typ1 lib T ts ts' hs ct e))
+                        (lsubstcn ext we ne sub1 (seq_cover_ex1 lib ext ts ts' hs ce e))
+                        (lsubstcn ext we ne sub2 (seq_cover_ex2 lib ext ts ts' hs ce e))
+                        (lsubstcn T wt nt sub1 (seq_cover_typ1 lib T ts ts' hs ct e))
                   | None => True
                 end
               )
     end.
 
 Definition sequent_true {o} lib (S : @csequent o) : Type :=
-  forall ts : list CTerm,
+  forall ts : list cterm,
     cover_csequent ts S
     -> sequent_true_at lib S ts.
 
 (* begin hide *)
 
 (*
-Definition sequent_true_at (S : csequent) (ts : list CTerm) : Type :=
+Definition sequent_true_at (S : csequent) (ts : list cterm) : Type :=
   let s  := projT1 (projT1 (projT1 S)) in
   let hs := hyps s in
   let G  := concl s in
-  forall ts' : list CTerm,
+  forall ts' : list cterm,
   forall p : hyps_true_at lib hs ts,
   forall e : equal_terms_in_hyps lib ts ts' hs,
     let sub1 := mk_hs_subst ts  hs in
@@ -4229,32 +4314,35 @@ Definition sequent_true_at (S : csequent) (ts : list CTerm) : Type :=
       ).
 *)
 
+
+
+
 Lemma sequent_true_at_all {o} :
   forall lib S ts,
     sequent_true_at lib S ts
     <=>
-    forall ts' : list (@CTerm o),
+    forall ts' : list (@cterm o),
       match destruct_csequent S with
-        | cseq_comps hs T wh wt ct ec =>
+        | cseq_comps hs T wh wt nt ct ec =>
           forall p : hyps_true_at lib hs ts,
           forall e : equal_terms_in_hyps lib ts ts' hs,
             let sub1 := mk_hs_subst ts  hs in
             let sub2 := mk_hs_subst ts' hs in
-            forall pC1 : cover_vars T sub1,
-            forall pC2 : cover_vars T sub2,
+            forall pC1 : cover_nout_vars T sub1,
+            forall pC2 : cover_nout_vars T sub2,
               match ec with
-                | Some (existT _ ext (we, ce)) =>
-                    forall pt1 : cover_vars ext sub1,
-                    forall pt2 : cover_vars ext sub2,
-                      tequality lib (lsubstc T wt sub1 pC1)
-                                (lsubstc T wt sub2 pC2)
+                | Some (existT _ ext (we, (ne, ce))) =>
+                    forall pt1 : cover_nout_vars ext sub1,
+                    forall pt2 : cover_nout_vars ext sub2,
+                      tequality lib (lsubstcn T wt nt sub1 pC1)
+                                (lsubstcn T wt nt sub2 pC2)
                       #
-                      equality lib (lsubstc ext we sub1 pt1)
-                               (lsubstc ext we sub2 pt2)
-                               (lsubstc T wt sub1 pC1)
+                      equality lib (lsubstcn ext we ne sub1 pt1)
+                               (lsubstcn ext we ne sub2 pt2)
+                               (lsubstcn T wt nt sub1 pC1)
                 | None =>
-                    tequality lib (lsubstc T wt sub1 pC1)
-                              (lsubstc T wt sub2 pC2)
+                    tequality lib (lsubstcn T wt nt sub1 pC1)
+                              (lsubstcn T wt nt sub2 pC2)
               end
       end.
 Proof.
@@ -4263,15 +4351,15 @@ Proof.
 
   generalize (h ts' p e); intro equs.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1) in equs; auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2) in equs; auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt1) in equs; auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt2) in equs; auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1) in equs; auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2) in equs; auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt1) in equs; auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt2) in equs; auto.
 
   generalize (h ts' p e); intro equs.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1) in equs; auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2) in equs; auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1) in equs; auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2) in equs; auto.
   sp.
 Qed.
 
@@ -4279,25 +4367,25 @@ Lemma sequent_true_at_ex {o} :
   forall lib S ts,
     sequent_true_at lib S ts
     <=>
-    forall ts' : list (@CTerm o),
+    forall ts' : list (@cterm o),
       match destruct_csequent S with
-        | cseq_comps hs T wh wt ct ec =>
+        | cseq_comps hs T wh wt nt ct ec =>
           forall p : hyps_true_at lib hs ts,
           forall e : equal_terms_in_hyps lib ts ts' hs,
             let sub1 := mk_hs_subst ts  hs in
             let sub2 := mk_hs_subst ts' hs in
-            {pC1 : cover_vars T sub1
-             & {pC2 : cover_vars T sub2
-                & tequality lib (lsubstc T wt sub1 pC1)
-                            (lsubstc T wt sub2 pC2)
+            {pC1 : cover_nout_vars T sub1
+             & {pC2 : cover_nout_vars T sub2
+                & tequality lib (lsubstcn T wt nt sub1 pC1)
+                            (lsubstcn T wt nt sub2 pC2)
                   #
                   match ec with
-                    | Some (existT _ ext (we, ce)) =>
-                        {pt1 : cover_vars ext sub1
-                         & {pt2 : cover_vars ext sub2
-                         & equality lib (lsubstc ext we sub1 pt1)
-                                    (lsubstc ext we sub2 pt2)
-                                    (lsubstc T wt sub1 pC1)}}
+                    | Some (existT _ ext (we, (ne, ce))) =>
+                        {pt1 : cover_nout_vars ext sub1
+                         & {pt2 : cover_nout_vars ext sub2
+                         & equality lib (lsubstcn ext we ne sub1 pt1)
+                                    (lsubstcn ext we ne sub2 pt2)
+                                    (lsubstcn T wt nt sub1 pC1)}}
                     | None => True
                   end}}
       end.
@@ -4319,26 +4407,26 @@ Proof.
 
   generalize (h ts' p e); intros; clear h; exrepd.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1); auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2); auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt1); auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt2); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2); auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt1); auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt2); auto.
 
   generalize (h ts' p e); intros; clear h; exrepd.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1); auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2); auto.
 Qed.
 
 Lemma cover_csequent_change_wf {o} :
-  forall (ts : list (@CTerm o)) s w1 w2,
+  forall (ts : list (@cterm o)) s w1 w2,
     cover_csequent ts (mk_wcseq s w1) <=> cover_csequent ts (mk_wcseq s w2).
 Proof.
   eauto with pi.
 Qed.
 
 Lemma sequent_true_at_change_wf {o} :
-  forall lib (ts : list (@CTerm o)) s w1 w2,
+  forall lib (ts : list (@cterm o)) s w1 w2,
     sequent_true_at lib (mk_wcseq s w1) ts <=> sequent_true_at lib (mk_wcseq s w2) ts.
 Proof.
   eauto with pi.
@@ -4355,10 +4443,10 @@ Lemma scover_typ1 {o} :
   forall lib t s1 s2 (H : @bhyps o),
     covered t (vars_hyps H)
     -> pw_assign_eq lib s1 s2 H
-    -> cover_vars t s1.
+    -> cover_nout_vars t s1.
 Proof.
   introv cv pw.
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   allapply @pw_assign_eq_dom; sp; allrw <-; sp.
 Qed.
 
@@ -4366,10 +4454,10 @@ Lemma scover_typ2 {o} :
   forall lib t s1 s2 (H : @bhyps o),
     covered t (vars_hyps H)
     -> pw_assign_eq lib s1 s2 H
-    -> cover_vars t s2.
+    -> cover_nout_vars t s2.
 Proof.
   introv cv pw.
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   allapply @pw_assign_eq_dom; sp; allrw <-; sp.
 Qed.
 
@@ -4377,10 +4465,10 @@ Lemma scover_ex1 {o} :
   forall lib e s1 s2 (H : @bhyps o),
     covered e (nh_vars_hyps H)
     -> pw_assign_eq lib s1 s2 H
-    -> cover_vars e s1.
+    -> cover_nout_vars e s1.
 Proof.
   introv cv pw; sp; allsimpl.
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   allapply @pw_assign_eq_dom; sp; allrw <-.
   apply covered_subvars with (vs1 := nh_vars_hyps H); sp.
 Qed.
@@ -4389,10 +4477,10 @@ Lemma scover_ex2 {o} :
   forall lib e s1 s2 (H : @bhyps o),
     covered e (nh_vars_hyps H)
     -> pw_assign_eq lib s1 s2 H
-    -> cover_vars e s2.
+    -> cover_nout_vars e s2.
 Proof.
   introv cv pw; sp; allsimpl.
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   allapply @pw_assign_eq_dom; sp; allrw <-.
   apply covered_subvars with (vs1 := nh_vars_hyps H); sp.
 Qed.
@@ -4410,18 +4498,18 @@ Qed.
  *)
 
 Definition KC_sequent_true {o} lib (S : @csequent o) : Type :=
-  forall s1 s2 : CSubstitution,
+  forall s1 s2 : CNSubstitution,
     match destruct_csequent S with
-      | cseq_comps H T wh wt ct ec =>
+      | cseq_comps H T wh wt nt ct ec =>
           forall p : pw_assign_eq lib s1 s2 H,
-            tequality lib (lsubstc T wt s1 (scover_typ1 lib T s1 s2 H ct p))
-                      (lsubstc T wt s2 (scover_typ2 lib T s1 s2 H ct p))
+            tequality lib (lsubstcn T wt nt s1 (scover_typ1 lib T s1 s2 H ct p))
+                      (lsubstcn T wt nt s2 (scover_typ2 lib T s1 s2 H ct p))
             #
             match ec with
-              | Some (existT _ ext (we, ce)) =>
-                  equality lib (lsubstc ext we s1 (scover_ex1 lib ext s1 s2 H ce p))
-                           (lsubstc ext we s2 (scover_ex2 lib ext s1 s2 H ce p))
-                           (lsubstc T wt s1 (scover_typ1 lib T s1 s2 H ct p))
+              | Some (existT _ ext (we, (ne, ce))) =>
+                  equality lib (lsubstcn ext we ne s1 (scover_ex1 lib ext s1 s2 H ce p))
+                           (lsubstcn ext we ne s2 (scover_ex2 lib ext s1 s2 H ce p))
+                           (lsubstcn T wt nt s1 (scover_typ1 lib T s1 s2 H ct p))
               | None => True
             end
     end.
@@ -4432,62 +4520,62 @@ Lemma KC_sequent_true_all {o} :
   forall lib (S : @csequent o),
     KC_sequent_true lib S
     <=>
-    forall s1 s2 : CSubstitution,
+    forall s1 s2 : CNSubstitution,
       match destruct_csequent S with
-        | cseq_comps H T wh wt ct ec =>
+        | cseq_comps H T wh wt nt ct ec =>
             forall p : pw_assign_eq lib s1 s2 H,
-            forall pC1 : cover_vars T s1,
-            forall pC2 : cover_vars T s2,
+            forall pC1 : cover_nout_vars T s1,
+            forall pC2 : cover_nout_vars T s2,
               match ec with
-                | Some (existT _ ext (we, ce)) =>
-                    forall pt1 : cover_vars ext s1,
-                    forall pt2 : cover_vars ext s2,
-                      tequality lib (lsubstc T wt s1 pC1)
-                                (lsubstc T wt s2 pC2)
-                      # equality lib (lsubstc ext we s1 pt1)
-                                 (lsubstc ext we s2 pt2)
-                                 (lsubstc T wt s1 pC1)
-                | None => tequality lib (lsubstc T wt s1 pC1)
-                                    (lsubstc T wt s2 pC2)
+                | Some (existT _ ext (we, (ne, ce))) =>
+                    forall pt1 : cover_nout_vars ext s1,
+                    forall pt2 : cover_nout_vars ext s2,
+                      tequality lib (lsubstcn T wt nt s1 pC1)
+                                (lsubstcn T wt nt s2 pC2)
+                      # equality lib (lsubstcn ext we ne s1 pt1)
+                                 (lsubstcn ext we ne s2 pt2)
+                                 (lsubstcn T wt nt s1 pC1)
+                | None => tequality lib (lsubstcn T wt nt s1 pC1)
+                                    (lsubstcn T wt nt s2 pC2)
               end
       end.
 Proof.
   unfold KC_sequent_true; split; intro h;
   destruct (destruct_csequent S); destruct ec; exrepnd; intros; auto.
 
-  generalize (h s2 s3 p); intro equs.
+  generalize (h s3 s4 p); intro equs.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1) in equs; auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2) in equs; auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt1) in equs; auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt2) in equs; auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1) in equs; auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2) in equs; auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt1) in equs; auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt2) in equs; auto.
 
   generalize (h s1 s2 p); intro equs.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1) in equs; auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2) in equs; auto; sp.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1) in equs; auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2) in equs; auto; sp.
 Qed.
 
 Lemma KC_sequent_true_ex {o} :
   forall lib (S : @csequent o),
     KC_sequent_true lib S
     <=>
-    forall s1 s2 : CSubstitution,
+    forall s1 s2 : CNSubstitution,
       match destruct_csequent S with
-        | cseq_comps H T wh wt ct ec =>
+        | cseq_comps H T wh wt nt ct ec =>
             forall p : pw_assign_eq lib s1 s2 H,
-              {pC1 : cover_vars T s1
-               & {pC2 : cover_vars T s2
-               & tequality lib (lsubstc T wt s1 pC1)
-                           (lsubstc T wt s2 pC2)
+              {pC1 : cover_nout_vars T s1
+               & {pC2 : cover_nout_vars T s2
+               & tequality lib (lsubstcn T wt nt s1 pC1)
+                           (lsubstcn T wt nt s2 pC2)
                  #
                  match ec with
-                    | Some (existT _ ext (we, ce)) =>
-                        {pt1 : cover_vars ext s1
-                          & {pt2 : cover_vars ext s2
-                             & equality lib (lsubstc ext we s1 pt1)
-                                        (lsubstc ext we s2 pt2)
-                                        (lsubstc T wt s1 pC1)}}
+                    | Some (existT _ ext (we, (ne, ce))) =>
+                        {pt1 : cover_nout_vars ext s1
+                          & {pt2 : cover_nout_vars ext s2
+                             & equality lib (lsubstcn ext we ne s1 pt1)
+                                        (lsubstcn ext we ne s2 pt2)
+                                        (lsubstcn T wt nt s1 pC1)}}
                     | None => True
                  end}}
                end.
@@ -4495,39 +4583,39 @@ Proof.
   unfold KC_sequent_true; split; intro h;
   destruct (destruct_csequent S); destruct ec; exrepnd; intros; auto.
 
-  generalize (h s2 s3 p); intros; clear h.
+  generalize (h s3 s4 p); intros; clear h.
 
-  exists (scover_typ1 lib T s2 s3 hs ct p)
-         (scover_typ2 lib T s2 s3 hs ct p); sp.
-  exists (scover_ex1 lib t s2 s3 hs s0 p)
-         (scover_ex2 lib t s2 s3 hs s0 p); sp.
+  exists (scover_typ1 lib T s3 s4 hs ct p)
+         (scover_typ2 lib T s3 s4 hs ct p); sp.
+  exists (scover_ex1 lib t s3 s4 hs s0 p)
+         (scover_ex2 lib t s3 s4 hs s0 p); sp.
 
   generalize (h s1 s2 p); intros; clear h.
 
   exists (scover_typ1 lib T s1 s2 hs ct p)
          (scover_typ2 lib T s1 s2 hs ct p); sp.
 
-  generalize (h s2 s3 p); intros; exrepd.
+  generalize (h s3 s4 p); intros; exrepd.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1); auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2); auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt1); auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt2); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2); auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt1); auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt2); auto.
 
   generalize (h s1 s2 p); intros; exrepd.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1); auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2); auto.
 Qed.
 
 Lemma s_cover_typ1 {o} :
   forall lib t s1 s2 (H : @bhyps o),
     covered t (vars_hyps H)
     -> similarity lib s1 s2 H
-    -> cover_vars t s1.
+    -> cover_nout_vars t s1.
 Proof.
   introv cv pw.
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   allapply @similarity_dom; sp; allrw; sp.
 Qed.
 
@@ -4535,10 +4623,10 @@ Lemma s_cover_typ2 {o} :
   forall lib t s1 s2 (H : @bhyps o),
     covered t (vars_hyps H)
     -> similarity lib s1 s2 H
-    -> cover_vars t s2.
+    -> cover_nout_vars t s2.
 Proof.
   introv cv pw.
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   allapply @similarity_dom; sp; allrw; sp.
 Qed.
 
@@ -4546,10 +4634,10 @@ Lemma s_cover_ex1 {o} :
   forall lib e s1 s2 (H : @bhyps o),
     covered e (nh_vars_hyps H)
     -> similarity lib s1 s2 H
-    -> cover_vars e s1.
+    -> cover_nout_vars e s1.
 Proof.
   introv cv pw; sp; allsimpl.
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   allapply @similarity_dom; sp; allrw.
   apply covered_subvars with (vs1 := nh_vars_hyps H); sp.
 Qed.
@@ -4558,10 +4646,10 @@ Lemma s_cover_ex2 {o} :
   forall lib e s1 s2 (H : @bhyps o),
     covered e (nh_vars_hyps H)
     -> similarity lib s1 s2 H
-    -> cover_vars e s2.
+    -> cover_nout_vars e s2.
 Proof.
   introv cv pw; sp; allsimpl.
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   allapply @similarity_dom; sp; allrw.
   apply covered_subvars with (vs1 := nh_vars_hyps H); sp.
 Qed.
@@ -4582,21 +4670,21 @@ Qed.
 Definition AN_sequent_true {o} lib (S : @csequent o) : Type :=
   forall s1,
     match destruct_csequent S with
-      | cseq_comps H T wh wt ct ec =>
+      | cseq_comps H T wh wt nt ct ec =>
           similarity lib s1 s1 H
           -> hyps_functionality lib s1 H
           -> forall s2,
              forall p : similarity lib s1 s2 H,
                tequality lib
-                 (lsubstc T wt s1 (s_cover_typ1 lib T s1 s2 H ct p))
-                 (lsubstc T wt s2 (s_cover_typ2 lib T s1 s2 H ct p))
+                 (lsubstcn T wt nt s1 (s_cover_typ1 lib T s1 s2 H ct p))
+                 (lsubstcn T wt nt s2 (s_cover_typ2 lib T s1 s2 H ct p))
                #
                match ec with
-                 | Some (existT _ ext (we, ce)) =>
+                 | Some (existT _ ext (we, (ne, ce))) =>
                      equality lib
-                       (lsubstc ext we s1 (s_cover_ex1 lib ext s1 s2 H ce p))
-                       (lsubstc ext we s2 (s_cover_ex2 lib ext s1 s2 H ce p))
-                       (lsubstc T wt s1 (s_cover_typ1 lib T s1 s2 H ct p))
+                       (lsubstcn ext we ne s1 (s_cover_ex1 lib ext s1 s2 H ce p))
+                       (lsubstcn ext we ne s2 (s_cover_ex2 lib ext s1 s2 H ce p))
+                       (lsubstcn T wt nt s1 (s_cover_typ1 lib T s1 s2 H ct p))
                  | None => True
                end
   end.
@@ -4615,18 +4703,18 @@ Definition AN_sequent_true {o} lib (S : @csequent o) : Type :=
 Definition VR_sequent_true {o} lib (S : @csequent o) : Type :=
   forall s1 s2,
     match destruct_csequent S with
-      | cseq_comps H T wh wt ct ec =>
+      | cseq_comps H T wh wt nt ct ec =>
           forall p : similarity lib s1 s2 H,
             hyps_functionality lib s1 H
             -> tequality lib
-                 (lsubstc T wt s1 (s_cover_typ1 lib T s1 s2 H ct p))
-                 (lsubstc T wt s2 (s_cover_typ2 lib T s1 s2 H ct p))
+                 (lsubstcn T wt nt s1 (s_cover_typ1 lib T s1 s2 H ct p))
+                 (lsubstcn T wt nt s2 (s_cover_typ2 lib T s1 s2 H ct p))
                # match ec with
-                   | Some (existT _ ext (we, ce)) =>
+                   | Some (existT _ ext (we, (ne, ce))) =>
                        equality lib
-                         (lsubstc ext we s1 (s_cover_ex1 lib ext s1 s2 H ce p))
-                         (lsubstc ext we s2 (s_cover_ex2 lib ext s1 s2 H ce p))
-                         (lsubstc T wt s1 (s_cover_typ1 lib T s1 s2 H ct p))
+                         (lsubstcn ext we ne s1 (s_cover_ex1 lib ext s1 s2 H ce p))
+                         (lsubstcn ext we ne s2 (s_cover_ex2 lib ext s1 s2 H ce p))
+                         (lsubstcn T wt nt s1 (s_cover_typ1 lib T s1 s2 H ct p))
                    | None => True
                  end
     end.
@@ -4637,16 +4725,16 @@ Definition VR_sequent_true {o} lib (S : @csequent o) : Type :=
 Definition AN_sequent_true_pairwise {o} lib (S : @csequent o) : Type :=
   forall s1 s2,
     match destruct_csequent S with
-      | cseq_comps H T wh wt ct ec =>
+      | cseq_comps H T wh wt nt ct ec =>
           forall p : similarity lib s1 s2 H,
             eq_hyps lib s1 s2 H
-            -> tequality lib (lsubstc T wt s1 (s_cover_typ1 lib T s1 s2 H ct p))
-                         (lsubstc T wt s2 (s_cover_typ2 lib T s1 s2 H ct p))
+            -> tequality lib (lsubstcn T wt nt s1 (s_cover_typ1 lib T s1 s2 H ct p))
+                         (lsubstcn T wt nt s2 (s_cover_typ2 lib T s1 s2 H ct p))
                # match ec with
-                   | Some (existT _ ext (we, ce)) =>
-                       equality lib (lsubstc ext we s1 (s_cover_ex1 lib ext s1 s2 H ce p))
-                                (lsubstc ext we s2 (s_cover_ex2 lib ext s1 s2 H ce p))
-                                (lsubstc T wt s1 (s_cover_typ1 lib T s1 s2 H ct p))
+                   | Some (existT _ ext (we, (ne, ce))) =>
+                       equality lib (lsubstcn ext we ne s1 (s_cover_ex1 lib ext s1 s2 H ce p))
+                                (lsubstcn ext we ne s2 (s_cover_ex2 lib ext s1 s2 H ce p))
+                                (lsubstcn T wt nt s1 (s_cover_typ1 lib T s1 s2 H ct p))
                    | None => True
                  end
     end.
@@ -4655,10 +4743,10 @@ Lemma s_cover_typ_1 {o} :
   forall lib t s1 s2 (H : @bhyps o),
     covered t (vars_hyps H)
     -> eqhyps lib s1 s2 H
-    -> cover_vars t s1.
+    -> cover_nout_vars t s1.
 Proof.
   introv cv pw.
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   allapply @eqhyps_dom; sp; allrw; sp.
 Qed.
 
@@ -4666,10 +4754,10 @@ Lemma s_cover_typ_2 {o} :
   forall lib t s1 s2 (H : @bhyps o),
     covered t (vars_hyps H)
     -> eqhyps lib s1 s2 H
-    -> cover_vars t s2.
+    -> cover_nout_vars t s2.
 Proof.
   introv cv pw.
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   allapply @eqhyps_dom; sp; allrw; sp.
 Qed.
 
@@ -4677,10 +4765,10 @@ Lemma s_cover_ex_1 {o} :
   forall lib e s1 s2 (H : @bhyps o),
     covered e (nh_vars_hyps H)
     -> eqhyps lib s1 s2 H
-    -> cover_vars e s1.
+    -> cover_nout_vars e s1.
 Proof.
   introv cv pw; sp; allsimpl.
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   allapply @eqhyps_dom; sp; allrw.
   apply covered_subvars with (vs1 := nh_vars_hyps H); sp.
 Qed.
@@ -4689,10 +4777,10 @@ Lemma s_cover_ex_2 {o} :
   forall lib e s1 s2 (H : @bhyps o),
     covered e (nh_vars_hyps H)
     -> eqhyps lib s1 s2 H
-    -> cover_vars e s2.
+    -> cover_nout_vars e s2.
 Proof.
   introv cv pw; sp; allsimpl.
-  rw @cover_vars_covered.
+  rw @cover_nout_vars_covered.
   allapply @eqhyps_dom; sp; allrw.
   apply covered_subvars with (vs1 := nh_vars_hyps H); sp.
 Qed.
@@ -4701,15 +4789,15 @@ Qed.
 Definition AN_sp_sequent_true {o} lib (S : @csequent o) : Type :=
   forall s1 s2,
     match destruct_csequent S with
-      | cseq_comps H T wh wt ct ec =>
+      | cseq_comps H T wh wt nt ct ec =>
           forall p : eqhyps lib s1 s2 H,
-            tequality lib (lsubstc T wt s1 (s_cover_typ_1 lib T s1 s2 H ct p))
-                      (lsubstc T wt s2 (s_cover_typ_2 lib T s1 s2 H ct p))
+            tequality lib (lsubstcn T wt nt s1 (s_cover_typ_1 lib T s1 s2 H ct p))
+                      (lsubstcn T wt nt s2 (s_cover_typ_2 lib T s1 s2 H ct p))
             # match ec with
-                | Some (existT _ ext (we, ce)) =>
-                    equality lib (lsubstc ext we s1 (s_cover_ex_1 lib ext s1 s2 H ce p))
-                             (lsubstc ext we s2 (s_cover_ex_2 lib ext s1 s2 H ce p))
-                             (lsubstc T wt s1 (s_cover_typ_1 lib T s1 s2 H ct p))
+                | Some (existT _ ext (we, (ne, ce))) =>
+                    equality lib (lsubstcn ext we ne s1 (s_cover_ex_1 lib ext s1 s2 H ce p))
+                             (lsubstcn ext we ne s2 (s_cover_ex_2 lib ext s1 s2 H ce p))
+                             (lsubstcn T wt nt s1 (s_cover_typ_1 lib T s1 s2 H ct p))
                 | None => True
               end
     end.
@@ -4720,24 +4808,24 @@ Lemma AN_sequent_true_all {o} :
     <=>
     forall s1,
       match destruct_csequent S with
-        | cseq_comps H T wh wt ct ec =>
+        | cseq_comps H T wh wt nt ct ec =>
               similarity lib s1 s1 H
               -> hyps_functionality lib s1 H
               -> forall s2,
-                 forall pC1 : cover_vars T s1,
-                 forall pC2 : cover_vars T s2,
+                 forall pC1 : cover_nout_vars T s1,
+                 forall pC2 : cover_nout_vars T s2,
                    similarity lib s1 s2 H
                    -> match ec with
-                        | Some (existT _ ext (we, ce)) =>
-                            forall pt1 : cover_vars ext s1,
-                            forall pt2 : cover_vars ext s2,
-                              tequality lib (lsubstc T wt s1 pC1)
-                                        (lsubstc T wt s2 pC2)
-                              # equality lib (lsubstc ext we s1 pt1)
-                                         (lsubstc ext we s2 pt2)
-                                         (lsubstc T wt s1 pC1)
-                        | None => tequality lib (lsubstc T wt s1 pC1)
-                                            (lsubstc T wt s2 pC2)
+                        | Some (existT _ ext (we, (ne, ce))) =>
+                            forall pt1 : cover_nout_vars ext s1,
+                            forall pt2 : cover_nout_vars ext s2,
+                              tequality lib (lsubstcn T wt nt s1 pC1)
+                                        (lsubstcn T wt nt s2 pC2)
+                              # equality lib (lsubstcn ext we ne s1 pt1)
+                                         (lsubstcn ext we ne s2 pt2)
+                                         (lsubstcn T wt nt s1 pC1)
+                        | None => tequality lib (lsubstcn T wt nt s1 pC1)
+                                            (lsubstcn T wt nt s2 pC2)
                       end
       end.
 Proof.
@@ -4745,19 +4833,19 @@ Proof.
   destruct (destruct_csequent S); destruct ec; exrepnd; introv sim hf; auto.
 
   introv sim2; introv.
-  generalize (h s2); clear h; introv hyp; repd.
-  apply hyp with (s3 := s3) (p := sim2) in hf; auto.
+  generalize (h s3); clear h; introv hyp; repd.
+  apply hyp with (s4 := s4) (p := sim2) in hf; auto.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1) in hf; auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2) in hf; auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt1) in hf; auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt2) in hf; auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1) in hf; auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2) in hf; auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt1) in hf; auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt2) in hf; auto.
 
   generalize (h s1); clear h; introv hyp sim2; repd.
   apply hyp with (s2 := s2) (p := sim2) in hf; auto.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1) in hf; auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2) in hf; auto; sp.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1) in hf; auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2) in hf; auto; sp.
 Qed.
 
 Lemma AN_sequent_true_ex {o} :
@@ -4766,23 +4854,23 @@ Lemma AN_sequent_true_ex {o} :
     <=>
     forall s1,
       match destruct_csequent S with
-        | cseq_comps H T wh wt ct ec =>
+        | cseq_comps H T wh wt nt ct ec =>
               similarity lib s1 s1 H
               -> hyps_functionality lib s1 H
               -> forall s2,
                    similarity lib s1 s2 H
-                   -> {pC1 : cover_vars T s1
-                       & {pC2 : cover_vars T s2
-                          & tequality lib (lsubstc T wt s1 pC1)
-                                      (lsubstc T wt s2 pC2)
+                   -> {pC1 : cover_nout_vars T s1
+                       & {pC2 : cover_nout_vars T s2
+                          & tequality lib (lsubstcn T wt nt s1 pC1)
+                                      (lsubstcn T wt nt s2 pC2)
                             #
                             match ec with
-                              | Some (existT _ ext (we, ce)) =>
-                                  {pt1 : cover_vars ext s1
-                                   & {pt2 : cover_vars ext s2
-                                      & equality lib (lsubstc ext we s1 pt1)
-                                                 (lsubstc ext we s2 pt2)
-                                                 (lsubstc T wt s1 pC1)}}
+                              | Some (existT _ ext (we, (ne, ce))) =>
+                                  {pt1 : cover_nout_vars ext s1
+                                   & {pt2 : cover_nout_vars ext s2
+                                      & equality lib (lsubstcn ext we ne s1 pt1)
+                                                 (lsubstcn ext we ne s2 pt2)
+                                                 (lsubstcn T wt nt s1 pC1)}}
                               | None => True
                             end}}
       end.
@@ -4791,13 +4879,13 @@ Proof.
   destruct (destruct_csequent S); destruct ec; exrepnd; introv sim hf; introv; auto.
 
   introv sim2.
-  generalize (h s2); intros hyp; clear h.
-  apply hyp with (s3 := s3) (p := sim2) in hf; auto.
+  generalize (h s3); intros hyp; clear h.
+  apply hyp with (s4 := s4) (p := sim2) in hf; auto.
 
-  exists (s_cover_typ1 lib T s2 s3 hs ct sim2)
-         (s_cover_typ2 lib T s2 s3 hs ct sim2); sp.
-  exists (s_cover_ex1 lib t s2 s3 hs s0 sim2)
-         (s_cover_ex2 lib t s2 s3 hs s0 sim2); sp.
+  exists (s_cover_typ1 lib T s3 s4 hs ct sim2)
+         (s_cover_typ2 lib T s3 s4 hs ct sim2); sp.
+  exists (s_cover_ex1 lib t s3 s4 hs s0 sim2)
+         (s_cover_ex2 lib t s3 s4 hs s0 sim2); sp.
 
   introv sim2.
   generalize (h s1); intro hyp; clear h.
@@ -4806,19 +4894,19 @@ Proof.
   exists (s_cover_typ1 lib T s1 s2 hs ct sim2)
          (s_cover_typ2 lib T s1 s2 hs ct sim2); sp.
 
-  generalize (h s2); intro hyp.
-  apply hyp with (s3 := s3) in hf; exrepd; auto.
+  generalize (h s3); intro hyp.
+  apply hyp with (s4 := s4) in hf; exrepd; auto.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1); auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2); auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt1); auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt2); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2); auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt1); auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt2); auto.
 
   generalize (h s1); intro hyp.
   apply hyp with (s2 := s2) in hf; exrepd; auto.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1); auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2); auto.
 Qed.
 
 Lemma VR_sequent_true_all {o} :
@@ -4827,22 +4915,22 @@ Lemma VR_sequent_true_all {o} :
     <=>
     forall s1 s2,
       match destruct_csequent S with
-        | cseq_comps H T wh wt ct ec =>
-            forall pC1 : cover_vars T s1,
-            forall pC2 : cover_vars T s2,
+        | cseq_comps H T wh wt nt ct ec =>
+            forall pC1 : cover_nout_vars T s1,
+            forall pC2 : cover_nout_vars T s2,
               similarity lib s1 s2 H
               -> hyps_functionality lib s1 H
               -> match ec with
-                   | Some (existT _ ext (we, ce)) =>
-                       forall pt1 : cover_vars ext s1,
-                       forall pt2 : cover_vars ext s2,
-                         tequality lib (lsubstc T wt s1 pC1)
-                                   (lsubstc T wt s2 pC2)
-                         # equality lib (lsubstc ext we s1 pt1)
-                                    (lsubstc ext we s2 pt2)
-                                    (lsubstc T wt s1 pC1)
-                   | None => tequality lib (lsubstc T wt s1 pC1)
-                                       (lsubstc T wt s2 pC2)
+                   | Some (existT _ ext (we, (ne, ce))) =>
+                       forall pt1 : cover_nout_vars ext s1,
+                       forall pt2 : cover_nout_vars ext s2,
+                         tequality lib (lsubstcn T wt nt s1 pC1)
+                                   (lsubstcn T wt nt s2 pC2)
+                         # equality lib (lsubstcn ext we ne s1 pt1)
+                                    (lsubstcn ext we ne s2 pt2)
+                                    (lsubstcn T wt nt s1 pC1)
+                   | None => tequality lib (lsubstcn T wt nt s1 pC1)
+                                       (lsubstcn T wt nt s2 pC2)
                  end
       end.
 Proof.
@@ -4850,19 +4938,19 @@ Proof.
   destruct (destruct_csequent S); destruct ec; exrepnd; introv sim; auto; introv hf.
 
   introv.
-  generalize (h s2 s3 sim); clear h; intro hyp; repd.
+  generalize (h s3 s4 sim); clear h; intro hyp; repd.
   apply hyp in hf.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1) in hf; auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2) in hf; auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt1) in hf; auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt2) in hf; auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1) in hf; auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2) in hf; auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt1) in hf; auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt2) in hf; auto.
 
   generalize (h s1 s2 sim); clear h; intro hyp; repd.
   apply hyp in hf.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1) in hf; auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2) in hf; auto; sp.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1) in hf; auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2) in hf; auto; sp.
 Qed.
 
 Lemma VR_sequent_true_ex {o} :
@@ -4871,21 +4959,21 @@ Lemma VR_sequent_true_ex {o} :
     <=>
     forall s1 s2,
       match destruct_csequent S with
-        | cseq_comps H T wh wt ct ec =>
+        | cseq_comps H T wh wt nt ct ec =>
               hyps_functionality lib s1 H
               -> similarity lib s1 s2 H
-              -> {pC1 : cover_vars T s1
-                  & {pC2 : cover_vars T s2
-                     & tequality lib (lsubstc T wt s1 pC1)
-                                 (lsubstc T wt s2 pC2)
+              -> {pC1 : cover_nout_vars T s1
+                  & {pC2 : cover_nout_vars T s2
+                     & tequality lib (lsubstcn T wt nt s1 pC1)
+                                 (lsubstcn T wt nt s2 pC2)
                        #
                        match ec with
-                         | Some (existT _ ext (we, ce)) =>
-                             {pt1 : cover_vars ext s1
-                               & {pt2 : cover_vars ext s2
-                                  & equality lib (lsubstc ext we s1 pt1)
-                                             (lsubstc ext we s2 pt2)
-                                             (lsubstc T wt s1 pC1)}}
+                         | Some (existT _ ext (we, (ne, ce))) =>
+                             {pt1 : cover_nout_vars ext s1
+                               & {pt2 : cover_nout_vars ext s2
+                                  & equality lib (lsubstcn ext we ne s1 pt1)
+                                             (lsubstcn ext we ne s2 pt2)
+                                             (lsubstcn T wt nt s1 pC1)}}
                          | None => True
                        end}}
       end.
@@ -4894,13 +4982,13 @@ Proof.
   destruct (destruct_csequent S); destruct ec; exrepnd; introv hf; auto.
 
   intro sim.
-  generalize (h s2 s3 sim); intro hyp; clear h.
+  generalize (h s3 s4 sim); intro hyp; clear h.
   apply hyp in hf.
 
-  exists (s_cover_typ1 lib T s2 s3 hs ct sim)
-         (s_cover_typ2 lib T s2 s3 hs ct sim); sp.
-  exists (s_cover_ex1 lib t s2 s3 hs s0 sim)
-         (s_cover_ex2 lib t s2 s3 hs s0 sim); sp.
+  exists (s_cover_typ1 lib T s3 s4 hs ct sim)
+         (s_cover_typ2 lib T s3 s4 hs ct sim); sp.
+  exists (s_cover_ex1 lib t s3 s4 hs s0 sim)
+         (s_cover_ex2 lib t s3 s4 hs s0 sim); sp.
 
   intro sim.
   generalize (h s1 s2 sim); intro hyp; clear h.
@@ -4909,19 +4997,19 @@ Proof.
   exists (s_cover_typ1 lib T s1 s2 hs ct sim)
          (s_cover_typ2 lib T s1 s2 hs ct sim); sp.
 
-  generalize (h s2 s3); intro hyp.
+  generalize (h s3 s4); intro hyp.
   repeat (dest_imp hyp hyp'); exrepnd.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1); auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2); auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt1); auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt2); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2); auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt1); auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt2); auto.
 
   generalize (h s1 s2); intro hyp.
   repeat (dest_imp hyp hyp'); exrepnd.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1); auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2); auto.
 Qed.
 
 Lemma AN_sp_sequent_true_all {o} :
@@ -4930,38 +5018,38 @@ Lemma AN_sp_sequent_true_all {o} :
     <=>
     forall s1 s2,
     match destruct_csequent S with
-      | cseq_comps H T wh wt ct ec =>
+      | cseq_comps H T wh wt nt ct ec =>
           forall p : eqhyps lib s1 s2 H,
-          forall pC1 : cover_vars T s1,
-          forall pC2 : cover_vars T s2,
+          forall pC1 : cover_nout_vars T s1,
+          forall pC2 : cover_nout_vars T s2,
             match ec with
-              | Some (existT _ ext (we, ce)) =>
-                  forall pt1 : cover_vars ext s1,
-                  forall pt2 : cover_vars ext s2,
-                    tequality lib (lsubstc T wt s1 pC1)
-                              (lsubstc T wt s2 pC2)
-                    # equality lib (lsubstc ext we s1 pt1)
-                               (lsubstc ext we s2 pt2)
-                               (lsubstc T wt s1 pC1)
-              | None => tequality lib (lsubstc T wt s1 pC1)
-                                  (lsubstc T wt s2 pC2)
+              | Some (existT _ ext (we, (ne, ce))) =>
+                  forall pt1 : cover_nout_vars ext s1,
+                  forall pt2 : cover_nout_vars ext s2,
+                    tequality lib (lsubstcn T wt nt s1 pC1)
+                              (lsubstcn T wt nt s2 pC2)
+                    # equality lib (lsubstcn ext we ne s1 pt1)
+                               (lsubstcn ext we ne s2 pt2)
+                               (lsubstcn T wt nt s1 pC1)
+              | None => tequality lib (lsubstcn T wt nt s1 pC1)
+                                  (lsubstcn T wt nt s2 pC2)
             end
     end.
 Proof.
   unfold AN_sp_sequent_true; split; intro h;
   destruct (destruct_csequent S); destruct ec; exrepnd; introv; auto; introv eqh; introv.
 
-  generalize (h s2 s3 eqh); intro equs.
+  generalize (h s3 s4 eqh); intro equs.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1) in equs; auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2) in equs; auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt1) in equs; auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt2) in equs; auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1) in equs; auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2) in equs; auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt1) in equs; auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt2) in equs; auto.
 
   generalize (h s1 s2 eqh); intro equs.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1) in equs; auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2) in equs; auto; sp.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1) in equs; auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2) in equs; auto; sp.
 Qed.
 
 Lemma AN_sp_sequent_true_ex {o} :
@@ -4970,20 +5058,20 @@ Lemma AN_sp_sequent_true_ex {o} :
     <=>
     forall s1 s2,
     match destruct_csequent S with
-      | cseq_comps H T wh wt ct ec =>
+      | cseq_comps H T wh wt nt ct ec =>
           forall p : eqhyps lib s1 s2 H,
-            {pC1 : cover_vars T s1
-             & {pC2 : cover_vars T s2
-                & tequality lib (lsubstc T wt s1 pC1)
-                            (lsubstc T wt s2 pC2)
+            {pC1 : cover_nout_vars T s1
+             & {pC2 : cover_nout_vars T s2
+                & tequality lib (lsubstcn T wt nt s1 pC1)
+                            (lsubstcn T wt nt s2 pC2)
                   #
                   match ec with
-                    | Some (existT _ ext (we, ce)) =>
-                        {pt1 : cover_vars ext s1
-                      & {pt2 : cover_vars ext s2
-                      & equality lib (lsubstc ext we s1 pt1)
-                                 (lsubstc ext we s2 pt2)
-                                 (lsubstc T wt s1 pC1)}}
+                    | Some (existT _ ext (we, (ne, ce))) =>
+                        {pt1 : cover_nout_vars ext s1
+                      & {pt2 : cover_nout_vars ext s2
+                      & equality lib (lsubstcn ext we ne s1 pt1)
+                                 (lsubstcn ext we ne s2 pt2)
+                                 (lsubstcn T wt nt s1 pC1)}}
                     | None => True
                   end}}
     end.
@@ -4992,12 +5080,12 @@ Proof.
   destruct (destruct_csequent S); destruct ec; exrepnd; introv; auto.
 
   intro eqh.
-  generalize (h s2 s3 eqh); sp.
+  generalize (h s3 s4 eqh); sp.
 
-  exists (s_cover_typ_1 lib T s2 s3 hs ct eqh)
-         (s_cover_typ_2 lib T s2 s3 hs ct eqh); sp.
-  exists (s_cover_ex_1 lib t s2 s3 hs s0 eqh)
-         (s_cover_ex_2 lib t s2 s3 hs s0 eqh); sp.
+  exists (s_cover_typ_1 lib T s3 s4 hs ct eqh)
+         (s_cover_typ_2 lib T s3 s4 hs ct eqh); sp.
+  exists (s_cover_ex_1 lib t s3 s4 hs s0 eqh)
+         (s_cover_ex_2 lib t s3 s4 hs s0 eqh); sp.
 
   intro eqh.
   generalize (h s1 s2 eqh); sp.
@@ -5005,17 +5093,17 @@ Proof.
   exists (s_cover_typ_1 lib T s1 s2 hs ct eqh)
          (s_cover_typ_2 lib T s1 s2 hs ct eqh); sp.
 
-  generalize (h s2 s3 p); intros; exrepd.
+  generalize (h s3 s4 p); intros; exrepd.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1); auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2); auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt1); auto.
-  rewrite lsubstc_replace with (w2 := s1) (p2 := pt2); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2); auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt1); auto.
+  rewrite lsubstcn_replace with (w2 := s1) (n2 := s2) (p2 := pt2); auto.
 
   generalize (h s1 s2 p); intros; exrepd.
 
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC1); auto.
-  rewrite lsubstc_replace with (w2 := wt) (p2 := pC2); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC1); auto.
+  rewrite lsubstcn_replace with (w2 := wt) (n2 := nt) (p2 := pC2); auto.
 Qed.
 
 Lemma AN_sp_sequent_true_implies_AN {o} :
@@ -5074,8 +5162,8 @@ Qed.
 Lemma equal_terms_in_hyps_implies_similarity {o} :
   forall lib (hs : @bhyps o) s ts,
     length ts = length hs
-    -> vars_hyps hs = dom_csub s
-    -> equal_terms_in_hyps lib (crange s) ts hs
+    -> vars_hyps hs = dom_cnsub s
+    -> equal_terms_in_hyps lib (cnrange s) ts hs
     -> similarity lib s (mk_hs_subst ts hs) hs.
 Proof.
   induction hs using rev_list_indT; simpl; introv leq vheq e; sp; cpx.
@@ -5085,22 +5173,22 @@ Proof.
 
   inversion e; subst; cpx.
   allrewrite @vars_hyps_snoc.
-  generalize (snoc_cases (NVar * CTerm) s); sp; subst; allsimpl; cpx.
-  allrewrite @crange_snoc.
-  allrewrite @dom_csub_snoc; cpx; allsimpl; subst.
+  generalize (snoc_cases (NVar * cterm) s); sp; subst; allsimpl; cpx.
+  allrewrite @cnrange_snoc.
+  allrewrite @dom_cnsub_snoc; cpx; allsimpl; subst.
   rewrite mk_hs_subst_snoc; sp.
 
   apply IHhs in eqt; auto.
 
   duplicate p as p'.
   (* rw does not work here? *)
-  apply cover_vars_sub in p; sp.
+  apply cover_nout_vars_sub in p; sp.
 
-  apply @sim_cons with (w := w) (p := p); sp.
+  apply @sim_cons with (w := w) (n := n) (p := p); sp.
 
-  assert (lsubstc (htyp a) w (mk_hs_subst (crange k) hs) p'
-          = lsubstc (htyp a) w k p) as eq.
-  apply lsubstc_eq; auto.
+  assert (lsubstcn (htyp a) w n (mk_hs_subst (cnrange k) hs) p'
+          = lsubstcn (htyp a) w n k p) as eq.
+  apply lsubstcn_eq; auto.
   apply mk_hs_subst_crange; auto.
   rewrite eq in e0; auto.
 Qed.
@@ -5109,7 +5197,7 @@ Lemma similarity_implies_equal_terms_in_hyps {o} :
   forall lib (hs : @bhyps o) s ts,
     length ts = length hs
     -> similarity lib (mk_hs_subst ts hs) s hs
-    -> equal_terms_in_hyps lib ts (crange s) hs.
+    -> equal_terms_in_hyps lib ts (cnrange s) hs.
 Proof.
   induction hs using rev_list_indT; simpl; introv leq sim; cpx;
   inversion sim; subst; allsimpl; sp; cpx.
@@ -5117,38 +5205,38 @@ Proof.
   rev_list_dest ts; cpx.
   rw @mk_hs_subst_snoc in sim; cpx.
   onerw @mk_hs_subst_snoc; cpx.
-  rewrite crange_snoc; simpl.
+  rewrite cnrange_snoc; simpl.
   inversion sim; cpx; clear_irr.
 
   apply IHhs in sim0; sp.
-  apply @EqInHyps_cons with (w := w) (p := p); sp.
+  apply @EqInHyps_cons with (w := w) (n := n) (p := p); sp.
 Qed.
 
 Lemma pw_assign_eq_implies_hyps_true_at {o} :
   forall lib (hs : @bhyps o) s1 s2,
     pw_assign_eq lib s1 s2 hs
-    -> hyps_true_at lib hs (crange s1).
+    -> hyps_true_at lib hs (cnrange s1).
 Proof.
   induction hs using rev_list_indT; simpl; introv pw;
   inversion pw; subst; allsimpl; cpx.
 
-  rewrite crange_snoc; simpl.
+  rewrite cnrange_snoc; simpl.
   allapplydup IHhs.
   allapplydup @pw_assign_eq_dom; sp.
   duplicate p as p0.
-  apply @cover_vars_sub with (hs := hs) in p; sp.
+  apply @cover_nout_vars_sub with (hs := hs) in p; sp.
 
-  apply @InHyp_cons with (w := w) (p := p); sp.
+  apply @InHyp_cons with (w := w) (n := n) (p := p); sp.
 
-  assert (lsubstc (htyp a) w (mk_hs_subst (crange s0) hs) p
-          = lsubstc (htyp a) w s0 p0)
-    by (apply lsubstc_eq; sp; apply mk_hs_subst_crange; sp).
+  assert (lsubstcn (htyp a) w n (mk_hs_subst (cnrange s0) hs) p
+          = lsubstcn (htyp a) w n s0 p0)
+    by (apply lsubstcn_eq; sp; apply mk_hs_subst_crange; sp).
 
   allrw; allapply @equality_refl; sp.
 
-  assert (lsubstc (htyp a) w (mk_hs_subst (crange s0) hs) p
-          = lsubstc (htyp a) w s0 p0)
-    by (apply lsubstc_eq; sp; apply mk_hs_subst_crange; sp).
+  assert (lsubstcn (htyp a) w n (mk_hs_subst (cnrange s0) hs) p
+          = lsubstcn (htyp a) w n s0 p0)
+    by (apply lsubstcn_eq; sp; apply mk_hs_subst_crange; sp).
   allrw.
 
   apply hf.
@@ -5159,24 +5247,24 @@ Qed.
 Lemma pw_assign_eq_implies_equal_terms_in_hyps {o} :
   forall lib (hs : @bhyps o) s1 s2,
     pw_assign_eq lib s1 s2 hs
-    -> equal_terms_in_hyps lib (crange s1) (crange s2) hs.
+    -> equal_terms_in_hyps lib (cnrange s1) (cnrange s2) hs.
 Proof.
   induction hs using rev_list_indT; simpl; introv pw;
   inversion pw; subst; allsimpl; cpx.
 
   allapplydup IHhs.
-  repeat (rewrite crange_snoc); allsimpl.
+  repeat (rewrite cnrange_snoc); allsimpl.
 
   allapplydup @pw_assign_eq_dom; sp.
 
   duplicate p as p0.
-  apply @cover_vars_sub with (hs := hs) in p; sp.
+  apply @cover_nout_vars_sub with (hs := hs) in p; sp.
 
-  apply @EqInHyps_cons with (w := w) (p := p); sp.
+  apply @EqInHyps_cons with (w := w) (n := n) (p := p); sp.
 
-  assert (lsubstc (htyp a) w s0 p0
-          = lsubstc (htyp a) w (mk_hs_subst (crange s0) hs) p).
-  apply lsubstc_eq; sp.
+  assert (lsubstcn (htyp a) w n s0 p0
+          = lsubstcn (htyp a) w n (mk_hs_subst (cnrange s0) hs) p).
+  apply lsubstcn_eq; sp.
   rewrite mk_hs_subst_crange; sp.
   rewrite <- H; sp.
 Qed.
@@ -5194,29 +5282,29 @@ Proof.
   repeat (rewrite mk_hs_subst_snoc); sp.
   inversion hta; cpx.
 
-  apply @pw_eq_cons with (w := w) (p := p); sp.
+  apply @pw_eq_cons with (w := w) (n := n) (p := p); sp.
 
-  assert (cover_vars (htyp a) (mk_hs_subst (crange s') hs)) as c1
+  assert (cover_nout_vars (htyp a) (mk_hs_subst (cnrange s') hs)) as c1
     by (allapply @similarity_length; repd;
         clear_dependents p0;
-        apply cover_vars_mk_hs_subst in p0; sp;
-        apply cover_vars_mk_hs_subst; auto;
-        try (rewrite crange_length; sp)).
+        apply cover_nout_vars_mk_hs_subst in p0; sp;
+        apply cover_nout_vars_mk_hs_subst; auto;
+        try (rewrite cnrange_length; sp)).
 
-  generalize (hf (crange s') c1); intro eqtyp.
+  generalize (hf (cnrange s') c1); intro eqtyp.
   dest_imp eqtyp hyp.
   apply similarity_implies_equal_terms_in_hyps; sp.
 
-  assert (lsubstc (htyp a) w0 (mk_hs_subst (crange s') hs) c1
-          = lsubstc (htyp a) w s' p') as leq.
-  apply lsubstc_eq; sp.
+  assert (lsubstcn (htyp a) w0 n0 (mk_hs_subst (cnrange s') hs) c1
+          = lsubstcn (htyp a) w n s' p') as leq.
+  apply lsubstcn_eq; sp.
   apply mk_hs_subst_crange.
   allapply @similarity_dom; sp.
   rewrite leq in eqtyp.
 
-  assert (lsubstc (htyp a) w0 (mk_hs_subst ts0 hs) p0
-          = lsubstc (htyp a) w (mk_hs_subst ts0 hs) p) as leq2.
-  apply lsubstc_eq; sp.
+  assert (lsubstcn (htyp a) w0 n0 (mk_hs_subst ts0 hs) p0
+          = lsubstcn (htyp a) w n (mk_hs_subst ts0 hs) p) as leq2.
+  apply lsubstcn_eq; sp.
   rewrite leq2 in eqtyp; sp.
 Qed.
 
@@ -5231,11 +5319,11 @@ Proof.
 
   applydup IHhs in eqh0; sp.
 
-  apply @pw_eq_cons with (w := w) (p := p1); sp.
+  apply @pw_eq_cons with (w := w) (n := n) (p := p1); sp.
 
   generalize (hf (snoc s' (hvar a, t2))); intro eqhyp.
   dest_imp eqhyp hyp.
-  apply @sim_cons with (w := w) (p := p1); sp.
+  apply @sim_cons with (w := w) (n := n) (p := p1); sp.
   inversion eqhyp; cpx.
   clear_irr; sp.
 
@@ -5243,7 +5331,7 @@ Proof.
 
   generalize (hf (snoc s' (hvar a, t2))); intro eqhyp.
   dest_imp eqhyp typ.
-  apply @sim_cons with (w := w) (p := p1); sp.
+  apply @sim_cons with (w := w) (n := n) (p := p1); sp.
   inversion eqhyp; cpx.
 Qed.
 
@@ -5255,7 +5343,7 @@ Proof.
   induction hs using rev_list_indT; simpl; introv pw;
   inversion pw; subst; allsimpl; cpx.
   allapplydup IHhs; sp.
-  apply @sim_cons with (w := w) (p := p); sp.
+  apply @sim_cons with (w := w) (n := n) (p := p); sp.
 Qed.
 
 Lemma pw_assign_eq_implies_hyps_functionality {o} :
@@ -5269,15 +5357,15 @@ Proof.
   introv sim.
   rev_list_dest s'; inversion sim; cpx; clear_irr.
 
-  assert (cover_vars (htyp a) u) as c'
-    by (apply similarity_cover_vars with (t := htyp a) in sim0; sp).
+  assert (cover_nout_vars (htyp a) u) as c'
+    by (apply similarity_cover_nout_vars with (t := htyp a) in sim0; sp).
 
   duplicate sim0 as sim1.
   apply hf with (p' := c') in sim1.
 
   duplicate pw0 as pw1.
   apply IHhs in pw1; sp.
-  apply @eq_hyps_cons with (w := w) (p1 := p) (p2 := c'); auto.
+  apply @eq_hyps_cons with (w := w) (n := n) (p1 := p) (p2 := c'); auto.
 Qed.
 
 (* end hide *)
@@ -5299,13 +5387,13 @@ Proof.
 
   - Case "->".
     rw @KC_sequent_true_all; simpl; intros.
-    generalize (X (crange s1)); intros imp.
+    generalize (X (cnrange s1)); intros imp.
     dest_imp imp hyp.
-    unfold crange; rewrite map_length.
+    unfold cnrange; rewrite map_length.
     allapply @pw_assign_eq_length; sp.
 
     rw @sequent_true_at_ex in imp; allsimpl.
-    generalize (imp (crange s2)); clear imp; intro imp.
+    generalize (imp (cnrange s2)); clear imp; intro imp.
     dest_imp imp hyp.
     apply @pw_assign_eq_implies_hyps_true_at with (s2 := s2); auto.
 
@@ -5384,11 +5472,12 @@ Lemma sequent_true_assume_types {o} :
   forall lib (S : @csequent o),
     ((forall h H J,
         hyps (projT1 (projT1 (projT1 S))) = snoc H h ++ J
-        -> {s1 : CSub
+        -> {s1 : CNSub
             , {w : wf_term (htyp h)
-            , {c : cover_vars (htyp h) s1
+            , {n : noutokens (htyp h)
+            , {c : cover_nout_vars (htyp h) s1
             , {sim : similarity lib s1 s1 H
-               , ltype lib (lvl h) (lsubstc (htyp h) w s1 c)}}}})
+               , ltype lib (lvl h) (lsubstcn (htyp h) w n s1 c)}}}}})
      -> sequent_true lib S)
     -> sequent_true lib S.
 Proof.
@@ -5413,14 +5502,14 @@ Proof.
   apply app_split in sim'2; repnd; subst; try (complete (allrw length_snoc; allrw; sp)).
   rw @similarity_snoc in sim'5; exrepnd; subst; cpx; clear_irr.
   apply similarity_refl in sim'6.
-  exists s1a w0 p1 sim'6.
+  exists s1a w0 n p1 sim'6.
   allapply @eqtypes_refl; sp.
 Qed.
 
 Definition arg_constraints {o} (arg : @sarg o) (hs : @bhyps o) :=
   match arg with
-    | sarg_var v => True
-    | sarg_term t => subvars (free_vars t) (nh_vars_hyps hs)
+  | sarg_var v => True
+  | sarg_term t => subvars (free_vars t) (nh_vars_hyps hs)
   end.
 
 Definition args_constraints {o} (args : list (@sarg o)) (hs : @bhyps o) :=
@@ -5625,17 +5714,17 @@ Lemma sp_rule_true :
   forall C    : NTerm,
   forall seqs : list baresequent,
     (forall s : baresequent, LIn s seqs -> hyps s = hs # extract (concl s) = mk_axiom)
-    -> (forall s1 s2 : CSub,
+    -> (forall s1 s2 : CNSub,
           (forall C : NTerm,
            forall m : LIn C (map baresequent_type seqs),
              {pC : wf_term C
-              & {c1 : cover_vars C s1
-              & {c2 : cover_vars C s2
+              & {c1 : cover_nout_vars C s1
+              & {c2 : cover_nout_vars C s2
                  & tequality (lsubstc C pC s1 c1) (lsubstc C pC s2 c2)
                  # member mkc_axiom (lsubstc C pC s1 c1)}}})
           -> forall pC : wf_term C,
-             forall c1 : cover_vars C s1,
-             forall c2 : cover_vars C s2,
+             forall c1 : cover_nout_vars C s1,
+             forall c2 : cover_nout_vars C s2,
                (tequality (lsubstc C pC s1 c1) (lsubstc C pC s2 c2)
                           # member mkc_axiom (lsubstc C pC s1 c1)))
     -> rule_true (mk_rule (mk_baresequent hs (mk_conclax C)) seqs []).
@@ -5667,8 +5756,8 @@ Proof.
   duplicate c0 as c2.
   rewrite <- sim1 in c0.
   rewrite <- sim0 in c2.
-  rw <- cover_vars_covered in c0.
-  rw <- cover_vars_covered in c2.
+  rw <- cover_nout_vars_covered in c0.
+  rw <- cover_nout_vars_covered in c2.
 
   exists H0 c0 c2.
 
@@ -5696,10 +5785,10 @@ Lemma sp_rule_true_no_hyps :
   forall H : hypotheses,
   forall C : NTerm,
   forall p : wf_conclusion H (mk_conclax C),
-    (forall s1 s2 : CSub,
+    (forall s1 s2 : CNSub,
      forall pC : wf_term C,
-     forall c1 : cover_vars C s1,
-     forall c2 : cover_vars C s2,
+     forall c1 : cover_nout_vars C s1,
+     forall c2 : cover_nout_vars C s2,
        (tequality (lsubstc C pC s1 c1) (lsubstc C pC s2 c2)
         # member mkc_axiom (lsubstc C pC s1 c1)))
     -> rule_true (mk_rule (mk_seq H (mk_conclax C) p) []).
@@ -5732,18 +5821,18 @@ Lemma simple_rule_true :
   forall C  : NTerm,
   forall p  : wf_conclusion H (mk_conclax C),
   forall Cs : list { c : NTerm & wf_conclusion H (mk_conclax c) },
-    (forall ts1 ts2 : list CTerm,
+    (forall ts1 ts2 : list cterm,
        (forall C : NTerm,
         forall m : LIn C (map (fun x => projT1 x) Cs),
           {pC : wf_term C
-           & {c1 : cover_vars C (mk_hyps_subst ts1 H)
-           & {c2 : cover_vars C (mk_hyps_subst ts2 H)
+           & {c1 : cover_nout_vars C (mk_hyps_subst ts1 H)
+           & {c2 : cover_nout_vars C (mk_hyps_subst ts2 H)
               & tequality (lsubstc C pC (mk_hyps_subst ts1 H) c1)
                           (lsubstc C pC (mk_hyps_subst ts2 H) c2)
               # member mkc_axiom (lsubstc C pC (mk_hyps_subst ts1 H) c1)}}})
        -> forall pC : wf_term C,
-          forall c1 : cover_vars C (mk_hyps_subst ts1 H),
-          forall c2 : cover_vars C (mk_hyps_subst ts2 H),
+          forall c1 : cover_nout_vars C (mk_hyps_subst ts1 H),
+          forall c2 : cover_nout_vars C (mk_hyps_subst ts2 H),
             (tequality (lsubstc C pC (mk_hyps_subst ts1 H) c1)
                        (lsubstc C pC (mk_hyps_subst ts2 H) c2)
              # member mkc_axiom (lsubstc C pC (mk_hyps_subst ts1 H) c1)))
@@ -5788,11 +5877,11 @@ Lemma wf_cl_cover :
   forall C H ts,
     wf_conclusion H (mk_conclax C)
     -> cover_hypotheses ts H
-    -> cover_vars C (mk_hyps_subst ts H).
+    -> cover_nout_vars C (mk_hyps_subst ts H).
 Proof.
   sp.
   inversion X; sp; allsimpl.
-  unfold cover_vars, over_vars.
+  unfold cover_nout_vars, over_vars.
   allunfold covered.
   destruct H; allsimpl.
   unfold mk_hyps_subst; simpl.
@@ -5815,22 +5904,22 @@ Lemma wf_cl_cover_lst :
   forall Cs : list { c : NTerm & wf_conclusion H (mk_conclax c) },
     LIn C (map (fun x => projT1 x) Cs)
     -> cover_hypotheses ts H
-    -> cover_vars C (mk_hyps_subst ts H).
+    -> cover_nout_vars C (mk_hyps_subst ts H).
 Proof.
   sp.
   allrw in_map_iff; sp; subst.
   apply wf_cl_cover; auto.
 Qed.
 
-Lemma cover_vars_eq_terms_in_hyps :
+Lemma cover_nout_vars_eq_terms_in_hyps :
   forall ts1 ts2 H t,
     equal_terms_in_hyps lib ts1 ts2 H
-    -> cover_vars t (mk_hs_subst ts1 H)
-    -> cover_vars t (mk_hs_subst ts2 H).
+    -> cover_nout_vars t (mk_hs_subst ts1 H)
+    -> cover_nout_vars t (mk_hs_subst ts2 H).
 Proof.
   intros ts1 ts2 H t e.
   apply equal_terms_in_hyps_length in e; repd.
-  unfold cover_vars, over_vars.
+  unfold cover_nout_vars, over_vars.
   repeat (rewrite <- dom_mk_hs_subst); sp; symmetry; sp.
 Qed.
 *)
@@ -5840,7 +5929,7 @@ Lemma lsubstc_seq_cl_eq :
   forall H  : hypotheses,
   forall C  : NTerm,
   forall p  : wf_conclusion H (mk_conclax C),
-  forall ts : list CTerm,
+  forall ts : list cterm,
   forall c  : cover_hypotheses ts H,
   forall a  : hyps_true_at (projT1 H) ts,
     lsubstc C
@@ -5857,7 +5946,7 @@ Proof.
   destruct H; allsimpl.
   rewrite dep_pair_eq_prop
   with (eq0 := eq_refl)
-         (pb := isprog_lcsubst C (mk_hs_subst ts x)
+         (pb := isprog_lcnsubst C (mk_hs_subst ts x)
                                (wf_cl_cl C (exist (fun hs : barehypotheses => wf_hypotheses hs) x w)
                                          p)
                                (wf_cl_cover C
@@ -5870,7 +5959,7 @@ Lemma lsubstc_seq_cl_eq2 :
   forall H  : hypotheses,
   forall C  : NTerm,
   forall p  : wf_conclusion H (mk_conclax C),
-  forall ts ts' : list CTerm,
+  forall ts ts' : list cterm,
   forall c  : cover_hypotheses ts H,
   forall a  : hyps_true_at (projT1 H) ts,
   forall e  : equal_terms_in_hyps lib ts ts' (projT1 H),
@@ -5888,7 +5977,7 @@ Proof.
   destruct H; allsimpl.
   rewrite dep_pair_eq_prop
   with (eq0 := eq_refl)
-         (pb := isprog_lcsubst C (mk_hs_subst ts' x)
+         (pb := isprog_lcnsubst C (mk_hs_subst ts' x)
                                (wf_cl_cl C (exist (fun hs : barehypotheses => wf_hypotheses hs) x w)
                                          p)
                                (wf_cl_cover C
@@ -5902,7 +5991,7 @@ Qed.
 Lemma lsubstc_seq_cl_lst :
   forall C  : NTerm,
   forall H  : hypotheses,
-  forall ts : list CTerm,
+  forall ts : list cterm,
   forall Cs : list {c : NTerm & wf_conclusion H (mk_conclax c)},
   forall wc : wf_conclusion H (mk_conclax C),
   forall ch : cover_hypotheses ts H,
@@ -5923,7 +6012,7 @@ Proof.
   unfold lsubstc; sp.
   rewrite dep_pair_eq
   with (eq0 := eq_refl)
-         (pb := isprog_lcsubst C (mk_hyps_subst ts H) (wf_cl_cl C H wc)
+         (pb := isprog_lcnsubst C (mk_hyps_subst ts H) (wf_cl_cl C H wc)
                                (wf_cl_cover C H ts wc ch)); sp.
   apply UIP_dec.
   apply bool_dec.
@@ -5934,7 +6023,7 @@ Lemma simple_rule_true :
   forall C  : NTerm,
   forall p  : wf_conclusion H (mk_conclax C),
   forall Cs : list { c : NTerm & wf_conclusion H (mk_conclax c) },
-    (forall ts1 ts2 : list CTerm,
+    (forall ts1 ts2 : list cterm,
      forall c1 : cover_hypotheses ts1 H,
      forall c2 : cover_hypotheses ts2 H,
        (forall C : NTerm,

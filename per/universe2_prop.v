@@ -31,6 +31,8 @@ Notation "T {+} U" := (T \/ U)%type (at level 80, right associativity).
 
 
 Require Export cequiv.
+Require Export cnterm2.
+
 
 Definition ccomputes_to_valc {p} lib t1 t2 := Cast (@computes_to_valc p lib t1 t2).
 Definition ccomputes_to_excc {p} lib a t e := Cast (@computes_to_excc p lib a t e).
@@ -51,6 +53,13 @@ Ltac uncast_step :=
     | [ H : chaltsc _ _                 |- _ ] => destruct H as [H]
     | [ H : reduces_kstepsc _ _ _ _     |- _ ] => destruct H as [H]
     | [ H : reduces_ksteps_excc _ _ _ _ |- _ ] => destruct H as [H]
+
+    | [ H : ccomputes_to_valcn _ _ _     |- _ ] => destruct H as [H]
+    | [ H : ccomputes_to_exccn _ _ _ _   |- _ ] => destruct H as [H]
+    | [ H : ccequivcn _ _ _              |- _ ] => destruct H as [H]
+    | [ H : capproxcn _ _ _              |- _ ] => destruct H as [H]
+    | [ H : chaltscn _ _                 |- _ ] => destruct H as [H]
+
     | [ H : Cast _                      |- _ ] => destruct H as [H]
   end.
 
@@ -66,6 +75,13 @@ Ltac uncastc :=
     | [ |- chaltsc _ _                 ] => constructor
     | [ |- reduces_kstepsc _ _ _ _     ] => constructor
     | [ |- reduces_ksteps_excc _ _ _ _ ] => constructor
+
+    | [ |- ccomputes_to_valcn _ _ _     ] => constructor
+    | [ |- ccomputes_to_exccn _ _ _ _   ] => constructor
+    | [ |- ccequivcn _ _ _              ] => constructor
+    | [ |- capproxcn _ _ _              ] => constructor
+    | [ |- chaltscn _ _                 ] => constructor
+
     | [ |- Cast _                      ] => constructor
   end.
 

@@ -33,8 +33,8 @@ Lemma close_type_system_teq {p} :
   forall T T' (eq : per) a1 a2 b1 b2 eqa,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_tequality a1 a2)
-    -> computes_to_valc lib T' (mkc_tequality b1 b2)
+    -> computes_to_valcn lib T (mkcn_tequality a1 a2)
+    -> computes_to_valcn lib T' (mkcn_tequality b1 b2)
     -> close lib ts a1 b1 eqa
     -> type_sys_props lib (close lib ts) a1 b1 eqa
     -> close lib ts a2 b2 eqa
@@ -75,12 +75,12 @@ Proof.
     ccomputes_to_eqval.
 
     duplicate c1 as c0.
-    apply cequivc_mkc_tequality with (t' := T3) in c0; sp.
+    apply cequivcn_mkcn_tequality with (t' := T3) in c0; sp.
     exists a1 a2 a' b' eqa; sp; spcast; sp; try (complete (right; spcast; sp));
     allunfold @type_sys_props; sp.
 
     duplicate c2 as c0.
-    apply cequivc_mkc_tequality with (t' := T3) in c0; sp.
+    apply cequivcn_mkcn_tequality with (t' := T3) in c0; sp.
     exists b1 b2 a' b' eqa; sp; spcast; sp; try (complete (right; spcast; sp)).
     allunfold @type_sys_props; sp.
     allunfold @type_sys_props; sp.
@@ -164,4 +164,3 @@ Proof.
     apply (type_sys_props_ts_trans3 lib) with (B := b2) (D := a2) (eq := eqa) (eq2 := eqa1); auto.
     apply type_sys_props_sym; auto.
 Qed.
-

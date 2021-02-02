@@ -32,7 +32,7 @@ Require Import dest_close.
 Lemma per_product_eq_preserves_eq_term_equals {p} :
   forall lib (eqa1 eqa2 : per(p)) eqb1 eqb2 t1 t2,
     eq_term_equals eqa1 eqa2
-    -> (forall (a1 a2 : CTerm) (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2),
+    -> (forall (a1 a2 : cterm) (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2),
           eq_term_equals (eqb1 a1 a2 e1) (eqb2 a1 a2 e2))
     -> per_product_eq lib eqa1 eqb1 t1 t2
     -> per_product_eq lib eqa2 eqb2 t1 t2.
@@ -48,9 +48,9 @@ Qed.
 Lemma per_product_eq_sym {p} :
   forall lib (eqa : per(p)) eqb t1 t2,
     term_equality_symmetric eqa
-    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+    -> (forall (a1 a2 : cterm) (e : eqa a1 a2),
           term_equality_symmetric (eqb a1 a2 e))
-    -> (forall (a1 a2 : CTerm) (e1 : eqa a1 a2) (e2 : eqa a2 a1),
+    -> (forall (a1 a2 : cterm) (e1 : eqa a1 a2) (e2 : eqa a2 a1),
           eq_term_equals (eqb a1 a2 e1) (eqb a2 a1 e2))
     -> per_product_eq lib eqa eqb t1 t2
     -> per_product_eq lib eqa eqb t2 t1.
@@ -104,14 +104,14 @@ Lemma per_product_eq_cequivc {p} :
           term_equality_respecting lib (eqb a1 a2 e))
     -> (forall a1 a2 (e1 : eqa a1 a2) (e : eqa a1 a1),
           eq_term_equals (eqb a1 a2 e1) (eqb a1 a1 e))
-    -> cequivc lib t1 t2
+    -> cequivcn lib t1 t2
     -> per_product_eq lib eqa eqb t1 t1
     -> per_product_eq lib eqa eqb t1 t2.
 Proof.
   introv tera terb eqt1 ceq peq.
   allunfold @per_product_eq; exrepnd.
   spcast; computes_to_eqval.
-  generalize (cequivc_mkc_pair lib t1 t2 a b); intro k.
+  generalize (cequivcn_mkcn_pair lib t1 t2 a b); intro k.
   repeat (autodimp k hyp); exrepnd.
   assert (eqa a a') as e' by (apply tera; sp; try (spcast; sp)).
   exists a a' b b' e'; sp; try (complete (spcast; sp)).
@@ -128,17 +128,17 @@ Lemma close_type_system_product {p} :
          A A' v v' B B' eqa eqb,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_product A v B)
-    -> computes_to_valc lib T' (mkc_product A' v' B')
+    -> computes_to_valcn lib T (mkcn_product A v B)
+    -> computes_to_valcn lib T' (mkcn_product A' v' B')
     -> close lib ts A A' eqa
-    -> (forall (a a' : CTerm) (e : eqa a a'),
-          close lib ts (substc a v B) (substc a' v' B') (eqb a a' e))
-    -> (forall (a a' : CTerm) (e : eqa a a'),
+    -> (forall (a a' : cterm) (e : eqa a a'),
+          close lib ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
+    -> (forall (a a' : cterm) (e : eqa a a'),
           type_system lib ts ->
           defines_only_universes lib ts ->
-          type_sys_props lib (close lib ts) (substc a v B) (substc a' v' B')
+          type_sys_props lib (close lib ts) (substcn a v B) (substcn a' v' B')
                          (eqb a a' e))
-    -> (forall t t' : CTerm, eq t t' <=> per_product_eq lib eqa eqb t t')
+    -> (forall t t' : cterm, eq t t' <=> per_product_eq lib eqa eqb t t')
     -> per_product lib (close lib ts) T T' eq
     -> type_sys_props lib (close lib ts) A A' eqa
     -> type_sys_props lib (close lib ts) T T' eq.
@@ -153,7 +153,7 @@ Proof.
 
     SSCase "CL_product".
     allunfold @per_product; exrepd.
-    generalize (eq_term_equals_type_family lib T T3 eqa0 eqa eqb0 eqb (close lib ts) A v B A' v' B' mkc_product); intro i.
+    generalize (eq_term_equals_type_family lib T T3 eqa0 eqa eqb0 eqb (close lib ts) A v B A' v' B' mkcn_product); intro i.
     repeat (autodimp i hyp; try (complete (introv eqp; eqconstr eqp; sp))); repnd.
 
     unfold eq_term_equals; sp.
@@ -176,7 +176,7 @@ Proof.
     apply CL_product; unfold per_product; exists eqa eqb; sp.
 
     duplicate c1 as ct.
-    apply @cequivc_mkc_product with (T' := T3) in ct; sp.
+    apply @cequivcn_mkcn_product with (T' := T3) in ct; sp.
 
     apply @type_family_cequivc
           with
@@ -191,7 +191,7 @@ Proof.
           (B := B'); sp.
 
     duplicate c2 as ct.
-    apply @cequivc_mkc_product with (T' := T3) in ct; sp.
+    apply @cequivcn_mkcn_product with (T' := T3) in ct; sp.
 
     apply @type_family_cequivc2
           with
@@ -265,7 +265,7 @@ Proof.
     (* 1 *)
     generalize (eq_term_equals_type_family
                   lib T T3 eqa0 eqa eqb0 eqb (close lib ts)
-                  A v B A' v' B' mkc_product); intro i.
+                  A v B A' v' B' mkcn_product); intro i.
     repeat (autodimp i hyp; try (complete (introv eqp; eqconstr eqp; sp))).
     repnd.
 
@@ -284,7 +284,7 @@ Proof.
     (* 2 *)
     generalize (eq_term_equals_type_family2
                   lib T3 T eqa0 eqa eqb0 eqb (close lib ts)
-                  A v B A' v' B' mkc_product); intro i;
+                  A v B A' v' B' mkcn_product); intro i;
     repeat (autodimp i hyp; try (complete (introv eqp; eqconstr eqp; sp)));
     repnd.
 
@@ -313,12 +313,12 @@ Proof.
 
     generalize (eq_term_equals_type_family2
                   lib T3 T eqa1 eqa eqb1 eqb (close lib ts)
-                  A v B A' v' B' mkc_product); intro i.
+                  A v B A' v' B' mkcn_product); intro i.
     repeat (autodimp i hyp; try (complete (introv eqp; eqconstr eqp; sp))).
     repnd.
 
     generalize (type_family_trans2
-                  lib mkc_product (close lib ts) T3 T T4 eqa eqb eqa0 eqb0 A v B A' v' B'); intro j.
+                  lib mkcn_product (close lib ts) T3 T T4 eqa eqb eqa0 eqb0 A v B A' v' B'); intro j.
     repeat (autodimp j hyp; try (complete (introv eqp; eqconstr eqp; sp))).
     repnd.
 
@@ -347,7 +347,7 @@ Proof.
 
     generalize (eq_term_equals_type_family2
                   lib T3 T' eqa1 eqa eqb1 eqb (close lib ts)
-                  A' v' B' A v B mkc_product); intro i.
+                  A' v' B' A v B mkcn_product); intro i.
     repeat (autodimp i hyp;
             try (complete (introv eqp; eqconstr eqp; sp));
             try (complete (apply type_sys_props_sym; sp))).
@@ -360,7 +360,7 @@ Proof.
     repnd.
 
     generalize (type_family_trans2
-                  lib mkc_product (close lib ts) T3 T' T4 eqa eqb eqa0 eqb0 A' v' B' A v B); intro j.
+                  lib mkcn_product (close lib ts) T3 T' T4 eqa eqb eqa0 eqb0 A' v' B' A v B); intro j.
     repeat (autodimp j hyp;
             try (complete (introv eqp; eqconstr eqp; sp));
             try (complete (apply type_sys_props_sym; sp))).
@@ -391,4 +391,3 @@ Proof.
 
     apply @per_product_eq_preserves_eq_term_equals with (eqa1 := eqa) (eqb1 := eqb); sp.
 Qed.
-

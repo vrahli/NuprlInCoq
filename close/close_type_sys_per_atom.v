@@ -83,7 +83,7 @@ Lemma per_atom_type_value_respecting {p} :
   forall lib (ts : cts(p)), type_value_respecting lib (per_atom lib ts).
 Proof.
  sp; unfold type_value_respecting, per_atom; sp; auto.
- spcast; apply @cequivc_atom with (T := T); auto.
+ spcast; apply @cequivcn_atom with (T := T); auto.
 Qed.
 
 Lemma per_atom_term_symmetric {p} :
@@ -122,19 +122,6 @@ Proof.
   apply @lblift_cequiv0 in p; subst; auto.
 Qed.
 
-(* !! MOVE to cequiv *)
-Lemma cequivc_token {pp} :
-  forall lib T T' s,
-    computes_to_valc lib T (mkc_token s)
-    -> @cequivc pp lib T T'
-    -> computes_to_valc lib T' (mkc_token s).
-Proof.
-  sp.
-  allapply @computes_to_valc_to_valuec; allsimpl.
-  apply cequivc_canonical_form with (t' := T') in X; sp.
-  apply lblift_cequiv0 in p; subst; auto.
-Qed.
-
 Lemma per_atom_term_value_respecting {p} :
   forall lib (ts : cts(p)), term_value_respecting lib (per_atom lib ts).
 Proof.
@@ -145,7 +132,7 @@ Proof.
   rw i in e; rw i; sp.
   allunfold @equality_of_atom; exrepnd.
   exists s; sp.
-  spcast; apply @cequivc_token with (T := t); auto.
+  spcast; eapply cequivcn_token; eauto.
 Qed.
 
 Lemma per_atom_type_system {p} :
@@ -242,4 +229,3 @@ Proof.
   + SCase "type_mtransitive"; repdors; subst; dclose_lr;
     dands; apply CL_atom; allunfold @per_atom; sp.
 Qed.
-

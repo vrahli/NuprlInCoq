@@ -37,18 +37,18 @@ Lemma close_type_system_isect {p} :
          A A' v v' B B' eqa eqb,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_isect A v B)
-    -> computes_to_valc lib T' (mkc_isect A' v' B')
+    -> computes_to_valcn lib T (mkcn_isect A v B)
+    -> computes_to_valcn lib T' (mkcn_isect A' v' B')
     -> close lib ts A A' eqa
-    -> (forall (a a' : CTerm) (e : eqa a a'),
-          close lib ts (substc a v B) (substc a' v' B') (eqb a a' e))
-    -> (forall (a a' : CTerm) (e : eqa a a'),
+    -> (forall (a a' : cterm) (e : eqa a a'),
+          close lib ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
+    -> (forall (a a' : cterm) (e : eqa a a'),
           type_system lib ts ->
           defines_only_universes lib ts ->
-          type_sys_props lib (close lib ts) (substc a v B) (substc a' v' B')
+          type_sys_props lib (close lib ts) (substcn a v B) (substcn a' v' B')
                          (eqb a a' e))
-    -> (forall t t' : CTerm,
-          eq t t' <=> (forall (a a' : CTerm) (e : eqa a a'), eqb a a' e t t'))
+    -> (forall t t' : cterm,
+          eq t t' <=> (forall (a a' : cterm) (e : eqa a a'), eqb a a' e t t'))
     -> per_isect lib (close lib ts) T T' eq
     -> type_sys_props lib (close lib ts) A A' eqa
     -> type_sys_props lib (close lib ts) T T' eq.
@@ -63,7 +63,7 @@ Proof.
 
     SSCase "CL_isect".
     allunfold @per_isect; exrepd.
-    generalize (eq_term_equals_type_family lib T T3 eqa0 eqa eqb0 eqb (close lib ts) A v B A' v' B' mkc_isect); intro i.
+    generalize (eq_term_equals_type_family lib T T3 eqa0 eqa eqb0 eqb (close lib ts) A v B A' v' B' mkcn_isect); intro i.
     repeat (autodimp i hyp; try (complete (introv e; eqconstr e; sp))); repnd.
 
     unfold eq_term_equals; sp.
@@ -89,7 +89,7 @@ Proof.
     apply CL_isect; unfold per_isect; exists eqa eqb; sp.
 
     duplicate c1 as ct.
-    apply @cequivc_mkc_isect with (T' := T3) in ct; sp.
+    apply @cequivcn_mkcn_isect with (T' := T3) in ct; sp.
 
     apply @type_family_cequivc
           with
@@ -104,7 +104,7 @@ Proof.
           (B := B'); sp.
 
     duplicate c2 as ct.
-    apply @cequivc_mkc_isect with (T' := T3) in ct; sp.
+    apply @cequivcn_mkcn_isect with (T' := T3) in ct; sp.
 
     apply @type_family_cequivc2
           with
@@ -168,7 +168,7 @@ Proof.
     (* 1 *)
     generalize (eq_term_equals_type_family
                   lib T T3 eqa0 eqa eqb0 eqb (close lib ts)
-                  A v B A' v' B' mkc_isect); intro i.
+                  A v B A' v' B' mkcn_isect); intro i.
     repeat (autodimp i hyp; try (complete (introv e; eqconstr e; sp))).
     repnd.
 
@@ -192,7 +192,7 @@ Proof.
     (* 2 *)
     generalize (eq_term_equals_type_family2
                   lib T3 T eqa0 eqa eqb0 eqb (close lib ts)
-                  A v B A' v' B' mkc_isect); intro i;
+                  A v B A' v' B' mkcn_isect); intro i;
     repeat (autodimp i hyp; try (complete (introv e; eqconstr e; sp)));
     repnd.
 
@@ -226,12 +226,12 @@ Proof.
 
     generalize (eq_term_equals_type_family2
                   lib T3 T eqa1 eqa eqb1 eqb (close lib ts)
-                  A v B A' v' B' mkc_isect); intro i.
+                  A v B A' v' B' mkcn_isect); intro i.
     repeat (autodimp i hyp; try (complete (introv e; eqconstr e; sp))).
     repnd.
 
     generalize (type_family_trans2
-                  lib mkc_isect (close lib ts) T3 T T4 eqa eqb eqa0 eqb0 A v B A' v' B'); intro j.
+                  lib mkcn_isect (close lib ts) T3 T T4 eqa eqb eqa0 eqb0 A v B A' v' B'); intro j.
     repeat (autodimp j hyp; try (complete (introv e; eqconstr e; sp))).
     repnd.
 
@@ -267,7 +267,7 @@ Proof.
 
     generalize (eq_term_equals_type_family2
                   lib T3 T' eqa1 eqa eqb1 eqb (close lib ts)
-                  A' v' B' A v B mkc_isect); intro i.
+                  A' v' B' A v B mkcn_isect); intro i.
     repeat (autodimp i hyp;
             try (complete (introv e; eqconstr e; sp));
             try (complete (apply type_sys_props_sym; sp))).
@@ -280,7 +280,7 @@ Proof.
     repnd.
 
     generalize (type_family_trans2
-                  lib mkc_isect (close lib ts) T3 T' T4 eqa eqb eqa0 eqb0 A' v' B' A v B); intro j.
+                  lib mkcn_isect (close lib ts) T3 T' T4 eqa eqb eqa0 eqb0 A' v' B' A v B); intro j.
     repeat (autodimp j hyp;
             try (complete (introv e; eqconstr e; sp));
             try (complete (apply type_sys_props_sym; sp))).
@@ -318,4 +318,3 @@ Proof.
     generalize (j1 a a' e' e); intro l.
     rw <- l; sp.
 Qed.
-

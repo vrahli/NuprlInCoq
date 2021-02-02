@@ -139,7 +139,7 @@ Definition type_trans (ts : cts) :=
 *)
 
 Definition type_value_respecting {p} lib (ts : cts(p)) :=
-  forall T T' eq, ts T T eq -> cequivc lib T T' -> ts T T' eq.
+  forall T T' eq, ts T T eq -> cequivcn lib T T' -> ts T T' eq.
 
 Definition term_symmetric {p} (ts : cts(p)) :=
   forall T T' eq, ts T T' eq -> term_equality_symmetric eq.
@@ -213,39 +213,39 @@ Tactic Notation "prove_type_system" ident(c) :=
 
 Definition uniquely_valued_body {p}
            (ts : cts(p))
-           (T1 T2 : CTerm)
+           (T1 T2 : cterm)
            (eq : per) :=
   forall eq' : per, ts T1 T2 eq' -> eq_term_equals eq eq'.
 
 Definition type_extensionality_body {p}
            (ts : cts(p))
-           (T1 T2 : CTerm)
+           (T1 T2 : cterm)
            (eq : per) :=
   forall eq' : per, eq_term_equals eq eq' -> ts T1 T2 eq'.
 
 Definition type_symmetric_body {p}
            (ts : cts(p))
-           (T1 T2 : CTerm)
+           (T1 T2 : cterm)
            (eq : per) :=
   ts T2 T1 eq.
 
 Definition type_transitive_body {p}
            (ts : cts(p))
-           (T1 T2 : CTerm)
+           (T1 T2 : cterm)
            (eq : per) :=
   forall T3, ts T2 T3 eq -> ts T1 T3 eq.
 
 Definition type_value_respecting_body {p}
            lib
            (ts : cts(p))
-           (T1 T2 : @CTerm p)
+           (T1 T2 : @cterm p)
            (eq : per) :=
-  forall T3, cequivc lib T1 T3 -> ts T1 T3 eq.
+  forall T3, cequivcn lib T1 T3 -> ts T1 T3 eq.
 
 Definition type_system_props {p}
            lib
            (ts : cts(p))
-           (T1 T2 : CTerm)
+           (T1 T2 : cterm)
            (eq : per) :=
   uniquely_valued_body ts T1 T2 eq
    # type_extensionality_body ts T1 T2 eq
@@ -406,7 +406,7 @@ Qed.
 Definition type_sys_props {p}
            (lib : library)
            (ts : cts(p))
-           (T1 T2 : CTerm)
+           (T1 T2 : cterm)
            (eq : per) :=
   (* uniquely valued *)
   (forall T3 eq',
@@ -427,7 +427,7 @@ Definition type_sys_props {p}
        ts T1 T3 eq'
        -> ts T2 T3 eq # ts T2 T3 eq' # ts T3 T3 eq')
     # (* type value respecting *)
-    (forall T T3, (T = T1 [+] T = T2) -> cequivc lib T T3 -> ts T T3 eq)
+    (forall T T3, (T = T1 [+] T = T2) -> cequivcn lib T T3 -> ts T T3 eq)
     # (* term symmetric *)
     term_equality_symmetric eq
     # (* term transitivive (1) *)
@@ -514,7 +514,7 @@ Tactic Notation "prove_type_sys_props" ident(c) :=
 Definition type_sys_props2 {p}
            (lib : library)
            (ts : cts(p))
-           (T1 T2 : CTerm)
+           (T1 T2 : cterm)
            (eq : per) :=
   (* uniquely valued *)
   (forall T3 eq',
@@ -527,7 +527,7 @@ Definition type_sys_props2 {p}
        -> eq_term_equals eq eq'
        -> ts T T3 eq')
     # (* type value respecting *)
-    (forall T T3, (T = T1 [+] T = T2) -> cequivc lib T T3 -> ts T T3 eq)
+    (forall T T3, (T = T1 [+] T = T2) -> cequivcn lib T T3 -> ts T T3 eq)
     # (* term symmetric *)
     term_equality_symmetric eq
     # (* term transitivive (1) *)
@@ -630,14 +630,14 @@ Qed.
 Definition type_sys_props3 {p}
            (lib : library)
            (ts : cts(p))
-           (T1 T2 : CTerm)
+           (T1 T2 : cterm)
            (eq : per) :=
   (* uniquely valued *)
   (forall T3 eq', ts T1 T3 eq' -> eq_term_equals eq eq')
     # (* type_extensionality *)
     (forall T3 eq', ts T1 T3 eq -> eq_term_equals eq eq' -> ts T1 T3 eq')
     # (* type value respecting *)
-    (forall T T3, (T = T1 [+] T = T2) -> cequivc lib T T3 -> ts T T3 eq)
+    (forall T T3, (T = T1 [+] T = T2) -> cequivcn lib T T3 -> ts T T3 eq)
     # (* term symmetric *)
     term_equality_symmetric eq
     # (* term transitivive (1) *)
@@ -797,6 +797,7 @@ Proof.
   introv tsp.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
   generalize (tygs A B eq); intro k; repeat (dest_imp k h).
+  dands; apply tyvr; tcsp; eauto 3 with slow.
 Qed.
 
 Lemma type_sys_props_ts_refl2 {p} :
@@ -808,6 +809,7 @@ Proof.
   introv tsp eqt.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
   generalize (tygs A B eq2); intro k; repeat (dest_imp k h).
+  dands; apply tys; tcsp; apply tyvr; tcsp; eauto 3 with slow.
 Qed.
 
 Lemma type_sys_props_ts_uv {p} :
@@ -1175,7 +1177,7 @@ Qed.
 
 Lemma type_system_type_mem {p} :
  forall ts : cts(p),
- forall T T' : CTerm,
+ forall T T' : cterm,
  forall eq : per,
    type_symmetric ts
    -> type_transitive ts
@@ -1188,7 +1190,7 @@ Qed.
 
 Lemma type_system_type_mem1 {p} :
  forall ts : cts(p),
- forall T T' : CTerm,
+ forall T T' : cterm,
  forall eq : per,
    type_symmetric ts
    -> type_transitive ts
@@ -1201,7 +1203,7 @@ Qed.
 
 Lemma type_system_type_mem2 {p} :
  forall ts : cts(p),
- forall T T' : CTerm,
+ forall T T' : cterm,
  forall eq : per,
    type_symmetric ts
    -> type_transitive ts
@@ -1224,7 +1226,7 @@ Definition ex_proj (A : Prop) P (ex : exists (x : A), P x) : A :=
 
 Lemma uniquely_valued_eq {p} :
   forall ts : cts(p),
-  forall T T1 T2 : CTerm,
+  forall T T1 T2 : cterm,
   forall eq1 eq2 : per,
     uniquely_valued ts
     -> type_symmetric ts
@@ -1240,7 +1242,7 @@ Proof.
 Qed.
 
 Lemma uniquely_valued_eq_ts {p} :
-  forall lib (ts : cts(p)) (T T1 T2 : CTerm) (eq1 eq2 : per),
+  forall lib (ts : cts(p)) (T T1 T2 : cterm) (eq1 eq2 : per),
     type_system lib ts
     -> ts T T1 eq1
     -> ts T T2 eq2
@@ -1253,7 +1255,7 @@ Qed.
 
 Lemma uniquely_valued_eq2 {p} :
   forall ts : cts(p),
-  forall T T1 T2 : CTerm,
+  forall T T1 T2 : cterm,
   forall eq1 eq2 : per,
     uniquely_valued ts
     -> type_symmetric ts
@@ -1269,7 +1271,7 @@ Proof.
 Qed.
 
 Lemma uniquely_valued_eq2_ts {p} :
-  forall lib (ts : cts(p)) (T T1 T2 : CTerm) (eq1 eq2 : per),
+  forall lib (ts : cts(p)) (T T1 T2 : cterm) (eq1 eq2 : per),
     type_system lib ts
     -> ts T1 T eq1
     -> ts T T2 eq2
@@ -1282,7 +1284,7 @@ Qed.
 
 Lemma uniquely_valued_trans {p} :
   forall ts : cts(p),
-  forall T1 T2 T3 : CTerm,
+  forall T1 T2 T3 : cterm,
   forall eq1 eq2 : per,
     uniquely_valued ts
     -> type_extensionality ts
@@ -1301,7 +1303,7 @@ Qed.
 
 Lemma uniquely_valued_trans2 {p} :
   forall ts : cts(p),
-  forall T1 T2 T3 : CTerm,
+  forall T1 T2 T3 : cterm,
   forall eq1 eq2 : per,
     uniquely_valued ts
     -> type_extensionality ts
@@ -1321,7 +1323,7 @@ Qed.
 
 Lemma uniquely_valued_trans2_r {p} :
   forall ts : cts(p),
-  forall T1 T2 T3 : CTerm,
+  forall T1 T2 T3 : cterm,
   forall eq1 eq2 : per,
     uniquely_valued ts
     -> type_extensionality ts
@@ -1338,7 +1340,7 @@ Qed.
 
 Lemma uniquely_valued_trans3 {p} :
   forall ts : cts(p),
-  forall T1 T2 T3 : CTerm,
+  forall T1 T2 T3 : cterm,
   forall eq1 eq2 : per,
     uniquely_valued ts
     -> type_extensionality ts
@@ -1357,7 +1359,7 @@ Qed.
 
 Lemma uniquely_valued_trans4 {p} :
   forall ts : cts(p),
-  forall T1 T2 T3 : CTerm,
+  forall T1 T2 T3 : cterm,
   forall eq1 eq2 : per,
     uniquely_valued ts
     -> type_extensionality ts
@@ -1375,7 +1377,7 @@ Qed.
 
 Lemma uniquely_valued_trans4_r {p} :
   forall ts : cts(p),
-  forall T1 T2 T3 : CTerm,
+  forall T1 T2 T3 : cterm,
   forall eq1 eq2 : per,
     uniquely_valued ts
     -> type_extensionality ts
@@ -1392,7 +1394,7 @@ Qed.
 
 Lemma uniquely_valued_trans5 {p} :
   forall ts : cts(p),
-  forall T1 T2 T3 : CTerm,
+  forall T1 T2 T3 : cterm,
   forall eq1 eq2 : per,
     uniquely_valued ts
     -> type_extensionality ts
@@ -1409,7 +1411,7 @@ Qed.
 
 Lemma uniquely_valued_trans6 {p} :
   forall ts : cts(p),
-  forall T1 T2 T3 : CTerm,
+  forall T1 T2 T3 : cterm,
   forall eq1 eq2 : per,
     uniquely_valued ts
     -> type_extensionality ts
@@ -1427,7 +1429,7 @@ Qed.
 
 Lemma uniquely_valued_trans7 {p} :
   forall ts : cts(p),
-  forall T1 T2 T3 : CTerm,
+  forall T1 T2 T3 : cterm,
   forall eq1 eq2 : per,
     uniquely_valued ts
     -> type_extensionality ts
@@ -1444,7 +1446,7 @@ Qed.
 
 Lemma uniquely_valued_trans7_r {p} :
   forall ts : cts(p),
-  forall T1 T2 T3 : CTerm,
+  forall T1 T2 T3 : cterm,
   forall eq1 eq2 : per,
     uniquely_valued ts
     -> type_extensionality ts
@@ -1461,7 +1463,7 @@ Qed.
 
 Lemma uniquely_valued_trans8 {p} :
   forall ts : cts(p),
-  forall T1 T2 T3 : CTerm,
+  forall T1 T2 T3 : cterm,
   forall eq1 eq2 : per,
     uniquely_valued ts
     -> type_extensionality ts
@@ -1478,7 +1480,7 @@ Qed.
 
 Lemma uniquely_valued_trans8_r {p} :
   forall ts : cts(p),
-  forall T1 T2 T3 : CTerm,
+  forall T1 T2 T3 : cterm,
   forall eq1 eq2 : per,
     uniquely_valued ts
     -> type_extensionality ts
@@ -1494,7 +1496,7 @@ Proof.
 Qed.
 
 Lemma term_equality_refl {p} :
- forall t1 t2 : @CTerm p,
+ forall t1 t2 : @cterm p,
  forall eq : per,
    term_equality_symmetric eq
    -> term_equality_transitive eq
@@ -1506,7 +1508,7 @@ Proof.
 Qed.
 
 Lemma term_equality_sym {p} :
- forall t1 t2 : @CTerm p,
+ forall t1 t2 : @cterm p,
  forall eq : per,
    term_equality_symmetric eq
    -> eq t1 t2
@@ -1517,7 +1519,7 @@ Qed.
 
 Lemma type_system_term_mem {p} :
  forall ts : cts(p),
- forall T T' t1 t2 : CTerm,
+ forall T T' t1 t2 : cterm,
  forall eq : per,
    term_symmetric ts
    -> term_transitive ts
@@ -1533,7 +1535,7 @@ Qed.
 
 Lemma type_extensionality_symm {p} :
   forall ts : cts(p),
-  forall T1 T2 : CTerm,
+  forall T1 T2 : cterm,
   forall eq eq' : per,
     type_symmetric ts
     -> type_extensionality ts
@@ -1547,12 +1549,12 @@ Proof.
 Qed.
 
 Lemma type_reduces_to_symm {p} :
-  forall lib (ts : cts(p)) (T1 T2 T3 : CTerm) (eq : per),
+  forall lib (ts : cts(p)) (T1 T2 T3 : cterm) (eq : per),
    type_symmetric ts
    -> type_transitive ts
    -> type_value_respecting lib ts
    -> ts T1 T2 eq
-   -> cequivc lib T1 T3
+   -> cequivcn lib T1 T3
    -> ts T1 T3 eq.
 Proof.
   intros.
@@ -1561,19 +1563,19 @@ Proof.
 Qed.
 
 Lemma type_reduces_to_symm2 {p} :
-  forall lib (ts : cts(p)) (T1 T2 T3 : CTerm) (eq : per),
+  forall lib (ts : cts(p)) (T1 T2 T3 : cterm) (eq : per),
    type_symmetric ts
    -> type_transitive ts
    -> type_value_respecting lib ts
    -> ts T2 T1 eq
-   -> cequivc lib T1 T3
+   -> cequivcn lib T1 T3
    -> ts T1 T3 eq.
 Proof.
   sp; generalize (type_reduces_to_symm lib ts T1 T2 T3 eq); sp.
 Qed.
 
 Lemma term_reduces_to_symm {p} :
-  forall lib (ts : cts(p)) (T1 T2 : CTerm) (eq : per),
+  forall lib (ts : cts(p)) (T1 T2 : cterm) (eq : per),
    type_symmetric ts
    -> type_transitive ts
    -> term_value_respecting lib ts
@@ -1674,7 +1676,7 @@ Proof.
 Qed.
 
 Lemma eqorceq_implies_eq {p} :
-  forall lib eq (a b c : @CTerm p),
+  forall lib eq (a b c : @cterm p),
     term_equality_respecting lib eq
     -> term_equality_symmetric eq
     -> term_equality_transitive eq
@@ -1689,8 +1691,26 @@ Proof.
   apply term_equality_refl with (t2 := c); auto.
 Qed.
 
+Lemma cequivcn_sym {o} :
+  forall w (a b : @cterm o),
+    cequivcn w a b -> cequivcn w b a.
+Proof.
+  introv ceq.
+  apply cequiv_sym; auto.
+Qed.
+
+Lemma cequivcn_trans {o} :
+  forall w (a b c : @cterm o),
+    cequivcn w a b
+    -> cequivcn w b c
+    -> cequivcn w a c.
+Proof.
+  introv ceqa ceqb.
+  eapply cequiv_trans; eauto.
+Qed.
+
 Lemma eqorceq_implies_eq2 {p} :
-  forall lib eq (a b c : @CTerm p),
+  forall lib eq (a b c : @cterm p),
     term_equality_respecting lib eq
     -> term_equality_symmetric eq
     -> term_equality_transitive eq
@@ -1703,21 +1723,21 @@ Proof.
   apply ter; auto.
   apply tes in e.
   apply term_equality_refl with (t2 := c); auto.
-  spcast; apply cequivc_sym; auto.
+  spcast; apply cequivcn_sym; auto.
 Qed.
 
 Lemma eqorceq_sym {p} :
-  forall lib eq (a b : @CTerm p),
+  forall lib eq (a b : @cterm p),
     term_equality_symmetric eq
     -> eqorceq lib eq a b
     -> eqorceq lib eq b a.
 Proof.
   unfold eqorceq; sp.
-  right; spcast; apply cequivc_sym; auto.
+  right; spcast; apply cequivcn_sym; auto.
 Qed.
 
 Lemma eqorceq_trans {p} :
-  forall lib eq (a b c : @CTerm p),
+  forall lib eq (a b c : @cterm p),
     term_equality_symmetric eq
     -> term_equality_transitive eq
     -> term_equality_respecting lib eq
@@ -1730,11 +1750,11 @@ Proof.
   left; apply tet with (t2 := b); auto.
   apply tes; apply ter.
   apply term_equality_refl with (t2 := v); auto.
-  spcast; apply cequivc_sym; auto.
+  spcast; apply cequivcn_sym; auto.
   left; apply tet with (t2 := b); auto.
   apply ter; auto.
   apply term_equality_refl with (t2 := a); auto.
-  right; spcast; apply @cequivc_trans with (b := b); auto.
+  right; spcast; apply @cequivcn_trans with (b := b); auto.
 Qed.
 
 Lemma eqorceq_eq_term_equals {p} :
@@ -1746,7 +1766,7 @@ Proof.
 Qed.
 
 Lemma eqorceq_commutes {p} :
-  forall lib (a b c d : @CTerm p) eq,
+  forall lib (a b c d : @cterm p) eq,
     term_equality_respecting lib eq
     -> term_equality_symmetric eq
     -> term_equality_transitive eq
@@ -1788,78 +1808,140 @@ Ltac appdup l H :=
   let newH := fresh H in
     remember H as newH; clear_eq newH H; apply l in newH.
 
+
 Ltac eqconstr0 name :=
   match type of name with
-    | mkc_uni _           = mkc_uni _           => apply mkc_uni_eq            in name
-    | mkc_inl _           = mkc_inl _           => apply mkc_inl_eq            in name
-    | mkc_inr _           = mkc_inr _           => apply mkc_inr_eq            in name
-    | mkc_integer _       = mkc_integer _       => apply mkc_integer_eq        in name
-    | mkc_token _         = mkc_token _         => apply mkc_token_eq          in name
-    | mkc_utoken _        = mkc_utoken _        => apply mkc_utoken_eq         in name
-    | mkc_exception _ _   = mkc_exception _ _   => apply mkc_exception_eq      in name
-    | mkc_pertype _       = mkc_pertype _       => apply mkc_pertype_eq        in name
-    | mkc_ipertype _      = mkc_ipertype _      => apply mkc_ipertype_eq       in name
-    | mkc_spertype _      = mkc_spertype _      => apply mkc_spertype_eq       in name
-    | mkc_partial _       = mkc_partial _       => apply mkc_partial_eq        in name
-    | mkc_admiss _        = mkc_admiss _        => apply mkc_admiss_eq         in name
-    | mkc_mono _          = mkc_mono _          => apply mkc_mono_eq           in name
-    | mkc_approx _ _      = mkc_approx _ _      => apply mkc_approx_eq         in name
-    | mkc_cequiv _ _      = mkc_cequiv _ _      => apply mkc_cequiv_eq         in name
-    | mkc_image _ _       = mkc_image _ _       => apply mkc_image_eq          in name
-    | mkc_texc _ _        = mkc_texc _ _        => apply mkc_texc_eq           in name
-    | mkc_union _ _       = mkc_union _ _       => apply mkc_union_eq          in name
-    | mkc_eunion _ _      = mkc_eunion _ _      => apply mkc_eunion_eq         in name
-    | mkc_sup _ _         = mkc_sup _ _         => apply mkc_sup_eq            in name
-    | mkc_refl _          = mkc_refl _          => apply mkc_refl_eq           in name
-    | mkc_pair _ _        = mkc_pair _ _        => apply mkc_pair_eq           in name
-    | mkc_equality _ _ _  = mkc_equality _ _ _  => apply mkc_equality_eq       in name
-    | mkc_requality _ _ _ = mkc_requality _ _ _ => apply mkc_requality_eq      in name
-    | mkc_tequality _ _   = mkc_tequality _ _   => apply mkc_tequality_eq      in name
+  (* CTerms *)
+  | mkc_uni _           = mkc_uni _           => apply mkc_uni_eq            in name
+  | mkc_inl _           = mkc_inl _           => apply mkc_inl_eq            in name
+  | mkc_inr _           = mkc_inr _           => apply mkc_inr_eq            in name
+  | mkc_integer _       = mkc_integer _       => apply mkc_integer_eq        in name
+  | mkc_token _         = mkc_token _         => apply mkc_token_eq          in name
+  | mkc_utoken _        = mkc_utoken _        => apply mkc_utoken_eq         in name
+  | mkc_exception _ _   = mkc_exception _ _   => apply mkc_exception_eq      in name
+  | mkc_pertype _       = mkc_pertype _       => apply mkc_pertype_eq        in name
+  | mkc_ipertype _      = mkc_ipertype _      => apply mkc_ipertype_eq       in name
+  | mkc_spertype _      = mkc_spertype _      => apply mkc_spertype_eq       in name
+  | mkc_partial _       = mkc_partial _       => apply mkc_partial_eq        in name
+  | mkc_admiss _        = mkc_admiss _        => apply mkc_admiss_eq         in name
+  | mkc_mono _          = mkc_mono _          => apply mkc_mono_eq           in name
+  | mkc_approx _ _      = mkc_approx _ _      => apply mkc_approx_eq         in name
+  | mkc_cequiv _ _      = mkc_cequiv _ _      => apply mkc_cequiv_eq         in name
+  | mkc_image _ _       = mkc_image _ _       => apply mkc_image_eq          in name
+  | mkc_texc _ _        = mkc_texc _ _        => apply mkc_texc_eq           in name
+  | mkc_union _ _       = mkc_union _ _       => apply mkc_union_eq          in name
+  | mkc_eunion _ _      = mkc_eunion _ _      => apply mkc_eunion_eq         in name
+  | mkc_sup _ _         = mkc_sup _ _         => apply mkc_sup_eq            in name
+  | mkc_refl _          = mkc_refl _          => apply mkc_refl_eq           in name
+  | mkc_pair _ _        = mkc_pair _ _        => apply mkc_pair_eq           in name
+  | mkc_equality _ _ _  = mkc_equality _ _ _  => apply mkc_equality_eq       in name
+  | mkc_requality _ _ _ = mkc_requality _ _ _ => apply mkc_requality_eq      in name
+  | mkc_tequality _ _   = mkc_tequality _ _   => apply mkc_tequality_eq      in name
 
-    | mkc_isect _ _ _    = mkc_isect _ _ _    => appdup mkc_isect_eq1    name; repd; subst; apply mkc_isect_eq2    in name
-    | mkc_disect _ _ _   = mkc_disect _ _ _   => appdup mkc_disect_eq1   name; repd; subst; apply mkc_disect_eq2   in name
-    | mkc_eisect _ _ _   = mkc_eisect _ _ _   => appdup mkc_eisect_eq1   name; repd; subst; apply mkc_eisect_eq2   in name
-    | mkc_function _ _ _ = mkc_function _ _ _ => appdup mkc_function_eq1 name; repd; subst; apply mkc_function_eq2 in name
-    | mkc_w _ _ _        = mkc_w _ _ _        => appdup mkc_w_eq1        name; repd; subst; apply mkc_w_eq2        in name
-    | mkc_m _ _ _        = mkc_m _ _ _        => appdup mkc_m_eq1        name; repd; subst; apply mkc_m_eq2        in name
-    | mkc_product _ _ _  = mkc_product _ _ _  => appdup mkc_product_eq1  name; repd; subst; apply mkc_product_eq2  in name
-    | mkc_set _ _ _      = mkc_set _ _ _      => appdup mkc_set_eq1      name; repd; subst; apply mkc_set_eq2      in name
-    | mkc_tunion _ _ _   = mkc_tunion _ _ _   => appdup mkc_tunion_eq1   name; repd; subst; apply mkc_tunion_eq2   in name
+  | mkc_isect _ _ _    = mkc_isect _ _ _    => appdup mkc_isect_eq1    name; repd; subst; apply mkc_isect_eq2    in name
+  | mkc_disect _ _ _   = mkc_disect _ _ _   => appdup mkc_disect_eq1   name; repd; subst; apply mkc_disect_eq2   in name
+  | mkc_eisect _ _ _   = mkc_eisect _ _ _   => appdup mkc_eisect_eq1   name; repd; subst; apply mkc_eisect_eq2   in name
+  | mkc_function _ _ _ = mkc_function _ _ _ => appdup mkc_function_eq1 name; repd; subst; apply mkc_function_eq2 in name
+  | mkc_w _ _ _        = mkc_w _ _ _        => appdup mkc_w_eq1        name; repd; subst; apply mkc_w_eq2        in name
+  | mkc_m _ _ _        = mkc_m _ _ _        => appdup mkc_m_eq1        name; repd; subst; apply mkc_m_eq2        in name
+  | mkc_product _ _ _  = mkc_product _ _ _  => appdup mkc_product_eq1  name; repd; subst; apply mkc_product_eq2  in name
+  | mkc_set _ _ _      = mkc_set _ _ _      => appdup mkc_set_eq1      name; repd; subst; apply mkc_set_eq2      in name
+  | mkc_tunion _ _ _   = mkc_tunion _ _ _   => appdup mkc_tunion_eq1   name; repd; subst; apply mkc_tunion_eq2   in name
 
-    | mkc_free_from_atom  _ _ _ = mkc_free_from_atom  _ _ _ => apply mkc_free_from_atom_eq  in name
-    | mkc_efree_from_atom _ _ _ = mkc_efree_from_atom _ _ _ => apply mkc_efree_from_atom_eq in name
+  | mkc_free_from_atom  _ _ _ = mkc_free_from_atom  _ _ _ => apply mkc_free_from_atom_eq  in name
+  | mkc_efree_from_atom _ _ _ = mkc_efree_from_atom _ _ _ => apply mkc_efree_from_atom_eq in name
 
-    | mkc_free_from_atoms _ _ = mkc_free_from_atoms _ _ => apply mkc_free_from_atoms_eq in name
+  | mkc_free_from_atoms _ _ = mkc_free_from_atoms _ _ => apply mkc_free_from_atoms_eq in name
 
-    | mkc_pw _ _ _ _ _ _ _ _ _ _ _ = mkc_pw _ _ _ _ _ _ _ _ _ _ _ => appdup mkc_pw_eq1 name; repd; subst; apply mkc_pw_eq2 in name
-    | mkc_pm _ _ _ _ _ _ _ _ _ _ _ = mkc_pm _ _ _ _ _ _ _ _ _ _ _ => appdup mkc_pm_eq1 name; repd; subst; apply mkc_pm_eq2 in name
+  | mkc_pw _ _ _ _ _ _ _ _ _ _ _ = mkc_pw _ _ _ _ _ _ _ _ _ _ _ => appdup mkc_pw_eq1 name; repd; subst; apply mkc_pw_eq2 in name
+  | mkc_pm _ _ _ _ _ _ _ _ _ _ _ = mkc_pm _ _ _ _ _ _ _ _ _ _ _ => appdup mkc_pm_eq1 name; repd; subst; apply mkc_pm_eq2 in name
+
+  (* CNTerms *)
+  | mkcn_uni _           = mkcn_uni _           => apply mkcn_uni_eq            in name
+  | mkcn_inl _           = mkcn_inl _           => apply mkcn_inl_eq            in name
+  | mkcn_inr _           = mkcn_inr _           => apply mkcn_inr_eq            in name
+  | mkcn_integer _       = mkcn_integer _       => apply mkcn_integer_eq        in name
+  | mkcn_token _         = mkcn_token _         => apply mkcn_token_eq          in name
+(*  | mkcn_utoken _        = mkcn_utoken _        => apply mkcn_utoken_eq         in name*)
+  | mkcn_exception _ _   = mkcn_exception _ _   => apply mkcn_exception_eq      in name
+  | mkcn_pertype _       = mkcn_pertype _       => apply mkcn_pertype_eq        in name
+  | mkcn_ipertype _      = mkcn_ipertype _      => apply mkcn_ipertype_eq       in name
+  | mkcn_spertype _      = mkcn_spertype _      => apply mkcn_spertype_eq       in name
+  | mkcn_partial _       = mkcn_partial _       => apply mkcn_partial_eq        in name
+  | mkcn_admiss _        = mkcn_admiss _        => apply mkcn_admiss_eq         in name
+  | mkcn_mono _          = mkcn_mono _          => apply mkcn_mono_eq           in name
+  | mkcn_approx _ _      = mkcn_approx _ _      => apply mkcn_approx_eq         in name
+  | mkcn_cequiv _ _      = mkcn_cequiv _ _      => apply mkcn_cequiv_eq         in name
+  | mkcn_image _ _       = mkcn_image _ _       => apply mkcn_image_eq          in name
+  | mkcn_texc _ _        = mkcn_texc _ _        => apply mkcn_texc_eq           in name
+  | mkcn_union _ _       = mkcn_union _ _       => apply mkcn_union_eq          in name
+  | mkcn_eunion _ _      = mkcn_eunion _ _      => apply mkcn_eunion_eq         in name
+  | mkcn_sup _ _         = mkcn_sup _ _         => apply mkcn_sup_eq            in name
+  | mkcn_refl _          = mkcn_refl _          => apply mkcn_refl_eq           in name
+  | mkcn_pair _ _        = mkcn_pair _ _        => apply mkcn_pair_eq           in name
+  | mkcn_equality _ _ _  = mkcn_equality _ _ _  => apply mkcn_equality_eq       in name
+  | mkcn_requality _ _ _ = mkcn_requality _ _ _ => apply mkcn_requality_eq      in name
+  | mkcn_tequality _ _   = mkcn_tequality _ _   => apply mkcn_tequality_eq      in name
+
+  | mkcn_isect _ _ _    = mkcn_isect _ _ _    => appdup mkcn_isect_eq1    name; repd; subst; apply mkcn_isect_eq2    in name
+  | mkcn_disect _ _ _   = mkcn_disect _ _ _   => appdup mkcn_disect_eq1   name; repd; subst; apply mkcn_disect_eq2   in name
+  | mkcn_eisect _ _ _   = mkcn_eisect _ _ _   => appdup mkcn_eisect_eq1   name; repd; subst; apply mkcn_eisect_eq2   in name
+  | mkcn_function _ _ _ = mkcn_function _ _ _ => appdup mkcn_function_eq1 name; repd; subst; apply mkcn_function_eq2 in name
+  | mkcn_w _ _ _        = mkcn_w _ _ _        => appdup mkcn_w_eq1        name; repd; subst; apply mkcn_w_eq2        in name
+  | mkcn_m _ _ _        = mkcn_m _ _ _        => appdup mkcn_m_eq1        name; repd; subst; apply mkcn_m_eq2        in name
+  | mkcn_product _ _ _  = mkcn_product _ _ _  => appdup mkcn_product_eq1  name; repd; subst; apply mkcn_product_eq2  in name
+  | mkcn_set _ _ _      = mkcn_set _ _ _      => appdup mkcn_set_eq1      name; repd; subst; apply mkcn_set_eq2      in name
+  | mkcn_tunion _ _ _   = mkcn_tunion _ _ _   => appdup mkcn_tunion_eq1   name; repd; subst; apply mkcn_tunion_eq2   in name
+
+(*  | mkcn_free_from_atom  _ _ _ = mkcn_free_from_atom  _ _ _ => apply mkcn_free_from_atom_eq  in name*)
+(*  | mkcn_efree_from_atom _ _ _ = mkcn_efree_from_atom _ _ _ => apply mkcn_efree_from_atom_eq in name*)
+
+(*  | mkcn_free_from_atoms _ _ = mkcn_free_from_atoms _ _ => apply mkcn_free_from_atoms_eq in name*)
+
+  | mkcn_pw _ _ _ _ _ _ _ _ _ _ _ = mkcn_pw _ _ _ _ _ _ _ _ _ _ _ => appdup mkcn_pw_eq1 name; repd; subst; apply mkcn_pw_eq2 in name
+  | mkcn_pm _ _ _ _ _ _ _ _ _ _ _ = mkcn_pm _ _ _ _ _ _ _ _ _ _ _ => appdup mkcn_pm_eq1 name; repd; subst; apply mkcn_pm_eq2 in name
   end.
 
 Ltac eqconstr name :=
   try (eqconstr0 name);
-  try (complete (dest_cterms name; allsimpl; inversion name));
+  try (complete (dest_cnterms name; allsimpl; inversion name));
   repd;
   subst;
   GC.
 
 Ltac computes_to_eqval :=
   match goal with
-    | [ H1 : computes_to_valc ?lib ?T ?T2,
-             H2 : computes_to_valc ?lib ?T ?T1
-        |- _ ] =>
-      let name := fresh "eq" in
-      assert (T1 = T2)
-        as name
-          by (apply (computes_to_valc_eq lib T); auto);
-        eqconstr name
-    | [ H1 : computes_to_excc ?lib ?a2 ?T ?T2,
-             H2 : computes_to_excc ?lib ?a1 ?T ?T1
-        |- _ ] =>
-      let name := fresh "eq" in
-      assert (a1 = a2 # T1 = T2)
-        as name
-          by (apply (computes_to_excc_eq lib T); auto);
-       eqconstr name
+  | [ H1 : computes_to_valc ?lib ?T ?T2,
+      H2 : computes_to_valc ?lib ?T ?T1
+      |- _ ] =>
+    let name := fresh "eq" in
+    assert (T1 = T2)
+      as name by (apply (computes_to_valc_eq lib T); auto);
+    eqconstr name
+
+  | [ H1 : computes_to_valcn ?lib ?T ?T2,
+      H2 : computes_to_valcn ?lib ?T ?T1
+      |- _ ] =>
+    let name := fresh "eq" in
+    assert (T1 = T2)
+      as name by (apply (computes_to_valcn_eq lib T); auto);
+    eqconstr name
+
+  | [ H1 : computes_to_excc ?lib ?a2 ?T ?T2,
+      H2 : computes_to_excc ?lib ?a1 ?T ?T1
+      |- _ ] =>
+    let name := fresh "eq" in
+    assert (a1 = a2 # T1 = T2)
+      as name by (apply (computes_to_excc_eq lib T); auto);
+    eqconstr name
+
+  | [ H1 : computes_to_exccn ?lib ?a2 ?T ?T2,
+      H2 : computes_to_exccn ?lib ?a1 ?T ?T1
+      |- _ ] =>
+    let name := fresh "eq" in
+    assert (a1 = a2 # T1 = T2)
+      as name by (apply (computes_to_exccn_eq lib T); auto);
+    eqconstr name
   end.
 
 Ltac apply_defines_only_universes :=
@@ -1891,6 +1973,9 @@ Ltac dupcomp T h :=
   match goal with
     | [ H : computes_to_valc ?lib T ?x |- _ ] =>
         assert (computes_to_valc lib T x) as h by auto
+
+    | [ H : computes_to_valcn ?lib T ?x |- _ ] =>
+        assert (computes_to_valcn lib T x) as h by auto
   end.
 
 
@@ -1902,24 +1987,24 @@ Ltac use_dou :=
       let h  := fresh "h" in
       let h' := fresh "h'" in
       let i  := fresh "i" in
-      assert ({i : nat , ccomputes_to_valc lib T1 (mkc_uni i)})
+      assert ({i : nat , ccomputes_to_valcn lib T1 (mkcn_uni i)})
         as c1
           by (unfold defines_only_universes in H1;
               generalize (type_system_type_mem ts T1 T2 eq);
               intro h;
-              dest_imp h h'; try (complete (allunfold type_system; sp));
-              dest_imp h h'; try (complete (allunfold type_system; sp));
+              dest_imp h h'; try (complete (allunfold @type_system; sp));
+              dest_imp h h'; try (complete (allunfold @type_system; sp));
               dest_imp h h';
               apply H1 in h;
               auto;
               clear h);
-      assert ({i : nat , ccomputes_to_valc lib T2 (mkc_uni i)})
+      assert ({i : nat , ccomputes_to_valcn lib T2 (mkcn_uni i)})
         as c2
           by (unfold defines_only_universes in H1;
               generalize (type_system_type_mem1 ts T1 T2 eq);
               intro h;
-              dest_imp h h'; try (complete (allunfold type_system; sp));
-              dest_imp h h'; try (complete (allunfold type_system; sp));
+              dest_imp h h'; try (complete (allunfold @type_system; sp));
+              dest_imp h h'; try (complete (allunfold @type_system; sp));
               dest_imp h h';
               apply H1 in h;
               auto;
@@ -2051,14 +2136,14 @@ Ltac spts :=
         generalize (uniquely_valued_trans8_r ts T1 T2 T3 eq1 eq2);
         complete sp
 
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq, H2 : cequivc ?lib ?T1 ?T3
+    | [ H : type_system ?lib ?ts, H1 : ?ts ?T1 ?T2 ?eq, H2 : cequivcn ?lib ?T1 ?T3
         |- ?ts ?T1 ?T3 ?eq ] =>
       unfold type_system in H;
         repnd;
         generalize (type_reduces_to_symm lib ts T1 T2 T3 eq);
         complete sp
 
-    | [ H : type_system ?lib ?ts, H1 : ?ts ?T2 ?T1 ?eq, H2 : cequivc ?lib ?T1 ?T3
+    | [ H : type_system ?lib ?ts, H1 : ?ts ?T2 ?T1 ?eq, H2 : cequivcn ?lib ?T1 ?T3
         |- ?ts ?T1 ?T3 ?eq ] =>
       unfold type_system in H;
         repnd;

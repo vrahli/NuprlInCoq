@@ -46,10 +46,10 @@ Lemma eq_term_equals_sym_tsp {p} :
          a1 a2
          (e : eqa a1 a1) (e1 : eqa a1 a2) (e2 : eqa a2 a1)
          v1 B1 v2 B2,
-    (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+    (forall (a1 a2 : cterm) (e : eqa a1 a2),
        type_sys_props lib ts
-                      (substc a1 v1 B1)
-                      (substc a2 v2 B2)
+                      (substcn a1 v1 B1)
+                      (substcn a2 v2 B2)
                       (eqb a1 a2 e))
     -> eq_term_equals (eqb a1 a2 e1) (eqb a1 a1 e)
        # eq_term_equals (eqb a2 a1 e2) (eqb a1 a1 e)
@@ -64,7 +64,7 @@ Proof.
 
   generalize (ftspb a1 a2 e1); intro i.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-  implies_ts_or (substc a2 v2 B2) tygt.
+  implies_ts_or (substcn a2 v2 B2) tygt.
   apply uv2 in tygt; sp.
 
   (* 2 *)
@@ -76,10 +76,10 @@ Proof.
   generalize (ftspb a2 a1 e2); intro i.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
 
-  generalize (tygs (substc a1 v1 B1) (substc a1 v2 B2) (eqb a1 a1 e)); intro i.
+  generalize (tygs (substcn a1 v1 B1) (substcn a1 v2 B2) (eqb a1 a1 e)); intro i.
   repeat (dest_imp i h); repnd.
   rw i in tygt.
-  rev_implies_ts_or (substc a2 v1 B1) tygt.
+  rev_implies_ts_or (substcn a2 v1 B1) tygt.
   apply uv2 in tygt; sp.
 
   (* 3 *)
@@ -97,10 +97,10 @@ Lemma eq_term_equals_sym_tsp2 {p} :
          (eqb : per-fam(eqa))
          v1 B1 v2 B2,
     term_equality_transitive eqa
-    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+    -> (forall (a1 a2 : cterm) (e : eqa a1 a2),
           type_sys_props lib ts
-                         (substc a1 v1 B1)
-                         (substc a2 v2 B2)
+                         (substcn a1 v1 B1)
+                         (substcn a2 v2 B2)
                          (eqb a1 a2 e))
     -> (forall a1 a2 (e1 : eqa a1 a2) (e : eqa a1 a1),
           eq_term_equals (eqb a1 a2 e1) (eqb a1 a1 e))
@@ -120,7 +120,7 @@ Proof.
 
   generalize (ftspb a1 a2 e1); intro i.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-  implies_ts_or (substc a2 v2 B2) tygt.
+  implies_ts_or (substcn a2 v2 B2) tygt.
   apply uv2 in tygt; sp.
 
   (* 2 *)
@@ -133,10 +133,10 @@ Proof.
   generalize (ftspb a2 a1 e2); intro i.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
 
-  generalize (tygs (substc a1 v1 B1) (substc a1 v2 B2) (eqb a1 a1 e)); intro i.
+  generalize (tygs (substcn a1 v1 B1) (substcn a1 v2 B2) (eqb a1 a1 e)); intro i.
   repeat (dest_imp i h); repnd.
   rw i in tygt.
-  rev_implies_ts_or (substc a2 v1 B1) tygt.
+  rev_implies_ts_or (substcn a2 v1 B1) tygt.
   apply uv2 in tygt; sp.
 
   (* 3 *)
@@ -155,9 +155,9 @@ Lemma type_sys_props_eqb_comm {p} :
          a1 a2
          (e : eqa a1 a2) (e1 : eqa a2 a1) (e2 : eqa a1 a1) (e3 : eqa a2 a2)
          v1 B1 v2 B2,
-    (forall (a1 a2 : CTerm) (e : eqa a1 a2),
-       type_sys_props lib ts (substc a1 v1 B1) (substc a2 v2 B2) (eqb a1 a2 e))
-    -> type_sys_props lib ts (substc a2 v1 B1) (substc a1 v2 B2) (eqb a1 a2 e).
+    (forall (a1 a2 : cterm) (e : eqa a1 a2),
+       type_sys_props lib ts (substcn a1 v1 B1) (substcn a2 v2 B2) (eqb a1 a2 e))
+    -> type_sys_props lib ts (substcn a2 v1 B1) (substcn a1 v2 B2) (eqb a1 a2 e).
 Proof.
   introv e1 e2 e3 ftspb.
 
@@ -174,14 +174,14 @@ Proof.
 
     generalize (ftspb a2 a1 e1); intro i.
     onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-    implies_ts_or_eq (substc a2 v1 B1) T3 (substc a1 v2 B2) h.
+    implies_ts_or_eq (substcn a2 v1 B1) T3 (substcn a1 v2 B2) h.
     apply uv2 in h.
     apply eq_term_equals_trans with (eq2 := eqb a2 a1 e1); sp.
     apply eq_term_equals_sym; sp.
 
     generalize (ftspb a2 a1 e1); intro i.
     onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-    rev_implies_ts_or_eq (substc a1 v2 B2) T3 (substc a2 v1 B1) h.
+    rev_implies_ts_or_eq (substcn a1 v2 B2) T3 (substcn a2 v1 B1) h.
     apply uv2 in h.
     apply eq_term_equals_trans with (eq2 := eqb a2 a1 e1); sp.
     apply eq_term_equals_sym; sp.
@@ -195,7 +195,7 @@ Proof.
     dest_imp i h; repnd.
     generalize (tyt2 T3 (eqb a1 a2 e)); intro j.
     dest_imp j h; repnd.
-    generalize (tys2 (substc a2 v1 B1) T3 eq'); intro k.
+    generalize (tys2 (substcn a2 v1 B1) T3 eq'); intro k.
     repeat (dest_imp k h).
     apply eq_term_equals_trans with (eq2 := eqb a1 a2 e); sp.
 
@@ -205,7 +205,7 @@ Proof.
     dest_imp i h; repnd.
     generalize (tyst2 T3 (eqb a1 a2 e)); intro j.
     dest_imp j h; repnd.
-    generalize (tys2 (substc a1 v2 B2) T3 eq'); intro k.
+    generalize (tys2 (substcn a1 v2 B2) T3 eq'); intro k.
     repeat (dest_imp k h).
     apply eq_term_equals_trans with (eq2 := eqb a1 a2 e); sp.
 
@@ -228,32 +228,32 @@ Proof.
     (* 1 *)
     generalize (ftspb a2 a2 e3); intro i.
     onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-    generalize (tyvr2 (substc a2 v1 B1) T3); intro i.
+    generalize (tyvr2 (substcn a2 v1 B1) T3); intro i.
     dest_imp i h.
     dest_imp i h.
 
     generalize (ftspb a1 a2 e); intro j.
     onedtsp uv3 tys3 tyt3 tyst3 tyvr3 tes3 tet3 tevr3 tygs3 tygt3 dum3.
-    generalize (tygs3 (substc a1 v1 B1) (substc a2 v2 B2) (eqb a1 a2 e)); intro k.
+    generalize (tygs3 (substcn a1 v1 B1) (substcn a2 v2 B2) (eqb a1 a2 e)); intro k.
     repeat (dest_imp k h); repnd.
     rw k in tygt3.
-    rev_implies_ts_or (substc a2 v1 B1) tygt3.
+    rev_implies_ts_or (substcn a2 v1 B1) tygt3.
     apply uv2 in tygt3.
-    generalize (tys2 (substc a2 v1 B1) (substc a2 v2 B2) (eqb a1 a2 e)); intro l.
+    generalize (tys2 (substcn a2 v1 B1) (substcn a2 v2 B2) (eqb a1 a2 e)); intro l.
     dest_imp l h.
 
     (* 2 *)
     generalize (ftspb a1 a1 e2); intro i.
     onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-    generalize (tyvr2 (substc a1 v2 B2) T3); intro i.
+    generalize (tyvr2 (substcn a1 v2 B2) T3); intro i.
     dest_imp i h.
     dest_imp i h.
 
     generalize (ftspb a1 a2 e); intro j.
     onedtsp uv3 tys3 tyt3 tyst3 tyvr3 tes3 tet3 tevr3 tygs3 tygt3 dum3.
-    implies_ts_or (substc a1 v2 B2) tygt3.
+    implies_ts_or (substcn a1 v2 B2) tygt3.
     apply uv2 in tygt3.
-    generalize (tys2 (substc a1 v1 B1) T3 (eqb a1 a2 e)); intro l.
+    generalize (tys2 (substcn a1 v1 B1) T3 (eqb a1 a2 e)); intro l.
     dest_imp l h.
 
   - Case "term_symmetric".
@@ -279,7 +279,7 @@ Proof.
 
     generalize (ftspb a2 a1 e1); intro i.
     onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-    generalize (tys2 (substc a2 v1 B1) (substc a1 v2 B2) (eqb a2 a1 e1)); sp.
+    generalize (tys2 (substcn a2 v1 B1) (substcn a1 v2 B2) (eqb a2 a1 e1)); sp.
 
 (*
   - Case "type_gtransitive".
@@ -287,11 +287,11 @@ Proof.
 
     generalize (ftspb a2 a1 e1); intro i.
     onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-    generalize (tygt2 (substc a2 v1 B1) T3 T4 eq1 eq2); sp.
+    generalize (tygt2 (substcn a2 v1 B1) T3 T4 eq1 eq2); sp.
 
     generalize (ftspb a2 a1 e1); intro i.
     onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-    generalize (tygt2 (substc a1 v2 B2) T3 T4 eq1 eq2); sp.
+    generalize (tygt2 (substcn a1 v2 B2) T3 T4 eq1 eq2); sp.
 *)
 
   - Case "type_mtransitive".
@@ -299,25 +299,25 @@ Proof.
 
     generalize (ftspb a2 a1 e1); intro i.
     onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 tymt2.
-    generalize (tymt2 (substc a2 v1 B1) T3 T4 eq1 eq2); sp.
+    generalize (tymt2 (substcn a2 v1 B1) T3 T4 eq1 eq2); sp.
 
     generalize (ftspb a2 a1 e1); intro i.
     onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 tymt2.
-    generalize (tymt2 (substc a1 v2 B2) T3 T4 eq1 eq2); sp.
+    generalize (tymt2 (substcn a1 v2 B2) T3 T4 eq1 eq2); sp.
 Qed.
 
 Lemma eq_term_equals_type_family {p} :
-  forall lib (T1 T2 : @CTerm p) eqa1 eqa2 eqb1 eqb2 ts A v B A' v' B'
-         (C : CTerm -> forall v : NVar, CVTerm [v] -> CTerm),
+  forall lib (T1 T2 : @cterm p) eqa1 eqa2 eqb1 eqb2 ts A v B A' v' B'
+         (C : cterm -> forall v : NVar, cvterm [v] -> cterm),
     (forall x y z a b c, C x y z = C a b c -> x = a # y = b)
     -> (forall x y z c, C x y z = C x y c -> z = c)
     -> type_family lib C ts T1 T2 eqa1 eqb1
-    -> computes_to_valc lib T1 (C A v B)
+    -> computes_to_valcn lib T1 (C A v B)
     -> type_sys_props lib ts A A' eqa2
-    -> (forall (a a' : CTerm) (e : eqa2 a a'),
+    -> (forall (a a' : cterm) (e : eqa2 a a'),
           type_sys_props lib ts
-                         (substc a v B)
-                         (substc a' v' B')
+                         (substcn a v B)
+                         (substcn a' v' B')
                          (eqb2 a a' e))
     -> eq_term_equals eqa2 eqa1
        # (forall a1 a2 (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2),
@@ -342,18 +342,18 @@ Proof.
   apply uv with (T3 := A'0); sp.
 
   (* Second clause *)
-  assert (forall (a1 a2 : CTerm) (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2),
+  assert (forall (a1 a2 : cterm) (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2),
              eq_term_equals (eqb1 a1 a2 e1) (eqb2 a1 a2 e2)) as feqtb.
   intros.
   generalize (t0 a1 a2 e1); intro ts1.
-  assert (ts (substc a1 v0 B0) (substc a2 v' B') (eqb2 a1 a2 e2))
+  assert (ts (substcn a1 v0 B0) (substcn a2 v' B') (eqb2 a1 a2 e2))
          as ts2
          by (generalize (ftspb a1 a2 e2); intro i;
              onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum; sp).
   generalize (ftspb a1 a2 e2); intro tsp.
 
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  implies_ts_or (substc a2 v' B') ts1.
+  implies_ts_or (substcn a2 v' B') ts1.
   apply uv in ts1.
   apply eq_term_equals_sym; auto.
 
@@ -363,11 +363,11 @@ Proof.
   intros.
   generalize (ftspb a1 a1 e1); intro tsp1.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
-  assert (ts (substc a1 v0 B0) (substc a2 v' B') (eqb2 a1 a2 e2))
+  assert (ts (substcn a1 v0 B0) (substcn a2 v' B') (eqb2 a1 a2 e2))
          as ts1
          by (generalize (ftspb a1 a2 e2); intro i;
              onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1; sp).
-  implies_ts_or (substc a1 v' B') ts1.
+  implies_ts_or (substcn a1 v' B') ts1.
   apply uv in ts1; sp.
 
   (* Fourth clause *)
@@ -378,12 +378,12 @@ Proof.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
   generalize (ftspb a2 a1 e2); intro tsp2.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-  assert (ts (substc a2 v0 B0) (substc a1 v' B') (eqb2 a2 a1 e2))
+  assert (ts (substcn a2 v0 B0) (substcn a1 v' B') (eqb2 a2 a1 e2))
          as ts1
          by (generalize (ftspb a2 a1 e2); intro i;
              onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1; sp).
   apply tygs2 in ts1; sp.
-  rev_implies_ts_or (substc a1 v0 B0) ts1.
+  rev_implies_ts_or (substcn a1 v0 B0) ts1.
   apply uv in ts1; sp.
 
   (* Fifth clause *)
@@ -411,7 +411,7 @@ Proof.
   assert (eqa1 a a') as e' by (rw <- eqta; auto).
   generalize (feqtb a a' e' e); intro eqtb.
   generalize (ftspb a a' e); intro tspb.
-  apply (type_sys_props_ts_uv2 lib) with (C := substc a' v' B') (eq1 := eqb1 a a' e'); sp.
+  apply (type_sys_props_ts_uv2 lib) with (C := substcn a' v' B') (eq1 := eqb1 a a' e'); sp.
 
   (* we prove the second type_family *)
   unfold type_family.
@@ -433,24 +433,24 @@ Proof.
   generalize (feqtb a' a e1 e2); intro eqtb.
   generalize (ftspb a' a e2); intro tspb.
 
-  assert (ts (substc a' v0 B0) (substc a v'0 B'0) (eqb2 a a' e))
+  assert (ts (substcn a' v0 B0) (substcn a v'0 B'0) (eqb2 a a' e))
          as i
-         by (apply (type_sys_props_ts_uv3 lib) with (C := substc a v' B') (eq1 := eqb1 a' a e1) (eq2 := eqb2 a' a e2); sp).
-  apply (type_sys_props_ts_sym3 lib) with (C := substc a v' B') (eq1 := eqb2 a' a e2); sp.
+         by (apply (type_sys_props_ts_uv3 lib) with (C := substcn a v' B') (eq1 := eqb1 a' a e1) (eq2 := eqb2 a' a e2); sp).
+  apply (type_sys_props_ts_sym3 lib) with (C := substcn a v' B') (eq1 := eqb2 a' a e2); sp.
 Qed.
 
 Lemma eq_term_equals_type_family2 {p} :
-  forall lib (T1 T2 : @CTerm p) eqa1 eqa2 eqb1 eqb2 ts A v B A' v' B'
-         (C : CTerm -> forall v : NVar, CVTerm [v] -> CTerm),
+  forall lib (T1 T2 : @cterm p) eqa1 eqa2 eqb1 eqb2 ts A v B A' v' B'
+         (C : cterm -> forall v : NVar, cvterm [v] -> cterm),
     (forall x y z a b c, C x y z = C a b c -> x = a # y = b)
     -> (forall x y z c, C x y z = C x y c -> z = c)
     -> type_family lib C ts T1 T2 eqa1 eqb1
-    -> computes_to_valc lib T2 (C A v B)
+    -> computes_to_valcn lib T2 (C A v B)
     -> type_sys_props lib ts A A' eqa2
-    -> (forall (a a' : CTerm) (e : eqa2 a a'),
+    -> (forall (a a' : cterm) (e : eqa2 a a'),
           type_sys_props lib ts
-                         (substc a v B)
-                         (substc a' v' B')
+                         (substcn a v B)
+                         (substcn a' v' B')
                          (eqb2 a a' e))
     -> eq_term_equals eqa2 eqa1
        # (forall a1 a2 (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2),
@@ -475,7 +475,7 @@ Proof.
   apply (type_sys_props_eq_term_equals lib) with (ts := ts) (A := A0) (B := A'0) (C := A'); sp.
 
   (* Second clause *)
-  assert (forall (a1 a2 : CTerm) (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2),
+  assert (forall (a1 a2 : cterm) (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2),
              eq_term_equals (eqb1 a1 a2 e1) (eqb2 a1 a2 e2)) as feqtb.
   intros.
   assert (eqa1 a1 a1)
@@ -495,7 +495,7 @@ Proof.
   apply eq_term_equals_trans with (eq2 := eqb2 a2 a1 e5).
   apply eq_term_equals_sym.
   apply (type_sys_props_eq_term_equals lib)
-        with (ts := ts) (A := substc a1 v0 B0) (B := substc a2 v'0 B'0) (C := substc a1 v' B'); sp.
+        with (ts := ts) (A := substcn a1 v0 B0) (B := substcn a2 v'0 B'0) (C := substcn a1 v' B'); sp.
   apply eq_term_equals_trans with (eq2 := eqb2 a1 a1 e4); sp.
   apply eq_term_equals_sym; sp.
 
@@ -507,7 +507,7 @@ Proof.
   generalize (ftspb a1 a2 e2); intro tsp2.
   apply type_sys_props_ts_refl in tsp1; repnd.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-  implies_ts_or (substc a2 v' B') tsp0.
+  implies_ts_or (substcn a2 v' B') tsp0.
   apply uv in tsp0; sp.
   apply eq_term_equals_sym; sp.
 
@@ -519,7 +519,7 @@ Proof.
   generalize (ftspb a2 a1 e2); intro tsp2.
   apply type_sys_props_ts_refl in tsp1; repnd.
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-  rev_implies_ts_or (substc a2 v'0 B'0) tsp1.
+  rev_implies_ts_or (substcn a2 v'0 B'0) tsp1.
   apply uv in tsp1; sp.
   apply eq_term_equals_sym; sp.
 
@@ -552,7 +552,7 @@ Proof.
   generalize (ftspb a' a e2); intro i.
 
   generalize (t0 a a' e1); intro j.
-  apply (type_sys_props_ts_uv4 lib) with (C := substc a v' B') (eq1 := eqb1 a a' e1) (eq2 := eqb2 a' a e2); sp.
+  apply (type_sys_props_ts_uv4 lib) with (C := substcn a v' B') (eq1 := eqb1 a a' e1) (eq2 := eqb2 a' a e2); sp.
 
   (* we prove the second type_family *)
   unfold type_family.
@@ -573,23 +573,23 @@ Proof.
   generalize (t0 a' a e1); intro tsb1.
   generalize (ftspb a a' e); intro tspb.
 
-  assert (ts (substc a' v0 B0) (substc a v'0 B'0) (eqb2 a a' e))
+  assert (ts (substcn a' v0 B0) (substcn a v'0 B'0) (eqb2 a a' e))
          as i
-         by (apply (type_sys_props_ts_uv4 lib) with (C := substc a' v' B') (eq1 := eqb1 a' a e1) (eq2 := eqb2 a a' e); sp).
-  apply (type_sys_props_ts_sym2 lib) with (C := substc a' v' B') (eq1 := eqb2 a a' e); sp.
+         by (apply (type_sys_props_ts_uv4 lib) with (C := substcn a' v' B') (eq1 := eqb1 a' a e1) (eq2 := eqb2 a a' e); sp).
+  apply (type_sys_props_ts_sym2 lib) with (C := substcn a' v' B') (eq1 := eqb2 a a' e); sp.
 Qed.
 
 Lemma type_family_trans {p} :
   forall lib C (ts : cts(p)) T1 T2 T3 eqa eqb eqa1 eqb1 eqa2 eqb2 A v B A' v' B',
     (forall x y z a b c, C x y z = C a b c -> x = a # y = b)
     -> (forall x y z c, C x y z = C x y c -> z = c)
-    -> computes_to_valc lib T1 (C A v B)
-    -> computes_to_valc lib T2 (C A' v' B')
+    -> computes_to_valcn lib T1 (C A v B)
+    -> computes_to_valcn lib T2 (C A' v' B')
     -> type_sys_props lib ts A A' eqa
-    -> (forall (a a' : CTerm) (e : eqa a a'),
+    -> (forall (a a' : cterm) (e : eqa a a'),
           type_sys_props lib ts
-                         (substc a v B)
-                         (substc a' v' B')
+                         (substcn a v B)
+                         (substcn a' v' B')
                          (eqb a a' e))
     -> type_family lib C ts T1 T2 eqa1 eqb1
     -> type_family lib C ts T2 T3 eqa2 eqb2
@@ -633,7 +633,7 @@ Proof.
   generalize (tf1 a1 a2 e2); intro ts1.
   generalize (ftspb a1 a2 e1); intro tsp.
   apply (type_sys_props_eq_term_equals2 lib)
-        with (ts := ts) (A := substc a1 v B) (B := substc a2 v' B') (C := substc a1 v B); sp.
+        with (ts := ts) (A := substcn a1 v B) (B := substcn a2 v' B') (C := substcn a1 v B); sp.
 
   (* *)
   assert (forall a1 a2 (e1 : eqa a1 a2) (e2 : eqa2 a2 a1),
@@ -642,7 +642,7 @@ Proof.
   generalize (tf2 a2 a1 e2); intro ts1.
   generalize (ftspb a1 a2 e1); intro tsp.
   apply (type_sys_props_eq_term_equals3 lib)
-        with (ts := ts) (A := substc a1 v'0 B'0) (B := substc a2 v' B') (C := substc a1 v B); sp.
+        with (ts := ts) (A := substcn a1 v'0 B'0) (B := substcn a2 v' B') (C := substcn a1 v B); sp.
 
   (* *)
   generalize (eq_term_equals_sym_tsp2 lib ts eqa eqb v B v' B' tet ftspb); intro i; repnd.
@@ -673,7 +673,7 @@ Proof.
   generalize (tf2 a' a' e3); intro ts2.
   generalize (ftspb a a' e); intro tspb.
 
-  apply (type_sys_props_ts_trans lib) with (B := substc a' v' B') (eq1 := eqb1 a a' e4) (eq2 := eqb2 a' a' e3); sp.
+  apply (type_sys_props_ts_trans lib) with (B := substcn a' v' B') (eq1 := eqb1 a a' e4) (eq2 := eqb2 a' a' e3); sp.
 Qed.
 
 Lemma type_sys_props_eq {p} :
@@ -764,9 +764,9 @@ Lemma type_family_refl {p} :
     (forall x y z a b c, C x y z = C a b c -> x = a # y = b)
     -> (forall x y z c, C x y z = C x y c -> z = c)
     -> type_sys_props lib ts A A' eqa
-    -> (forall (a a' : CTerm) (e : eqa a a'),
-          type_sys_props lib ts (substc a v B) (substc a' v' B') (eqb a a' e))
-    -> computes_to_valc lib T1 (C A v B)
+    -> (forall (a a' : cterm) (e : eqa a a'),
+          type_sys_props lib ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
+    -> computes_to_valcn lib T1 (C A v B)
     -> type_family lib C ts T1 T2 eqa eqb
     -> type_family lib C ts T1 T1 eqa eqb
        # type_family lib C ts T2 T2 eqa eqb.
@@ -788,7 +788,7 @@ Proof.
              apply tet with (t2 := a); sp).
   generalize (tspb a a' e); intro i.
   generalize (tspb a' a' e'); intro j.
-  apply (type_sys_props_eq lib) with (C := substc a' v' B') (eq2 := eqb a' a' e'); sp.
+  apply (type_sys_props_eq lib) with (C := substcn a' v' B') (eq2 := eqb a' a' e'); sp.
 
   exists A'0 A'0 v'0 v'0 B'0 B'0; sp; spcast; sp.
 
@@ -803,7 +803,7 @@ Proof.
   generalize (t0 a a' e); intro j.
   generalize (t0 a a e'); intro k.
 
-  generalize (type_sys_props_ts_trans2 lib ts (substc a v B) (substc a v'0 B'0) (substc a' v'0 B'0) (substc a' v' B') (eqb a a e') (eqb a a' e) (eqb a a' e)); sp.
+  generalize (type_sys_props_ts_trans2 lib ts (substcn a v B) (substcn a v'0 B'0) (substcn a' v'0 B'0) (substcn a' v' B') (eqb a a e') (eqb a a' e) (eqb a a' e)); sp.
 Qed.
 
 (*
@@ -811,12 +811,12 @@ Lemma type_family_trans :
   forall C ts T1 T2 T3 eqa1 eqb1 eqa2 eqb2 A v B A' v' B',
     (forall x y z a b c, C x y z = C a b c -> x = a # y = b)
     -> (forall x y z c, C x y z = C x y c -> z = c)
-    -> computes_to_valc T1 (C A v B)
+    -> computes_to_valcn T1 (C A v B)
     -> type_sys_props ts A A' eqa1
-    -> (forall (a a' : CTerm) (e : eqa1 a a'),
+    -> (forall (a a' : cterm) (e : eqa1 a a'),
           type_sys_props ts
-                         (substc a v B)
-                         (substc a' v' B')
+                         (substcn a v B)
+                         (substcn a' v' B')
                          (eqb1 a a' e))
     -> type_family C ts T1 T2 eqa1 eqb1
     -> type_family C ts T2 T3 eqa2 eqb2
@@ -849,12 +849,12 @@ Proof.
   generalize (ftspb a1 a2 e1); intro tsp.
 
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-  generalize (tygt2 (substc a1 v B)
-                    (substc a1 v'1 B'1)
-                    (substc a2 v'0 B'0)
+  generalize (tygt2 (substcn a1 v B)
+                    (substcn a1 v'1 B'1)
+                    (substcn a2 v'0 B'0)
                     (eqb1 a1 a1 e3)
                     (eqb2 a1 a2 e2)); sp.
-  implies_ts_or (substc a2 v' B') X.
+  implies_ts_or (substcn a2 v' B') X.
   apply uv2 in X; sp.
 
   (* We prove the third clause *)
@@ -870,9 +870,9 @@ Proof.
   generalize (tf2 a' a' e2); intro ts2.
   generalize (ftspb a a' e); intro tspb.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-  generalize (tygt2 (substc a v B)
-                    (substc a' v'1 B'1)
-                    (substc a' v'0 B'0)
+  generalize (tygt2 (substcn a v B)
+                    (substcn a' v'1 B'1)
+                    (substcn a' v'0 B'0)
                     (eqb1 a a' e)
                     (eqb2 a' a' e2)); sp.
 Qed.
@@ -882,12 +882,12 @@ Lemma type_family_trans2 {p} :
   forall lib C (ts : cts(p)) T1 T2 T3 eqa1 eqb1 eqa2 eqb2 A v B A' v' B',
     (forall x y z a b c, C x y z = C a b c -> x = a # y = b)
     -> (forall x y z c, C x y z = C x y c -> z = c)
-    -> computes_to_valc lib T2 (C A v B)
+    -> computes_to_valcn lib T2 (C A v B)
     -> type_sys_props lib ts A A' eqa1
-    -> (forall (a a' : CTerm) (e : eqa1 a a'),
+    -> (forall (a a' : cterm) (e : eqa1 a a'),
           type_sys_props lib ts
-                         (substc a v B)
-                         (substc a' v' B')
+                         (substcn a v B)
+                         (substcn a' v' B')
                          (eqb1 a a' e))
     -> type_family lib C ts T1 T2 eqa1 eqb1
     -> type_family lib C ts T2 T3 eqa2 eqb2
@@ -916,7 +916,7 @@ Proof.
   generalize (tf2 a1 a2 e2); intro ts2.
   generalize (ftspb a1 a2 e1); intro tsp.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-  implies_ts_or (substc a2 v' B') ts2.
+  implies_ts_or (substcn a2 v' B') ts2.
   apply uv2 in ts2; sp.
 
   (* We prove the third clause *)
@@ -932,25 +932,62 @@ Proof.
   generalize (tf2 a' a' e2); intro ts2.
   generalize (ftspb a' a' e1); intro tspb.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 tymt2.
-  generalize (tymt2 (substc a' v B)
-                    (substc a v1 B1)
-                    (substc a' v'0 B'0)
+  generalize (tymt2 (substcn a' v B)
+                    (substcn a v1 B1)
+                    (substcn a' v'0 B'0)
                     (eqb1 a a' e)
                     (eqb2 a' a' e2)); sp.
 Qed.
 
+Lemma isprog_nout_vars_implies_isprogram_bt {o} :
+  forall vs (t : @NTerm o),
+    isprog_nout_vars vs t
+    -> isprogram_bt (bterm vs t).
+Proof.
+  introv isp.
+  apply isprog_vars_implies_isprogram_bt.
+  apply isprog_nout_vars_implies_isprog_vars; auto.
+Qed.
+Hint Resolve isprog_nout_vars_implies_isprogram_bt : slow.
+
+Lemma isprog_nout_implies_isprogram {o} :
+  forall (t : @NTerm o),
+    isprog_nout t
+    -> isprogram t.
+Proof.
+  introv isp.
+  apply isprog_nout_implies_isprog in isp; eauto 3 with slow.
+Qed.
+Hint Resolve isprog_nout_implies_isprogram : slow.
+
+Lemma bcequivcn1 {p} :
+  forall lib v1 v2 t1 t2,
+    @bcequivcn p lib [v1] t1 [v2] t2
+    -> forall t,
+         cequivcn lib (substcn t v1 t1) (substcn t v2 t2).
+Proof.
+  unfold bcequivcn, cequivcn, bcequivc, cequivc, get_cvterm, substc. introv Hbc. intro t.
+  destruct_cnterms; allsimpl.
+  apply blift_cequiv_approx in Hbc. repnd.
+  allrw <- @isprog_vars_isprogrambt.
+  apply approxbt_lsubst_prog with (lnt:=[x]) in Hbc;spcls; try simpl_list; spcf; eauto 2 with slow.
+  apply approxbt_lsubst_prog with (lnt:=[x]) in Hbc0;spcls; try simpl_list; spcf; eauto 2 with slow.
+  unfold subst. allsimpl.
+  split; spc.
+Qed.
+
 Lemma type_family_cequivc {p} :
   forall lib C (ts : cts(p)) T1 T2 eqa eqb A1 v1 B1 A2 v2 B2 A v B,
-    cequivc lib T1 T2
-    -> computes_to_valc lib T1 (C A1 v1 B1)
-    -> computes_to_valc lib T2 (C A2 v2 B2)
-    -> cequivc lib A1 A2
-    -> bcequivc lib [v1] B1 [v2] B2
+    cequivcn lib T1 T2
+    -> computes_to_valcn lib T1 (C A1 v1 B1)
+    -> computes_to_valcn lib T2 (C A2 v2 B2)
+    -> cequivcn lib A1 A2
+    -> bcequivcn lib [v1] B1 [v2] B2
     -> ts A1 A eqa
-    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+    -> (forall (a1 a2 : cterm) (e : eqa a1 a2),
           type_sys_props lib ts
-                         (substc a1 v1 B1)
-                         (substc a2 v B)
+                         (substcn a1 v1 B1)
+                         (substcn a2 v B)
                          (eqb a1 a2 e))
     -> type_sys_props lib ts A1 A eqa
     -> type_family lib C ts T1 T2 eqa eqb.
@@ -966,30 +1003,30 @@ Proof.
 
   generalize (ftspb a' a' e'); intro i.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2.
-  generalize (tyvr2 (substc a' v1 B1) (substc a' v2 B2)); intro k.
+  generalize (tyvr2 (substcn a' v1 B1) (substcn a' v2 B2)); intro k.
   dest_imp k h.
   dest_imp k h.
-  apply bcequivc1 with (t := a') in cb; auto.
+  apply bcequivcn1 with (t := a') in cb; auto.
 
   generalize (ftspb a a' e); intro i.
   generalize (ftspb a' a' e'); intro j.
 
-  generalize (type_sys_props_eq lib ts (substc a v1 B1) (substc a' v1 B1) (substc a' v B) (eqb a a' e) (eqb a' a' e')); intro l; repeat (dest_imp l h).
-  generalize (type_sys_props_ts_trans3 lib ts (substc a v1 B1) (substc a' v1 B1) (substc a' v2 B2) (substc a' v B) (eqb a a' e) (eqb a' a' e') (eqb a' a' e')); sp.
+  generalize (type_sys_props_eq lib ts (substcn a v1 B1) (substcn a' v1 B1) (substcn a' v B) (eqb a a' e) (eqb a' a' e')); intro l; repeat (dest_imp l h).
+  generalize (type_sys_props_ts_trans3 lib ts (substcn a v1 B1) (substcn a' v1 B1) (substcn a' v2 B2) (substcn a' v B) (eqb a a' e) (eqb a' a' e') (eqb a' a' e')); sp.
 Qed.
 
 Lemma type_family_cequivc2 {p} :
   forall lib C (ts : cts(p)) T1 T2 eqa eqb A1 v1 B1 A2 v2 B2 A v B,
-    cequivc lib T1 T2
-    -> computes_to_valc lib T1 (C A1 v1 B1)
-    -> computes_to_valc lib T2 (C A2 v2 B2)
-    -> cequivc lib A1 A2
-    -> bcequivc lib [v1] B1 [v2] B2
+    cequivcn lib T1 T2
+    -> computes_to_valcn lib T1 (C A1 v1 B1)
+    -> computes_to_valcn lib T2 (C A2 v2 B2)
+    -> cequivcn lib A1 A2
+    -> bcequivcn lib [v1] B1 [v2] B2
     -> ts A A1 eqa
-    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+    -> (forall (a1 a2 : cterm) (e : eqa a1 a2),
           type_sys_props lib ts
-                         (substc a1 v B)
-                         (substc a2 v1 B1)
+                         (substcn a1 v B)
+                         (substcn a2 v1 B1)
                          (eqb a1 a2 e))
     -> type_sys_props lib ts A A1 eqa
     -> type_family lib C ts T1 T2 eqa eqb.
@@ -1038,7 +1075,7 @@ Qed.
 
 Lemma is_per_iff {p} :
   forall eq1 eq2,
-    (forall x y : @CTerm p, inhabited (eq1 x y) <=> inhabited (eq2 x y))
+    (forall x y : @cterm p, inhabited (eq1 x y) <=> inhabited (eq2 x y))
     -> is_per eq1
     -> is_per eq2.
 Proof.
@@ -1060,7 +1097,7 @@ Proof.
 Qed.
 
 Lemma is_per_sym {p} :
-  forall (a b : @CTerm p) eq,
+  forall (a b : @cterm p) eq,
     is_per eq
     -> inhabited (eq a b)
     -> inhabited (eq b a).
@@ -1070,7 +1107,7 @@ Proof.
 Qed.
 
 Lemma is_per_trans {p} :
-  forall (a b c : @CTerm p) eq,
+  forall (a b c : @cterm p) eq,
     is_per eq
     -> inhabited (eq a b)
     -> inhabited (eq b c)
@@ -1083,8 +1120,8 @@ Qed.
 
 Lemma type_sys_props_pertype_eq_term_equals {p} :
   forall lib (ts : cts(p)) R eq1 eq2,
-    (forall x y, type_sys_props lib ts (mkc_apply2 R x y) (mkc_apply2 R x y) (eq1 x y))
-    -> (forall x y, ts (mkc_apply2 R x y) (mkc_apply2 R x y) (eq2 x y))
+    (forall x y, type_sys_props lib ts (mkcn_apply2 R x y) (mkcn_apply2 R x y) (eq1 x y))
+    -> (forall x y, ts (mkcn_apply2 R x y) (mkcn_apply2 R x y) (eq2 x y))
     -> (forall x y, eq_term_equals (eq1 x y) (eq2 x y)).
 Proof.
   introv tsp tseq; intros.
@@ -1092,7 +1129,7 @@ Proof.
   generalize (tsp x y); intro k.
   repeat (dest_imp k h).
   onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-  implies_ts_or (mkc_apply2 R x y) j.
+  implies_ts_or (mkcn_apply2 R x y) j.
   apply uv in j; sp.
 Qed.
 
@@ -1100,7 +1137,7 @@ Qed.
 Lemma weq_eq_term_equals {p} :
   forall lib (eqa1 eqa2 : per(p))
          eqb1 eqb2 t1 t2,
-    (forall (a1 a2 : CTerm) (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2),
+    (forall (a1 a2 : cterm) (e1 : eqa1 a1 a2) (e2 : eqa2 a1 a2),
        eq_term_equals (eqb1 a1 a2 e1) (eqb2 a1 a2 e2))
     -> eq_term_equals eqa1 eqa2
     -> weq lib eqa1 eqb1 t1 t2
@@ -1120,10 +1157,10 @@ Lemma weq_sym {p} :
   forall lib eqa eqb t1 t2 v1 v2 B1 B2 (ts : cts(p)),
     term_equality_symmetric eqa
     -> term_equality_transitive eqa
-    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+    -> (forall (a1 a2 : cterm) (e : eqa a1 a2),
           type_sys_props lib ts
-                         (substc a1 v1 B1)
-                         (substc a2 v2 B2)
+                         (substcn a1 v1 B1)
+                         (substcn a2 v2 B2)
                          (eqb a1 a2 e))
     -> weq lib eqa eqb t1 t2
     -> weq lib eqa eqb t2 t1.
@@ -1147,10 +1184,10 @@ Lemma eq_family_trans1 {p} :
          a a1 a2 t1 t2
          ts v1 B1 v2 B2
          (e1 : eqa a a1) (e2 : eqa a a2),
-    (forall (a1 a2 : @CTerm p) (e : eqa a1 a2),
+    (forall (a1 a2 : @cterm p) (e : eqa a1 a2),
        type_sys_props lib ts
-                      (substc a1 v1 B1)
-                      (substc a2 v2 B2)
+                      (substcn a1 v1 B1)
+                      (substcn a2 v2 B2)
                       (eqb a1 a2 e))
     -> eqb a a1 e1 t1 t2
     -> eqb a a2 e2 t1 t2.
@@ -1160,7 +1197,7 @@ Proof.
   onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1; sp.
   generalize (ftsp a a2 e2); intro tsp2.
   onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 dum2; sp.
-  generalize (uv2 (substc a1 v2 B2) (eqb a a1 e1)); intro i; sp.
+  generalize (uv2 (substcn a1 v2 B2) (eqb a a1 e1)); intro i; sp.
   rw i; sp.
 Qed.
 
@@ -1168,10 +1205,10 @@ Lemma weq_trans {p} :
   forall lib eqa eqb t1 t2 t3 ts v1 B1 v2 B2,
     term_equality_symmetric eqa
     -> term_equality_transitive eqa
-    -> (forall (a1 a2 : @CTerm p) (e : eqa a1 a2),
+    -> (forall (a1 a2 : @cterm p) (e : eqa a1 a2),
           type_sys_props lib ts
-                         (substc a1 v1 B1)
-                         (substc a2 v2 B2)
+                         (substcn a1 v1 B1)
+                         (substcn a2 v2 B2)
                          (eqb a1 a2 e))
     -> weq lib eqa eqb t1 t2
     -> weq lib eqa eqb t2 t3
@@ -1210,23 +1247,23 @@ Lemma weq_cequivc2 :
     term_equality_respecting eqa
     -> term_equality_symmetric eqa
     -> term_equality_transitive eqa
-    -> (forall (a1 a2 : CTerm) (e : eqa a1 a2),
+    -> (forall (a1 a2 : cterm) (e : eqa a1 a2),
           type_sys_props ts
-                         (substc a1 v1 B1)
-                         (substc a2 v2 B2)
+                         (substcn a1 v1 B1)
+                         (substcn a2 v2 B2)
                          (eqb a1 a2 e))
-    -> weq eqa eqb (mkc_apply f b) (mkc_apply f b)
+    -> weq eqa eqb (mkcn_apply f b) (mkcn_apply f b)
     -> eqb a a' e b b'
     -> cequivc f f'
-    -> weq eqa eqb (mkc_apply f b) (mkc_apply f' b').
+    -> weq eqa eqb (mkcn_apply f b) (mkcn_apply f' b').
 Proof.
   introv tera tesa teta ftspb weq1 eqb1 ceq.
   generalize f' b' eqb1 ceq; clear ceq eqb1 b' f'.
-  remember (mkc_apply f b).
+  remember (mkcn_apply f b).
   generalize Heqc; clear Heqc.
   induction weq1.
   introv eq eqb1 ceq; subst.
-  generalize (cequivc_mkc_sup t' t'0 a' f'); intros i.
+  generalize (cequivc_mkcn_sup t' t'0 a' f'); intros i.
   repeat (dest_imp i hyp); exrepnd.
   rename b' into f'0.
   unfold term_equality_respecting in tera.
@@ -1253,13 +1290,13 @@ Lemma weq_cequivc {p} :
     term_equality_respecting lib eqa
     -> term_equality_symmetric eqa
     -> term_equality_transitive eqa
-    -> (forall (a1 a2 : @CTerm p) (e : eqa a1 a2),
+    -> (forall (a1 a2 : @cterm p) (e : eqa a1 a2),
           type_sys_props lib ts
-                         (substc a1 v1 B1)
-                         (substc a2 v2 B2)
+                         (substcn a1 v1 B1)
+                         (substcn a2 v2 B2)
                          (eqb a1 a2 e))
     -> weq lib eqa eqb t t1
-    -> cequivc lib t1 t2
+    -> cequivcn lib t1 t2
     -> weq lib eqa eqb t t2.
 Proof.
   introv tera tesa teta ftspb weq1.
@@ -1270,7 +1307,7 @@ Proof.
   rename a' into a1.
   rename f' into f1.
   spcast.
-  generalize (cequivc_mkc_sup lib t1 t2 a1 f1); intros i.
+  generalize (cequivcn_mkcn_sup lib t1 t2 a1 f1); intros i.
   repeat (dest_imp i hyp); exrepnd.
   rename a' into a2.
   rename b' into f2.
@@ -1289,13 +1326,13 @@ Proof.
   generalize (i3 a a1 e e'); intro eqt1; rw eqt1.
   generalize (i3 a a2 k e'); intro eqt2; rw eqt2 in hyp; sp.
 
-  apply sp_implies_cequivc_apply; sp.
+  apply sp_implies_cequivcn_apply; sp.
 Qed.
 
 Lemma type_sys_props_cequivc {p} :
   forall lib (ts : cts(p)) A B C eq,
     type_sys_props lib ts A B eq
-    -> cequivc lib A C
+    -> cequivcn lib A C
     -> ts A C eq.
 Proof.
   introv tsp ceq.
@@ -1314,8 +1351,8 @@ Qed.
 
 Lemma type_sys_props_pertype_eq_term_equals1 {p} :
   forall lib (ts : cts(p)) R R1 R2 eq1 eq2,
-    (forall x y, type_sys_props lib ts (mkc_apply2 R x y) (mkc_apply2 R1 x y) (eq1 x y))
-    -> (forall x y, ts (mkc_apply2 R x y) (mkc_apply2 R2 x y) (eq2 x y))
+    (forall x y, type_sys_props lib ts (mkcn_apply2 R x y) (mkcn_apply2 R1 x y) (eq1 x y))
+    -> (forall x y, ts (mkcn_apply2 R x y) (mkcn_apply2 R2 x y) (eq2 x y))
     -> (forall x y, (eq1 x y) <=2=> (eq2 x y)).
 Proof.
   introv tsp k; intros t1 t2.
@@ -1323,16 +1360,16 @@ Proof.
   generalize (tsp t1 t2); clear tsp; intro tsp; repeat (autodimp tsp hyp).
   generalize (type_sys_props_eq_term_equals4
                 lib ts
-                (mkc_apply2 R t1 t2)
-                (mkc_apply2 R2 t1 t2)
-                (mkc_apply2 R1 t1 t2)
+                (mkcn_apply2 R t1 t2)
+                (mkcn_apply2 R2 t1 t2)
+                (mkcn_apply2 R1 t1 t2)
                 (eq2 t1 t2) (eq1 t1 t2) k tsp); sp.
 Qed.
 
 Lemma type_sys_props_pertype_eq_term_equals2 {p} :
   forall lib (ts : cts(p)) R1 R2 R3 eq1 eq2,
-    (forall x y, type_sys_props lib ts (mkc_apply2 R1 x y) (mkc_apply2 R2 x y) (eq1 x y))
-    -> (forall x y, ts (mkc_apply2 R2 x y) (mkc_apply2 R3 x y) (eq2 x y))
+    (forall x y, type_sys_props lib ts (mkcn_apply2 R1 x y) (mkcn_apply2 R2 x y) (eq1 x y))
+    -> (forall x y, ts (mkcn_apply2 R2 x y) (mkcn_apply2 R3 x y) (eq2 x y))
     -> (forall x y, (eq1 x y) <=2=> (eq2 x y)).
 Proof.
   introv tsp k; intros t1 t2.
@@ -1340,8 +1377,8 @@ Proof.
   generalize (tsp t1 t2); clear tsp; intro tsp; repeat (autodimp tsp hyp).
   generalize (type_sys_props_eq_term_equals3
                 lib ts
-                (mkc_apply2 R3 t1 t2)
-                (mkc_apply2 R2 t1 t2)
-                (mkc_apply2 R1 t1 t2)
+                (mkcn_apply2 R3 t1 t2)
+                (mkcn_apply2 R2 t1 t2)
+                (mkcn_apply2 R1 t1 t2)
                 (eq2 t1 t2) (eq1 t1 t2) k tsp); sp.
 Qed.

@@ -47,13 +47,14 @@ Require Export per.
 (* begin hide *)
 
 
+
 (** Empty candidate type system *)
 Definition cts_bot {p} (T T' : @CTerm p) (eq : @CTerm p -> @CTerm p -> Type) : Set := False.
 
 Definition univ_def {p}
            lib
            (ts : cts)
-           (uni T T' : @CTerm p)
+           (uni T T' : @cterm p)
            (eq : per) : [U] :=
      (T ===>(lib) uni
      # T' ===>(lib) uni
@@ -61,12 +62,12 @@ Definition univ_def {p}
          eq A A' <=> {eqa : per , close lib ts A A' eqa})
     {+} ts T T' eq.
 
-Definition univ0 {p} (lib : @library p) (T T' : @CTerm p) (eq : per(p)) := False.
-Definition univ1 {p} lib (T T' : @CTerm p) eq := close lib (univ_def lib (univ0 lib) (mkc_uni 0)) T T' eq.
-Definition univ2 {p} lib (T T' : @CTerm p) eq := close lib (univ_def lib (univ1 lib) (mkc_uni 1)) T T' eq.
-Definition univ3 {p} lib (T T' : @CTerm p) eq := close lib (univ_def lib (univ2 lib) (mkc_uni 2)) T T' eq.
+Definition univ0 {p} (lib : @library p) (T T' : @cterm p) (eq : per(p)) := False.
+Definition univ1 {p} lib (T T' : @cterm p) eq := close lib (univ_def lib (univ0 lib) (mkcn_uni 0)) T T' eq.
+Definition univ2 {p} lib (T T' : @cterm p) eq := close lib (univ_def lib (univ1 lib) (mkcn_uni 1)) T T' eq.
+Definition univ3 {p} lib (T T' : @cterm p) eq := close lib (univ_def lib (univ2 lib) (mkcn_uni 2)) T T' eq.
 
-Definition univ' {p} lib (T T' : @CTerm p) eq :=
+Definition univ' {p} lib (T T' : @cterm p) eq :=
   univ0 lib T T' eq [+] univ1 lib T T' eq [+] univ2 lib T T' eq [+] univ3 lib T T' eq.
 
 (* end hide *)
@@ -95,12 +96,12 @@ Definition univ' {p} lib (T T' : @CTerm p) eq :=
 
  *)
 
-Fixpoint univi {p} lib (i : nat) (T T' : @CTerm p) (eq : per(p)) : [U] :=
+Fixpoint univi {p} lib (i : nat) (T T' : @cterm p) (eq : per(p)) : [U] :=
   match i with
   | 0 => False
   | S n =>
-    (T ===>(lib) (mkc_uni n)
-     # T' ===>(lib) (mkc_uni n)
+    (T ===>(lib) (mkcn_uni n)
+     # T' ===>(lib) (mkcn_uni n)
      # forall A A',
          eq A A' <=> {eqa : per , close lib (univi lib n) A A' eqa})
     {+} univi lib n T T' eq
@@ -147,24 +148,24 @@ Lemma univi_mkc_uni {p} :
   forall lib (i : nat),
     univi lib
           (S i)
-          (mkc_uni i)
-          (mkc_uni i)
+          (mkcn_uni i)
+          (mkcn_uni i)
           (fun A A' => {eqa : per(p) , close lib (univi lib i) A A' eqa}).
 Proof.
   intros.
   simpl.
   left.
-  dands; try (spcast; apply computes_to_valc_refl; sp).
+  dands; try (spcast; apply computes_to_valcn_refl; eauto 3 with slow).
   sp.
 Qed.
 
 Lemma univi_exists {p} :
-  forall lib i (T T' : @CTerm p) eq,
+  forall lib i (T T' : @cterm p) eq,
     univi lib i T T' eq
     -> {j : nat
         , j < i
-         # T ===>(lib) (mkc_uni j)
-         # T' ===>(lib) (mkc_uni j)
+         # T ===>(lib) (mkcn_uni j)
+         # T' ===>(lib) (mkcn_uni j)
          # forall A A',
               eq A A' <=> {eqa : per , close lib (univi lib j) A A' eqa}}.
 Proof.
@@ -175,12 +176,12 @@ Proof.
 Qed.
 
 Lemma univi_exists_iff {p} :
-  forall lib i (T T' : @CTerm p) eq,
+  forall lib i (T T' : @cterm p) eq,
     univi lib i T T' eq
     <=> {j : nat
           , j < i
-          # T ===>(lib) (mkc_uni j)
-          # T' ===>(lib) (mkc_uni j)
+          # T ===>(lib) (mkcn_uni j)
+          # T' ===>(lib) (mkcn_uni j)
           # forall A A',
                eq A A' <=> {eqa : per , close lib (univi lib j) A A' eqa}}.
 Proof.
@@ -204,10 +205,10 @@ Proof.
 Qed.
 
 (*
-(*Polymorphic*) Definition univ (T T' : CTerm) (eq : per) :=
+(*Polymorphic*) Definition univ (T T' : cterm) (eq : per) :=
   {n : nat
-    & computes_to_valc T (mkc_uni n)
-    # computes_to_valc T' (mkc_uni n)
+    & computes_to_valc T (mkcn_uni n)
+    # computes_to_valc T' (mkcn_uni n)
     # forall A A',
          eq A A' <=> {eqa : per & nuprli n A A' eqa}}.
 *)
@@ -221,24 +222,24 @@ Qed.
 
  *)
 
-Definition univ {p} lib (T T' : @CTerm p) (eq : per) :=
+Definition univ {p} lib (T T' : @cterm p) (eq : per) :=
   {i : nat , univi lib i T T' eq}.
 
 (**
 
   We say that a candidate type system defines only universes if all
-  its types are of the forms [mkc_uni i].  For example, we can prove
+  its types are of the forms [mkcn_uni i].  For example, we can prove
   that [univ] defines only universes.
 
 *)
 
 Definition defines_only_universes {p} lib (ts : cts(p)) :=
-  forall T eq, ts T T eq -> {i : nat , T ===>(lib) (mkc_uni i)}.
+  forall T eq, ts T T eq -> {i : nat , T ===>(lib) (mkcn_uni i)}.
 
 (* begin hide *)
 
 Lemma univi_iff_univ {p} :
-  forall lib (a b : @CTerm p) eq,
+  forall lib (a b : @cterm p) eq,
     univ lib a b eq <=> {i : nat , univi lib i a b eq}.
 Proof.
   sp; split; sp.
@@ -259,7 +260,7 @@ Definition nuprl {p} lib := @close p lib (univ lib).
 
 
 (* ============ Extension of the type system with a new universe of types ============ *)
-Inductive closep {p} lib (ts : cts) (T T' : @CTerm p) (eq : per) : [U] :=
+Inductive closep {p} lib (ts : cts) (T T' : @cterm p) (eq : per) : [U] :=
   | CLp_init    : ts T T' eq -> closep lib ts T T' eq
   | CLp_int     : per_int     lib (closep lib ts) T T' eq -> closep lib ts T T' eq
   | CLp_base    : per_base    lib (closep lib ts) T T' eq -> closep lib ts T T' eq
@@ -276,32 +277,32 @@ Inductive closep {p} lib (ts : cts) (T T' : @CTerm p) (eq : per) : [U] :=
   | CLp_pm      : per_pm      lib (closep lib ts) T T' eq -> closep lib ts T T' eq
   | CLp_union   : per_union   lib (closep lib ts) T T' eq -> closep lib ts T T' eq
   | CLp_image   : per_image   lib (closep lib ts) T T' eq -> closep lib ts T T' eq
-  | CLp_compute : per_compute lib (closep lib ts) T T' eq -> closep lib ts T T' eq.
+(*  | CLp_compute : per_compute lib (closep lib ts) T T' eq -> closep lib ts T T' eq*).
 Hint Constructors closep.
 
-Fixpoint univip {p} lib (i : nat) (T T' : @CTerm p) (eq : per(p)) : [U] :=
+Fixpoint univip {p} lib (i : nat) (T T' : @cterm p) (eq : per(p)) : [U] :=
   match i with
   | 0 => False
   | S n =>
-    (T ===>(lib) (mkc_uni n)
-     # T' ===>(lib) (mkc_uni n)
+    (T ===>(lib) (mkcn_uni n)
+     # T' ===>(lib) (mkcn_uni n)
      # forall A A',
          eq A A' <=> {eqa : per , closep lib (univip lib n) A A' eqa})
     {+} univip lib n T T' eq
   end.
 
-Definition univp {p} lib (T T' : @CTerm p) (eq : per) :=
+Definition univp {p} lib (T T' : @cterm p) (eq : per) :=
   {i : nat , univip lib i T T' eq}.
 
 Definition nuprlp {p} lib := @closep p lib (univp lib).
 
-Definition Nuprl {p} lib (T T' : @CTerm p) (eq : per) :=
+Definition Nuprl {p} lib (T T' : @cterm p) (eq : per) :=
   nuprl lib T T' eq [+] univp lib T T' eq.
 (* ==================================================================================*)
 
 
 Lemma typable_in_higher_univ {pp} :
-  forall lib i (T T' : @CTerm pp) eq,
+  forall lib i (T T' : @cterm pp) eq,
     nuprli lib i T T' eq
     -> forall k, nuprli lib (k + i) T T' eq.
 Proof.
@@ -414,17 +415,17 @@ Proof.
     apply CL_mono; unfold per_partial; sp.
     exists A1 A2 eqa; sp.
 
-  - Case "CL_ffatom".
+(*  - Case "CL_ffatom".
     apply CL_ffatom; unfold per_ffatom; sp.
-    exists A1 A2 x1 x2 a1 a2 eqa u; sp.
+    exists A1 A2 x1 x2 a1 a2 eqa u; sp.*)
 
-  - Case "CL_effatom".
+(*  - Case "CL_effatom".
     apply CL_effatom; unfold per_effatom; sp.
-    exists A1 A2 x1 x2 a1 a2 eqa; sp.
+    exists A1 A2 x1 x2 a1 a2 eqa; sp.*)
 
-  - Case "CL_ffatoms".
+(*  - Case "CL_ffatoms".
     apply CL_ffatoms; unfold per_ffatoms; sp.
-    exists A1 A2 x1 x2 eqa; sp.
+    exists A1 A2 x1 x2 eqa; sp.*)
 
   - Case "CL_set".
     apply CL_set; unfold per_set; sp.
@@ -443,7 +444,7 @@ Proof.
 Qed.
 
 Lemma typable_in_higher_univ_r {p} :
-  forall lib i (T T' : @CTerm p) eq,
+  forall lib i (T T' : @cterm p) eq,
     nuprli lib i T T' eq
     -> forall k, nuprli lib (i + k) T T' eq.
 Proof.
@@ -466,7 +467,7 @@ Proof.
 Qed.
 
 Lemma typable_in_higher_univ_max {p} :
-  forall lib i1 i2 (A1 B1 A2 B2 : @CTerm p) eq1 eq2,
+  forall lib i1 i2 (A1 B1 A2 B2 : @cterm p) eq1 eq2,
     nuprli lib i1 A1 B1 eq1
     -> nuprli lib i2 A2 B2 eq2
     -> nuprli lib (Peano.max i1 i2) A1 B1 eq1
@@ -491,7 +492,7 @@ Proof.
 Qed.
 
 Lemma uni_in_higher_univ {p} :
-  forall lib i (T T' : @CTerm p) eq,
+  forall lib i (T T' : @cterm p) eq,
     univi lib i T T' eq
     -> forall k, univi lib (k + i) T T' eq.
 Proof.
@@ -499,7 +500,7 @@ Proof.
 Qed.
 
 Lemma uni_in_higher_univ_r {p} :
-  forall lib i (T T' : @CTerm p) eq,
+  forall lib i (T T' : @cterm p) eq,
     univi lib i T T' eq
     -> forall k, univi lib (i + k) T T' eq.
 Proof.
@@ -528,10 +529,10 @@ Qed.
 (*
 (*Error: Universe inconsistency.*)
 
-Lemma mkc_uni_in_nuprl :
+Lemma mkcn_uni_in_nuprl :
   forall i : nat,
-    nuprl (mkc_uni i)
-          (mkc_uni i)
+    nuprl (mkcn_uni i)
+          (mkcn_uni i)
           (fun A A' => {eqa : per & close (univi i) A A' eqa}).
 Proof.
   intro.
@@ -540,13 +541,13 @@ Proof.
   left; sp; apply computes_to_valc_refl; sp.
 Qed.
 
-Lemma nuprl_mkc_uni :
+Lemma nuprl_mkcn_uni :
   forall i : nat,
-    {eq : per & nuprl (mkc_uni i) (mkc_uni i) eq}.
+    {eq : per & nuprl (mkcn_uni i) (mkcn_uni i) eq}.
 Proof.
   intros.
   exists (fun A A' => {eqa : per & close (univi i) A A' eqa}).
-  apply mkc_uni_in_nuprl.
+  apply mkcn_uni_in_nuprl.
 Qed.
 *)
 
@@ -618,7 +619,7 @@ Qed.
 *)
 
 Lemma nuprli_implies_nuprl {pp} :
-  forall lib (a b : @CTerm pp) i eq,
+  forall lib (a b : @cterm pp) i eq,
     nuprli lib i a b eq
     -> nuprl lib a b eq.
 Proof.
@@ -793,23 +794,23 @@ Proof.
     exists A1 A2 eqa; sp.
     apply IHn with (i0 := i); sp.
 
-  - Case "CL_ffatom".
+(*  - Case "CL_ffatom".
     apply CL_ffatom.
     unfold per_ffatom; sp.
     exists A1 A2 x1 x2 a1 a2 eqa u; sp.
-    apply IHn with (i0 := i); sp.
+    apply IHn with (i0 := i); sp.*)
 
-  - Case "CL_effatom".
+(*  - Case "CL_effatom".
     apply CL_effatom.
     unfold per_effatom; sp.
     exists A1 A2 x1 x2 a1 a2 eqa; sp.
-    apply IHn with (i0 := i); sp.
+    apply IHn with (i0 := i); sp.*)
 
-  - Case "CL_ffatoms".
+(*  - Case "CL_ffatoms".
     apply CL_ffatoms.
     unfold per_ffatoms; sp.
     exists A1 A2 x1 x2 eqa; sp.
-    apply IHn with (i0 := i); sp.
+    apply IHn with (i0 := i); sp.*)
 
   - Case "CL_set".
     apply CL_set.
@@ -845,7 +846,7 @@ Qed.
 
  *)
 
-Definition tequality {p} lib (T1 T2 : @CTerm p) :=
+Definition tequality {p} lib (T1 T2 : @cterm p) :=
   { eq : per , nuprl lib T1 T2 eq }.
 
 (**
@@ -855,7 +856,7 @@ Definition tequality {p} lib (T1 T2 : @CTerm p) :=
 
  *)
 
-Definition type {p} lib (T : @CTerm p) := tequality lib T T.
+Definition type {p} lib (T : @cterm p) := tequality lib T T.
 
 (**
 
@@ -864,7 +865,7 @@ Definition type {p} lib (T : @CTerm p) := tequality lib T T.
 
  *)
 
-Definition equality {p} lib (t1 t2 T : @CTerm p) :=
+Definition equality {p} lib (t1 t2 T : @cterm p) :=
   { eq : per , nuprl lib T T eq # eq t1 t2 }.
 
 (**
@@ -873,7 +874,7 @@ Definition equality {p} lib (t1 t2 T : @CTerm p) :=
 
  *)
 
-Definition member {p} lib (t T : @CTerm p) := equality lib t t T.
+Definition member {p} lib (t T : @cterm p) := equality lib t t T.
 
 (**
 
@@ -882,7 +883,7 @@ Definition member {p} lib (t T : @CTerm p) := equality lib t t T.
 
  *)
 
-Definition tequalityi {p} lib i (T1 T2 : @CTerm p) := equality lib T1 T2 (mkc_uni i).
+Definition tequalityi {p} lib i (T1 T2 : @cterm p) := equality lib T1 T2 (mkcn_uni i).
 
 (**
 
@@ -891,21 +892,21 @@ Definition tequalityi {p} lib i (T1 T2 : @CTerm p) := equality lib T1 T2 (mkc_un
 
  *)
 
-Definition typei {p} lib i (T : @CTerm p) := tequalityi lib i T T.
+Definition typei {p} lib i (T : @cterm p) := tequalityi lib i T T.
 
 (* begin hide *)
 
 (** This is similar to eqorsq but using 'equality' instead of 'eq' *)
-Definition equorsq {p} lib (t1 t2 T : @CTerm p) := equality lib t1 t2 T {+} ccequivc lib t1 t2.
-Definition equorsq2 {p} lib (t1 t2 t3 t4 T : @CTerm p) := equorsq lib t1 t2 T # equorsq lib t3 t4 T.
+Definition equorsq {p} lib (t1 t2 T : @cterm p) := equality lib t1 t2 T {+} ccequivcn lib t1 t2.
+Definition equorsq2 {p} lib (t1 t2 t3 t4 T : @cterm p) := equorsq lib t1 t2 T # equorsq lib t3 t4 T.
 
 Lemma fold_equorsq {p} :
-  forall lib (t1 t2 T : @CTerm p),
-    (equality lib t1 t2 T {+} ccequivc lib t1 t2) = equorsq lib t1 t2 T.
+  forall lib (t1 t2 T : @cterm p),
+    (equality lib t1 t2 T {+} ccequivcn lib t1 t2) = equorsq lib t1 t2 T.
 Proof. sp. Qed.
 
 Lemma fold_equorsq2 {p} :
-  forall lib (t1 t2 t3 t4 T : @CTerm p),
+  forall lib (t1 t2 t3 t4 T : @cterm p),
     (equorsq lib t1 t2 T # equorsq lib t3 t4 T) = equorsq2 lib t1 t2 t3 t4 T.
 Proof. sp. Qed.
 
@@ -926,10 +927,10 @@ Proof.
   apply nuprl_sym; sp.
 Qed.
 
-Lemma tequality_mkc_uni :
-  forall i : nat, tequality (mkc_uni i) (mkc_uni i).
+Lemma tequality_mkcn_uni :
+  forall i : nat, tequality (mkcn_uni i) (mkcn_uni i).
 Proof.
-  generalize nuprl_mkc_uni; sp.
+  generalize nuprl_mkcn_uni; sp.
 Qed.
 *)
 
@@ -951,13 +952,13 @@ Inductive lvlop : Type :=
 | nolvl : lvlop
 | atlvl : nat -> lvlop.
 
-Definition eqtypes {p} lib lvl (T1 T2 : @CTerm p) :=
+Definition eqtypes {p} lib lvl (T1 T2 : @cterm p) :=
   match lvl with
     | nolvl => tequality lib T1 T2
     | atlvl l => tequalityi lib l T1 T2
   end.
 
-Definition ltype {p} lib l (T : @CTerm p) := eqtypes lib l T T.
+Definition ltype {p} lib l (T : @cterm p) := eqtypes lib l T T.
 
 (* begin hide *)
 

@@ -59,7 +59,7 @@ Lemma per_base_type_value_respecting {p} :
   forall lib (ts : cts(p)), type_value_respecting lib (per_base lib ts).
 Proof.
   sp; unfold type_value_respecting, per_base; sp.
-  spcast; apply cequivc_base with (t := T); auto.
+  spcast; eapply cequivcn_base; eauto.
 Qed.
 
 Lemma per_base_term_symmetric {p} :
@@ -70,7 +70,7 @@ Proof.
   destruct i as [ ct i ].
   destruct i as [ ct' i ].
   rw i in e; rw i.
-  spcast; apply cequivc_sym; auto.
+  spcast; apply cequivcn_sym; auto.
 Qed.
 
 Lemma per_base_term_transitive {p} :
@@ -81,7 +81,7 @@ Proof.
   destruct i as [ ct i ].
   destruct i as [ ct' i ].
   rw i in e1; rw i in e2; rw i.
-  spcast; apply cequivc_trans with (b := t2); auto.
+  spcast; apply cequivcn_trans with (b := t2); auto.
 Qed.
 
 Lemma per_base_term_value_respecting {p} :

@@ -38,13 +38,13 @@ Require Export cvterm.
 
 (* This is basically 'functionEquality' *)
 Lemma tequality_function {p} :
-  forall lib (A1 A2 : @CTerm p) v1 v2 B1 B2,
+  forall lib (A1 A2 : @cterm p) v1 v2 B1 B2,
     tequality lib
-              (mkc_function A1 v1 B1)
-              (mkc_function A2 v2 B2)
+              (mkcn_function A1 v1 B1)
+              (mkcn_function A2 v2 B2)
     <=>
     (tequality lib A1 A2
-     # forall a a', equality lib a a' A1 -> tequality lib (substc a v1 B1) (substc a' v2 B2)).
+     # forall a a', equality lib a a' A1 -> tequality lib (substcn a v1 B1) (substcn a' v2 B2)).
 Proof.
   intros.
   sp_iff Case.
@@ -75,13 +75,13 @@ Proof.
     generalize (choice_teq lib A1 v1 B1 v2 B2 teqb); intro n; exrepnd.
 
     exists (fun t1 t2 =>
-              forall a1 a2 : CTerm,
+              forall a1 a2 : cterm,
               forall e : eqa a1 a2,
                 f a1
                   a2
                   (eq_equality2 lib a1 a2 A1 A2 eqa e teqa0)
-                  (mkc_apply t1 a1)
-                  (mkc_apply t2 a2)).
+                  (mkcn_apply t1 a1)
+                  (mkcn_apply t2 a2)).
     apply CL_func; fold (@nuprl p lib).
     unfold per_func.
     exists eqa.
@@ -89,17 +89,17 @@ Proof.
     exists (fun a1 a2 e => f a1 a2 (eq_equality2 lib a1 a2 A1 A2 eqa e teqa0)); sp.
 
     exists A1 A2 v1 v2 B1 B2; sp;
-    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_function))).
+    try (complete (spcast; apply computes_to_valcn_refl; eauto 3 with slow)).
 Qed.
 
 
 
 Lemma if_member_function {p} :
-  forall lib (f : @CTerm p) A v B,
-    member lib f (mkc_function A v B)
+  forall lib (f : @cterm p) A v B,
+    member lib f (mkcn_function A v B)
     -> forall x y,
          equality lib x y A
-         -> equality lib (mkc_apply f x) (mkc_apply f y) (substc x v B).
+         -> equality lib (mkcn_apply f x) (mkcn_apply f y) (substcn x v B).
 Proof.
   unfold member, equality, nuprl; introv m e; exrepnd.
   inversion m1; subst; try not_univ.
@@ -114,35 +114,35 @@ Proof.
 
   exists (eqb x y e0); sp.
 
-  apply nuprl_refl with (t2 := substc y v0 B0); sp.
+  apply nuprl_refl with (t2 := substcn y v0 B0); sp.
 Qed.
 
 (* This is 'functionExtensionality' *)
 Lemma implies_member_function {p} :
-  forall lib (f : @CTerm p) g A v B,
+  forall lib (f : @cterm p) g A v B,
     type lib A
-    -> (forall a a', equality lib a a' A -> tequality lib (substc a v B) (substc a' v B))
+    -> (forall a a', equality lib a a' A -> tequality lib (substcn a v B) (substcn a' v B))
     -> (forall a a',
           equality lib a a' A
-          -> equality lib (mkc_apply f a) (mkc_apply g a') (substc a v B))
-    -> equality lib f g (mkc_function A v B).
+          -> equality lib (mkcn_apply f a) (mkcn_apply g a') (substcn a v B))
+    -> equality lib f g (mkcn_function A v B).
 Proof.
   introv ty teq eqap.
   unfold member, equality.
   unfold type, tequality in ty; exrepnd.
   rename eq into eqa.
 
-  generalize (choice_eq lib A v B (fun a => mkc_apply f a) (fun a => mkc_apply g a) eqap);
+  generalize (choice_eq lib A v B (fun a => mkcn_apply f a) (fun a => mkcn_apply g a) eqap);
     intro n; exrepnd.
 
   exists (fun t1 t2 =>
-            forall a1 a2 : CTerm,
+            forall a1 a2 : cterm,
             forall e : eqa a1 a2,
               f0 a1
                  a2
                  (eq_equality1 lib a1 a2 A eqa e ty0)
-                 (mkc_apply t1 a1)
-                 (mkc_apply t2 a2)); sp.
+                 (mkcn_apply t1 a1)
+                 (mkcn_apply t2 a2)); sp.
 
   unfold nuprl; apply CL_func; fold @nuprl; unfold per_func.
   exists eqa.
@@ -151,14 +151,14 @@ Proof.
 
   unfold type_family.
   exists A A v v B B; sp;
-  try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_function))).
+  try (complete (spcast; apply computes_to_valcn_refl; eauto 3 with slow)).
 
   generalize (n0 a a' (eq_equality1 lib a a' A eqa e ty0)); intro n; repnd.
 
   generalize (choice_teq lib A v B v B teq); intro m; exrepnd.
   generalize (m0 a a' (eq_equality1 lib a a' A eqa e ty0)); intro m.
 
-  apply nuprl_trans with (t2 := substc a v B)
+  apply nuprl_trans with (t2 := substcn a v B)
                            (eq2 := f1 a a' (eq_equality1 lib a a' A eqa e ty0)); sp.
 
   generalize (n0 a1 a2 (eq_equality1 lib a1 a2 A eqa e ty0)); sp.
@@ -167,15 +167,15 @@ Qed.
 (**
 
   As another example, we can prove that two terms [f] and [g] are
-  equal in the function type [mkc_function A v B] if and only if [A]
+  equal in the function type [mkcn_function A v B] if and only if [A]
   is a type, [B] is functional over [A], and forall [a] and [a'] equal
-  in [A], [mkc_apply f a] and [mkc_apply g a'] are equals in [substc a
+  in [A], [mkcn_apply f a] and [mkcn_apply g a'] are equals in [substc a
   v B].
 
   This is one of the lemmas where we need the [FunctionalChoice_on]
   axiom. Let us explain that issue.  Let us assume that we want to
   prove the left-hand-side of [<=>] from its right-hand-side.  To
-  prove that [f] and [g] are equal in [mkc_function A v B], we have to
+  prove that [f] and [g] are equal in [mkcn_function A v B], we have to
   provide the equality of the function type, and in particular, we
   have to provide the equality of its co-domain.  We obtain that
   equality from the third clause in the right-hand-side of the [<=>].
@@ -190,14 +190,14 @@ Qed.
 
 (* This is the <=> verison of 'implies_member_function' *)
 Lemma equality_in_function {p} :
-  forall lib (f : @CTerm p) g A v B,
-    equality lib f g (mkc_function A v B)
+  forall lib (f : @cterm p) g A v B,
+    equality lib f g (mkcn_function A v B)
     <=>
     (type lib A
-     # (forall a a', equality lib a a' A -> tequality lib (substc a v B) (substc a' v B))
+     # (forall a a', equality lib a a' A -> tequality lib (substcn a v B) (substcn a' v B))
      # (forall a a',
           equality lib a a' A
-          -> equality lib (mkc_apply f a) (mkc_apply g a') (substc a v B))).
+          -> equality lib (mkcn_apply f a) (mkcn_apply g a') (substcn a v B))).
 Proof.
   introv; sp_iff Case; introv e; try (complete (apply implies_member_function; sp)).
 
@@ -228,15 +228,15 @@ Proof.
 Qed.
 
 Lemma equality_function {p} :
-  forall lib (A1 A2 : @CTerm p) v1 v2 B1 B2 i,
-    equality lib (mkc_function A1 v1 B1)
-             (mkc_function A2 v2 B2)
-             (mkc_uni i)
+  forall lib (A1 A2 : @cterm p) v1 v2 B1 B2 i,
+    equality lib (mkcn_function A1 v1 B1)
+             (mkcn_function A2 v2 B2)
+             (mkcn_uni i)
     <=>
-    (equality lib A1 A2 (mkc_uni i)
+    (equality lib A1 A2 (mkcn_uni i)
      # forall a a',
          equality lib a a' A1
-         -> equality lib (substc a v1 B1) (substc a' v2 B2) (mkc_uni i)).
+         -> equality lib (substcn a v1 B1) (substcn a' v2 B2) (mkcn_uni i)).
 Proof.
   introv.
   sp_iff Case.
@@ -290,11 +290,11 @@ Proof.
     generalize (choice_teqi lib j0 A1 v1 B1 v2 B2 eqb); intro n; exrepnd.
 
     exists (fun t1 t2 =>
-              forall a1 a2 : CTerm,
+              forall a1 a2 : cterm,
               forall e : eqa a1 a2,
                 f a1 a2
                   (eq_equality3 lib a1 a2 A1 A2 eqa j0 e h0)
-                  (mkc_apply t1 a1) (mkc_apply t2 a2)).
+                  (mkcn_apply t1 a1) (mkcn_apply t2 a2)).
     unfold nuprli.
     apply CL_func; fold (@nuprli p lib j0).
     unfold per_func.
@@ -303,17 +303,17 @@ Proof.
     exists (fun a1 a2 e => f a1 a2 (eq_equality3 lib a1 a2 A1 A2 eqa j0 e h0)); sp.
 
     exists A1 A2 v1 v2 B1 B2; sp;
-    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_function))).
+    try (complete (spcast; apply computes_to_valcn_refl; eauto 3 with slow)).
 Qed.
 
 Lemma equality_in_function2 {p} :
-  forall lib (f g : @CTerm p) A v B,
-    equality lib f g (mkc_function A v B)
+  forall lib (f g : @cterm p) A v B,
+    equality lib f g (mkcn_function A v B)
     <=>
-    (type lib (mkc_function A v B)
+    (type lib (mkcn_function A v B)
      # (forall a a',
           equality lib a a' A
-          -> equality lib (mkc_apply f a) (mkc_apply g a') (substc a v B))).
+          -> equality lib (mkcn_apply f a) (mkcn_apply g a') (substcn a v B))).
 Proof.
   introv.
   rw @equality_in_function; split; intro k; repnd; dands; try (complete sp).
@@ -326,15 +326,15 @@ Proof.
 Qed.
 
 Lemma inhabited_function {p} :
-  forall lib (A : @CTerm p) v B,
-    inhabited_type lib (mkc_function A v B)
+  forall lib (A : @cterm p) v B,
+    inhabited_type lib (mkcn_function A v B)
     <=>
     (type lib A
-     # (forall a a', equality lib a a' A -> tequality lib (substc a v B) (substc a' v B))
-     # {f : CTerm
+     # (forall a a', equality lib a a' A -> tequality lib (substcn a v B) (substcn a' v B))
+     # {f : cterm
         , forall a a',
             equality lib a a' A
-            -> equality lib (mkc_apply f a) (mkc_apply f a') (substc a v B)}).
+            -> equality lib (mkcn_apply f a) (mkcn_apply f a') (substcn a v B)}).
 Proof.
   introv; split; intro k.
 
@@ -348,66 +348,66 @@ Proof.
 Qed.
 
 Lemma equality_in_function3 {p} :
-  forall lib (f g : @CTerm p) A v B,
-    equality lib f g (mkc_function A v B)
+  forall lib (f g : @cterm p) A v B,
+    equality lib f g (mkcn_function A v B)
     <=>
     (type lib A
      # (forall a a',
           equality lib a a' A
-          -> tequality lib (substc a v B) (substc a' v B)
-             # equality lib (mkc_apply f a) (mkc_apply g a') (substc a v B))).
+          -> tequality lib (substcn a v B) (substcn a' v B)
+             # equality lib (mkcn_apply f a) (mkcn_apply g a') (substcn a v B))).
 Proof.
   introv; rw @equality_in_function; split; sp; discover; sp.
 Qed.
 
 Lemma tequality_function_fun {p} :
-  forall lib (A : @CTerm p) v B,
-    (type lib (mkc_function A v (mk_cv [v] B)) {+} type lib (mkc_fun A B))
-    -> tequality lib (mkc_function A v (mk_cv [v] B))
-                 (mkc_fun A B).
+  forall lib (A : @cterm p) v B,
+    (type lib (mkcn_function A v (mk_cvn [v] B)) {+} type lib (mkcn_fun A B))
+    -> tequality lib (mkcn_function A v (mk_cvn [v] B))
+                 (mkcn_fun A B).
 Proof.
   introv o; repdors.
 
-  apply tequality_respects_alphaeqc_right with (T2 := mkc_function A v (mk_cv [v] B)); sp.
+  apply tequality_respects_alphaeqcn_right with (T2 := mkcn_function A v (mk_cvn [v] B)); sp; eauto 3 with slow.
 
-  apply tequality_respects_alphaeqc_left with (T1 := mkc_fun A B); sp.
-  apply alphaeqc_sym; sp.
+  apply tequality_respects_alphaeqcn_left with (T1 := mkcn_fun A B); sp.
+  apply alphaeqcn_sym; sp; eauto 3 with slow.
 Qed.
 
-Lemma tequality_mkc_fun_dom {p} :
-  forall lib (A1 A2 B : @CTerm p),
+Lemma tequality_mkcn_fun_dom {p} :
+  forall lib (A1 A2 B : @cterm p),
     tequality lib A1 A2
-    -> type lib (mkc_fun A1 B)
-    -> tequality lib (mkc_fun A1 B) (mkc_fun A2 B).
+    -> type lib (mkcn_fun A1 B)
+    -> tequality lib (mkcn_fun A1 B) (mkcn_fun A2 B).
 Proof.
   introv teqa teqf.
-  allrw <- @fold_mkc_fun.
+  allrw <- @fold_mkcn_fun.
   allrw @tequality_function; repnd; dands; auto.
 Qed.
 
 Lemma tequality_fun {p} :
-  forall lib (A1 A2 B1 B2 : @CTerm p),
-    tequality lib (mkc_fun A1 B1) (mkc_fun A2 B2)
+  forall lib (A1 A2 B1 B2 : @cterm p),
+    tequality lib (mkcn_fun A1 B1) (mkcn_fun A2 B2)
     <=>
     (tequality lib A1 A2 # (inhabited_type lib A1 -> tequality lib B1 B2)).
 Proof.
   intros.
-  allrw <- @fold_mkc_fun.
+  allrw <- @fold_mkcn_fun.
   rw @tequality_function.
   split; intro teq; repnd; dands; auto; introv e.
 
   - unfold inhabited_type in e; exrepnd.
     generalize (teq t t); intro k; autodimp k hyp.
-    repeat (rw @csubst_mk_cv in k); sp.
+    repeat (rw @cnsubst_mk_cv in k); sp.
 
   - autodimp teq hyp.
     exists a; allapply @equality_refl; sp.
-    repeat (rw @csubst_mk_cv); sp.
+    repeat (rw @cnsubst_mk_cv); sp.
 Qed.
 
-Lemma tequality_mkc_fun_l {p} :
-  forall lib (A1 A2 B1 B2 : @CTerm p),
-    tequality lib (mkc_fun A1 B1) (mkc_fun A2 B2)
+Lemma tequality_mkcn_fun_l {p} :
+  forall lib (A1 A2 B1 B2 : @cterm p),
+    tequality lib (mkcn_fun A1 B1) (mkcn_fun A2 B2)
     -> tequality lib A1 A2.
 Proof.
   introv Hpart1.
@@ -415,64 +415,64 @@ Proof.
 Qed.
 
 Lemma equality_in_fun {p} :
-  forall lib (f g A B : @CTerm p),
-    equality lib f g (mkc_fun A B)
+  forall lib (f g A B : @cterm p),
+    equality lib f g (mkcn_fun A B)
     <=>
     (type lib A
      # (inhabited_type lib A -> type lib B)
      # (forall a a',
           equality lib a a' A
-          -> equality lib (mkc_apply f a) (mkc_apply g a') B)).
+          -> equality lib (mkcn_apply f a) (mkcn_apply g a') B)).
 Proof.
   introv.
-  rw <- @fold_mkc_fun.
+  rw <- @fold_mkcn_fun.
   rw @equality_in_function.
   split; intro k; repnd; dands; auto.
 
   introv i.
   unfold inhabited_type in i; exrepnd.
   generalize (k1 t t); intro j; autodimp j hyp.
-  repeat (rw @csubst_mk_cv in j); sp.
+  repeat (rw @cnsubst_mk_cv in j); sp.
 
   introv e.
   apply k in e.
-  repeat (rw @csubst_mk_cv in e); sp.
+  repeat (rw @cnsubst_mk_cv in e); sp.
 
   introv e.
-  repeat (rw @csubst_mk_cv); sp.
+  repeat (rw @cnsubst_mk_cv); sp.
   autodimp k1 hyp.
   exists a; allapply @equality_refl; sp.
 
   introv e.
-  repeat (rw @csubst_mk_cv); sp.
+  repeat (rw @cnsubst_mk_cv); sp.
 Qed.
 
-Lemma tequality_mkc_fun {p} :
-  forall lib (A1 A2 B1 B2 : @CTerm p),
-    tequality lib (mkc_fun A1 B1) (mkc_fun A2 B2)
+Lemma tequality_mkcn_fun {p} :
+  forall lib (A1 A2 B1 B2 : @cterm p),
+    tequality lib (mkcn_fun A1 B1) (mkcn_fun A2 B2)
               <=> (tequality lib A1 A2 # (inhabited_type lib A1 -> tequality lib B1 B2)).
 Proof.
   introv.
-  allrw <- @fold_mkc_fun.
+  allrw <- @fold_mkcn_fun.
   rw @tequality_function.
   split; intro k; repnd; dands; auto.
 
   introv i.
   unfold inhabited_type in i; exrepnd.
   generalize (k t t i0); intro teq.
-  allrw @csubst_mk_cv; auto.
+  allrw @cnsubst_mk_cv; auto.
 
   introv e.
-  allrw @csubst_mk_cv; auto.
+  allrw @cnsubst_mk_cv; auto.
   apply equality_refl in e.
   autodimp k hyp.
   exists a; auto.
 Qed.
 
-Lemma type_mkc_fun {p} :
-  forall lib (A B : @CTerm p),
-    type lib (mkc_fun A B) <=> (type lib A # (inhabited_type lib A -> type lib B)).
+Lemma type_mkcn_fun {p} :
+  forall lib (A B : @cterm p),
+    type lib (mkcn_fun A B) <=> (type lib A # (inhabited_type lib A -> type lib B)).
 Proof.
   introv.
-  rw @tequality_mkc_fun; sp.
+  rw @tequality_mkcn_fun; sp.
 Qed.

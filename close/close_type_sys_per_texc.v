@@ -76,7 +76,7 @@ Lemma per_texc_eq_cequiv {p} :
   forall lib (eqn eqe : per(p)) t1 t2,
     term_equality_respecting lib eqn
     -> term_equality_respecting lib eqe
-    -> cequivc lib t1 t2
+    -> cequivcn lib t1 t2
     -> per_texc_eq lib eqn eqe t1 t1
     -> per_texc_eq lib eqn eqe t1 t2.
 Proof.
@@ -84,7 +84,7 @@ Proof.
   introv resn rese ceq per; repdors; exrepnd.
   ccomputes_to_eqval.
   dup per0 as comp.
-  eapply cequivc_mkc_exception in comp;[|exact ceq]; exrepnd.
+  eapply cequivcn_mkcn_exception in comp;[|exact ceq]; exrepnd.
   exists n1 a' e1 b'; dands; spcast; auto.
   - eapply resn; spcast; auto.
   - eapply rese; spcast; auto.
@@ -97,13 +97,13 @@ Lemma close_type_system_texc {p} :
          A1 A2 B1 B2 eqa eqb,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_texc A1 B1)
-    -> computes_to_valc lib T' (mkc_texc A2 B2)
+    -> computes_to_valcn lib T (mkcn_texc A1 B1)
+    -> computes_to_valcn lib T' (mkcn_texc A2 B2)
     -> close lib ts A1 A2 eqa
     -> type_sys_props lib (close lib ts) A1 A2 eqa
     -> close lib ts B1 B2 eqb
     -> type_sys_props lib (close lib ts) B1 B2 eqb
-    -> (forall t t' : CTerm, eq t t' <=> per_texc_eq lib eqa eqb t t')
+    -> (forall t t' : cterm, eq t t' <=> per_texc_eq lib eqa eqb t t')
     -> per_texc lib (close lib ts) T T' eq
     -> type_sys_props lib (close lib ts) T T' eq.
 Proof.
@@ -141,13 +141,13 @@ Proof.
     apply CL_texc; unfold per_texc.
 
     (* 1 *)
-    generalize (cequivc_mkc_texc lib T T3 A1 B1); introv k; repeat (autodimp k hyp); exrepnd.
+    generalize (cequivcn_mkcn_texc lib T T3 A1 B1); introv k; repeat (autodimp k hyp); exrepnd.
     exists eqa eqb A1 a' B1 b'; sp; spcast; sp.
     generalize (type_sys_props_cequivc lib (close lib ts) A1 A2 a' eqa); sp.
     generalize (type_sys_props_cequivc lib (close lib ts) B1 B2 b' eqb); sp.
 
     (* 2 *)
-    generalize (cequivc_mkc_texc lib T' T3 A2 B2); introv k; repeat (autodimp k hyp); exrepnd.
+    generalize (cequivcn_mkcn_texc lib T' T3 A2 B2); introv k; repeat (autodimp k hyp); exrepnd.
     exists eqa eqb A2 a' B2 b'; sp; spcast; sp.
     apply type_sys_props_sym in reca.
     generalize (type_sys_props_cequivc lib (close lib ts) A2 A1 a' eqa); sp.
@@ -227,4 +227,3 @@ Proof.
         { apply type_sys_props_sym in recb.
           generalize (type_sys_props_ts_trans4 lib (close lib ts) E0 B2 E2 B1 eqe0 eqe eqb); sp. }
 Qed.
-

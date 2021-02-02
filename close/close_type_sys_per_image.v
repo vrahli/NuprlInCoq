@@ -31,7 +31,7 @@ Require Import dest_close.
 
 Lemma eq_term_equals_per_image_eq_if {p} :
   forall lib (eqa1 eqa2 : per(p)) f1 f2,
-    cequivc lib f1 f2
+    cequivcn lib f1 f2
     -> eq_term_equals eqa1 eqa2
     -> eq_term_equals (per_image_eq lib eqa1 f1) (per_image_eq lib eqa2 f2).
 Proof.
@@ -42,19 +42,19 @@ Proof.
 
   apply @image_eq_eq with (a1 := a1) (a2 := a2); sp; spcast.
   apply eqt; sp.
-  apply cequivc_trans with (b := mkc_apply f1 a1); auto.
-  apply sp_implies_cequivc_apply; sp.
-  apply cequivc_trans with (b := mkc_apply f1 a2); auto.
-  apply sp_implies_cequivc_apply; sp.
+  apply cequivcn_trans with (b := mkcn_apply f1 a1); auto.
+  apply sp_implies_cequivcn_apply; sp.
+  apply cequivcn_trans with (b := mkcn_apply f1 a2); auto.
+  apply sp_implies_cequivcn_apply; sp.
 
   apply @image_eq_cl with (t := t); sp.
 
   apply @image_eq_eq with (a1 := a1) (a2 := a2); sp; spcast.
   apply eqt; sp.
-  apply cequivc_trans with (b := mkc_apply f2 a1); auto.
-  apply sp_implies_cequivc_apply; sp; apply cequivc_sym; sp.
-  apply cequivc_trans with (b := mkc_apply f2 a2); auto.
-  apply sp_implies_cequivc_apply; sp; apply cequivc_sym; sp.
+  apply cequivcn_trans with (b := mkcn_apply f2 a1); auto.
+  apply sp_implies_cequivcn_apply; sp; apply cequivcn_sym; sp.
+  apply cequivcn_trans with (b := mkcn_apply f2 a2); auto.
+  apply sp_implies_cequivcn_apply; sp; apply cequivcn_sym; sp.
 Qed.
 
 Lemma per_image_eq_sym {p} :
@@ -95,8 +95,8 @@ Proof.
   apply @image_eq_eq with (a1 := a2) (a2 := a2); sp.
   apply tet with (t2 := a1); sp.
   spcast.
-  apply cequivc_trans with (b := t2); sp.
-  apply cequivc_sym; sp.
+  apply cequivcn_trans with (b := t2); sp.
+  apply cequivcn_sym; sp.
 Qed.
 
 Lemma close_type_system_image {p} :
@@ -106,12 +106,12 @@ Lemma close_type_system_image {p} :
          A A' f f' eqa,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_image A f)
-    -> computes_to_valc lib T' (mkc_image A' f')
+    -> computes_to_valcn lib T (mkcn_image A f)
+    -> computes_to_valcn lib T' (mkcn_image A' f')
     -> close lib ts A A' eqa
     -> type_sys_props lib (close lib ts) A A' eqa
-    -> ccequivc lib f f'
-    -> (forall t t' : CTerm, eq t t' <=> per_image_eq lib eqa f t t')
+    -> ccequivcn lib f f'
+    -> (forall t t' : cterm, eq t t' <=> per_image_eq lib eqa f t t')
     -> per_image lib (close lib ts) T T' eq
     -> type_sys_props lib (close lib ts) T T' eq.
 Proof.
@@ -131,7 +131,7 @@ Proof.
       ccomputes_to_eqval.
       revert t1 t2.
       rw @fold_eq_term_equals.
-      apply eq_term_equals_per_image_eq_if; sp.
+      apply eq_term_equals_per_image_eq_if; sp; eauto 3 with slow.
       onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt dum.
       generalize (uv A2 eqa0); sp.
 
@@ -150,13 +150,13 @@ Proof.
     apply CL_image; unfold per_image.
 
     (* 1 *)
-    generalize (cequivc_mkc_image lib T T3 A f); intro k; repeat (autodimp k hyp); exrepnd.
+    generalize (cequivcn_mkcn_image lib T T3 A f); intro k; repeat (autodimp k hyp); exrepnd.
     exists eqa A a' f b'; sp; spcast; sp.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
     generalize (tyvr A a'); introv j; repeat (autodimp j hyp).
 
     (* 2 *)
-    generalize (cequivc_mkc_image lib T' T3 A' f'); intro k; repeat (autodimp k hyp); exrepnd.
+    generalize (cequivcn_mkcn_image lib T' T3 A' f'); intro k; repeat (autodimp k hyp); exrepnd.
     exists eqa A' a' f' b'; sp; spcast; sp.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
     generalize (tyvr A' a'); introv j; repeat (autodimp j hyp).
@@ -193,14 +193,14 @@ Proof.
     (* 1 *)
     exists eqa0 A2 A f2 f; sp; spcast; sp.
     apply (type_sys_props_ts_sym3 lib) with (C := A') (eq1 := eqa); sp.
-    apply cequivc_sym; sp.
+    apply cequivcn_sym; sp.
     apply eq_term_equals_trans with (eq2 := per_image_eq lib eqa0 f); sp.
     apply eq_term_equals_per_image_eq_if; sp.
 
     (* 2 *)
     exists eqa0 A A1 f f1; sp; spcast; sp.
     apply (type_sys_props_ts_sym2 lib) with (C := A') (eq1 := eqa); sp.
-    apply cequivc_sym; sp.
+    apply cequivcn_sym; sp.
     apply eq_term_equals_trans with (eq2 := per_image_eq lib eqa0 f1); sp.
     apply eq_term_equals_per_image_eq_if; sp.
 
@@ -217,28 +217,27 @@ Proof.
 
       * exists eqa1 A0 A2 f0 f2; sp; spcast; sp.
         apply (type_sys_props_ts_trans3 lib) with (B := A) (D := A') (eq2 := eqa0) (eq := eqa); sp.
-        apply cequivc_trans with (b := f); sp.
+        apply cequivcn_trans with (b := f); sp.
 
       * exists eqa0 A0 A2 f0 f2; sp; spcast; sp.
         apply (type_sys_props_ts_trans4 lib) with (B := A) (D := A') (eq1 := eqa1) (eq := eqa); sp.
-        apply cequivc_trans with (b := f); sp.
+        apply cequivcn_trans with (b := f); sp.
         apply @eq_term_equals_trans with (eq2 := per_image_eq lib eqa0 f); sp.
         apply eq_term_equals_per_image_eq_if; sp.
-        apply cequivc_sym; sp.
+        apply cequivcn_sym; sp.
 
     + dands; apply CL_image; unfold per_image.
 
       * exists eqa1 A0 A2 f0 f2; sp; spcast; sp.
         apply type_sys_props_sym in reca.
         apply (type_sys_props_ts_trans3 lib) with (B := A') (D := A) (eq2 := eqa0) (eq := eqa); sp.
-        apply cequivc_trans with (b := f'); sp.
+        apply cequivcn_trans with (b := f'); sp.
 
       * exists eqa0 A0 A2 f0 f2; sp; spcast; sp.
         apply type_sys_props_sym in reca.
         apply (type_sys_props_ts_trans4 lib) with (B := A') (D := A) (eq1 := eqa1) (eq := eqa); sp.
-        apply cequivc_trans with (b := f'); sp.
+        apply cequivcn_trans with (b := f'); sp.
         apply @eq_term_equals_trans with (eq2 := per_image_eq lib eqa0 f'); sp.
         apply eq_term_equals_per_image_eq_if; sp.
-        apply cequivc_sym; sp.
+        apply cequivcn_sym; sp.
 Qed.
-

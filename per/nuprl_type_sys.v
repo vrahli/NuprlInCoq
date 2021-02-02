@@ -101,7 +101,7 @@ Proof.
   - unfold type_value_respecting; sp.
     allrw @univi_exists_iff; sp.
     exists j; sp; thin_trivials.
-    spcast; apply cequivc_uni with (t := T); auto.
+    spcast; apply cequivcn_uni with (t := T); auto.
 
   - unfold term_symmetric, term_equality_symmetric; sp.
     allrw @univi_exists_iff; sp; spcast.
@@ -147,7 +147,7 @@ Proof.
 Qed.
 
 Lemma nuprli_uniquely_valued {o} :
-  forall lib i1 i2 (T T' : @CTerm o) eq eq',
+  forall lib i1 i2 (T T' : @cterm o) eq eq',
     nuprli lib i1 T T' eq
     -> nuprli lib i2 T T' eq'
     -> eq_term_equals eq eq'.
@@ -164,7 +164,7 @@ Proof.
 Qed.
 
 Lemma nuprli_type_transitive {o} :
-  forall lib i1 i2 (T1 T2 T3 : @CTerm o) eq,
+  forall lib i1 i2 (T1 T2 T3 : @cterm o) eq,
     nuprli lib i1 T1 T2 eq
     -> nuprli lib i2 T2 T3 eq
     -> {i : nat & nuprli lib i T1 T3 eq # i1 <= i # i2 <= i}.
@@ -179,7 +179,7 @@ Proof.
 Qed.
 
 Lemma univi_uniquely_valued {o} :
-  forall lib i1 i2 (T T' : @CTerm o) eq eq',
+  forall lib i1 i2 (T T' : @cterm o) eq eq',
     univi lib i1 T T' eq
     -> univi lib i2 T T' eq'
     -> eq_term_equals eq eq'.
@@ -286,7 +286,7 @@ Ltac nts :=
   end.
 
 Lemma nuprl_refl {p} :
-  forall lib (t1 t2 : @CTerm p) eq,
+  forall lib (t1 t2 : @cterm p) eq,
     nuprl lib t1 t2 eq -> nuprl lib t1 t1 eq.
 Proof.
   intros.
@@ -296,14 +296,14 @@ Proof.
 Qed.
 
 Lemma nuprl_sym {p} :
-  forall lib (t1 t2 : @CTerm p) eq,
+  forall lib (t1 t2 : @cterm p) eq,
     nuprl lib t1 t2 eq -> nuprl lib t2 t1 eq.
 Proof.
   intros; nts; sp.
 Qed.
 
 Lemma nuprl_trans {p} :
-  forall lib (t1 t2 t3 : @CTerm p) eq1 eq2,
+  forall lib (t1 t2 t3 : @cterm p) eq1 eq2,
     nuprl lib t1 t2 eq1 -> nuprl lib t2 t3 eq2 -> nuprl lib t1 t3 eq1.
 Proof.
   introv n1 n2; nts.
@@ -313,7 +313,7 @@ Proof.
 Qed.
 
 Lemma nuprl_uniquely_valued {p} :
-  forall lib (t : @CTerm p) eq1 eq2,
+  forall lib (t : @cterm p) eq1 eq2,
     nuprl lib t t eq1
     -> nuprl lib t t eq2
     -> eq_term_equals eq1 eq2.
@@ -323,9 +323,9 @@ Proof.
 Qed.
 
 Lemma nuprl_value_respecting_left {p} :
-  forall lib (t1 t2 t3 : @CTerm p) eq,
+  forall lib (t1 t2 t3 : @cterm p) eq,
     nuprl lib t1 t2 eq
-    -> cequivc lib t1 t3
+    -> cequivcn lib t1 t3
     -> nuprl lib t3 t2 eq.
 Proof.
   intros.
@@ -338,7 +338,7 @@ Qed.
 Lemma nuprl_value_respecting_right {p} :
   forall lib t1 t2 t3 eq,
     @nuprl p lib t1 t2 eq
-    -> cequivc lib t2 t3
+    -> cequivcn lib t2 t3
     -> nuprl lib t1 t3 eq.
 Proof.
   intros.
@@ -367,4 +367,3 @@ Proof.
 Qed.
 
 (* end hide *)
-

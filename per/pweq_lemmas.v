@@ -79,11 +79,11 @@ Lemma pweq_implies2 {o} :
     -> eq_term_equals eqp1 eqp2
     -> eq_term_equals_fam eqp1 eqa1 eqp2 eqa2
     -> eq_term_equals_fam_fam eqp1 eqa1 eqb1 eqp2 eqa2 eqb2
-    -> (forall (p p' : CTerm) (ep : eqp1 p p')
-               (a a' : CTerm) (ea : eqa1 p p' ep a a')
-               (b b' : CTerm) (eb : eqb1 p p' ep a a' ea b b'),
-          eqp1 (lsubstc3 cp1 p ca1 a cb1 b C1)
-               (lsubstc3 cp2 p' ca2 a' cb2 b' C2))
+    -> (forall (p p' : cterm) (ep : eqp1 p p')
+               (a a' : cterm) (ea : eqa1 p p' ep a a')
+               (b b' : cterm) (eb : eqb1 p p' ep a a' ea b b'),
+          eqp1 (lsubstcn3 cp1 p ca1 a cb1 b C1)
+               (lsubstcn3 cp2 p' ca2 a' cb2 b' C2))
     -> eqp1 p1 p2
     -> forall t1 t2,
          pweq lib eqp1 eqa1 eqb1 cp1 ca1 cb1 C1 p1 t1 t2
@@ -147,7 +147,7 @@ Proof.
   introv eqt.
   rw <- eqt in eb1.
 
-  generalize (R b1 b2 eb1 (lsubstc3 cp2 p2 ca2 a1 cb2 b1 C2)); intro k.
+  generalize (R b1 b2 eb1 (lsubstcn3 cp2 p2 ca2 a1 cb2 b1 C2)); intro k.
   dest_imp k hyp.
 
   assert (eqa1 p p2 eps a1 a1)
@@ -317,7 +317,7 @@ Proof.
                              (ca1 := ca)
                              (cb1 := cb)
                              (C1 := C)
-                             (p1 := lsubstc3 cp ps ca a1 cb b2 C);
+                             (p1 := lsubstcn3 cp ps ca a1 cb b2 C);
     auto.
   apply type_sys_props_fam_implies_sym_trans_respeq with (P := P1) (P' := P2) in tspa; sp.
   apply type_sys_props_fam_implies_sym_trans_respeq with (P := P1) (P' := P2) in tspa; sp.
@@ -339,14 +339,14 @@ Lemma pweq_cequivc {o} :
     -> type_sys_props_fam lib (close lib ts) eqp ap A ap' A' eqa
     -> type_sys_props_fam_fam lib (close lib ts) eqp eqa bp ba B bp' ba' B' eqb
     -> pweq lib eqp eqa eqb cp ca cb C p t t1
-    -> cequivc lib t1 t2
+    -> cequivcn lib t1 t2
     -> pweq lib eqp eqa eqb cp ca cb C p t t2.
 Proof.
   introv tspp tspa tspb pw ceq.
   revert dependent t2.
   induction pw as [ p1 t1 t2 ep a1 f1 a2 f2 ea c1 c2 R I ].
   intros t ceq; spcast.
-  generalize (cequivc_mkc_sup lib t2 t a2 f2 c2 ceq); intros c; exrepnd.
+  generalize (cequivcn_mkcn_sup lib t2 t a2 f2 c2 ceq); intros c; exrepnd.
   rename a' into a.
   rename  b' into f.
 
@@ -376,7 +376,7 @@ Proof.
   apply e2.
   apply e1 in eb; auto.
 
-  apply sp_implies_cequivc_apply; sp.
+  apply sp_implies_cequivcn_apply; sp.
 Qed.
 
 Lemma pweq_implies_param {o} :
@@ -470,7 +470,7 @@ Proof.
 
   applydup @type_sys_props_implies_term_eq_sym in tspp as sym.
   applydup @type_sys_props_implies_term_eq_trans in tspp as trans.
-  apply trans with (t2 := lsubstc3 cp' p2 ca' a1 cb' b1 C'); sp.
+  apply trans with (t2 := lsubstcn3 cp' p2 ca' a1 cb' b1 C'); sp.
 Qed.
 
 Lemma pweq_trans {o} :
@@ -539,9 +539,9 @@ Proof.
                 lib ts eqp eqa eqb
                 P P' ap A ap' A' bp ba B bp' ba' B'
                 cp ca cb C cp' ca' cb' C'
-                (lsubstc3 cp p1 ca a2 cb b1 C)
-                (lsubstc3 cp p1 ca a1 cb b1 C)
-                (mkc_apply f2 b1) (mkc_apply f3 b2));
+                (lsubstcn3 cp p1 ca a2 cb b1 C)
+                (lsubstcn3 cp p1 ca a1 cb b1 C)
+                (mkcn_apply f2 b1) (mkcn_apply f3 b2));
     intro k; repeat (autodimp k hyp).
 
   generalize (equal_Cparams_refl

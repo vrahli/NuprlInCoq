@@ -27,8 +27,8 @@
 Require Import type_sys_useful2.
 Require Import tactics2.
 
-Definition eq_term_equals_efam (eqa1 eqa1' : per) eqb1 eqa2 eqa2' eqb2 :=
-  forall (a a' : CTerm)
+Definition eq_term_equals_efam {o} (eqa1 eqa1' : per(o)) eqb1 eqa2 eqa2' eqb2 :=
+  forall (a a' : cterm)
          (e1  : eqa1 a a)
          (e1' : eqa1' a' a')
          (e2  : eqa2 a a)

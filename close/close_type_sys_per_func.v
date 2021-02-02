@@ -35,18 +35,18 @@ Lemma close_type_system_func {p} :
          A A' v v' B B' eqa eqb,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_function A v B)
-    -> computes_to_valc lib T' (mkc_function A' v' B')
+    -> computes_to_valcn lib T (mkcn_function A v B)
+    -> computes_to_valcn lib T' (mkcn_function A' v' B')
     -> close lib ts A A' eqa
-    -> (forall (a a' : CTerm) (e : eqa a a'),
-          close lib ts (substc a v B) (substc a' v' B') (eqb a a' e))
-    -> (forall (a a' : CTerm) (e : eqa a a'),
+    -> (forall (a a' : cterm) (e : eqa a a'),
+          close lib ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
+    -> (forall (a a' : cterm) (e : eqa a a'),
           type_system lib ts ->
           defines_only_universes lib ts ->
-          type_sys_props lib (close lib ts) (substc a v B) (substc a' v' B')
+          type_sys_props lib (close lib ts) (substcn a v B) (substcn a' v' B')
                          (eqb a a' e))
-    -> (forall t t' : CTerm,
-          eq t t' <=> (forall (a a' : CTerm) (e : eqa a a'), eqb a a' e (mkc_apply t a) (mkc_apply t' a')))
+    -> (forall t t' : cterm,
+          eq t t' <=> (forall (a a' : cterm) (e : eqa a a'), eqb a a' e (mkcn_apply t a) (mkcn_apply t' a')))
     -> per_func lib (close lib ts) T T' eq
     -> type_sys_props lib (close lib ts) A A' eqa
     -> type_sys_props lib (close lib ts) T T' eq.
@@ -61,7 +61,7 @@ Proof.
 
     SSCase "CL_func".
     allunfold @per_func; exrepd.
-    generalize (eq_term_equals_type_family lib T T3 eqa0 eqa eqb0 eqb (close lib ts) A v B A' v' B' mkc_function); intro i.
+    generalize (eq_term_equals_type_family lib T T3 eqa0 eqa eqb0 eqb (close lib ts) A v B A' v' B' mkcn_function); intro i.
     repeat (autodimp i hyp; try (complete (introv e; eqconstr e; sp))); repnd.
 
     unfold eq_term_equals; sp.
@@ -88,7 +88,7 @@ Proof.
     apply CL_func; unfold per_func; exists eqa eqb; sp.
 
     duplicate c1 as ct.
-    apply @cequivc_mkc_function with (T' := T3) in ct; sp.
+    apply @cequivcn_mkcn_function with (T' := T3) in ct; sp.
 
     apply @type_family_cequivc
           with
@@ -103,7 +103,7 @@ Proof.
           (B := B'); sp.
 
     duplicate c2 as ct.
-    apply @cequivc_mkc_function with (T' := T3) in ct; sp.
+    apply @cequivcn_mkcn_function with (T' := T3) in ct; sp.
 
     apply @type_family_cequivc2
           with
@@ -146,11 +146,11 @@ Proof.
     apply eqiff with (a := a) (a' := a') (e := e) in eqt12; auto.
     apply eqiff with (a := a) (a' := a') (e := e) in eqt23; auto.
 
-    assert (eqb a a' e (mkc_apply t2 a') (mkc_apply t2 a));
+    assert (eqb a a' e (mkcn_apply t2 a') (mkcn_apply t2 a));
       try (complete (generalize (recb a a' e); sp;
                      onedtsp X6 X7 X8 X9 X10 X11 X12 X5 tygs1 tygt1 dum1; sp;
-                     apply X12 with (mkc_apply t2 a'); auto;
-                     apply X12 with (mkc_apply t2 a); auto)).
+                     apply X12 with (mkcn_apply t2 a'); auto;
+                     apply X12 with (mkcn_apply t2 a); auto)).
 
     assert (eq t2 t2) as eqt2;
       try (complete (apply eqiff with (a := a) (a' := a') (e := e) in eqt2; auto;
@@ -169,12 +169,12 @@ Proof.
                      apply eqteq in eq2;
                      generalize (recb a0 a'0 e0); sp;
                      onedtsp X6 X7 X8 X9 X10 X11 X12 X5 tygs1 tygt1 dum1; sp;
-                     apply X12 with (t2 := mkc_apply t3 a'0); sp)).
+                     apply X12 with (t2 := mkcn_apply t3 a'0); sp)).
 
     allunfold @per_func; exrepd.
     generalize (eq_term_equals_type_family
                   lib T T' eqa0 eqa eqb0 eqb (close lib ts)
-                  A v B A' v' B' mkc_function); intro i.
+                  A v B A' v' B' mkcn_function); intro i.
     repeat (autodimp i hyp; try (complete (introv f; eqconstr f; sp))).
     repnd.
     apply eq_term_equals_sym; sp.
@@ -187,11 +187,11 @@ Proof.
 
     generalize (recb a a' e); sp.
     onedtsp X5 X6 X7 X8 X9 X10 X11 X4 tygs1 tygt1 dum1; sp.
-    apply X11 with (t2 := mkc_apply t a'); auto.
+    apply X11 with (t2 := mkcn_apply t a'); auto.
     apply X4.
-    apply term_equality_refl with (t2 := mkc_apply t a); auto.
+    apply term_equality_refl with (t2 := mkcn_apply t a); auto.
 
-    spcast; apply sp_implies_cequivc_apply; sp.
+    spcast; apply sp_implies_cequivcn_apply; sp.
 
   + SCase "type_gsymmetric"; repdors; subst; split; sp; dclose_lr;
     apply CL_func;
@@ -201,7 +201,7 @@ Proof.
     (* 1 *)
     generalize (eq_term_equals_type_family
                   lib T T3 eqa0 eqa eqb0 eqb (close lib ts)
-                  A v B A' v' B' mkc_function); intro i.
+                  A v B A' v' B' mkcn_function); intro i.
     repeat (autodimp i hyp; try (complete (introv e; eqconstr e; sp))).
     repnd.
 
@@ -225,7 +225,7 @@ Proof.
     (* 2 *)
     generalize (eq_term_equals_type_family2
                   lib T3 T eqa0 eqa eqb0 eqb (close lib ts)
-                  A v B A' v' B' mkc_function); intro i;
+                  A v B A' v' B' mkcn_function); intro i;
     repeat (autodimp i hyp; try (complete (introv e; eqconstr e; sp)));
     repnd.
 
@@ -259,12 +259,12 @@ Proof.
 
     generalize (eq_term_equals_type_family2
                   lib T3 T eqa1 eqa eqb1 eqb (close lib ts)
-                  A v B A' v' B' mkc_function); intro i.
+                  A v B A' v' B' mkcn_function); intro i.
     repeat (autodimp i hyp; try (complete (introv e; eqconstr e; sp))).
     repnd.
 
     generalize (type_family_trans2
-                  lib mkc_function (close lib ts) T3 T T4 eqa eqb eqa0 eqb0 A v B A' v' B');
+                  lib mkcn_function (close lib ts) T3 T T4 eqa eqb eqa0 eqb0 A v B A' v' B');
       intro j.
     repeat (autodimp j hyp; try (complete (introv e; eqconstr e; sp))).
     repnd.
@@ -301,7 +301,7 @@ Proof.
 
     generalize (eq_term_equals_type_family2
                   lib T3 T' eqa1 eqa eqb1 eqb (close lib ts)
-                  A' v' B' A v B mkc_function); intro i.
+                  A' v' B' A v B mkcn_function); intro i.
     repeat (autodimp i hyp;
             try (complete (introv e; eqconstr e; sp));
             try (complete (apply type_sys_props_sym; sp))).
@@ -314,7 +314,7 @@ Proof.
     repnd.
 
     generalize (type_family_trans2
-                  lib mkc_function (close lib ts) T3 T' T4 eqa eqb eqa0 eqb0 A' v' B' A v B); intro j.
+                  lib mkcn_function (close lib ts) T3 T' T4 eqa eqb eqa0 eqb0 A' v' B' A v B); intro j.
     repeat (autodimp j hyp;
             try (complete (introv e; eqconstr e; sp));
             try (complete (apply type_sys_props_sym; sp))).
@@ -352,4 +352,3 @@ Proof.
     generalize (j1 a a' e' e); intro l.
     rw <- l; sp.
 Qed.
-

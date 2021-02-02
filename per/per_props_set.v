@@ -36,12 +36,12 @@ Require Export cvterm.
 
 
 Lemma tequality_set {p} :
-  forall lib (A1 A2 : @CTerm p) v1 v2 B1 B2,
-    tequality lib (mkc_set A1 v1 B1)
-              (mkc_set A2 v2 B2)
+  forall lib (A1 A2 : @cterm p) v1 v2 B1 B2,
+    tequality lib (mkcn_set A1 v1 B1)
+              (mkcn_set A2 v2 B2)
     <=>
     (tequality lib A1 A2
-     # forall a a', equality lib a a' A1 -> tequality lib (substc a v1 B1) (substc a' v2 B2)).
+     # forall a a', equality lib a a' A1 -> tequality lib (substcn a v1 B1) (substcn a' v2 B2)).
 Proof.
   intros.
   sp_iff Case.
@@ -86,19 +86,19 @@ Proof.
     exists (fun a1 a2 e => f a1 a2 (eq_equality2 lib a1 a2 A1 A2 eqa e teqa0)); sp.
 
     exists A1 A2 v1 v2 B1 B2; sp;
-    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_set))).
+    try (complete (spcast; apply computes_to_valcn_refl; eauto 3 with slow)).
 Qed.
 
 Lemma equality_set {p} :
-  forall lib (A1 A2 : @CTerm p) v1 v2 B1 B2 i,
-    equality lib (mkc_set A1 v1 B1)
-             (mkc_set A2 v2 B2)
-             (mkc_uni i)
+  forall lib (A1 A2 : @cterm p) v1 v2 B1 B2 i,
+    equality lib (mkcn_set A1 v1 B1)
+             (mkcn_set A2 v2 B2)
+             (mkcn_uni i)
     <=>
-    (equality lib A1 A2 (mkc_uni i)
+    (equality lib A1 A2 (mkcn_uni i)
      # forall a a',
          equality lib a a' A1
-         -> equality lib (substc a v1 B1) (substc a' v2 B2) (mkc_uni i)).
+         -> equality lib (substcn a v1 B1) (substcn a' v2 B2) (mkcn_uni i)).
 Proof.
   introv.
   sp_iff Case.
@@ -161,16 +161,16 @@ Proof.
     exists (fun a1 a2 e => f a1 a2 (eq_equality3 lib a1 a2 A1 A2 eqa j0 e h0)); sp.
 
     exists A1 A2 v1 v2 B1 B2; sp;
-    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_set))).
+    try (complete (spcast; apply computes_to_valcn_refl; eauto 3 with slow)).
 Qed.
 
 Lemma equality_in_set {p} :
-  forall lib (t u : @CTerm p) A v B,
-    equality lib t u (mkc_set A v B)
+  forall lib (t u : @cterm p) A v B,
+    equality lib t u (mkcn_set A v B)
     <=>
-    ((forall a a', equality lib a a' A -> tequality lib (substc a v B) (substc a' v B))
+    ((forall a a', equality lib a a' A -> tequality lib (substcn a v B) (substcn a' v B))
      # equality lib t u A
-     # inhabited_type lib (substc t v B)).
+     # inhabited_type lib (substcn t v B)).
 Proof.
   sp; sp_iff Case; introv e.
 
@@ -219,7 +219,7 @@ Proof.
 
     unfold type_family.
     exists A A v v B B; sp;
-    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_set))).
+    try (complete (spcast; apply computes_to_valcn_refl; eauto 3 with slow)).
 
     generalize (n0 a a' (eq_equality1 lib a a' A eqa e3 e1)); intro n; repnd.
 

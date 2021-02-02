@@ -180,805 +180,6 @@ Inductive per_semantics : term_equality -> NTerm -> NTerm -> Prop :=
 
 (* begin hide *)
 
-Definition cterm {o} := @CNTerm o.
-
-Definition cnterm2cterm {o} (t : @CNTerm o) : CTerm :=
-  let (x,p) := t in
-  mk_ct x (isprog_nout_implies_isprog x p).
-
-Definition cterm2CTerm {o} (t : @cterm o) : @CTerm o := cnterm2cterm t.
-(*Coercion cterm2CTerm : cterm >-> CTerm.*)
-
-Definition isprog_nout_vars {o} vs (t : @NTerm o) :=
-  assert (sub_vars (free_vars t) vs) # assert (nullb (get_utokens t)) # wf_term t.
-
-Lemma isprog_nout_vars_implies_isprog_vars {o} :
-  forall vs (t : @NTerm o),
-    isprog_nout_vars vs t
-    -> isprog_vars vs t.
-Proof.
-  introv h.
-  unfold isprog_nout_vars, isprog_vars in *; sp.
-Qed.
-Hint Resolve isprog_nout_vars_implies_isprog_vars : slow.
-
-Definition CVNTerm {o} vs := { t : @NTerm o | isprog_nout_vars vs t }.
-
-Definition cvterm {o} vs := @CVNTerm o vs.
-
-Definition cvnterm2cvterm {o} {vs} (t : @CVNTerm o vs) : @CVTerm o vs :=
-  let (x,p) := t in
-  mk_cvterm vs x (isprog_nout_vars_implies_isprog_vars vs x p).
-
-Definition cvterm2CVTerm {o} {vs} (t : @cvterm o vs) : @CVTerm o vs := cvnterm2cvterm t.
-(*Coercion cvterm2CVTerm : cvterm >-> CVTerm.*)
-
-Definition get_cvnterm {p} {vs} (t : @CVNTerm p vs) := proj1_sig t.
-
-Hint Resolve subst_preserves_wf_term : slow.
-Hint Rewrite assert_andb : slow.
-
-Lemma subst_preserves_isprog_nout {o} :
-  forall (t : @NTerm o) (v : NVar) (u : NTerm),
-    isprog_nout_vars [v] t
-    -> isprog_nout u
-    -> isprog_nout (subst t v u).
-Proof.
-  introv ispt ispu.
-  unfold isprog_nout, isprog_nout_vars in *; repnd; dands; eauto 3 with slow.
-  unfold no_vars_like_b in *; autorewrite with slow in *; repnd.
-  dands; allrw @assert_nullb; simpl in *.
-  { introv i; apply eqset_free_vars_disjoint in i; simpl in *; boolvar; simpl in *;
-      autorewrite with slow in *; try (complete (apply ispt0 in i; tcsp));[].
-    rewrite remove_nvars_cons in i; autorewrite with slow in *.
-    apply in_app_iff in i; repndors;
-      try (complete (apply ispt0 in i; tcsp));
-      try (complete (apply ispu1 in i; tcsp)). }
-  eapply eqset_preserves_null; try apply eqset_sym; try apply get_utokens_subst.
-  boolvar; autorewrite with slow in *; tcsp.
-  apply null_app; dands; auto.
-Qed.
-Hint Resolve subst_preserves_isprog_nout : isprog.
-
-Definition substcn {o} (u : @CNTerm o) (v : NVar) (t : CVNTerm [v]) : CNTerm :=
-  let (a,x) := t in
-  let (b,y) := u in
-  exist isprog_nout (subst a v b) (subst_preserves_isprog_nout a v b x y).
-
-Definition computes_to_valcn {p} lib (t1 t2 : @CNTerm p) :=
-  computes_to_value lib (get_cnterm t1) (get_cnterm t2).
-
-Definition computes_to_exccn {p} lib (a t1 t2 : @CNTerm p) :=
-  computes_to_exception lib (get_cnterm a) (get_cnterm t1) (get_cnterm t2).
-
-Definition cequivcn {p} lib (a b : @CNTerm p) :=
-  cequiv lib (get_cnterm a) (get_cnterm b).
-
-Definition approxcn {p} lib (a b : @CNTerm p) :=
-  approx lib (get_cnterm a) (get_cnterm b).
-
-Definition hasvaluecn {p} lib (t : @CNTerm p) := hasvalue lib (get_cnterm t).
-
-Definition ccomputes_to_valcn {p} lib t1 t2 := Cast (@computes_to_valcn p lib t1 t2).
-Definition ccomputes_to_exccn {p} lib a t e := Cast (@computes_to_exccn p lib a t e).
-Definition ccequivcn {p} lib t1 t2 := Cast (@cequivcn p lib t1 t2).
-Definition capproxcn {p} lib t1 t2 := Cast (@approxcn p lib t1 t2).
-Definition chaltscn {p} lib t := Cast (@hasvaluecn p lib t).
-
-
-Lemma isprog_nout_mk_integer {p} : forall n : Z, @isprog_nout p (mk_integer n).
-Proof.
-  repeat constructor.
-Qed.
-
-Definition mkcn_integer {p} (n : Z) : @CNTerm p :=
-  exist isprog_nout (mk_integer n) (isprog_nout_mk_integer n).
-
-Theorem isprog_nout_int {p} : @isprog_nout p mk_int.
-Proof.
-  repeat constructor.
-Qed.
-
-Definition mkcn_int {p} : @CNTerm p :=
-  exist isprog_nout mk_int isprog_nout_int.
-
-Definition isprog_nout_token {p} :
-  forall s : String.string, @isprog_nout p (mk_token s) := fun _ => (eq_refl,eq_refl).
-
-Definition mkcn_token {p} (s : String.string) : @CNTerm p :=
-  exist isprog_nout (mk_token s) (isprog_nout_token s).
-
-Definition isprog_nout_atom {p} : @isprog_nout p mk_atom := (eq_refl,eq_refl).
-
-Definition mkcn_atom {p} : @CNTerm p :=
-  exist isprog_nout mk_atom isprog_nout_atom.
-
-Theorem isprog_nout_axiom {p} : @isprog_nout p mk_axiom.
-Proof.
-  repeat constructor.
-Qed.
-
-Definition mkcn_axiom {p} : @CNTerm p :=
-  exist isprog_nout mk_axiom isprog_nout_axiom.
-
-Theorem isprog_nout_base {p} : @isprog_nout p mk_base.
-Proof.
-  repeat constructor.
-Qed.
-
-Definition mkcn_base {p} : @CNTerm p :=
-  exist isprog_nout mk_base isprog_nout_base.
-
-Lemma nullb_app :
-  forall {T} (l k : list T),
-    nullb (l ++ k) = nullb l && nullb k.
-Proof.
-  introv; unfold nullb; destruct l; simpl in *; auto.
-Qed.
-Hint Rewrite @nullb_app : slow.
-
-Hint Resolve assert_true : slow.
-Hint Resolve wf_approx : slow.
-Hint Resolve wf_cequiv : slow.
-Hint Resolve wf_equality : slow.
-Hint Resolve wf_refl : slow.
-Hint Resolve wf_tequality : slow.
-Hint Resolve wf_requality : slow.
-Hint Resolve wf_isect : slow.
-Hint Resolve wf_eisect : slow.
-Hint Resolve wf_disect : slow.
-Hint Resolve wf_function : slow.
-Hint Resolve wf_product : slow.
-Hint Resolve wf_set : slow.
-Hint Resolve wf_apply : slow.
-Hint Resolve wf_apply2 : slow.
-Hint Resolve wf_pair : slow.
-Hint Resolve wf_sup : slow.
-Hint Resolve wf_tunion : slow.
-Hint Resolve wf_union : slow.
-Hint Resolve wf_eunion : slow.
-Hint Resolve wf_texc : slow.
-Hint Resolve wf_inl : slow.
-Hint Resolve wf_inr : slow.
-Hint Resolve wf_image : slow.
-Hint Resolve wf_pertype : slow.
-Hint Resolve wf_ipertype : slow.
-Hint Resolve wf_spertype : slow.
-Hint Resolve wf_quotient : slow.
-Hint Resolve wf_partial : slow.
-Hint Resolve wf_fix : slow.
-
-Ltac prove_isprog_nout :=
-  intros;
-  unfold isprog_nout, isprog_nout_vars, no_vars_like_b in *; simpl in *; autorewrite with slow in *;
-  simpl in *; repnd; dands; autorewrite with slow in *; repnd; dands; eauto 3 with slow.
-
-
-Lemma isprog_nout_fix {p} :
-  forall t : @NTerm p, isprog_nout t -> isprog_nout (mk_fix t).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_fix {p} (t : @CNTerm p) :=
-  let (a,x) := t in
-  exist isprog_nout (mk_fix a) (isprog_nout_fix a x).
-
-Lemma isprog_nout_bot {p} : @isprog_nout p mk_bot.
-Proof.
-  repeat constructor.
-Qed.
-
-Definition mkcn_bot {p} : @CNTerm p :=
-  exist isprog_nout mk_bot isprog_nout_bot.
-
-Lemma isprog_nout_pertype {p} :
-  forall (a : @NTerm p), isprog_nout a -> isprog_nout (mk_pertype a).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_pertype {p} (R : @CNTerm p) : CNTerm :=
-  let (a,x) := R in
-  exist isprog_nout (mk_pertype a) (isprog_nout_pertype a x).
-
-Lemma isprog_nout_ipertype {p} :
-  forall (a : @NTerm p), isprog_nout a -> isprog_nout (mk_ipertype a).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_ipertype {p} (R : @CNTerm p) : CNTerm :=
-  let (a,x) := R in
-  exist isprog_nout (mk_ipertype a) (isprog_nout_ipertype a x).
-
-Lemma isprog_nout_spertype {p} :
-  forall (a : @NTerm p), isprog_nout a -> isprog_nout (mk_spertype a).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_spertype {p} (R : @CNTerm p) : CNTerm :=
-  let (a,x) := R in
-  exist isprog_nout (mk_spertype a) (isprog_nout_spertype a x).
-
-Theorem isprog_nout_image {p} :
-  forall (a b : @NTerm p), isprog_nout a -> isprog_nout b -> isprog_nout (mk_image a b).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_image {p} (T F : @CNTerm p) : CNTerm :=
-  let (t,x) := T in
-  let (f,y) := F in
-  exist isprog_nout (mk_image t f) (isprog_nout_image t f x y).
-
-Lemma isprog_nout_inl {p} :
-  forall a : @NTerm p, isprog_nout a -> isprog_nout (mk_inl a).
-Proof.
-  prove_isprog_nout; try apply wf_inl; auto.
-Qed.
-
-Definition mkcn_inl {p} (t : @CNTerm p) : CNTerm :=
-  let (a,x) := t in exist isprog_nout (mk_inl a) (isprog_nout_inl a x).
-
-Lemma isprog_nout_inr {p} :
-  forall a : @NTerm p, isprog_nout a -> isprog_nout (mk_inr a).
-Proof.
-  prove_isprog_nout; try apply wf_inr; auto.
-Qed.
-
-Definition mkcn_inr {p} (t : @CNTerm p) : CNTerm :=
-  let (a,x) := t in exist isprog_nout (mk_inr a) (isprog_nout_inr a x).
-
-Theorem isprog_nout_texc {p} :
-  forall a b : @NTerm p,
-    isprog_nout a -> isprog_nout b -> isprog_nout (mk_texc a b).
-Proof.
-  prove_isprog_nout; try apply wf_texc; auto.
-Qed.
-
-Definition mkcn_texc {p} (t1 t2 : @CNTerm p) : CNTerm :=
-  let (a,x) := t1 in
-  let (b,y) := t2 in
-  exist isprog_nout (mk_texc a b) (isprog_nout_texc a b x y).
-
-Theorem isprog_nout_union {p} :
-  forall a b : @NTerm p,
-    isprog_nout a -> isprog_nout b -> isprog_nout (mk_union a b).
-Proof.
-  prove_isprog_nout; try apply wf_union; auto.
-Qed.
-
-Definition mkcn_union {p} (t1 t2 : @CNTerm p) : CNTerm :=
-  let (a,x) := t1 in
-  let (b,y) := t2 in
-  exist isprog_nout (mk_union a b) (isprog_nout_union a b x y).
-
-Theorem isprog_nout_union2 {p} :
-  forall a b : @NTerm p,
-    isprog_nout a -> isprog_nout b -> isprog_nout (mk_union2 a b).
-Proof.
-  prove_isprog_nout; try apply wf_union; auto.
-Qed.
-
-Definition mkcn_union2 {p} (t1 t2 : @CNTerm p) : CNTerm :=
-  let (a,x) := t1 in
-  let (b,y) := t2 in
-  exist isprog_nout (mk_union2 a b) (isprog_nout_union2 a b x y).
-
-Theorem isprog_nout_eunion {p} :
-  forall a b : @NTerm p,
-    isprog_nout a -> isprog_nout b -> isprog_nout (mk_eunion a b).
-Proof.
-  prove_isprog_nout; try apply wf_eunion; auto.
-Qed.
-
-Definition mkcn_eunion {p} (t1 t2 : @CNTerm p) : CNTerm :=
-  let (a,x) := t1 in
-  let (b,y) := t2 in
-  exist isprog_nout (mk_eunion a b) (isprog_nout_eunion a b x y).
-
-Lemma isprog_nout_tunion {p} :
-  forall (a :@NTerm p) v b,
-    isprog_nout a
-    -> isprog_nout_vars [v] b
-    -> isprog_nout (mk_tunion a v b).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_tunion {p} (T1 : @CNTerm p) (v : NVar) (T2 : CVNTerm [v]) : CNTerm :=
-  let (a,x) := T1 in
-  let (b,y) := T2 in
-  exist isprog_nout (mk_tunion a v b) (isprog_nout_tunion a v b x y).
-
-Lemma isprog_nout_pair {p} :
-  forall a b : @NTerm p, isprog_nout a -> isprog_nout b -> isprog_nout (mk_pair a b).
-Proof.
-  prove_isprog_nout; apply wf_pair; auto.
-Qed.
-
-Definition mkcn_pair {p} (t1 t2 : @CNTerm p) : CNTerm :=
-  let (a,x) := t1 in
-  let (b,y) := t2 in
-  exist isprog_nout (mk_pair a b) (isprog_nout_pair a b x y).
-
-Lemma isprog_nout_sup {p} :
-  forall a b : @NTerm p, isprog_nout a -> isprog_nout b -> isprog_nout (mk_sup a b).
-Proof.
-  prove_isprog_nout; apply wf_sup; auto.
-Qed.
-
-Definition mkcn_sup {p} (t1 t2 : @CNTerm p) : CNTerm :=
-  let (a,x) := t1 in
-  let (b,y) := t2 in
-  exist isprog_nout (mk_sup a b) (isprog_nout_sup a b x y).
-
-Theorem isprog_nout_approx {p} :
-  forall a b : @NTerm p, isprog_nout a -> isprog_nout b -> isprog_nout (mk_approx a b).
-Proof.
-  introv ispa ispb; unfold isprog_nout, no_vars_like_b in *; simpl in *; autorewrite with slow in *.
-  simpl in *; repnd; dands; autorewrite with slow in *; repnd; dands; eauto 3 with slow.
-Qed.
-
-Theorem isprog_nout_cequiv {p} :
-  forall a b : @NTerm p, isprog_nout a -> isprog_nout b -> isprog_nout (mk_cequiv a b).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_approx {p} (t1 t2 : @CNTerm p) : CNTerm :=
-  let (a,x) := t1 in
-  let (b,y) := t2 in
-  exist isprog_nout (mk_approx a b) (isprog_nout_approx a b x y).
-
-Definition mkcn_cequiv {p} (t1 t2 : @CNTerm p) : CNTerm :=
-  let (a,x) := t1 in
-  let (b,y) := t2 in
-  exist isprog_nout (mk_cequiv a b) (isprog_nout_approx a b x y).
-
-Lemma isprog_nout_equality {p} :
-  forall a b T : @NTerm p,
-    isprog_nout a
-    -> isprog_nout b
-    -> isprog_nout T
-    -> isprog_nout (mk_equality a b T).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_equality {p} (t1 t2 T : @CNTerm p) : CNTerm :=
-  let (a,x) := t1 in
-  let (b,y) := t2 in
-  let (c,z) := T in
-  exist isprog_nout (mk_equality a b c) (isprog_nout_equality a b c x y z).
-
-Lemma isprog_nout_refl {p} :
-  forall a : @NTerm p, isprog_nout a -> isprog_nout (mk_refl a).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_refl {p} (t1 : @CNTerm p) : CNTerm :=
-  let (a,x) := t1 in
-    exist isprog_nout (mk_refl a) (isprog_nout_refl a x).
-
-Lemma isprog_nout_tequality {p} :
-  forall a b : @NTerm p, isprog_nout a -> isprog_nout b -> isprog_nout (mk_tequality a b).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_tequality {p} (t1 t2 : @CNTerm p) : CNTerm :=
-  let (a,x) := t1 in
-  let (b,y) := t2 in
-  exist isprog_nout (mk_tequality a b) (isprog_nout_tequality a b x y).
-
-Lemma isprog_nout_requality {p} :
-  forall a b T : @NTerm p,
-    isprog_nout a
-    -> isprog_nout b
-    -> isprog_nout T
-    -> isprog_nout (mk_requality a b T).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_requality {p} (t1 t2 T : @CNTerm p) : CNTerm :=
-  let (a,x) := t1 in
-  let (b,y) := t2 in
-  let (c,z) := T in
-  exist isprog_nout (mk_requality a b c) (isprog_nout_requality a b c x y z).
-
-Lemma isprog_nout_isect {p} :
-  forall (a : @NTerm p) v b,
-    isprog_nout a
-    -> isprog_nout_vars [v] b
-    -> isprog_nout (mk_isect a v b).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_isect {p} (T1 : @CNTerm p) (v : NVar) (T2 : CVNTerm [v]) : CNTerm :=
-  let (a,x) := T1 in
-  let (b,y) := T2 in
-  exist isprog_nout (mk_isect a v b) (isprog_nout_isect a v b x y).
-
-Lemma isprog_nout_eisect {p} :
-  forall (a : @NTerm p) v b,
-    isprog_nout a
-    -> isprog_nout_vars [v] b
-    -> isprog_nout (mk_eisect a v b).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_eisect {p} (T1 : @CNTerm p) (v : NVar) (T2 : CVNTerm [v]) : CNTerm :=
-  let (a,x) := T1 in
-  let (b,y) := T2 in
-  exist isprog_nout (mk_eisect a v b) (isprog_nout_eisect a v b x y).
-
-Lemma isprog_nout_disect {p} :
-  forall (a : @NTerm p) v b,
-    isprog_nout a
-    -> isprog_nout_vars [v] b
-    -> isprog_nout (mk_disect a v b).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_disect {p} (T1 : @CNTerm p) (v : NVar) (T2 : CVNTerm [v]) : CNTerm :=
-  let (a,x) := T1 in
-  let (b,y) := T2 in
-  exist isprog_nout (mk_disect a v b) (isprog_nout_disect a v b x y).
-
-Lemma isprog_nout_function {p} :
-  forall (a : @NTerm p) v b,
-    isprog_nout a
-    -> isprog_nout_vars [v] b
-    -> isprog_nout (mk_function a v b).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_function {p} (T1 : @CNTerm p) (v : NVar) (T2 : CVNTerm [v]) : CNTerm :=
-  let (a,x) := T1 in
-  let (b,y) := T2 in
-  exist isprog_nout (mk_function a v b) (isprog_nout_function a v b x y).
-
-Lemma isprog_nout_product {p} :
-  forall (a : @NTerm p) v b,
-    isprog_nout a
-    -> isprog_nout_vars [v] b
-    -> isprog_nout (mk_product a v b).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_product {p} (T1 : @CNTerm p) (v : NVar) (T2 : CVNTerm [v]) : CNTerm :=
-  let (a,x) := T1 in
-  let (b,y) := T2 in
-  exist isprog_nout (mk_product a v b) (isprog_nout_product a v b x y).
-
-Lemma isprog_nout_set {p} :
-  forall (a :@NTerm p) v b,
-    isprog_nout a
-    -> isprog_nout_vars [v] b
-    -> isprog_nout (mk_set a v b).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_set {p} (T1 : @CNTerm p) (v : NVar) (T2 : CVNTerm [v]) : CNTerm :=
-  let (a,x) := T1 in
-  let (b,y) := T2 in
-  exist isprog_nout (mk_set a v b) (isprog_nout_set a v b x y).
-
-Theorem isprog_nout_apply {p} :
-  forall (a b : @NTerm p), isprog_nout a -> isprog_nout b -> isprog_nout (mk_apply a b).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_apply {p} (t1 t2 : @CNTerm p) : CNTerm :=
-  let (a,x) := t1 in
-  let (b,y) := t2 in
-  exist isprog_nout (mk_apply a b) (isprog_nout_apply a b x y).
-
-Theorem isprog_nout_apply2 {p} :
-  forall (f a b : @NTerm p),
-    isprog_nout f -> isprog_nout a -> isprog_nout b -> isprog_nout (mk_apply2 f a b).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_apply2 {p} (t0 t1 t2 : @CNTerm p) : CNTerm :=
-  let (f,z) := t0 in
-  let (a,x) := t1 in
-  let (b,y) := t2 in
-  exist isprog_nout (mk_apply2 f a b) (isprog_nout_apply2 f a b z x y).
-
-Lemma isprog_nout_quotient {p} :
-  forall (a : @NTerm p) v1 v2 b,
-    isprog_nout a
-    -> isprog_nout_vars [v1,v2] b
-    -> isprog_nout (mk_quotient a v1 v2 b).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_quotient {p} (T1 : @CNTerm p) (v1 v2 : NVar) (T2 : CVNTerm [v1,v2]) : CNTerm :=
-  let (a,x) := T1 in
-  let (b,y) := T2 in
-  exist isprog_nout (mk_quotient a v1 v2 b) (isprog_nout_quotient a v1 v2 b x y).
-
-Theorem isprog_nout_partial {p} :
-  forall (a : @NTerm p), isprog_nout a -> isprog_nout (mk_partial a).
-Proof.
-  prove_isprog_nout.
-Qed.
-
-Definition mkcn_partial {p} (R : @CNTerm p) : CNTerm :=
-  let (a,x) := R in
-  exist isprog_nout (mk_partial a) (isprog_nout_partial a x).
-
-Theorem isprog_nout_mono {p} :
-  forall (a : @NTerm p), isprog_nout a -> isprog_nout (mk_mono a).
-Proof.
-  prove_isprog_nout; try apply wf_mono_iff; auto.
-Qed.
-
-Definition mkcn_mono {p} (R : @CNTerm p) : CNTerm :=
-  let (a,x) := R in
-  exist isprog_nout (mk_mono a) (isprog_nout_mono a x).
-
-Theorem isprog_nout_admiss {p} :
-  forall (a : @NTerm p), isprog_nout a -> isprog_nout (mk_admiss a).
-Proof.
-  prove_isprog_nout; try apply wf_admiss_iff; auto.
-Qed.
-
-Definition mkcn_admiss {p} (R : @CNTerm p) : CNTerm :=
-  let (a,x) := R in
-  exist isprog_nout (mk_admiss a) (isprog_nout_admiss a x).
-
-
-Definition CNSubstitution  {p} : tuniv := lmap NVar (@CNTerm p).
-
-Definition cnsub2sub {p} (sub : @CNSubstitution p) : Substitution :=
-  map (fun x => (fst x, get_cnterm (snd x))) sub.
-
-Definition cnsubst {p} (t : @NTerm p) (sub : CNSubstitution) :=
-  lsubst t (cnsub2sub sub).
-
-Definition dom_cnsub {p} (sub : @CNSubstitution p)  := map (fun x => fst x) sub.
-
-Definition cover_nout_vars {p} (t : @NTerm p) (sub : @CNSubstitution p) :=
-  subvars (free_vars t) (dom_cnsub sub).
-
-Lemma in_cnsub2sub {p} :
-  forall sub : @CNSubstitution p,
-  forall v : NVar,
-  forall u : NTerm,
-    LIn (v, u) (cnsub2sub sub)
-    -> isprogram u.
-Proof.
-  induction sub; simpl; sp; simpl in *; ginv; eauto.
-  destruct a; simpl; eauto 3 with slow.
-Qed.
-
-Definition wf_term_cnsubst {o} :
-  forall (t : @NTerm o) sub,
-    wf_term t
-    -> wf_term (cnsubst t sub).
-Proof.
-  sp; allrw @wf_term_eq.
-  apply isprogram_lsubst1; sp.
-  allapply @in_cnsub2sub; sp.
-Qed.
-Hint Resolve wf_term_cnsubst : slow.
-
-Lemma cover_vars_cvnterm2 {p} :
-  forall v1 v2 t u1 u2,
-    cover_nout_vars (@get_cvnterm p [v1,v2] t) [(v1, u1), (v2, u2)].
-Proof.
-  destruct t; sp; simpl.
-  unfold isprog_nout_vars in *; repnd; auto.
-Qed.
-
-Hint Resolve wf_term_csubst : slow.
-
-Lemma implies_isprog_nout {o} :
-  forall (t : @NTerm o),
-    wf_term t
-    -> closed t
-    -> noutokens t
-    -> isprog_nout t.
-Proof.
-  introv wf cl n.
-  unfold isprog_nout, no_vars_like_b; dands; autorewrite with slow; dands; eauto 3 with slow;
-    apply assert_nullb; apply null_iff_nil; tcsp.
-Qed.
-Hint Resolve implies_isprog_nout : slow.
-
-Lemma closed_lsubst {o} :
-  forall (t : @NTerm o) sub,
-    cl_sub sub
-    -> covered t (dom_sub sub)
-    -> closed (lsubst t sub).
-Proof.
-  introv cl cov.
-  unfold lsubst; boolvar; apply closed_lsubst_aux; auto.
-  unfold covered in *; rewrite free_vars_change_bvars_alpha; auto.
-Qed.
-Hint Resolve closed_lsubst : slow.
-
-Lemma cl_sub_cnsub2sub {o} :
-  forall (sub : @CNSubstitution o),
-    cl_sub (cnsub2sub sub).
-Proof.
-  introv.
-  apply cl_sub_eq; introv i.
-  unfold range, cnsub2sub in *.
-  allrw map_map; unfold compose in *; simpl in *.
-  apply in_map_iff in i; exrepnd; simpl in *; subst.
-  destruct a; simpl in *; eauto 3 with slow.
-Qed.
-Hint Resolve cl_sub_cnsub2sub : slow.
-
-Lemma dom_sub_cnsub2sub_eq_dom_cnsub {o} :
-  forall (sub : @CNSubstitution o),
-    dom_sub (cnsub2sub sub) = dom_cnsub sub.
-Proof.
-  introv; unfold dom_sub, dom_cnsub, dom_lmap, cnsub2sub.
-  allrw map_map; unfold compose; simpl; auto.
-Qed.
-
-Lemma implies_covered_dom_sub_cnsub2sub {o} :
-  forall (t : @NTerm o) sub,
-    cover_nout_vars t sub
-    -> covered t (dom_sub (cnsub2sub sub)).
-Proof.
-  introv cov; rewrite dom_sub_cnsub2sub_eq_dom_cnsub; auto.
-Qed.
-Hint Resolve implies_covered_dom_sub_cnsub2sub : slow.
-
-Lemma implies_closed_cnsubst {o} :
-  forall (t : @NTerm o) sub,
-    cover_nout_vars t sub
-    -> closed (cnsubst t sub).
-Proof.
-  introv cov.
-  apply closed_lsubst; eauto 3 with slow.
-Qed.
-Hint Resolve implies_closed_cnsubst : slow.
-
-Hint Rewrite @get_utokens_sub_cons : slow.
-
-Lemma null_get_utokens_sub_cnsub2sub {o} :
-  forall (sub : @CNSubstitution o),
-    null (get_utokens_sub (cnsub2sub sub)).
-Proof.
-  induction sub; simpl in *; autorewrite with slow; auto.
-  apply null_app; dands; auto.
-  destruct a; simpl; tcsp.
-  destruct c; simpl in *; tcsp.
-  apply isprog_nout_iff in i; repnd.
-  apply null_iff_nil; auto.
-Qed.
-Hint Resolve null_get_utokens_sub_cnsub2sub : slow.
-
-Lemma get_utokens_change_bvars_alpha {o} :
-  forall (t : @NTerm o) vs,
-    get_utokens (change_bvars_alpha vs t) = get_utokens t.
-Proof.
-  introv; apply alphaeq_preserves_utokens; eauto 3 with slow.
-  apply alpha_eq_sym; apply change_bvars_alpha_spec.
-Qed.
-Hint Rewrite @get_utokens_change_bvars_alpha : slow.
-
-Lemma get_utokens_cnsubst {o} :
-  forall (t : @NTerm o) sub,
-    get_utokens (cnsubst t sub) = get_utokens t.
-Proof.
-  introv; unfold cnsubst, lsubst; boolvar;
-    rewrite get_utokens_lsubst_aux_trivial1; autorewrite with slow; eauto 3 with slow.
-Qed.
-Hint Rewrite @get_utokens_cnsubst : slow.
-
-Lemma implies_noutokens_cnsubst {o} :
-  forall (t : @NTerm o) sub,
-    noutokens t
-    -> noutokens (cnsubst t sub).
-Proof.
-  introv h; unfold noutokens in *; autorewrite with slow in *; auto.
-Qed.
-Hint Resolve implies_noutokens_cnsubst : slow.
-
-Lemma isprog_nout_csubst {p} :
-  forall (t : @NTerm p) sub,
-    wf_term t
-    -> noutokens t
-    -> cover_nout_vars t sub
-    -> isprog_nout (cnsubst t sub).
-Proof.
-  introv wf nout cov.
-  apply implies_isprog_nout; eauto 3 with slow.
-Defined.
-
-Lemma assert_nullb_get_utokens_as_noutokens {o} :
-  forall (t : @NTerm o),
-    assert (nullb (get_utokens t)) <=> noutokens t.
-Proof.
-  introv; rw @assert_nullb; apply null_iff_nil.
-Qed.
-
-Lemma isprog_nout_vars_eq {p} :
-  forall (t : @NTerm p) vs,
-    isprog_nout_vars vs t <=> subvars (free_vars t) vs # noutokens t # nt_wf t.
-Proof.
-  unfold isprog_nout_vars; sp.
-  rw @nt_wf_eq; rw @assert_nullb_get_utokens_as_noutokens; sp.
-Qed.
-
-Lemma wf_cvnterm {p} :
-  forall {vs} (t : @CVNTerm p vs),
-    wf_term (get_cvnterm t).
-Proof.
-  destruct t; simpl.
-  rw @isprog_nout_vars_eq in i; sp; eauto 3 with slow.
-Qed.
-
-Lemma noutokens_get_cvnterm {o} :
-  forall {vs} (t : @CVNTerm o vs),
-    noutokens (get_cvnterm t).
-Proof.
-  introv; destruct t; simpl in *.
-  apply isprog_nout_vars_eq in i; tcsp.
-Qed.
-
-Lemma cover_nout_vars_cvnterm3 {p} :
-  forall v1 v2 v3 t u1 u2 u3,
-    cover_nout_vars (@get_cvnterm p [v1,v2,v3] t) [(v1, u1), (v2, u2), (v3, u3)].
-Proof.
-  destruct t; sp; simpl.
-  rw @isprog_nout_vars_eq in i; sp.
-Qed.
-
-Definition lsubstcn {p}
-           (t   : @NTerm p)
-           (w   : wf_term t)
-           (n   : noutokens t)
-           (sub : CNSubstitution)
-           (p   : cover_nout_vars t sub) : CNTerm :=
-  exist isprog_nout
-        (cnsubst t sub)
-        (isprog_nout_csubst t sub w n p).
-
-Definition lsubstcn2 {p}
-           (v1 : NVar) (u1 : @CNTerm p)
-           (v2 : NVar) (u2 : CNTerm)
-           (t : CVNTerm [v1;v2]) :=
-  lsubstcn
-    (get_cvnterm t)
-    (wf_cvnterm t)
-    (noutokens_get_cvnterm t)
-    [(v1,u1),(v2,u2)]
-    (cover_vars_cvnterm2 v1 v2 t u1 u2).
-
-Definition lsubstcn3 {p}
-           (v1 : NVar) (u1 : @CNTerm p)
-           (v2 : NVar) (u2 : CNTerm)
-           (v3 : NVar) (u3 : CNTerm)
-           (t : CVNTerm [v1;v2;v3]) :=
-  lsubstcn
-    (get_cvnterm t)
-    (wf_cvnterm t)
-    (noutokens_get_cvnterm t)
-    [(v1,u1),(v2,u2),(v3,u3)]
-    (cover_nout_vars_cvnterm3 v1 v2 v3 t u1 u2 u3).
-
 
 Definition term_equality {p} := @cterm p -> @cterm p -> [U].
 
@@ -2330,9 +1531,11 @@ Inductive weq {p}
             -> weq lib eqa eqb (mkcn_apply f b) (mkcn_apply f' b'))
       -> weq lib eqa eqb t t'.
 
+
+
 Definition per_w {p} lib (ts : cts) T1 T2 (eq : per(p)) : [U] :=
   {eqa : per , {eqb : per-fam(eqa) ,
-   type_family lib mkc_w ts T1 T2 eqa eqb
+   type_family lib mkcn_w ts T1 T2 eqa eqb
    # eq <=2=> (weq lib eqa eqb)}}.
 
 (**
@@ -2350,11 +1553,11 @@ CoInductive meq {p}
 | meq_cons :
     forall a f a' f' : cterm,
     forall e : eqa a a',
-      t ===>(lib) (mkc_sup a f)
-      -> t' ===>(lib) (mkc_sup a' f')
+      t ===>(lib) (mkcn_sup a f)
+      -> t' ===>(lib) (mkcn_sup a' f')
       -> (forall b b',
             eqb a a' e b b'
-            -> meq lib eqa eqb (mkc_apply f b) (mkc_apply f' b'))
+            -> meq lib eqa eqb (mkcn_apply f b) (mkcn_apply f' b'))
       -> meq lib eqa eqb t t'.
 
 Definition per_m {p}
@@ -2364,7 +1567,7 @@ Definition per_m {p}
            (eq : per) : [U] :=
   {eqa : per
    , {eqb : per-fam(eqa)
-      , type_family lib mkc_m ts T1 T2 eqa eqb
+      , type_family lib mkcn_m ts T1 T2 eqa eqb
       # eq <=2=> (meq lib eqa eqb)}}.
 
 (**
@@ -2428,13 +1631,13 @@ Definition type_pfamily {p}
       # ts P1 P2 eqp
       # (forall p1 p2,
          forall ep : eqp p1 p2,
-           ts (substc p1 ap1 A1) (substc p2 ap2 A2) (eqa p1 p2 ep))
+           ts (substcn p1 ap1 A1) (substcn p2 ap2 A2) (eqa p1 p2 ep))
       # (forall p1 p2,
          forall ep : eqp p1 p2,
          forall a1 a2,
          forall ea : eqa p1 p2 ep a1 a2,
-           ts (lsubstc2 bp1 p1 ba1 a1 B1)
-              (lsubstc2 bp2 p2 ba2 a2 B2)
+           ts (lsubstcn2 bp1 p1 ba1 a1 B1)
+              (lsubstcn2 bp2 p2 ba2 a2 B2)
               (eqb p1 p2 ep a1 a2 ea))
       # (forall p1 p2,
          forall ep : eqp p1 p2,
@@ -2442,8 +1645,8 @@ Definition type_pfamily {p}
          forall ea : eqa p1 p2 ep a1 a2,
          forall b1 b2,
          forall eb : eqb p1 p2 ep a1 a2 ea b1 b2,
-           eqp (lsubstc3 cp1 p1 ca1 a1 cb1 b1 C1)
-               (lsubstc3 cp2 p2 ca2 a2 cb2 b2 C2))
+           eqp (lsubstcn3 cp1 p1 ca1 a1 cb1 b1 C1)
+               (lsubstcn3 cp2 p2 ca2 a2 cb2 b2 C2))
       # eqp p1 p2
        }}}}}}}}.
 
@@ -2467,15 +1670,15 @@ Inductive pweq {pp}
     forall ep : eqp p p,
     forall a1 f1 a2 f2 : cterm,
     forall ea : eqa p p ep a1 a2,
-      t1 ===>(lib) (mkc_sup a1 f1)
-      -> t2 ===>(lib) (mkc_sup a2 f2)
+      t1 ===>(lib) (mkcn_sup a1 f1)
+      -> t2 ===>(lib) (mkcn_sup a2 f2)
       -> (forall b1 b2,
             eqb p p ep a1 a2 ea b1 b2
             -> pweq lib eqp eqa eqb
                     cp ca cb C
-                    (lsubstc3 cp p ca a1 cb b1 C)
-                    (mkc_apply f1 b1)
-                    (mkc_apply f2 b2))
+                    (lsubstcn3 cp p ca a1 cb b1 C)
+                    (mkcn_apply f1 b1)
+                    (mkcn_apply f2 b2))
       -> pweq lib eqp eqa eqb cp ca cb C p t1 t2.
 
 Definition per_pw {p}
@@ -2490,7 +1693,7 @@ Definition per_pw {p}
    , {cp1, cp2, ca1, ca2, cb1, cb2 : NVar
    , {C1 : cvterm [cp1, ca1, cb1]
    , {C2 : cvterm [cp2, ca2, cb2]
-      , type_pfamily lib mkc_pw ts T1 T2 eqp eqa eqb
+      , type_pfamily lib mkcn_pw ts T1 T2 eqp eqa eqb
                      cp1 ca1 cb1
                      C1
                      cp2 ca2 cb2
@@ -2602,15 +1805,15 @@ CoInductive pmeq {pp}
     forall ep : eqp p p,
     forall a1 f1 a2 f2 : cterm,
     forall ea : eqa p p ep a1 a2,
-      t1 ===>(lib) (mkc_sup a1 f1)
-      -> t2 ===>(lib) (mkc_sup a2 f2)
+      t1 ===>(lib) (mkcn_sup a1 f1)
+      -> t2 ===>(lib) (mkcn_sup a2 f2)
       -> (forall b1 b2,
             eqb p p ep a1 a2 ea b1 b2
             -> pmeq lib eqp eqa eqb
                     cp ca cb C
-                    (lsubstc3 cp p ca a1 cb b1 C)
-                    (mkc_apply f1 b1)
-                    (mkc_apply f2 b2))
+                    (lsubstcn3 cp p ca a1 cb b1 C)
+                    (mkcn_apply f1 b1)
+                    (mkcn_apply f2 b2))
       -> pmeq lib eqp eqa eqb cp ca cb C p t1 t2.
 
 Definition per_pm {p}
@@ -2625,7 +1828,7 @@ Definition per_pm {p}
    , {cp1, cp2, ca1, ca2, cb1, cb2 : NVar
    , {C1 : cvterm [cp1, ca1, cb1]
    , {C2 : cvterm [cp2, ca2, cb2]
-      , type_pfamily lib mkc_pm ts T1 T2 eqp eqa eqb
+      , type_pfamily lib mkcn_pm ts T1 T2 eqp eqa eqb
                      cp1 ca1 cb1
                      C1
                      cp2 ca2 cb2
@@ -2660,8 +1863,8 @@ Definition per_rec {o}
 (*  # T2 ===>(lib) (mkc_rec G)*)
   # (forall (A B : cterm) (eqa : per),
         ts A B eqa
-        -> ts (mkc_apply F A) (mkc_apply F B) (f eqa)
-           # ts (mkc_apply G A) (mkc_apply G B) (f eqa))
+        -> ts (mkcn_apply F A) (mkcn_apply F B) (f eqa)
+           # ts (mkcn_apply G A) (mkcn_apply G B) (f eqa))
 (*  # eq <=2=> (per_rec_per f)*) }}}.
 
 (*
@@ -2691,8 +1894,8 @@ Definition per_rec (ts : cts) (T1 T2 : @cterm p) (eq : per(p)) : [U] :=
  * from the per definitions *)
 Definition close_compute {p} lib (ts : cts) (T1 T2 : @cterm p) (eq : per(p)) :=
   {T3, T4 : cterm
-   $ ccomputes_to_valc lib T1 T3
-   # ccomputes_to_valc lib T2 T4
+   $ ccomputes_to_valcn lib T1 T3
+   # ccomputes_to_valcn lib T2 T4
    # ts T3 T4 eq}.
 
 (* end hide *)
@@ -2712,7 +1915,7 @@ Inductive close {p} lib (ts : cts) (T T' : @cterm p) (eq : per(p)) : [U] :=
   | CL_init     : ts T T' eq -> close lib ts T T' eq
   | CL_int      : per_int      lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_atom     : per_atom     lib (close lib ts) T T' eq -> close lib ts T T' eq
-  | CL_uatom    : per_uatom    lib (close lib ts) T T' eq -> close lib ts T T' eq
+(*  | CL_uatom    : per_uatom    lib (close lib ts) T T' eq -> close lib ts T T' eq*)
   | CL_base     : per_base     lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_approx   : per_approx   lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_cequiv   : per_cequiv   lib (close lib ts) T T' eq -> close lib ts T T' eq
@@ -2738,9 +1941,9 @@ Inductive close {p} lib (ts : cts) (T T' : @cterm p) (eq : per(p)) : [U] :=
   | CL_partial  : per_partial  lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_admiss   : per_admiss   lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_mono     : per_mono     lib (close lib ts) T T' eq -> close lib ts T T' eq
-  | CL_ffatom   : per_ffatom   lib (close lib ts) T T' eq -> close lib ts T T' eq
-  | CL_effatom  : per_effatom  lib (close lib ts) T T' eq -> close lib ts T T' eq
-  | CL_ffatoms  : per_ffatoms  lib (close lib ts) T T' eq -> close lib ts T T' eq
+(*  | CL_ffatom   : per_ffatom   lib (close lib ts) T T' eq -> close lib ts T T' eq*)
+(*  | CL_effatom  : per_effatom  lib (close lib ts) T T' eq -> close lib ts T T' eq*)
+(*  | CL_ffatoms  : per_ffatoms  lib (close lib ts) T T' eq -> close lib ts T T' eq*)
   | CL_set      : per_set      lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_tunion   : per_tunion   lib (close lib ts) T T' eq -> close lib ts T T' eq
   | CL_product  : per_product  lib (close lib ts) T T' eq -> close lib ts T T' eq
@@ -2750,7 +1953,7 @@ Hint Constructors close.
 Arguments CL_init     {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_int      {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_atom     {p} [lib] [ts] [T] [T'] [eq] _.
-Arguments CL_uatom    {p} [lib] [ts] [T] [T'] [eq] _.
+(*Arguments CL_uatom    {p} [lib] [ts] [T] [T'] [eq] _.*)
 Arguments CL_base     {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_approx   {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_cequiv   {p} [lib] [ts] [T] [T'] [eq] _.
@@ -2773,9 +1976,9 @@ Arguments CL_image    {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_partial  {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_admiss   {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_mono     {p} [lib] [ts] [T] [T'] [eq] _.
-Arguments CL_ffatom   {p} [lib] [ts] [T] [T'] [eq] _.
-Arguments CL_effatom  {p} [lib] [ts] [T] [T'] [eq] _.
-Arguments CL_ffatoms  {p} [lib] [ts] [T] [T'] [eq] _.
+(*Arguments CL_ffatom   {p} [lib] [ts] [T] [T'] [eq] _.*)
+(*Arguments CL_effatom  {p} [lib] [ts] [T] [T'] [eq] _.*)
+(*Arguments CL_ffatoms  {p} [lib] [ts] [T] [T'] [eq] _.*)
 Arguments CL_set      {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_tunion   {p} [lib] [ts] [T] [T'] [eq] _.
 Arguments CL_product  {p} [lib] [ts] [T] [T'] [eq] _.
@@ -2788,7 +1991,7 @@ Tactic Notation "close_cases" tactic(first) ident(c) :=
   [ Case_aux c "CL_init"
   | Case_aux c "CL_int"
   | Case_aux c "CL_atom"
-  | Case_aux c "CL_uatom"
+(*  | Case_aux c "CL_uatom"*)
   | Case_aux c "CL_base"
   | Case_aux c "CL_approx"
   | Case_aux c "CL_cequiv"
@@ -2814,9 +2017,9 @@ Tactic Notation "close_cases" tactic(first) ident(c) :=
   | Case_aux c "CL_partial"
   | Case_aux c "CL_admiss"
   | Case_aux c "CL_mono"
-  | Case_aux c "CL_ffatom"
-  | Case_aux c "CL_effatom"
-  | Case_aux c "CL_ffatoms"
+(*  | Case_aux c "CL_ffatom"*)
+(*  | Case_aux c "CL_effatom"*)
+(*  | Case_aux c "CL_ffatoms"*)
   | Case_aux c "CL_set"
   | Case_aux c "CL_tunion"
   | Case_aux c "CL_product"
@@ -2839,11 +2042,11 @@ Definition close_ind' {pp}
                  (eq : per)
                  (per : per_atom lib (close lib ts) T T' eq),
             P ts T T' eq)
-  (uatom : forall (ts : cts)
+(*  (uatom : forall (ts : cts)
                  (T T' : @cterm pp)
                  (eq : per)
                  (per : per_uatom lib (close lib ts) T T' eq),
-            P ts T T' eq)
+            P ts T T' eq)*)
   (base : forall (ts : cts)
                  (T T' : @cterm pp)
                  (eq : per)
@@ -2864,16 +2067,16 @@ Definition close_ind' {pp}
                  (eq : per)
                  (A B a1 a2 b1 b2 : @cterm pp)
                  (eqa : per)
-                 (c1 : T ===>(lib) (mkc_equality a1 a2 A))
-                 (c2 : T' ===>(lib) (mkc_equality b1 b2 B))
+                 (c1 : T ===>(lib) (mkcn_equality a1 a2 A))
+                 (c2 : T' ===>(lib) (mkcn_equality b1 b2 B))
                  (cla : close lib ts A B eqa)
                  (reca : P ts A B eqa)
                  (eos1 : eqindomain eqa a1 b1)
                  (eos2 : eqindomain eqa a2 b2)
                  (eqiff : forall t t',
                             eq t t'
-                               <=> t ===>(lib) mkc_axiom
-                               # t' ===>(lib) mkc_axiom
+                               <=> t ===>(lib) mkcn_axiom
+                               # t' ===>(lib) mkcn_axiom
                                # eqa a1 a2)
                  (per : per_eq lib (close lib ts) T T' eq),
             P ts T T' eq)
@@ -2882,8 +2085,8 @@ Definition close_ind' {pp}
                  (eq : per)
                  (A B a1 a2 b1 b2 : @cterm pp)
                  (eqa : per)
-                 (c1 : T ===>(lib) (mkc_requality a1 a2 A))
-                 (c2 : T' ===>(lib) (mkc_requality b1 b2 B))
+                 (c1 : T ===>(lib) (mkcn_requality a1 a2 A))
+                 (c2 : T' ===>(lib) (mkcn_requality b1 b2 B))
                  (cla : close lib ts A B eqa)
                  (reca : P ts A B eqa)
                  (eo1 : eqorceq lib eqa a1 b1)
@@ -2896,8 +2099,8 @@ Definition close_ind' {pp}
                  (eq : per)
                  (a1 a2 b1 b2 : @cterm pp)
                  (eqa : per)
-                 (c1 : T ===>(lib) (mkc_tequality a1 a2))
-                 (c2 : T' ===>(lib) (mkc_tequality b1 b2))
+                 (c1 : T ===>(lib) (mkcn_tequality a1 a2))
+                 (c2 : T' ===>(lib) (mkcn_tequality b1 b2))
                  (cl1  : close lib ts a1 b1 eqa)
                  (rec1 : P ts a1 b1 eqa)
                  (cl2  : close lib ts a2 b2 eqa)
@@ -2916,12 +2119,12 @@ Definition close_ind' {pp}
                   (B' : cvterm [v'])
                   (eqa : per)
                   (eqb : forall a a' : cterm, forall e : eqa a a', per)
-                  (c1 : T ===>(lib) (mkc_isect A v B))
-                  (c2 : T' ===>(lib) (mkc_isect A' v' B'))
+                  (c1 : T ===>(lib) (mkcn_isect A v B))
+                  (c2 : T' ===>(lib) (mkcn_isect A' v' B'))
                   (cla : close lib ts A A' eqa)
                   (reca : P ts A A' eqa)
-                  (clb : forall a a', forall e : eqa a a', close lib ts (substc a v B) (substc a' v' B') (eqb a a' e))
-                  (recb : forall a a', forall e : eqa a a', P ts (substc a v B) (substc a' v' B') (eqb a a' e))
+                  (clb : forall a a', forall e : eqa a a', close lib ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
+                  (recb : forall a a', forall e : eqa a a', P ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
                   (eqiff : forall t t', eq t t' <=> (forall a a', forall e : eqa a a', eqb a a' e t t'))
                   (per : per_isect lib (close lib ts) T T' eq),
              P ts T T' eq)
@@ -2934,19 +2137,19 @@ Definition close_ind' {pp}
                   (B' : cvterm [v'])
                   (eqa : per)
                   (eqb : forall a a' : cterm, forall e : eqa a a', per)
-                  (c1 : T ===>(lib) (mkc_function A v B))
-                  (c2 : T' ===>(lib) (mkc_function A' v' B'))
+                  (c1 : T ===>(lib) (mkcn_function A v B))
+                  (c2 : T' ===>(lib) (mkcn_function A' v' B'))
                   (cla : close lib ts A A' eqa)
                   (reca : P ts A A' eqa)
-                  (clb : forall a a', forall e : eqa a a', close lib ts (substc a v B) (substc a' v' B') (eqb a a' e))
-                  (recb : forall a a', forall e : eqa a a', P ts (substc a v B) (substc a' v' B') (eqb a a' e))
+                  (clb : forall a a', forall e : eqa a a', close lib ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
+                  (recb : forall a a', forall e : eqa a a', P ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
                   (eqiff : forall t t', eq t t'
                                            <=>
                                            (forall a a',
                                             forall e : eqa a a',
                                               (eqb a a' e)
-                                                (mkc_apply t a)
-                                                (mkc_apply t' a')))
+                                                (mkcn_apply t a)
+                                                (mkcn_apply t' a')))
                   (per : per_func lib (close lib ts) T T' eq),
             P ts T T' eq)
   (disect : forall (ts : cts)
@@ -2958,12 +2161,12 @@ Definition close_ind' {pp}
                    (B' : cvterm [v'])
                    (eqa : per)
                    (eqb : forall a a' : cterm, forall e : eqa a a', per)
-                   (c1 : T ===>(lib) (mkc_disect A v B))
-                   (c2 : T' ===>(lib) (mkc_disect A' v' B'))
+                   (c1 : T ===>(lib) (mkcn_disect A v B))
+                   (c2 : T' ===>(lib) (mkcn_disect A' v' B'))
                    (cla : close lib ts A A' eqa)
                    (reca : P ts A A' eqa)
-                   (clb : forall a a', forall e : eqa a a', close lib ts (substc a v B) (substc a' v' B') (eqb a a' e))
-                   (recb : forall a a', forall e : eqa a a', P ts (substc a v B) (substc a' v' B') (eqb a a' e))
+                   (clb : forall a a', forall e : eqa a a', close lib ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
+                   (recb : forall a a', forall e : eqa a a', P ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
                    (eqiff : forall t t', eq t t' <=> {e : eqa t t' , eqb t t' e t t'})
                    (per : per_disect lib (close lib ts) T T' eq),
               P ts T T' eq)
@@ -2972,23 +2175,23 @@ Definition close_ind' {pp}
                     (eq : per)
                     (R1 R2 : @cterm pp)
                     (eq1 eq2 : cterm -> cterm -> per)
-                    (c1 : T ===>(lib) (mkc_pertype R1))
-                    (c2 : T' ===>(lib) (mkc_pertype R2))
+                    (c1 : T ===>(lib) (mkcn_pertype R1))
+                    (c2 : T' ===>(lib) (mkcn_pertype R2))
                     (cl1 : forall x y, close lib ts
-                                             (mkc_apply2 R1 x y)
-                                             (mkc_apply2 R1 x y)
+                                             (mkcn_apply2 R1 x y)
+                                             (mkcn_apply2 R1 x y)
                                              (eq1 x y))
                     (rec1 : forall x y, P ts
-                                          (mkc_apply2 R1 x y)
-                                          (mkc_apply2 R1 x y)
+                                          (mkcn_apply2 R1 x y)
+                                          (mkcn_apply2 R1 x y)
                                           (eq1 x y))
                     (cl2 : forall x y, close lib ts
-                                             (mkc_apply2 R2 x y)
-                                             (mkc_apply2 R2 x y)
+                                             (mkcn_apply2 R2 x y)
+                                             (mkcn_apply2 R2 x y)
                                              (eq2 x y))
                     (rec2 : forall x y, P ts
-                                          (mkc_apply2 R2 x y)
-                                          (mkc_apply2 R2 x y)
+                                          (mkcn_apply2 R2 x y)
+                                          (mkcn_apply2 R2 x y)
                                           (eq2 x y))
                     (inh : forall x y, inhabited (eq1 x y) <=> inhabited (eq2 x y))
                     (isper : is_per eq1)
@@ -3000,15 +2203,15 @@ Definition close_ind' {pp}
                      (eq : per)
                      (R1 R2 : @cterm pp)
                      (eq1 : cterm -> cterm -> per)
-                     (c1 : T ===>(lib) (mkc_ipertype R1))
-                     (c2 : T' ===>(lib) (mkc_ipertype R2))
+                     (c1 : T ===>(lib) (mkcn_ipertype R1))
+                     (c2 : T' ===>(lib) (mkcn_ipertype R2))
                      (cl1 : forall x y, close lib ts
-                                              (mkc_apply2 R1 x y)
-                                              (mkc_apply2 R2 x y)
+                                              (mkcn_apply2 R1 x y)
+                                              (mkcn_apply2 R2 x y)
                                               (eq1 x y))
                      (rec1 : forall x y, P ts
-                                           (mkc_apply2 R1 x y)
-                                           (mkc_apply2 R2 x y)
+                                           (mkcn_apply2 R1 x y)
+                                           (mkcn_apply2 R2 x y)
                                            (eq1 x y))
                      (isper : is_per eq1)
                      (eqiff : eq <=2=> (pertype_eq eq1))
@@ -3019,24 +2222,24 @@ Definition close_ind' {pp}
                      (eq : per)
                      (R1 R2 : @cterm pp)
                      (eq1 : cterm -> cterm -> per)
-                     (c1 : T ===>(lib) (mkc_spertype R1))
-                     (c2 : T' ===>(lib) (mkc_spertype R2))
+                     (c1 : T ===>(lib) (mkcn_spertype R1))
+                     (c2 : T' ===>(lib) (mkcn_spertype R2))
                      (cl1 : forall x y,
-                              close lib ts (mkc_apply2 R1 x y) (mkc_apply2 R2 x y) (eq1 x y))
+                              close lib ts (mkcn_apply2 R1 x y) (mkcn_apply2 R2 x y) (eq1 x y))
                      (rec1 : forall x y,
-                               P ts (mkc_apply2 R1 x y) (mkc_apply2 R2 x y) (eq1 x y))
+                               P ts (mkcn_apply2 R1 x y) (mkcn_apply2 R2 x y) (eq1 x y))
                      (cl2 : forall x y z,
                               inhabited(eq1 x z)
-                              -> close lib ts (mkc_apply2 R1 x y) (mkc_apply2 R1 z y) (eq1 x y))
+                              -> close lib ts (mkcn_apply2 R1 x y) (mkcn_apply2 R1 z y) (eq1 x y))
                      (rec2 : forall x y z,
                                inhabited(eq1 x z)
-                               -> P ts (mkc_apply2 R1 x y) (mkc_apply2 R1 z y) (eq1 x y))
+                               -> P ts (mkcn_apply2 R1 x y) (mkcn_apply2 R1 z y) (eq1 x y))
                      (cl3 : forall x y z,
                               inhabited(eq1 y z)
-                              -> close lib ts (mkc_apply2 R1 x y) (mkc_apply2 R1 x z) (eq1 x y))
+                              -> close lib ts (mkcn_apply2 R1 x y) (mkcn_apply2 R1 x z) (eq1 x y))
                      (rec3 : forall x y z,
                                inhabited(eq1 y z)
-                               -> P ts (mkc_apply2 R1 x y) (mkc_apply2 R1 x z) (eq1 x y))
+                               -> P ts (mkcn_apply2 R1 x y) (mkcn_apply2 R1 x z) (eq1 x y))
                      (isper : is_per eq1)
                      (eqiff : eq <=2=> (pertype_eq eq1))
                      (per : per_spertype lib (close lib ts) T T' eq),
@@ -3050,12 +2253,12 @@ Definition close_ind' {pp}
                   (B' : cvterm [v'])
                   (eqa : per)
                   (eqb : forall a a' : cterm, forall e : eqa a a', per)
-                  (c1 : T ===>(lib) (mkc_w A v B))
-                  (c2 : T' ===>(lib) (mkc_w A' v' B'))
+                  (c1 : T ===>(lib) (mkcn_w A v B))
+                  (c2 : T' ===>(lib) (mkcn_w A' v' B'))
                   (cla : close lib ts A A' eqa)
                   (reca : P ts A A' eqa)
-                  (clb : forall a a', forall e : eqa a a', close lib ts (substc a v B) (substc a' v' B') (eqb a a' e))
-                  (recb : forall a a', forall e : eqa a a', P ts (substc a v B) (substc a' v' B') (eqb a a' e))
+                  (clb : forall a a', forall e : eqa a a', close lib ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
+                  (recb : forall a a', forall e : eqa a a', P ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
                   (eqiff : forall t t', eq t t' <=> weq lib eqa eqb t t')
                   (per : per_w lib (close lib ts) T T' eq),
             P ts T T' eq)
@@ -3068,12 +2271,12 @@ Definition close_ind' {pp}
                   (B' : cvterm [v'])
                   (eqa : per)
                   (eqb : forall a a' : cterm, forall e : eqa a a', per)
-                  (c1 : T ===>(lib) (mkc_m A v B))
-                  (c2 : T' ===>(lib) (mkc_m A' v' B'))
+                  (c1 : T ===>(lib) (mkcn_m A v B))
+                  (c2 : T' ===>(lib) (mkcn_m A' v' B'))
                   (cla : close lib ts A A' eqa)
                   (reca : P ts A A' eqa)
-                  (clb : forall a a', forall e : eqa a a', close lib ts (substc a v B) (substc a' v' B') (eqb a a' e))
-                  (recb : forall a a', forall e : eqa a a', P ts (substc a v B) (substc a' v' B') (eqb a a' e))
+                  (clb : forall a a', forall e : eqa a a', close lib ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
+                  (recb : forall a a', forall e : eqa a a', P ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
                   (eqiff : forall t t', eq t t' <=> meq lib eqa eqb t t')
                   (per : per_m lib (close lib ts) T T' eq),
             P ts T T' eq)
@@ -3098,31 +2301,31 @@ Definition close_ind' {pp}
                          forall a a' : cterm,
                          forall ea : eqa p p' ep a a',
                            per)
-                  (c1 : T ===>(lib) (mkc_pw Pr ap A bp ba B cp ca cb C p))
-                  (c2 : T' ===>(lib) (mkc_pw Pr' ap' A' bp' ba' B' cp' ca' cb' C' p'))
+                  (c1 : T ===>(lib) (mkcn_pw Pr ap A bp ba B cp ca cb C p))
+                  (c2 : T' ===>(lib) (mkcn_pw Pr' ap' A' bp' ba' B' cp' ca' cb' C' p'))
                   (clp : close lib ts Pr Pr' eqp)
                   (recp : P ts Pr Pr' eqp)
                   (cla : forall p p',
                          forall ep : eqp p p',
-                           close lib ts (substc p ap A) (substc p' ap' A') (eqa p p' ep))
+                           close lib ts (substcn p ap A) (substcn p' ap' A') (eqa p p' ep))
                   (reca : forall p p',
                           forall ep : eqp p p',
-                            P ts (substc p ap A) (substc p' ap' A') (eqa p p' ep))
+                            P ts (substcn p ap A) (substcn p' ap' A') (eqa p p' ep))
                   (clb : forall p p',
                          forall ep : eqp p p',
                          forall a a',
                          forall ea : eqa p p' ep a a',
                            close lib ts
-                                 (lsubstc2 bp p ba a B)
-                                 (lsubstc2 bp' p' ba' a' B')
+                                 (lsubstcn2 bp p ba a B)
+                                 (lsubstcn2 bp' p' ba' a' B')
                                  (eqb p p' ep a a' ea))
                   (recb : forall p p',
                           forall ep : eqp p p',
                           forall a a',
                           forall ea : eqa p p' ep a a',
                             P ts
-                              (lsubstc2 bp p ba a B)
-                              (lsubstc2 bp' p' ba' a' B')
+                              (lsubstcn2 bp p ba a B)
+                              (lsubstcn2 bp' p' ba' a' B')
                               (eqb p p' ep a a' ea))
                   (eqc : forall p p',
                          forall ep : eqp p p',
@@ -3130,8 +2333,8 @@ Definition close_ind' {pp}
                          forall ea : eqa p p' ep a a',
                          forall b b',
                          forall eb : eqb p p' ep a a' ea b b',
-                           eqp (lsubstc3 cp p ca a cb b C)
-                               (lsubstc3 cp' p' ca' a' cb' b' C'))
+                           eqp (lsubstcn3 cp p ca a cb b C)
+                               (lsubstcn3 cp' p' ca' a' cb' b' C'))
                   (peq : eqp p p')
                   (eqiff : forall t t', eq t t' <=> pweq lib eqp eqa eqb cp ca cb C p t t')
                   (per : per_pw lib (close lib ts) T T' eq),
@@ -3157,31 +2360,31 @@ Definition close_ind' {pp}
                          forall a a' : cterm,
                          forall ea : eqa p p' ep a a',
                            per)
-                  (c1 : T ===>(lib) (mkc_pm Pr ap A bp ba B cp ca cb C p))
-                  (c2 : T' ===>(lib) (mkc_pm Pr' ap' A' bp' ba' B' cp' ca' cb' C' p'))
+                  (c1 : T ===>(lib) (mkcn_pm Pr ap A bp ba B cp ca cb C p))
+                  (c2 : T' ===>(lib) (mkcn_pm Pr' ap' A' bp' ba' B' cp' ca' cb' C' p'))
                   (clp : close lib ts Pr Pr' eqp)
                   (recp : P ts Pr Pr' eqp)
                   (cla : forall p p',
                          forall ep : eqp p p',
-                           close lib ts (substc p ap A) (substc p' ap' A') (eqa p p' ep))
+                           close lib ts (substcn p ap A) (substcn p' ap' A') (eqa p p' ep))
                   (reca : forall p p',
                           forall ep : eqp p p',
-                            P ts (substc p ap A) (substc p' ap' A') (eqa p p' ep))
+                            P ts (substcn p ap A) (substcn p' ap' A') (eqa p p' ep))
                   (clb : forall p p',
                          forall ep : eqp p p',
                          forall a a',
                          forall ea : eqa p p' ep a a',
                            close lib ts
-                                 (lsubstc2 bp p ba a B)
-                                 (lsubstc2 bp' p' ba' a' B')
+                                 (lsubstcn2 bp p ba a B)
+                                 (lsubstcn2 bp' p' ba' a' B')
                                  (eqb p p' ep a a' ea))
                   (recb : forall p p',
                           forall ep : eqp p p',
                           forall a a',
                           forall ea : eqa p p' ep a a',
                             P ts
-                              (lsubstc2 bp p ba a B)
-                              (lsubstc2 bp' p' ba' a' B')
+                              (lsubstcn2 bp p ba a B)
+                              (lsubstcn2 bp' p' ba' a' B')
                               (eqb p p' ep a a' ea))
                   (eqc : forall p p',
                          forall ep : eqp p p',
@@ -3189,8 +2392,8 @@ Definition close_ind' {pp}
                          forall ea : eqa p p' ep a a',
                          forall b b',
                          forall eb : eqb p p' ep a a' ea b b',
-                           eqp (lsubstc3 cp p ca a cb b C)
-                               (lsubstc3 cp' p' ca' a' cb' b' C'))
+                           eqp (lsubstcn3 cp p ca a cb b C)
+                               (lsubstcn3 cp' p' ca' a' cb' b' C'))
                   (peq : eqp p p')
                   (eqiff : forall t t', eq t t' <=> pmeq lib eqp eqa eqb cp ca cb C p t t')
                   (per : per_pm lib (close lib ts) T T' eq),
@@ -3200,8 +2403,8 @@ Definition close_ind' {pp}
                   (eq : per)
                   (N N' E E' : @cterm pp)
                   (eqn eqe : per)
-                  (c1 : T ===>(lib) (mkc_texc N E))
-                  (c2 : T' ===>(lib) (mkc_texc N' E'))
+                  (c1 : T ===>(lib) (mkcn_texc N E))
+                  (c2 : T' ===>(lib) (mkcn_texc N' E'))
                   (cln : close lib ts N N' eqn)
                   (recn : P ts N N' eqn)
                   (cle : close lib ts E E' eqe)
@@ -3214,8 +2417,8 @@ Definition close_ind' {pp}
                   (eq : per)
                   (A A' B B' : @cterm pp)
                   (eqa eqb : per)
-                  (c1 : T ===>(lib) (mkc_union A B))
-                  (c2 : T' ===>(lib) (mkc_union A' B'))
+                  (c1 : T ===>(lib) (mkcn_union A B))
+                  (c2 : T' ===>(lib) (mkcn_union A' B'))
                   (cla : close lib ts A A' eqa)
                   (reca : P ts A A' eqa)
                   (clb : close lib ts B B' eqb)
@@ -3228,8 +2431,8 @@ Definition close_ind' {pp}
                   (eq : per)
                   (A A' B B' : @cterm pp)
                   (eqa1 eqa2 eqb1 eqb2 : per)
-                  (c1 : T ===>(lib) (mkc_eunion A B))
-                  (c2 : T' ===>(lib) (mkc_eunion A' B'))
+                  (c1 : T ===>(lib) (mkcn_eunion A B))
+                  (c2 : T' ===>(lib) (mkcn_eunion A' B'))
                   (iffa : eqa1 <=2=> eqa2)
                   (iffb : eqb1 <=2=> eqb2)
                   (cla1  : close lib ts A A eqa1)
@@ -3248,8 +2451,8 @@ Definition close_ind' {pp}
                   (eq : per)
                   (A A' B B' : @cterm pp)
                   (eqa : per)
-                  (c1 : T ===>(lib) (mkc_union2 A B))
-                  (c2 : T' ===>(lib) (mkc_union2 A' B'))
+                  (c1 : T ===>(lib) (mkcn_union2 A B))
+                  (c2 : T' ===>(lib) (mkcn_union2 A' B'))
                   (cla : close lib ts A A' eqa)
                   (reca : P ts A A' eqa)
                   (clb : close lib ts B B' eqb)
@@ -3262,11 +2465,11 @@ Definition close_ind' {pp}
                   (eq : per)
                   (A A' f f' : @cterm pp)
                   (eqa : per)
-                  (c1 : T ===>(lib) (mkc_image A f))
-                  (c2 : T' ===>(lib) (mkc_image A' f'))
+                  (c1 : T ===>(lib) (mkcn_image A f))
+                  (c2 : T' ===>(lib) (mkcn_image A' f'))
                   (cla : close lib ts A A' eqa)
                   (reca : P ts A A' eqa)
-                  (ceq : ccequivc lib f f')
+                  (ceq : ccequivcn lib f f')
                   (eqiff : forall t t', eq t t' <=> per_image_eq lib eqa f t t')
                   (per : per_image lib (close lib ts) T T' eq),
             P ts T T' eq)
@@ -3284,31 +2487,31 @@ Definition close_ind' {pp}
                    (g  : e-sel(eqa,eqa',f))
                    (f' : t-sel(eqa'))
                    (g' : e-sel(eqa',eqa,f'))
-                   (c1 : T ===>(lib) (mkc_eisect A v B))
-                   (c2 : T' ===>(lib) (mkc_eisect A' v' B'))
+                   (c1 : T ===>(lib) (mkcn_eisect A v B))
+                   (c2 : T' ===>(lib) (mkcn_eisect A' v' B'))
                    (cla : close ts A A eqa)
                    (reca : P ts A A eqa)
                    (cla' : close ts A' A' eqa')
                    (reca' : P ts A' A' eqa')
                    (clb : forall a (e : eqa a a),
                             close ts
-                                  (substc a v B)
-                                  (substc (f a e) v' B')
+                                  (substcn a v B)
+                                  (substcn (f a e) v' B')
                                   (eqb a (f a e) e (g a e)))
                    (recb : forall a (e : eqa a a),
                              P ts
-                               (substc a v B)
-                               (substc (f a e) v' B')
+                               (substcn a v B)
+                               (substcn (f a e) v' B')
                                (eqb a (f a e) e (g a e)))
                    (clb' : forall a' (e' : eqa' a' a'),
                              close ts
-                                   (substc (f' a' e') v B)
-                                   (substc a' v' B')
+                                   (substcn (f' a' e') v B)
+                                   (substcn a' v' B')
                                    (eqb (f' a' e') a' (g' a' e') e'))
                    (recb' : forall a' (e' : eqa' a' a'),
                               P ts
-                                (substc (f' a' e') v B)
-                                (substc a' v' B')
+                                (substcn (f' a' e') v B)
+                                (substcn a' v' B')
                                 (eqb (f' a' e') a' (g' a' e') e'))
                    (eqiff : eq <=2=> (eisect_eq eqa eqa' eqb))
                    (per : per_eisect lib (close lib ts) T T' eq),
@@ -3318,11 +2521,11 @@ Definition close_ind' {pp}
                     (eq : per)
                     (A1 A2 : @cterm pp)
                     (eqa : per)
-                    (c1 : T ===>(lib) (mkc_partial A1))
-                    (c2 : T' ===>(lib) (mkc_partial A2))
+                    (c1 : T ===>(lib) (mkcn_partial A1))
+                    (c2 : T' ===>(lib) (mkcn_partial A2))
                     (cla : close lib ts A1 A2 eqa)
                     (reca : P ts A1 A2 eqa)
-                    (hv : forall a, eqa a a -> chaltsc lib a)
+                    (hv : forall a, eqa a a -> chaltscn lib a)
                     (eqiff : forall t t', eq t t' <=> per_partial_eq lib eqa t t')
                     (per : per_partial lib (close lib ts) T T' eq),
                P ts T T' eq)
@@ -3331,13 +2534,13 @@ Definition close_ind' {pp}
                     (eq : per)
                     (A1 A2 : @cterm pp)
                     (eqa : per)
-                    (c1 : T ===>(lib) (mkc_admiss A1))
-                    (c2 : T' ===>(lib) (mkc_admiss A2))
+                    (c1 : T ===>(lib) (mkcn_admiss A1))
+                    (c2 : T' ===>(lib) (mkcn_admiss A2))
                     (cla : close lib ts A1 A2 eqa)
                     (reca : P ts A1 A2 eqa)
                     (eqiff : (forall t t' : cterm,
                       eq t t' <=>
-                        (t) ===>(lib) (mkc_axiom) # (t') ===>(lib) (mkc_axiom) # admissible_equality eqa))
+                        (t) ===>(lib) (mkcn_axiom) # (t') ===>(lib) (mkcn_axiom) # admissible_equality eqa))
                     (per : per_admiss lib (close lib ts) T T' eq),
                P ts T T' eq)
   (mono : forall (ts : cts)
@@ -3345,57 +2548,57 @@ Definition close_ind' {pp}
                     (eq : per)
                     (A1 A2 : @cterm pp)
                     (eqa : per)
-                    (c1 : T ===>(lib) (mkc_mono A1))
-                    (c2 : T' ===>(lib) (mkc_mono A2))
+                    (c1 : T ===>(lib) (mkcn_mono A1))
+                    (c2 : T' ===>(lib) (mkcn_mono A2))
                     (cla : close lib ts A1 A2 eqa)
                     (reca : P ts A1 A2 eqa)
                     (eqiff : (forall t t' : cterm,
                       eq t t' <=>
-                        (t) ===>(lib) (mkc_axiom) # (t') ===>(lib) (mkc_axiom) # mono_equality lib eqa))
+                        (t) ===>(lib) (mkcn_axiom) # (t') ===>(lib) (mkcn_axiom) # mono_equality lib eqa))
                     (per : per_mono lib (close lib ts) T T' eq),
                P ts T T' eq)
-  (ffatom : forall (ts : cts)
+(*  (ffatom : forall (ts : cts)
                     (T T' : @cterm pp)
                     (eq : per)
                     (A1 A2 x1 x2 a1 a2 : @cterm pp)
                     (eqa : per)
                     (u : get_patom_set pp)
-                    (c1 : T ===>(lib) (mkc_free_from_atom A1 x1 a1))
-                    (c2 : T' ===>(lib) (mkc_free_from_atom A2 x2 a2))
+                    (c1 : T ===>(lib) (mkcn_free_from_atom A1 x1 a1))
+                    (c2 : T' ===>(lib) (mkcn_free_from_atom A2 x2 a2))
                     (cla : close lib ts A1 A2 eqa)
                     (reca : P ts A1 A2 eqa)
                     (ex : eqa x1 x2)
-                    (ca1 : a1 ===>(lib) (mkc_utoken u))
-                    (ca2 : a2 ===>(lib) (mkc_utoken u))
+                    (ca1 : a1 ===>(lib) (mkcn_utoken u))
+                    (ca2 : a2 ===>(lib) (mkcn_utoken u))
                     (eqiff : eq <=2=> (per_ffatom_eq lib eqa u x1))
                     (per : per_ffatom lib (close lib ts) T T' eq),
-               P ts T T' eq)
-  (effatom : forall (ts : cts)
+               P ts T T' eq)*)
+(*  (effatom : forall (ts : cts)
                     (T T' : @cterm pp)
                     (eq : per)
                     (A1 A2 x1 x2 a1 a2 : @cterm pp)
                     (eqa : per)
-                    (c1 : T ===>(lib) (mkc_efree_from_atom A1 x1 a1))
-                    (c2 : T' ===>(lib) (mkc_efree_from_atom A2 x2 a2))
+                    (c1 : T ===>(lib) (mkcn_efree_from_atom A1 x1 a1))
+                    (c2 : T' ===>(lib) (mkcn_efree_from_atom A2 x2 a2))
                     (cla : close lib ts A1 A2 eqa)
                     (reca : P ts A1 A2 eqa)
                     (niff : name_not_in_upto lib a1 x1 eqa <=> name_not_in_upto lib a2 x2 eqa)
                     (eqiff : eq <=2=> (per_effatom_eq lib eqa a1 x1))
                     (per : per_effatom lib (close lib ts) T T' eq),
-               P ts T T' eq)
-  (ffatoms : forall (ts : cts)
+               P ts T T' eq)*)
+(*  (ffatoms : forall (ts : cts)
                     (T T' : @cterm pp)
                     (eq : per)
                     (A1 A2 x1 x2 : @cterm pp)
                     (eqa : per)
-                    (c1 : T ===>(lib) (mkc_free_from_atoms A1 x1))
-                    (c2 : T' ===>(lib) (mkc_free_from_atoms A2 x2))
+                    (c1 : T ===>(lib) (mkcn_free_from_atoms A1 x1))
+                    (c2 : T' ===>(lib) (mkcn_free_from_atoms A2 x2))
                     (cla : close lib ts A1 A2 eqa)
                     (reca : P ts A1 A2 eqa)
                     (ex : eqa x1 x2)
                     (eqiff : eq <=2=> (per_ffatoms_eq lib eqa x1))
                     (per : per_ffatoms lib (close lib ts) T T' eq),
-               P ts T T' eq)
+               P ts T T' eq)*)
   (subset : forall (ts : cts)
                    (T T' : @cterm pp)
                    (eq : per)
@@ -3405,12 +2608,12 @@ Definition close_ind' {pp}
                    (B' : cvterm [v'])
                    (eqa : per)
                    (eqb : forall a a' : cterm, forall e : eqa a a', per)
-                   (c1 : T ===>(lib) (mkc_set A v B))
-                   (c2 : T' ===>(lib) (mkc_set A' v' B'))
+                   (c1 : T ===>(lib) (mkcn_set A v B))
+                   (c2 : T' ===>(lib) (mkcn_set A' v' B'))
                    (cla : close lib ts A A' eqa)
                    (reca : P ts A A' eqa)
-                   (clb : forall a a', forall e : eqa a a', close lib ts (substc a v B) (substc a' v' B') (eqb a a' e))
-                   (recb : forall a a', forall e : eqa a a', P ts (substc a v B) (substc a' v' B') (eqb a a' e))
+                   (clb : forall a a', forall e : eqa a a', close lib ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
+                   (recb : forall a a', forall e : eqa a a', P ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
                    (eqiff : forall t t', eq t t' <=> {e : eqa t t' , inhabited (eqb t t' e)})
                    (per : per_set lib (close lib ts) T T' eq),
               P ts T T' eq)
@@ -3423,12 +2626,12 @@ Definition close_ind' {pp}
                    (B' : cvterm [v'])
                    (eqa : per)
                    (eqb : forall a a' : cterm, forall e : eqa a a', per)
-                   (c1 : T ===>(lib) (mkc_tunion A v B))
-                   (c2 : T' ===>(lib) (mkc_tunion A' v' B'))
+                   (c1 : T ===>(lib) (mkcn_tunion A v B))
+                   (c2 : T' ===>(lib) (mkcn_tunion A' v' B'))
                    (cla : close lib ts A A' eqa)
                    (reca : P ts A A' eqa)
-                   (clb : forall a a', forall e : eqa a a', close lib ts (substc a v B) (substc a' v' B') (eqb a a' e))
-                   (recb : forall a a', forall e : eqa a a', P ts (substc a v B) (substc a' v' B') (eqb a a' e))
+                   (clb : forall a a', forall e : eqa a a', close lib ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
+                   (recb : forall a a', forall e : eqa a a', P ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
                    (eqiff : forall t t', eq t t' <=> per_tunion_eq eqa eqb t t')
                    (per : per_tunion lib (close lib ts) T T' eq),
               P ts T T' eq)
@@ -3441,12 +2644,12 @@ Definition close_ind' {pp}
                   (B' : cvterm [v'])
                   (eqa : per)
                   (eqb : forall a a' : cterm, forall e : eqa a a', per)
-                  (c1 : T ===>(lib) (mkc_product A v B))
-                  (c2 : T' ===>(lib) (mkc_product A' v' B'))
+                  (c1 : T ===>(lib) (mkcn_product A v B))
+                  (c2 : T' ===>(lib) (mkcn_product A' v' B'))
                   (cla : close lib ts A A' eqa)
                   (reca : P ts A A' eqa)
-                  (clb : forall a a', forall e : eqa a a', close lib ts (substc a v B) (substc a' v' B') (eqb a a' e))
-                  (recb : forall a a', forall e : eqa a a', P ts (substc a v B) (substc a' v' B') (eqb a a' e))
+                  (clb : forall a a', forall e : eqa a a', close lib ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
+                  (recb : forall a a', forall e : eqa a a', P ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
                   (eqiff : forall t t', eq t t' <=> per_product_eq lib eqa eqb t t')
                   (per : per_product lib (close lib ts) T T' eq),
             P ts T T' eq)
@@ -3455,8 +2658,8 @@ Definition close_ind' {pp}
                     (eq : per)
                     (A1 A2 : @cterm pp)
                     (eq1 eq2 : per)
-                    (c1 : ccomputes_to_valc T  (mkc_esquash A1))
-                    (c2 : ccomputes_to_valc T' (mkc_esquash A2))
+                    (c1 : ccomputes_to_valc T  (mkcn_esquash A1))
+                    (c2 : ccomputes_to_valc T' (mkcn_esquash A2))
                     (cl1 : close ts A1 A1 eq1)
                     (rec1 : P ts A1 A1 eq1)
                     (cl2 : close ts A2 A2 eq2)
@@ -3464,8 +2667,8 @@ Definition close_ind' {pp}
                     (inh : inhabited eq1 <=> inhabited eq2)
                     (eqiff : forall t t', eq t t'
                                              <=>
-                                             ccomputes_to_valc t mkc_axiom
-                                             # ccomputes_to_valc t' mkc_axiom
+                                             ccomputes_to_valc t mkcn_axiom
+                                             # ccomputes_to_valc t' mkcn_axiom
                                              # inhabited eq1)
                     (per : per_esquash lib (close lib ts) T T' eq),
                P ts T T' eq)*)
@@ -3483,7 +2686,7 @@ Definition close_ind' {pp}
    | CL_init   pts => init  ts T T' eq pts
    | CL_int    pts => int   ts T T' eq pts
    | CL_atom   pts => atom  ts T T' eq pts
-   | CL_uatom  pts => uatom ts T T' eq pts
+(*   | CL_uatom  pts => uatom ts T T' eq pts*)
    | CL_base   pts => base  ts T T' eq pts
    | CL_approx pts => aprx  ts T T' eq pts
    | CL_cequiv pts => ceq   ts T T' eq pts
@@ -3572,8 +2775,8 @@ Definition close_ind' {pp}
                (rec ts A A' eqa tsa)
                ftsb
                (fun a a' eqa => rec ts
-                                    (substc a v B)
-                                    (substc a' v' B')
+                                    (substcn a v B)
+                                    (substcn a' v' B')
                                     (eqb a a' eqa)
                                     (ftsb a a' eqa))
                teq
@@ -3599,8 +2802,8 @@ Definition close_ind' {pp}
                tsb
                (fun a a' eqa =>
                   rec ts
-                      (substc a v B)
-                      (substc a' v' B')
+                      (substcn a v B)
+                      (substcn a' v' B')
                       (eqb a a' eqa)
                       (tsb a a' eqa))
                teq
@@ -3625,8 +2828,8 @@ Definition close_ind' {pp}
                 (rec ts A A' eqa tsa)
                 ftsb
                 (fun a a' eqa => rec ts
-                                     (substc a v B)
-                                     (substc a' v' B')
+                                     (substcn a v B)
+                                     (substcn a' v' B')
                                      (eqb a a' eqa)
                                      (ftsb a a' eqa))
                 teq
@@ -3647,14 +2850,14 @@ Definition close_ind' {pp}
                c2
                F1
                (fun x y => rec ts
-                               (mkc_apply2 R1 x y)
-                               (mkc_apply2 R1 x y)
+                               (mkcn_apply2 R1 x y)
+                               (mkcn_apply2 R1 x y)
                                (eq1 x y)
                                (F1 x y))
                F2
                (fun x y => rec ts
-                               (mkc_apply2 R2 x y)
-                               (mkc_apply2 R2 x y)
+                               (mkcn_apply2 R2 x y)
+                               (mkcn_apply2 R2 x y)
                                (eq2 x y)
                                (F2 x y))
                inh
@@ -3674,8 +2877,8 @@ Definition close_ind' {pp}
                c2
                F1
                (fun x y => rec ts
-                               (mkc_apply2 R1 x y)
-                               (mkc_apply2 R2 x y)
+                               (mkcn_apply2 R1 x y)
+                               (mkcn_apply2 R2 x y)
                                (eq1 x y)
                                (F1 x y))
                isp
@@ -3697,22 +2900,22 @@ Definition close_ind' {pp}
                 F1
                 (fun x y =>
                    rec ts
-                       (mkc_apply2 R1 x y)
-                       (mkc_apply2 R2 x y)
+                       (mkcn_apply2 R1 x y)
+                       (mkcn_apply2 R2 x y)
                        (eq1 x y)
                        (F1 x y))
                 F2
                 (fun x y z inh =>
                    rec ts
-                       (mkc_apply2 R1 x y)
-                       (mkc_apply2 R1 z y)
+                       (mkcn_apply2 R1 x y)
+                       (mkcn_apply2 R1 z y)
                        (eq1 x y)
                        (F2 x y z inh))
                 F3
                 (fun x y z inh =>
                    rec ts
-                       (mkc_apply2 R1 x y)
-                       (mkc_apply2 R1 x z)
+                       (mkcn_apply2 R1 x y)
+                       (mkcn_apply2 R1 x z)
                        (eq1 x y)
                        (F3 x y z inh))
                 isp
@@ -3739,8 +2942,8 @@ Definition close_ind' {pp}
                tsb
                (fun a a' eqa =>
                   rec ts
-                      (substc a v B)
-                      (substc a' v' B')
+                      (substcn a v B)
+                      (substcn a' v' B')
                       (eqb a a' eqa)
                       (tsb a a' eqa))
                teq
@@ -3766,8 +2969,8 @@ Definition close_ind' {pp}
                tsb
                (fun a a' eqa =>
                   rec ts
-                      (substc a v B)
-                      (substc a' v' B')
+                      (substcn a v B)
+                      (substcn a' v' B')
                       (eqb a a' eqa)
                       (tsb a a' eqa))
                teq
@@ -3818,15 +3021,15 @@ Definition close_ind' {pp}
             tsa
             (fun p p' eqp =>
                rec ts
-                   (substc p ap A)
-                   (substc p' ap' A')
+                   (substcn p ap A)
+                   (substcn p' ap' A')
                    (eqa p p' eqp)
                    (tsa p p' eqp))
             tsb
             (fun p p' eqp a a' eqa =>
                rec ts
-                   (lsubstc2 bp p ba a B)
-                   (lsubstc2 bp' p' ba' a' B')
+                   (lsubstcn2 bp p ba a B)
+                   (lsubstcn2 bp' p' ba' a' B')
                    (eqb p p' eqp a a' eqa)
                    (tsb p p' eqp a a' eqa))
             tsc
@@ -3879,15 +3082,15 @@ Definition close_ind' {pp}
             tsa
             (fun p p' eqp =>
                rec ts
-                   (substc p ap A)
-                   (substc p' ap' A')
+                   (substcn p ap A)
+                   (substcn p' ap' A')
                    (eqa p p' eqp)
                    (tsa p p' eqp))
             tsb
             (fun p p' eqp a a' eqa =>
                rec ts
-                   (lsubstc2 bp p ba a B)
-                   (lsubstc2 bp' p' ba' a' B')
+                   (lsubstcn2 bp p ba a B)
+                   (lsubstcn2 bp' p' ba' a' B')
                    (eqb p p' eqp a a' eqa)
                    (tsb p p' eqp a a' eqa))
             tsc
@@ -4015,15 +3218,15 @@ Definition close_ind' {pp}
                 ftsb
                 (fun a e =>
                    (rec ts
-                        (substc a v B)
-                        (substc (f a e) v' B')
+                        (substcn a v B)
+                        (substcn (f a e) v' B')
                         (eqb a (f a e) e (g a e))
                         (ftsb a e)))
                 ftsb'
                 (fun a' e' =>
                    (rec ts
-                        (substc (f' a' e') v B)
-                        (substc a' v' B')
+                        (substcn (f' a' e') v B)
+                        (substcn a' v' B')
                         (eqb (f' a' e') a' (g' a' e') e')
                         (ftsb' a' e')))
                 teq
@@ -4072,7 +3275,7 @@ Definition close_ind' {pp}
                (rec ts A1 A2 eqa cla)
                eqt
                pts
-   | CL_ffatom pts =>
+(*   | CL_ffatom pts =>
        let (A1,  x) := pts in
        let (A2,  x) := x in
        let (x1,  x) := x in
@@ -4094,8 +3297,8 @@ Definition close_ind' {pp}
                 (rec ts A1 A2 eqa cla)
                 ex ca1 ca2
                 eqt
-                pts
-   | CL_effatom pts =>
+                pts*)
+(*   | CL_effatom pts =>
        let (A1,  x) := pts in
        let (A2,  x) := x in
        let (x1,  x) := x in
@@ -4114,8 +3317,8 @@ Definition close_ind' {pp}
                  (rec ts A1 A2 eqa cla)
                  ni
                  eqt
-                 pts
-   | CL_ffatoms pts =>
+                 pts*)
+(*   | CL_ffatoms pts =>
        let (A1,  x) := pts in
        let (A2,  x) := x in
        let (x1,  x) := x in
@@ -4132,7 +3335,7 @@ Definition close_ind' {pp}
                 (rec ts A1 A2 eqa cla)
                 ex
                 eqt
-                pts
+                pts*)
    | CL_set pts =>
        let (eqa, x) := pts in
        let (eqb, x) := x in
@@ -4154,8 +3357,8 @@ Definition close_ind' {pp}
                 tsb
                 (fun a a' eqa =>
                    rec ts
-                       (substc a v B)
-                       (substc a' v' B')
+                       (substcn a v B)
+                       (substcn a' v' B')
                        (eqb a a' eqa)
                        (tsb a a' eqa))
                 teq
@@ -4181,8 +3384,8 @@ Definition close_ind' {pp}
                 tsb
                 (fun a a' eqa =>
                    rec ts
-                       (substc a v B)
-                       (substc a' v' B')
+                       (substcn a v B)
+                       (substcn a' v' B')
                        (eqb a a' eqa)
                        (tsb a a' eqa))
                 teq
@@ -4208,8 +3411,8 @@ Definition close_ind' {pp}
                tsb
                (fun a a' eqa =>
                   rec ts
-                      (substc a v B)
-                      (substc a' v' B')
+                      (substcn a v B)
+                      (substcn a' v' B')
                       (eqb a a' eqa)
                       (tsb a a' eqa))
                teq
@@ -4273,7 +3476,7 @@ Ltac one_unfold_per :=
   match goal with
     | [ H : per_int      _ _ _ _ _ |- _ ] => unfold per_int      in H; exrepd
     | [ H : per_atom     _ _ _ _ _ |- _ ] => unfold per_atom     in H; exrepd
-    | [ H : per_uatom    _ _ _ _ _ |- _ ] => unfold per_uatom    in H; exrepd
+(*    | [ H : per_uatom    _ _ _ _ _ |- _ ] => unfold per_uatom    in H; exrepd*)
     | [ H : per_base     _ _ _ _ _ |- _ ] => unfold per_base     in H; exrepd
     | [ H : per_approx   _ _ _ _ _ |- _ ] => unfold per_approx   in H; exrepd
     | [ H : per_cequiv   _ _ _ _ _ |- _ ] => unfold per_cequiv   in H; exrepd
@@ -4299,9 +3502,9 @@ Ltac one_unfold_per :=
     | [ H : per_partial  _ _ _ _ _ |- _ ] => unfold per_partial  in H; exrepd
     | [ H : per_admiss   _ _ _ _ _ |- _ ] => unfold per_admiss   in H; exrepd
     | [ H : per_mono     _ _ _ _ _ |- _ ] => unfold per_mono     in H; exrepd
-    | [ H : per_ffatom   _ _ _ _ _ |- _ ] => unfold per_ffatom   in H; exrepd
-    | [ H : per_effatom  _ _ _ _ _ |- _ ] => unfold per_effatom  in H; exrepd
-    | [ H : per_ffatoms  _ _ _ _ _ |- _ ] => unfold per_ffatoms  in H; exrepd
+(*    | [ H : per_ffatom   _ _ _ _ _ |- _ ] => unfold per_ffatom   in H; exrepd*)
+(*    | [ H : per_effatom  _ _ _ _ _ |- _ ] => unfold per_effatom  in H; exrepd*)
+(*    | [ H : per_ffatoms  _ _ _ _ _ |- _ ] => unfold per_ffatoms  in H; exrepd*)
     | [ H : per_set      _ _ _ _ _ |- _ ] => unfold per_set      in H; exrepd
     | [ H : per_tunion   _ _ _ _ _ |- _ ] => unfold per_tunion   in H; exrepd
     | [ H : per_product  _ _ _ _ _ |- _ ] => unfold per_product  in H; exrepd
@@ -4322,6 +3525,16 @@ Ltac computes_to_valc_diff :=
           (assert (T1 = T2) as name
                   by (apply (computes_to_valc_eq lib T); auto);
            dest_cterms name;
+           inversion name;
+           fail)
+
+    | [ H1 : computes_to_valcn ?lib ?T ?T1,
+        H2 : computes_to_valcn ?lib ?T ?T2
+                               |- _ ] =>
+        let name := fresh "eq" in
+          (assert (T1 = T2) as name
+                  by (apply (computes_to_valcn_eq lib T); auto);
+           dest_cnterms name;
            inversion name;
            fail)
   end.

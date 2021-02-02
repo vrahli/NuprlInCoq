@@ -76,7 +76,7 @@ Qed.
 Lemma per_partial_eq_cequiv {p} :
   forall lib (eq : per(p)) t1 t2,
     term_equality_respecting lib eq
-    -> cequivc lib t1 t2
+    -> cequivcn lib t1 t2
     -> per_partial_eq lib eq t1 t1
     -> per_partial_eq lib eq t1 t2.
 Proof.
@@ -84,9 +84,9 @@ Proof.
   allunfold @per_partial_eq; repnd; dands.
 
   split; intro k; spcast.
-  apply @hasvaluec_cequivc with (t1 := t1); sp.
-  apply @hasvaluec_cequivc with (t1 := t2); sp.
-  apply cequivc_sym; sp.
+  apply @hasvaluecn_cequivcn with (t1 := t1); sp.
+  apply @hasvaluecn_cequivcn with (t1 := t2); sp.
+  apply cequivcn_sym; sp.
 
   introv h.
   autodimp per hyp;
@@ -101,12 +101,12 @@ Lemma close_type_system_partial {p} :
          A1 A2 eqa,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_partial A1)
-    -> computes_to_valc lib T' (mkc_partial A2)
+    -> computes_to_valcn lib T (mkcn_partial A1)
+    -> computes_to_valcn lib T' (mkcn_partial A2)
     -> close lib ts A1 A2 eqa
     -> type_sys_props lib (close lib ts) A1 A2 eqa
-    -> (forall a, eqa a a -> chaltsc lib a)
-    -> (forall t t' : CTerm, eq t t' <=> per_partial_eq lib eqa t t')
+    -> (forall a, eqa a a -> chaltscn lib a)
+    -> (forall t t' : cterm, eq t t' <=> per_partial_eq lib eqa t t')
     -> per_partial lib (close lib ts) T T' eq
     -> type_sys_props lib (close lib ts) T T' eq.
 Proof.
@@ -144,16 +144,16 @@ Proof.
     apply CL_partial; unfold per_partial.
 
     (* 1 *)
-    generalize (cequivc_mkc_partial lib T T3 A1); introv k; repeat (autodimp k hyp); exrepnd.
-    exists A1 b eqa; sp; spcast; sp.
+    generalize (cequivcn_mkcn_partial lib T T3 A1); introv k; repeat (autodimp k hyp); exrepnd.
+    exists A1 a' eqa; sp; spcast; sp.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tyvr A1 b); sp.
+    generalize (tyvr A1 a'); sp.
 
     (* 2 *)
-    generalize (cequivc_mkc_partial lib T' T3 A2); introv k; repeat (autodimp k hyp); exrepnd.
-    exists A2 b eqa; sp; spcast; sp.
+    generalize (cequivcn_mkcn_partial lib T' T3 A2); introv k; repeat (autodimp k hyp); exrepnd.
+    exists A2 a' eqa; sp; spcast; sp.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tyvr A2 b); sp.
+    generalize (tyvr A2 a'); sp.
 
   - SCase "term_symmetric".
     unfold term_equality_symmetric; introv eqt.
@@ -223,4 +223,3 @@ Proof.
         onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
         generalize (tymt A2 A4 A3 eqa1 eqa0); sp.
 Qed.
-

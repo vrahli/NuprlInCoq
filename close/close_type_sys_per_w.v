@@ -37,17 +37,17 @@ Lemma close_type_system_w {p} :
          A A' v v' B B' eqa eqb,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_w A v B)
-    -> computes_to_valc lib T' (mkc_w A' v' B')
+    -> computes_to_valcn lib T (mkcn_w A v B)
+    -> computes_to_valcn lib T' (mkcn_w A' v' B')
     -> close lib ts A A' eqa
-    -> (forall (a a' : CTerm) (e : eqa a a'),
-          close lib ts (substc a v B) (substc a' v' B') (eqb a a' e))
-    -> (forall (a a' : CTerm) (e : eqa a a'),
+    -> (forall (a a' : cterm) (e : eqa a a'),
+          close lib ts (substcn a v B) (substcn a' v' B') (eqb a a' e))
+    -> (forall (a a' : cterm) (e : eqa a a'),
           type_system lib ts ->
           defines_only_universes lib ts ->
-          type_sys_props lib (close lib ts) (substc a v B) (substc a' v' B')
+          type_sys_props lib (close lib ts) (substcn a v B) (substcn a' v' B')
                          (eqb a a' e))
-    -> (forall t t' : CTerm, eq t t' <=> weq lib eqa eqb t t')
+    -> (forall t t' : cterm, eq t t' <=> weq lib eqa eqb t t')
     -> per_w lib (close lib ts) T T' eq
     -> type_sys_props lib (close lib ts) A A' eqa
     -> type_sys_props lib (close lib ts) T T' eq.
@@ -62,7 +62,7 @@ Proof.
 
     SSCase "CL_w".
     allunfold @per_w; exrepd.
-    generalize (eq_term_equals_type_family lib T T3 eqa0 eqa eqb0 eqb (close lib ts) A v B A' v' B' mkc_w); intro i.
+    generalize (eq_term_equals_type_family lib T T3 eqa0 eqa eqb0 eqb (close lib ts) A v B A' v' B' mkcn_w); intro i.
     repeat (autodimp i hyp; try (complete (introv eqw; eqconstr eqw; sp))); repnd.
 
     unfold eq_term_equals; sp.
@@ -88,7 +88,7 @@ Proof.
     apply CL_w; unfold per_w; exists eqa eqb; sp.
 
     duplicate c1 as ct.
-    apply @cequivc_mkc_w with (T' := T3) in ct; sp.
+    apply @cequivcn_mkcn_w with (T' := T3) in ct; sp.
 
     apply @type_family_cequivc
           with
@@ -103,7 +103,7 @@ Proof.
           (B := B'); sp.
 
     duplicate c2 as ct.
-    apply @cequivc_mkc_w with (T' := T3) in ct; sp.
+    apply @cequivcn_mkcn_w with (T' := T3) in ct; sp.
 
     apply @type_family_cequivc2
           with
@@ -154,7 +154,7 @@ Proof.
     (* 1 *)
     generalize (eq_term_equals_type_family
                   lib T T3 eqa0 eqa eqb0 eqb (close lib ts)
-                  A v B A' v' B' mkc_w); intro i.
+                  A v B A' v' B' mkcn_w); intro i.
     repeat (autodimp i hyp; try (complete (introv eqw; eqconstr eqw; sp))).
     repnd.
 
@@ -173,7 +173,7 @@ Proof.
     (* 2 *)
     generalize (eq_term_equals_type_family2
                   lib T3 T eqa0 eqa eqb0 eqb (close lib ts)
-                  A v B A' v' B' mkc_w); intro i;
+                  A v B A' v' B' mkcn_w); intro i;
     repeat (autodimp i hyp; try (complete (introv eqw; eqconstr eqw; sp)));
     repnd.
 
@@ -202,12 +202,12 @@ Proof.
 
     generalize (eq_term_equals_type_family2
                   lib T3 T eqa1 eqa eqb1 eqb (close lib ts)
-                  A v B A' v' B' mkc_w); intro i.
+                  A v B A' v' B' mkcn_w); intro i.
     repeat (autodimp i hyp; try (complete (introv eqw; eqconstr eqw; sp))).
     repnd.
 
     generalize (type_family_trans2
-                  lib mkc_w (close lib ts) T3 T T4 eqa eqb eqa0 eqb0 A v B A' v' B');
+                  lib mkcn_w (close lib ts) T3 T T4 eqa eqb eqa0 eqb0 A v B A' v' B');
       intro j.
     repeat (autodimp j hyp; try (complete (introv eqw; eqconstr eqw; sp))).
     repnd.
@@ -236,7 +236,7 @@ Proof.
 
     generalize (eq_term_equals_type_family2
                   lib T3 T' eqa1 eqa eqb1 eqb (close lib ts)
-                  A' v' B' A v B mkc_w); intro i.
+                  A' v' B' A v B mkcn_w); intro i.
     repeat (autodimp i hyp;
             try (complete (introv eqw; eqconstr eqw; sp));
             try (complete (apply type_sys_props_sym; sp))).
@@ -249,7 +249,7 @@ Proof.
     repnd.
 
     generalize (type_family_trans2
-                  lib mkc_w (close lib ts) T3 T' T4 eqa eqb eqa0 eqb0 A' v' B' A v B); intro j.
+                  lib mkcn_w (close lib ts) T3 T' T4 eqa eqb eqa0 eqb0 A' v' B' A v B); intro j.
     repeat (autodimp j hyp;
             try (complete (introv eqw; eqconstr eqw; sp));
             try (complete (apply type_sys_props_sym; sp))).
@@ -279,4 +279,3 @@ Proof.
 
     apply @weq_eq_term_equals with (eqa1 := eqa) (eqb1 := eqb); sp.
 Qed.
-

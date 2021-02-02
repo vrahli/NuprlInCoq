@@ -797,21 +797,119 @@ Proof.
   sp.
 Qed.
 
+Definition isprog_nout_vars {o} vs (t : @NTerm o) :=
+  assert (sub_vars (free_vars t) vs) # assert (nullb (get_utokens t)) # wf_term t.
+
+Lemma isprog_nout_vars_proof_irrelevance {p} :
+  forall vs (t : @NTerm p) (x y : isprog_nout_vars vs t),
+    x = y.
+Proof.
+  intros.
+  unfold isprog_nout_vars in *; repnd.
+  repeat (f_equal; try apply UIP).
+Qed.
+
+Hint Extern 0 =>
+let h := fresh "h" in
+match goal with
+  | [ H1 : isprog_nout_vars ?v ?t , H2 : isprog_nout_vars ?V ?t |- _ ] =>
+    pose proof (isprog_nout_vars_proof_irrelevance v t H2 H1) as h; subst
+end : pi.
+
+Definition CNTerm {p} := { t : @NTerm p | isprog_nout t }.
+Definition get_cnterm {p} (t : @CNTerm p) := let (a,_) := t in a.
+
+Definition CNSubstitution {o} : tuniv := lmap NVar (@CNTerm o).
+Definition CNSub {o} : tuniv := @CNSubstitution o.
+
+Definition dom_cnsub {p} (sub : @CNSubstitution p)  := map (fun x => fst x) sub.
+
+Definition cover_nout_vars {p} (t : @NTerm p) (sub : @CNSubstitution p) :=
+  subvars (free_vars t) (dom_cnsub sub).
+
+Lemma cover_nout_vars_proof_irrelevance {p} :
+  forall t s,
+  forall x y : @cover_nout_vars p t s,
+    x = y.
+Proof.
+  intros.
+  apply UIP_dec.
+  apply bool_dec.
+Qed.
+
+Hint Extern 0 =>
+let h := fresh "h" in
+match goal with
+  | [ H1 : cover_nout_vars ?t ?s , H2 : cover_nout_vars ?t ?s |- _ ] =>
+    pose proof (cover_nout_vars_proof_irrelevance t s H2 H1) as h; subst
+end : pi.
+
+Definition cover_nout_vars_upto {p} (t : @NTerm p) (sub : @CNSub p) (vs : list NVar) :=
+  subvars (free_vars t) (vs ++ dom_cnsub sub).
+
+Lemma cover_nout_vars_upto_proof_irrelevance {p} :
+  forall t s vs,
+  forall x y : @cover_nout_vars_upto p t s vs,
+    x = y.
+Proof.
+  intros.
+  apply UIP_dec.
+  apply bool_dec.
+Qed.
+
+Hint Extern 0 =>
+let h := fresh "h" in
+match goal with
+  | [ H1 : cover_nout_vars_upto ?t ?s ?vs , H2 : cover_nout_vars_upto ?t ?s ?vs |- _ ] =>
+    pose proof (cover_nout_vars_upto_proof_irrelevance t s vs H2 H1) as h; subst
+end : pi.
+
+Lemma noutokens_proof_irrelevance {p} :
+  forall t,
+  forall x y : @noutokens p t,
+    x = y.
+Proof.
+  intros.
+  apply UIP_dec.
+  apply list_eq_dec.
+  apply (patom p).
+Qed.
+
+Hint Extern 0 =>
+let h := fresh "h" in
+match goal with
+| [ H1 : noutokens ?t , H2 : noutokens ?t |- _ ] =>
+  pose proof (noutokens_proof_irrelevance t H2 H1) as h; subst
+end : pi.
+
+
 
 (** clear_irr removes the duplicates of proofs of propositions that
  * have proof irrelevance. *)
 Ltac clear_irr :=
   repeat match goal with
-           | [ H1 : covered ?a ?b, H2 : covered ?a ?b |- _ ] =>
-             assert (H2 = H1) by apply covered_proof_irrelevance; subst
-           | [ H1 : cover_vars ?a ?b, H2 : cover_vars ?a ?b |- _ ] =>
-             assert (H2 = H1) by apply cover_vars_proof_irrelevance; subst
-           | [ H1 : cover_vars_upto ?a ?b ?c, H2 : cover_vars_upto ?a ?b ?c |- _ ] =>
-             assert (H2 = H1) by apply cover_vars_upto_proof_irrelevance; subst
-           | [ H1 : wf_term ?a, H2 : wf_term ?a |- _ ] =>
-             assert (H2 = H1) by apply wf_term_proof_irrelevance; subst
-           | [ H1 : isprog ?a, H2 : isprog ?a |- _ ] =>
-             assert (H2 = H1) by apply isprog_proof_irrelevance; subst
+         | [ H1 : covered ?a ?b, H2 : covered ?a ?b |- _ ] =>
+           assert (H2 = H1) by apply covered_proof_irrelevance; subst
+         | [ H1 : wf_term ?a, H2 : wf_term ?a |- _ ] =>
+           assert (H2 = H1) by apply wf_term_proof_irrelevance; subst
+         | [ H1 : noutokens ?a, H2 : noutokens ?a |- _ ] =>
+           assert (H2 = H1) by apply noutokens_proof_irrelevance; subst
+
+         | [ H1 : isprog ?a, H2 : isprog ?a |- _ ] =>
+           assert (H2 = H1) by apply isprog_proof_irrelevance; subst
+         | [ H1 : cover_vars ?a ?b, H2 : cover_vars ?a ?b |- _ ] =>
+           assert (H2 = H1) by apply cover_vars_proof_irrelevance; subst
+         | [ H1 : cover_vars_upto ?a ?b ?c, H2 : cover_vars_upto ?a ?b ?c |- _ ] =>
+           assert (H2 = H1) by apply cover_vars_upto_proof_irrelevance; subst
+
+         | [ H1 : isprog_nout ?a, H2 : isprog_nout ?a |- _ ] =>
+           assert (H2 = H1) by apply isprog_nout_proof_irrelevance; subst
+         | [ H1 : isprog_nout_vars ?v ?a, H2 : isprog_nout_vars ?v ?a |- _ ] =>
+           assert (H2 = H1) by apply isprog_nout_vars_proof_irrelevance; subst
+         | [ H1 : cover_nout_vars ?a ?b, H2 : cover_nout_vars ?a ?b |- _ ] =>
+           assert (H2 = H1) by apply cover_nout_vars_proof_irrelevance; subst
+         | [ H1 : cover_nout_vars_upto ?a ?b ?c, H2 : cover_nout_vars_upto ?a ?b ?c |- _ ] =>
+           assert (H2 = H1) by apply cover_nout_vars_upto_proof_irrelevance; subst
          end.
 
 Lemma dom_sub_snoc {p} :

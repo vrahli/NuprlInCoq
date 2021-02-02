@@ -58,7 +58,7 @@ Lemma per_int_type_value_respecting {p} :
   forall lib (ts : cts(p)), type_value_respecting lib (per_int lib ts).
 Proof.
  sp; unfold type_value_respecting, per_int; sp; auto.
- spcast; apply @cequivc_int with (T := T); auto.
+ spcast; apply @cequivcn_int with (T := T); auto.
 Qed.
 
 Lemma per_int_term_symmetric {p} :
@@ -94,7 +94,7 @@ Proof.
   rw i in e; rw i; sp.
   allunfold @equality_of_int; exrepnd.
   exists k; sp.
-  spcast; apply @cequivc_integer with (t := t); auto.
+  spcast; apply @cequivcn_integer with (t := t); auto.
 Qed.
 
 Lemma per_int_type_system {p} :
@@ -190,4 +190,3 @@ Proof.
   + SCase "type_mtransitive"; repdors; subst; dclose_lr;
     dands; apply CL_int; allunfold @per_int; sp.
 Qed.
-

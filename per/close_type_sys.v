@@ -34,7 +34,7 @@ Require Export type_sys_useful2.
 Require Import close_type_sys_per_init.
 Require Import close_type_sys_per_int.
 Require Import close_type_sys_per_atom.
-Require Import close_type_sys_per_uatom.
+(*Require Import close_type_sys_per_uatom.*)
 Require Import close_type_sys_per_base.
 Require Import close_type_sys_per_sqle.
 Require Import close_type_sys_per_sqequal.
@@ -56,9 +56,9 @@ Require Import close_type_sys_per_image.
 Require Import close_type_sys_per_partial.
 Require Import close_type_sys_per_admiss.
 Require Import close_type_sys_per_mono.
-Require Import close_type_sys_per_ffatom.
-Require Import close_type_sys_per_effatom.
-Require Import close_type_sys_per_ffatoms.
+(*Require Import close_type_sys_per_ffatom.*)
+(*Require Import close_type_sys_per_effatom.*)
+(*Require Import close_type_sys_per_ffatoms.*)
 Require Import close_type_sys_per_set.
 Require Import close_type_sys_per_tunion.
 Require Import close_type_sys_per_product.
@@ -103,8 +103,8 @@ Proof.
   - Case "CL_atom".
     admit.
 
-  - Case "CL_uatom".
-    admit.
+(*  - Case "CL_uatom".
+    admit.*)
 
   - Case "CL_base".
     admit.
@@ -136,15 +136,15 @@ Lemma close_type_system_eq_implies {o} :
     -> is_type_system lib (per_eq lib ts)
     -> forall T T' (eq : per) A B a1 a2 b1 b2 eqa,
          defines_only_universes lib ts
-         -> computes_to_valc lib T (mkc_equality a1 a2 A)
-         -> computes_to_valc lib T' (mkc_equality b1 b2 B)
+         -> computes_to_valcn lib T (mkcn_equality a1 a2 A)
+         -> computes_to_valcn lib T' (mkcn_equality b1 b2 B)
          -> close lib ts A B eqa
          -> eqorceq lib eqa a1 b1
          -> eqorceq lib eqa a2 b2
-         -> (forall t t' : CTerm,
+         -> (forall t t' : cterm,
                eq t t' <=>
-                  ccomputes_to_valc lib t mkc_axiom
-                  # ccomputes_to_valc lib t' mkc_axiom
+                  ccomputes_to_valcn lib t mkcn_axiom
+                  # ccomputes_to_valcn lib t' mkcn_axiom
                   # eqa a1 a2)
          -> per_eq lib (close lib ts) T T' eq
          -> type_sys_props lib (close lib ts) A B eqa
@@ -197,8 +197,8 @@ Proof.
   - Case "CL_atom".
     apply close_type_system_atom; auto.
 
-  - Case "CL_uatom".
-    apply close_type_system_uatom; auto.
+(*  - Case "CL_uatom".
+    apply close_type_system_uatom; auto.*)
 
   - Case "CL_base".
     apply close_type_system_base; auto.
@@ -270,14 +270,14 @@ Proof.
   - Case "CL_mono".
     eapply close_type_system_mono; eauto.
 
-  - Case "CL_ffatom".
+(*  - Case "CL_ffatom".
     eapply close_type_system_ffatom; eauto.
 
   - Case "CL_effatom".
     eapply close_type_system_effatom; eauto.
 
   - Case "CL_ffatoms".
-    eapply close_type_system_ffatoms; eauto.
+    eapply close_type_system_ffatoms; eauto.*)
 
   - Case "CL_set".
     eapply close_type_system_set; eauto.

@@ -81,13 +81,13 @@ Qed.
 Lemma per_mono_eq_cequiv {p} :
   forall lib (eq : per(p)) t1 t2,
     term_equality_respecting lib eq
-    -> cequivc lib t1 t2
+    -> cequivcn lib t1 t2
     -> per_mono_eq lib eq t1 t1
     -> per_mono_eq lib eq t1 t2.
 Proof.
   introv res ceq per.
   allunfold @per_mono_eq; repnd; dands; auto.
-  GC; try (spcast; apply cequivc_axiom with (t := t1); sp).
+  GC; try (spcast; eapply cequivcn_axiom; eauto 3 with slow).
 Qed.
 
 
@@ -99,11 +99,11 @@ Lemma close_type_system_mono {p} :
          A1 A2 eqa,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_mono A1)
-    -> computes_to_valc lib T' (mkc_mono A2)
+    -> computes_to_valcn lib T (mkcn_mono A1)
+    -> computes_to_valcn lib T' (mkcn_mono A2)
     -> close lib ts A1 A2 eqa
     -> type_sys_props lib (close lib ts) A1 A2 eqa
-    -> (forall t t' : CTerm, eq t t' <=> per_mono_eq lib eqa t t')
+    -> (forall t t' : cterm, eq t t' <=> per_mono_eq lib eqa t t')
     -> per_mono lib (close lib ts) T T' eq
     -> type_sys_props lib (close lib ts) T T' eq.
 Proof.
@@ -141,16 +141,16 @@ Proof.
     apply CL_mono; unfold per_mono.
 
     (* 1 *)
-    generalize (cequivc_mkc_mono lib T T3 A1); introv k; repeat (autodimp k hyp); exrepnd.
-    exists A1 b eqa; sp; spcast; sp.
+    generalize (cequivcn_mkcn_mono lib T T3 A1); introv k; repeat (autodimp k hyp); exrepnd.
+    exists A1 a' eqa; sp; spcast; sp.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tyvr A1 b); sp.
+    generalize (tyvr A1 a'); sp.
 
     (* 2 *)
-    generalize (cequivc_mkc_mono lib T' T3 A2); introv k; repeat (autodimp k hyp); exrepnd.
-    exists A2 b eqa; sp; spcast; sp.
+    generalize (cequivcn_mkcn_mono lib T' T3 A2); introv k; repeat (autodimp k hyp); exrepnd.
+    exists A2 a' eqa; sp; spcast; sp.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tyvr A2 b); sp.
+    generalize (tyvr A2 a'); sp.
 
   - SCase "term_symmetric".
     unfold term_equality_symmetric; introv eqt.
@@ -220,4 +220,3 @@ Proof.
         onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
         generalize (tymt A2 A4 A3 eqa1 eqa0); sp.
 Qed.
-

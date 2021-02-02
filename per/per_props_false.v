@@ -35,28 +35,28 @@ Require Export per_props_cequiv.
 
 
 Lemma tequality_false {p} :
-  forall lib, @tequality p lib mkc_false mkc_false.
+  forall lib, @tequality p lib mkcn_false mkcn_false.
 Proof.
   introv.
-  rw @mkc_false_eq.
-  rw @tequality_mkc_approx; split; intro k; spcast;
+  rw @mkcn_false_eq.
+  rw @tequality_mkcn_approx; split; intro k; spcast;
   apply not_axiom_approxc_bot in k; sp.
 Qed.
 Hint Immediate tequality_false.
 
 Lemma equality_in_false {p} :
-  forall lib (t1 t2 : @CTerm p), equality lib t1 t2 mkc_false <=> False.
+  forall lib (t1 t2 : @cterm p), equality lib t1 t2 mkcn_false <=> False.
 Proof.
   introv; split; intro e; sp.
-  rw @mkc_false_eq in e.
+  rw @mkcn_false_eq in e.
   rw <- @equality_in_approx in e; repnd; spcast.
   allapply @not_axiom_approxc_bot; sp.
 Qed.
 
 Lemma equality_in_void {p} :
-  forall lib (t1 t2 : @CTerm p), equality lib t1 t2 mkc_void <=> False.
+  forall lib (t1 t2 : @cterm p), equality lib t1 t2 mkcn_void <=> False.
 Proof.
   introv.
-  rw @mkc_void_eq_mkc_false; sp.
+  rw @mkcn_void_eq_mkcn_false; sp.
   apply equality_in_false.
 Qed.

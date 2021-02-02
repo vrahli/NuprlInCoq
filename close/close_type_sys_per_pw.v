@@ -32,9 +32,9 @@ Require Import pweq_lemmas.
 Lemma close_type_system_pw {o} :
   forall (lib : library)
          (ts : cts(o))
-         (T T' : CTerm)
+         (T T' : cterm)
          (eq : per)
-         (P P': CTerm)
+         (P P': cterm)
          ap ap'
          A A'
          bp bp' ba ba'
@@ -47,23 +47,23 @@ Lemma close_type_system_pw {o} :
          (eqb : per-fam-fam(eqp,eqa)),
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_pw P ap A bp ba B cp ca cb C p)
-    -> computes_to_valc lib T' (mkc_pw P' ap' A' bp' ba' B' cp' ca' cb' C' p')
+    -> computes_to_valcn lib T (mkcn_pw P ap A bp ba B cp ca cb C p)
+    -> computes_to_valcn lib T' (mkcn_pw P' ap' A' bp' ba' B' cp' ca' cb' C' p')
     -> close lib ts P P' eqp
     -> type_sys_props lib (close lib ts) P P' eqp
-    -> (forall (p p' : CTerm) (ep : eqp p p'),
-          close lib ts (substc p ap A) (substc p' ap' A') (eqa p p' ep))
+    -> (forall (p p' : cterm) (ep : eqp p p'),
+          close lib ts (substcn p ap A) (substcn p' ap' A') (eqa p p' ep))
     -> type_sys_props_fam lib (close lib ts) eqp ap A ap' A' eqa
-    -> (forall (p p' : CTerm) (ep : eqp p p')
-               (a a' : CTerm) (ea : eqa p p' ep a a'),
+    -> (forall (p p' : cterm) (ep : eqp p p')
+               (a a' : cterm) (ea : eqa p p' ep a a'),
           close lib ts
-                (lsubstc2 bp p ba a B)
-                (lsubstc2 bp' p' ba' a' B')
+                (lsubstcn2 bp p ba a B)
+                (lsubstcn2 bp' p' ba' a' B')
                 (eqb p p' ep a a' ea))
     -> type_sys_props_fam_fam lib (close lib ts) eqp eqa bp ba B bp' ba' B' eqb
     -> equal_Cparams eqp eqa eqb cp ca cb C cp' ca' cb' C'
     -> eqp p p'
-    -> (forall t t' : CTerm, eq t t' <=> pweq lib eqp eqa eqb cp ca cb C p t t')
+    -> (forall t t' : cterm, eq t t' <=> pweq lib eqp eqa eqb cp ca cb C p t t')
     -> per_pw lib (close lib ts) T T' eq
     -> type_sys_props lib (close lib ts) T T' eq.
 Proof.
@@ -82,7 +82,7 @@ Proof.
     sp_pfam.
 
     generalize (type_pfamily_eq_term_equals
-                  lib mkc_pw
+                  lib mkcn_pw
                   (close lib ts) T T' T3
                   eqp1 eqa1 eqb1 cp ca cb C cp' ca' cb' C' p p'
                   eqp0 eqa0 eqb0 cp ca cb C cp2 ca2 cb2 C2 p p2
@@ -90,7 +90,7 @@ Proof.
                   P' eqp
                   ap' A' eqa
                   bp' ba' B' eqb).
-    introv k; repeat (autodimp k hyp); try (apply eq_type_pfamilies_mkc_pw).
+    introv k; repeat (autodimp k hyp); try (apply eq_type_pfamilies_mkcn_pw).
     repnd; repeat subst.
     red_eqTs; repeat subst; GC.
 
@@ -116,11 +116,11 @@ Proof.
     repdors; subst; apply CL_pw; unfold per_pw.
 
     (* 1 *)
-    generalize (cequivc_mkc_pw lib T T3 P ap A bp ba B cp ca cb C p c1); intro k.
+    generalize (cequivcn_mkcn_pw lib T T3 P ap A bp ba B cp ca cb C p c1); intro k.
     autodimp k hyp; exrepnd.
 
     generalize (type_pfamily_cequivc
-                  lib mkc_pw (close lib ts) T T3 eqp eqa eqb
+                  lib mkcn_pw (close lib ts) T T3 eqp eqa eqb
                   P ap A bp ba B cp ca cb C p
                   P'0 ap'0 A'0 bp'0 ba'0 B'0 cp'0 ca'0 cb'0 C'0 p'0
                   P' ap' A' bp' ba' B' cp' ca' cb' C' p');
@@ -129,11 +129,11 @@ Proof.
     exists cp cp'0 ca ca'0 cb cb'0 C C'0; dands; auto.
 
     (* 2 *)
-    generalize (cequivc_mkc_pw lib T' T3 P' ap' A' bp' ba' B' cp' ca' cb' C' p' c2); intro k.
+    generalize (cequivcn_mkcn_pw lib T' T3 P' ap' A' bp' ba' B' cp' ca' cb' C' p' c2); intro k.
     autodimp k hyp; exrepnd.
 
     generalize (type_pfamily_cequivc
-                  lib mkc_pw (close lib ts) T' T3 eqp eqa eqb
+                  lib mkcn_pw (close lib ts) T' T3 eqp eqa eqb
                   P' ap' A' bp' ba' B' cp' ca' cb' C' p'
                   P'0 ap'0 A'0 bp'0 ba'0 B'0 cp'0 ca'0 cb'0 C'0 p'0
                   P ap A bp ba B cp ca cb C p);
@@ -177,7 +177,7 @@ Proof.
     exrepnd.
     sp_pfam.
     generalize (type_pfamily_sym
-                    lib mkc_pw (close lib ts) T T' eqp0 eqa0 eqb0
+                    lib mkcn_pw (close lib ts) T T' eqp0 eqa0 eqb0
                     cp ca cb C
                     cp' ca' cb' C'
                     p p'
@@ -185,7 +185,7 @@ Proof.
                     eqp eqa eqb
                     P' ap' A' bp' ba' B' cp' ca' cb' C'); introv k.
     repeat (autodimp k hyp);
-      try (complete (apply eq_type_pfamilies_mkc_pw)).
+      try (complete (apply eq_type_pfamilies_mkcn_pw)).
     repnd; subst; red_eqTs; GC; subst.
 
     unfold term_equality_symmetric; introv Heq.
@@ -219,7 +219,7 @@ Proof.
 
     (* 1 *)
     generalize (type_pfamily_sym
-                  lib mkc_pw (close lib ts)
+                  lib mkcn_pw (close lib ts)
                   T T3 eqp0 eqa0 eqb0 cp1 ca1 cb1 C1 cp2 ca2 cb2 C2 p1 p2
                   P ap A bp ba B cp ca cb C p
                   eqp eqa eqb
@@ -267,7 +267,7 @@ Proof.
 
     (* 2 *)
     generalize (type_pfamily_sym2
-                  lib mkc_pw (close lib ts)
+                  lib mkcn_pw (close lib ts)
                   T3 T eqp0 eqa0 eqb0 cp1 ca1 cb1 C1 cp2 ca2 cb2 C2 p1 p2
                   P ap A bp ba B cp ca cb C p
                   eqp eqa eqb
@@ -320,7 +320,7 @@ Proof.
 
     (* 1 *)
     generalize (type_pfamily_trans2 lib
-                  (close lib ts) T3 T T4 mkc_pw
+                  (close lib ts) T3 T T4 mkcn_pw
                   eqp0 eqa0 eqb0
                   eqp1 eqa1 eqb1
                   eqp eqa eqb
@@ -343,7 +343,7 @@ Proof.
     apply @eq_term_equals_trans with (eq2 := pweq lib eqp1 eqa1 eqb1 cp ca cb C p); auto.
 
     generalize (type_pfamily_sym2
-                  lib mkc_pw (close lib ts) T3 T
+                  lib mkcn_pw (close lib ts) T3 T
                   eqp0 eqa0 eqb0 cp1 ca1 cb1 C1 cp ca cb C p1 p
                   P ap A bp ba B cp ca cb C p
                   eqp eqa eqb
@@ -351,7 +351,7 @@ Proof.
     repeat (autodimp j hyp); repnd; subst; GC; red_eqTs; subst; GC.
 
     generalize (type_pfamily_eq_term_equals
-                  lib mkc_pw (close lib ts) T T3 T4
+                  lib mkcn_pw (close lib ts) T T3 T4
                   eqp0 eqa0 eqb0 cp ca cb C cp1 ca1 cb1 C1 p p1
                   eqp1 eqa1 eqb1 cp ca cb C cp3 ca3 cb3 C3 p p3
                   P ap A bp ba B cp ca cb C p
@@ -401,7 +401,7 @@ Proof.
 
     (* 2 *)
     generalize (type_pfamily_trans2 lib
-                  (close lib ts) T3 T' T4 mkc_pw
+                  (close lib ts) T3 T' T4 mkcn_pw
                   eqp0 eqa0 eqb0
                   eqp1 eqa1 eqb1
                   eqp eqa eqb
@@ -433,7 +433,7 @@ Proof.
     apply @eq_term_equals_trans with (eq2 := pweq lib eqp1 eqa1 eqb1 cp' ca' cb' C' p'); auto.
 
     generalize (type_pfamily_sym2
-                  lib mkc_pw (close lib ts) T3 T'
+                  lib mkcn_pw (close lib ts) T3 T'
                   eqp0 eqa0 eqb0 cp1 ca1 cb1 C1 cp' ca' cb' C' p1 p'
                   P' ap' A' bp' ba' B' cp' ca' cb' C' p'
                   eqp eqa eqb
@@ -450,7 +450,7 @@ Proof.
     apply @type_sys_props_fam_fam_implies_eq_fam_fam_sym with (P := P) (P' := P') (ap := ap) (A := A) (ap' := ap') (A' := A') in tspB; sp.
 
     generalize (type_pfamily_eq_term_equals
-                  lib mkc_pw (close lib ts) T' T3 T4
+                  lib mkcn_pw (close lib ts) T' T3 T4
                   eqp0 eqa0 eqb0 cp' ca' cb' C' cp1 ca1 cb1 C1 p' p1
                   eqp1 eqa1 eqb1 cp' ca' cb' C' cp3 ca3 cb3 C3 p' p3
                   P' ap' A' bp' ba' B' cp' ca' cb' C' p'
@@ -501,4 +501,3 @@ Proof.
     apply l11.
     apply j5; sp.
 Qed.
-

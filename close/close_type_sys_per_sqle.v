@@ -69,15 +69,15 @@ Proof.
   sp; unfold type_value_respecting, per_approx; sp.
   ccomputes_to_eqval.
   dupcomp T Hcompt.
-  apply cequivc_mkc_approx with (t' := T') in Hcompt; sp.
+  apply cequivcn_mkcn_approx with (t' := T') in Hcompt; sp.
   exists a b a' b'; sp; spcast; sp.
   split; sp; spcast.
-  apply @approxc_cequivc_trans with (b := b); auto.
-  apply @cequivc_approxc_trans with (b := a); auto.
-  apply cequivc_sym; auto.
-  apply @approxc_cequivc_trans with (b := b'); auto.
-  apply @cequivc_approxc_trans with (b := a'); auto.
-  apply cequivc_sym; auto.
+  apply @approxcn_cequivcn_trans with (b := b); auto.
+  apply @cequivcn_approxcn_trans with (b := a); auto.
+  apply cequivcn_sym; auto.
+  apply @approxcn_cequivcn_trans with (b := b'); auto.
+  apply @cequivcn_approxcn_trans with (b := a'); auto.
+  apply cequivcn_sym; auto.
 Qed.
 
 Lemma per_approx_term_symmetric {p} :
@@ -105,7 +105,7 @@ Proof.
   introv i e c; exrepnd.
   ccomputes_to_eqval.
   allrw; discover; sp.
-  spcast; apply @cequivc_axiom with (t' := t') in c; sp.
+  spcast; eapply @cequivcn_axiom in c; eauto.
 Qed.
 
 Lemma per_approx_type_system {p} :
@@ -236,4 +236,3 @@ Proof.
     exists a0 b0 c2 d2; sp; spcast; sp.
     allrw; sp.
 Qed.
-

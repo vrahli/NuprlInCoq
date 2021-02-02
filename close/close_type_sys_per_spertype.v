@@ -35,27 +35,27 @@ Lemma close_type_system_spertype {p} :
          R1 R2 eq1,
     type_system lib ts
     -> defines_only_universes lib ts
-    -> computes_to_valc lib T (mkc_spertype R1)
-    -> computes_to_valc lib T' (mkc_spertype R2)
-    -> (forall x y : CTerm,
-          close lib ts (mkc_apply2 R1 x y) (mkc_apply2 R2 x y) (eq1 x y))
-    -> (forall x y : CTerm,
+    -> computes_to_valcn lib T (mkcn_spertype R1)
+    -> computes_to_valcn lib T' (mkcn_spertype R2)
+    -> (forall x y : cterm,
+          close lib ts (mkcn_apply2 R1 x y) (mkcn_apply2 R2 x y) (eq1 x y))
+    -> (forall x y : cterm,
           type_sys_props lib (close lib ts)
-                         (mkc_apply2 R1 x y)
-                         (mkc_apply2 R2 x y)
+                         (mkcn_apply2 R1 x y)
+                         (mkcn_apply2 R2 x y)
                          (eq1 x y))
-    -> (forall x y z : CTerm,
+    -> (forall x y z : cterm,
           inhabited (eq1 x z)
-          -> close lib ts (mkc_apply2 R1 x y) (mkc_apply2 R1 z y) (eq1 x y))
-    -> (forall x y z : CTerm,
+          -> close lib ts (mkcn_apply2 R1 x y) (mkcn_apply2 R1 z y) (eq1 x y))
+    -> (forall x y z : cterm,
           inhabited (eq1 x z)
-          -> type_sys_props lib (close lib ts) (mkc_apply2 R1 x y) (mkc_apply2 R1 z y) (eq1 x y))
-    -> (forall x y z : CTerm,
+          -> type_sys_props lib (close lib ts) (mkcn_apply2 R1 x y) (mkcn_apply2 R1 z y) (eq1 x y))
+    -> (forall x y z : cterm,
           inhabited (eq1 y z)
-          -> close lib ts (mkc_apply2 R1 x y) (mkc_apply2 R1 x z) (eq1 x y))
-    -> (forall x y z : CTerm,
+          -> close lib ts (mkcn_apply2 R1 x y) (mkcn_apply2 R1 x z) (eq1 x y))
+    -> (forall x y z : cterm,
           inhabited (eq1 y z)
-          -> type_sys_props lib (close lib ts) (mkc_apply2 R1 x y) (mkc_apply2 R1 x z) (eq1 x y))
+          -> type_sys_props lib (close lib ts) (mkcn_apply2 R1 x y) (mkcn_apply2 R1 x z) (eq1 x y))
     -> is_per eq1
     -> (eq <=2=> (pertype_eq eq1))
     -> per_spertype lib (close lib ts) T T' eq
@@ -99,48 +99,48 @@ Proof.
     apply CL_spertype; unfold per_spertype.
 
     (* 1 *)
-    apply cequivc_mkc_spertype with (a := R1) in X; sp.
-    exists R1 b eq1; sp; spcast; sp.
+    apply cequivcn_mkcn_spertype with (a := R1) in X; sp.
+    exists R1 a' eq1; sp; spcast; sp.
     generalize (cl1 x y); intro clt1.
     generalize (rec1 x y); sp.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tyvr (mkc_apply2 R1 x y) (mkc_apply2 b x y)); intro imp1.
+    generalize (tyvr (mkcn_apply2 R1 x y) (mkcn_apply2 a' x y)); intro imp1.
     repeat (autodimp imp1 hyp).
-    repeat (rw @mkc_apply2_eq).
-    repeat (apply sp_implies_cequivc_apply); auto.
+    repeat (rw @mkcn_apply2_eq).
+    repeat (apply sp_implies_cequivcn_apply); auto.
 
     (* 2 *)
-    apply cequivc_mkc_spertype with (a := R2) in X; sp.
-    exists R2 b eq1; dands; spcast; try (complete sp); introv.
+    apply cequivcn_mkcn_spertype with (a := R2) in X; sp.
+    exists R2 a' eq1; dands; spcast; try (complete sp); introv.
 
     generalize (cl1 x y); intro clt1.
     generalize (rec1 x y); sp.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tyvr (mkc_apply2 R2 x y) (mkc_apply2 b x y)); intro imp1.
+    generalize (tyvr (mkcn_apply2 R2 x y) (mkcn_apply2 a' x y)); intro imp1.
     repeat (autodimp imp1 hyp).
-    repeat (rw @mkc_apply2_eq).
-    repeat (apply sp_implies_cequivc_apply); auto.
+    repeat (rw @mkcn_apply2_eq).
+    repeat (apply sp_implies_cequivcn_apply); auto.
 
     intro inh.
     generalize (cl2 x y z inh); intro clt2.
     generalize (rec2 x y z inh); intro tsp.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tymt (mkc_apply2 R1 x y) (mkc_apply2 R2 x y) (mkc_apply2 R2 z y) (eq1 x y) (eq1 x y));
+    generalize (tymt (mkcn_apply2 R1 x y) (mkcn_apply2 R2 x y) (mkcn_apply2 R2 z y) (eq1 x y) (eq1 x y));
       intro k; repeat (autodimp k hyp); repnd; auto.
-    generalize (tygs (mkc_apply2 R1 x y) (mkc_apply2 R2 x y) (eq1 x y));
+    generalize (tygs (mkcn_apply2 R1 x y) (mkcn_apply2 R2 x y) (eq1 x y));
       intro k; repeat (autodimp k hyp); apply k; auto.
-    generalize (tymt (mkc_apply2 R1 z y) (mkc_apply2 R1 x y) (mkc_apply2 R2 z y) (eq1 x y) (eq1 z y));
+    generalize (tymt (mkcn_apply2 R1 z y) (mkcn_apply2 R1 x y) (mkcn_apply2 R2 z y) (eq1 x y) (eq1 z y));
       intro k; repeat (autodimp k hyp); repnd; auto.
 
     intro inh.
     generalize (cl3 x y z inh); intro clt3.
     generalize (rec3 x y z inh); intro tsp.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tymt (mkc_apply2 R1 x y) (mkc_apply2 R2 x y) (mkc_apply2 R2 x z) (eq1 x y) (eq1 x y));
+    generalize (tymt (mkcn_apply2 R1 x y) (mkcn_apply2 R2 x y) (mkcn_apply2 R2 x z) (eq1 x y) (eq1 x y));
       intro k; repeat (autodimp k hyp); repnd; auto.
-    generalize (tygs (mkc_apply2 R1 x y) (mkc_apply2 R2 x y) (eq1 x y));
+    generalize (tygs (mkcn_apply2 R1 x y) (mkcn_apply2 R2 x y) (eq1 x y));
       intro k; repeat (autodimp k hyp); apply k; auto.
-    generalize (tymt (mkc_apply2 R1 x z) (mkc_apply2 R1 x y) (mkc_apply2 R2 x z) (eq1 x y) (eq1 x z));
+    generalize (tymt (mkcn_apply2 R1 x z) (mkcn_apply2 R1 x y) (mkcn_apply2 R2 x z) (eq1 x y) (eq1 x z));
       intro k; repeat (autodimp k hyp); repnd; auto.
 
   - SCase "term_symmetric".
@@ -161,14 +161,14 @@ Proof.
     assert (eq_term_equals (eq1 t t') (eq1 t t)) as eqteq.
     generalize (rec1 t t); sp.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
-    generalize (tyvr (mkc_apply2 R1 t t) (mkc_apply2 R1 t t')); intro i; repeat (autodimp i h).
-    repeat (rw @mkc_apply2_eq).
-    apply implies_cequivc_apply; sp.
+    generalize (tyvr (mkcn_apply2 R1 t t) (mkcn_apply2 R1 t t')); intro i; repeat (autodimp i h).
+    repeat (rw @mkcn_apply2_eq).
+    apply implies_cequivcn_apply; eauto 3 with slow.
     generalize (rec1 t t'); sp.
     onedtsp uv2 tys2 tyt2 tyst2 tyvr2 tes2 tet2 tevr2 tygs2 tygt2 tymt2.
-    generalize (tygs (mkc_apply2 R1 t t) (mkc_apply2 R1 t t') (eq1 t t)); intro k; repeat (autodimp k h).
+    generalize (tygs (mkcn_apply2 R1 t t) (mkcn_apply2 R1 t t') (eq1 t t)); intro k; repeat (autodimp k h).
     rw k in i.
-    generalize (uv2 (mkc_apply2 R1 t t) (eq1 t t)); intro j; repeat (autodimp j h).
+    generalize (uv2 (mkcn_apply2 R1 t t) (eq1 t t)); intro j; repeat (autodimp j h).
 
     apply eq_term_equals_implies_inhabited in eqteq.
     rw eqteq; sp.
@@ -184,20 +184,20 @@ Proof.
     (* 1 *)
     exists R3 R1 eq0; sp; spcast; sp.
 
-    eapply @type_sys_props_ts_sym3 with (C := mkc_apply2 R2 x y) (eq1 := eq1 x y); sp.
+    eapply @type_sys_props_ts_sym3 with (C := mkcn_apply2 R2 x y) (eq1 := eq1 x y); sp.
 
-    eapply @type_sys_props_ts_trans3 with (B := mkc_apply2 R1 x y) (D := mkc_apply2 R2 x y) (eq2 := eq0 x y) (eq := eq1 x y); auto.
-    eapply @type_sys_props_ts_sym3 with (C := mkc_apply2 R2 x y) (eq1 := eq1 x y); sp.
-    eapply @type_sys_props_ts_trans3 with (B := mkc_apply2 R1 z y) (D := mkc_apply2 R2 z y) (eq2 := eq0 z y) (eq := eq1 z y); auto.
+    eapply @type_sys_props_ts_trans3 with (B := mkcn_apply2 R1 x y) (D := mkcn_apply2 R2 x y) (eq2 := eq0 x y) (eq := eq1 x y); auto.
+    eapply @type_sys_props_ts_sym3 with (C := mkcn_apply2 R2 x y) (eq1 := eq1 x y); sp.
+    eapply @type_sys_props_ts_trans3 with (B := mkcn_apply2 R1 z y) (D := mkcn_apply2 R2 z y) (eq2 := eq0 z y) (eq := eq1 z y); auto.
 
-    eapply @type_sys_props_ts_trans3 with (B := mkc_apply2 R1 x y) (D := mkc_apply2 R2 x y) (eq2 := eq0 x y) (eq := eq1 x y); auto.
-    eapply @type_sys_props_ts_sym3 with (C := mkc_apply2 R2 x y) (eq1 := eq1 x y); sp.
-    eapply @type_sys_props_ts_trans3 with (B := mkc_apply2 R1 x z) (D := mkc_apply2 R2 x z) (eq2 := eq0 x z) (eq := eq1 x z); auto.
+    eapply @type_sys_props_ts_trans3 with (B := mkcn_apply2 R1 x y) (D := mkcn_apply2 R2 x y) (eq2 := eq0 x y) (eq := eq1 x y); auto.
+    eapply @type_sys_props_ts_sym3 with (C := mkcn_apply2 R2 x y) (eq1 := eq1 x y); sp.
+    eapply @type_sys_props_ts_trans3 with (B := mkcn_apply2 R1 x z) (D := mkcn_apply2 R2 x z) (eq2 := eq0 x z) (eq := eq1 x z); auto.
 
     (* 2 *)
     exists R1 R0 eq0; dands; spcast; try (complete sp); introv.
 
-    eapply @type_sys_props_ts_sym2 with (C := mkc_apply2 R2 x y) (eq1 := eq1 x y); sp.
+    eapply @type_sys_props_ts_sym2 with (C := mkcn_apply2 R2 x y) (eq1 := eq1 x y); sp.
 
     introv inh.
     assert (forall a b, (eq1 a b) <=2=> (eq0 a b)) as eqs.
@@ -207,7 +207,7 @@ Proof.
     generalize (rec1 a b); intro tsp.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
     apply tygs in cl.
-    generalize (uv (mkc_apply2 R0 a b) (eq0 a b)); intro k; repeat (autodimp k hyp).
+    generalize (uv (mkcn_apply2 R0 a b) (eq0 a b)); intro k; repeat (autodimp k hyp).
     sp.
     (* end proof of assert *)
     generalize (iff_inhabited_if_eq_term_equals (eq1 x z) (eq0 x z) (eqs x z)); intro j.
@@ -224,7 +224,7 @@ Proof.
     generalize (rec1 a b); intro tsp.
     onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
     apply tygs in cl.
-    generalize (uv (mkc_apply2 R0 a b) (eq0 a b)); intro k; repeat (autodimp k hyp).
+    generalize (uv (mkcn_apply2 R0 a b) (eq0 a b)); intro k; repeat (autodimp k hyp).
     sp.
     (* end proof of assert *)
     generalize (iff_inhabited_if_eq_term_equals (eq1 y z) (eq0 y z) (eqs y z)); intro j.
@@ -243,23 +243,23 @@ Proof.
     + dands; apply CL_spertype; unfold per_spertype.
 
       * exists R0 R5 eq3; sp; spcast; sp.
-        eapply @type_sys_props_ts_trans3 with (B := mkc_apply2 R1 x y) (D := mkc_apply2 R2 x y) (eq2 := eq4 x y) (eq := eq1 x y); auto.
+        eapply @type_sys_props_ts_trans3 with (B := mkcn_apply2 R1 x y) (D := mkcn_apply2 R2 x y) (eq2 := eq4 x y) (eq := eq1 x y); auto.
 
       * exists R0 R5 eq4; dands; spcast; introv; try (complete sp).
 
-        eapply @type_sys_props_ts_trans4 with (B := mkc_apply2 R1 x y) (D := mkc_apply2 R2 x y) (eq1 := eq3 x y) (eq := eq1 x y); auto.
+        eapply @type_sys_props_ts_trans4 with (B := mkcn_apply2 R1 x y) (D := mkcn_apply2 R2 x y) (eq1 := eq3 x y) (eq := eq1 x y); auto.
 
         intro inh.
-        eapply @type_sys_props_ts_trans4 with (B := mkc_apply2 R1 x y) (D := mkc_apply2 R2 x y) (eq1 := eq3 x y) (eq := eq1 x y); auto.
-        eapply @type_sys_props_ts_trans3 with (B := mkc_apply2 R1 z y) (D := mkc_apply2 R2 z y) (eq2 := eq3 z y) (eq := eq1 z y); auto.
+        eapply @type_sys_props_ts_trans4 with (B := mkcn_apply2 R1 x y) (D := mkcn_apply2 R2 x y) (eq1 := eq3 x y) (eq := eq1 x y); auto.
+        eapply @type_sys_props_ts_trans3 with (B := mkcn_apply2 R1 z y) (D := mkcn_apply2 R2 z y) (eq2 := eq3 z y) (eq := eq1 z y); auto.
         generalize (h3 z y); intro cl.
         generalize (rec1 z y); intro tsp.
         onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
         apply tygs in cl; auto.
 
         intro inh.
-        eapply @type_sys_props_ts_trans4 with (B := mkc_apply2 R1 x y) (D := mkc_apply2 R2 x y) (eq1 := eq3 x y) (eq := eq1 x y); auto.
-        eapply @type_sys_props_ts_trans3 with (B := mkc_apply2 R1 x z) (D := mkc_apply2 R2 x z) (eq2 := eq3 x z) (eq := eq1 x z); auto.
+        eapply @type_sys_props_ts_trans4 with (B := mkcn_apply2 R1 x y) (D := mkcn_apply2 R2 x y) (eq1 := eq3 x y) (eq := eq1 x y); auto.
+        eapply @type_sys_props_ts_trans3 with (B := mkcn_apply2 R1 x z) (D := mkcn_apply2 R2 x z) (eq2 := eq3 x z) (eq := eq1 x z); auto.
         generalize (h3 x z); intro cl.
         generalize (rec1 x z); intro tsp.
         onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
@@ -268,18 +268,18 @@ Proof.
     + dands; apply CL_spertype; unfold per_spertype.
 
       * exists R0 R5 eq3; sp; spcast; sp.
-        eapply @type_sys_props_ts_trans3 with (B := mkc_apply2 R2 x y) (D := mkc_apply2 R1 x y) (eq2 := eq4 x y) (eq := eq1 x y); auto.
+        eapply @type_sys_props_ts_trans3 with (B := mkcn_apply2 R2 x y) (D := mkcn_apply2 R1 x y) (eq2 := eq4 x y) (eq := eq1 x y); auto.
         apply type_sys_props_sym; auto.
 
       * exists R0 R5 eq4; dands; spcast; introv; try (complete sp).
 
-        eapply @type_sys_props_ts_trans4 with (B := mkc_apply2 R2 x y) (D := mkc_apply2 R1 x y) (eq1 := eq3 x y) (eq := eq1 x y); auto.
+        eapply @type_sys_props_ts_trans4 with (B := mkcn_apply2 R2 x y) (D := mkcn_apply2 R1 x y) (eq1 := eq3 x y) (eq := eq1 x y); auto.
         apply type_sys_props_sym; auto.
 
         intro inh.
-        eapply @type_sys_props_ts_trans4 with (B := mkc_apply2 R2 x y) (D := mkc_apply2 R1 x y) (eq1 := eq3 x y) (eq := eq1 x y); auto;
+        eapply @type_sys_props_ts_trans4 with (B := mkcn_apply2 R2 x y) (D := mkcn_apply2 R1 x y) (eq1 := eq3 x y) (eq := eq1 x y); auto;
         try (complete (apply type_sys_props_sym; auto)).
-        eapply @type_sys_props_ts_trans3 with (B := mkc_apply2 R2 z y) (D := mkc_apply2 R1 z y) (eq2 := eq3 z y) (eq := eq1 z y); auto;
+        eapply @type_sys_props_ts_trans3 with (B := mkcn_apply2 R2 z y) (D := mkcn_apply2 R1 z y) (eq2 := eq3 z y) (eq := eq1 z y); auto;
         try (complete (apply type_sys_props_sym; auto)).
         generalize (h3 z y); intro cl.
         generalize (rec1 z y); intro tsp.
@@ -287,13 +287,12 @@ Proof.
         apply tygs in cl; auto.
 
         intro inh.
-        eapply @type_sys_props_ts_trans4 with (B := mkc_apply2 R2 x y) (D := mkc_apply2 R1 x y) (eq1 := eq3 x y) (eq := eq1 x y); auto;
+        eapply @type_sys_props_ts_trans4 with (B := mkcn_apply2 R2 x y) (D := mkcn_apply2 R1 x y) (eq1 := eq3 x y) (eq := eq1 x y); auto;
         try (complete (apply type_sys_props_sym; auto)).
-        eapply @type_sys_props_ts_trans3 with (B := mkc_apply2 R2 x z) (D := mkc_apply2 R1 x z) (eq2 := eq3 x z) (eq := eq1 x z); auto;
+        eapply @type_sys_props_ts_trans3 with (B := mkcn_apply2 R2 x z) (D := mkcn_apply2 R1 x z) (eq2 := eq3 x z) (eq := eq1 x z); auto;
         try (complete (apply type_sys_props_sym; auto)).
         generalize (h3 x z); intro cl.
         generalize (rec1 x z); intro tsp.
         onedtsp uv tys tyt tyst tyvr tes tet tevr tygs tygt tymt.
         apply tygs in cl; auto.
 Qed.
-
