@@ -490,13 +490,13 @@ Proof.
 
         - rewrite compute_step_fresh_if_isvalue_like2; auto.
 
-        - rewrite compute_step_fresh_if_isnoncan_like; auto.
-
+        - fold_terms; simpl;rewrite compute_step_fresh_if_isnoncan_like; auto.
+ 
           pose proof (ind t (subst t n (mk_utoken (get_fresh_atom t))) [n]) as q; clear ind.
           repeat (autodimp q hyp); eauto 2 with slow.
           { rewrite simple_osize_subst; eauto 2 with slow. }
           apply q in comp2; clear q.
-          rewrite comp2; simpl; auto.
+          fold_terms; simpl;rewrite comp2; simpl; auto.
       }
 
     + SCase "Exc".
@@ -2830,7 +2830,7 @@ Proof.
         - pose proof (ind t (subst t n (mk_utoken (get_fresh_atom t))) [n]) as q; clear ind.
           repeat (autodimp q hyp); eauto 2 with slow.
           { rewrite simple_osize_subst; eauto 2 with slow. }
-          rewrite compute_step_fresh_if_isnoncan_like; auto.
+          fold_terms; simpl;rewrite compute_step_fresh_if_isnoncan_like; auto; simpl.
           allrw @wf_fresh_iff.
           apply q in comp2; auto; allrw; simpl; auto.
 

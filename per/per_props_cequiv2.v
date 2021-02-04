@@ -40,6 +40,7 @@ Require Export continuity_defs_ceq.
 Require Export per_props_nat.
 Require Export cequiv_bind.
 Require Export per_props_uni.
+Require Export computation_seq.
 
 
 Lemma type_mkc_cequiv {o} :
@@ -170,7 +171,7 @@ Proof.
     unfold computes_to_seqnc in hv0.
     unfold computes_to_seq in hv0.
     applydup @reduces_to_preserves_program in hv0; auto.
-    rw @isprogram_mk_ntseq in hv1.
+    rw @approx.isprogram_mk_ntseq in hv1.
     assert (forall x, isprog_nout (n x)) as nout.
     { introv.
       pose proof (hv1 x) as h; clear hv1; repnd.
@@ -906,7 +907,7 @@ Proof.
     unfold computes_to_seqnc in hv0.
     unfold computes_to_seq in hv0.
     applydup @reduces_to_preserves_program in hv0; auto.
-    rw @isprogram_mk_ntseq in hv1.
+    rw @approx.isprogram_mk_ntseq in hv1.
     assert (forall x, isprog_nout (n x)) as nout.
     { introv.
       pose proof (hv1 x) as h; clear hv1; repnd.

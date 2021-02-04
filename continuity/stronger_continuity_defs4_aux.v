@@ -787,12 +787,13 @@ Proof.
   unfold mk_less, mk_apply, mk_vbot, mk_zero, mk_nat, mk_integer, mk_fix, mk_lam, mk_var, nobnd.
   repeat (prove_alpha_eq4; eauto 2 with slow).
 
-  { pose proof (ex_fresh_var (v' :: z :: [])) as fv.
+  { pose proof (ex_fresh_var (v :: z :: [])) as fv.
     exrepnd; allsimpl; allrw not_over_or; repnd; GC.
-    apply (al_bterm_aux [v0]); simpl; auto;
+    (* apply (al_bterm_aux [v0]); simpl; auto;
     repeat (boolvar; simpl); tcsp;
-    allrw disjoint_singleton_l; allsimpl; tcsp. }
-Qed.
+    allrw disjoint_singleton_l; allsimpl; tcsp.*)
+  admit. }
+Admitted. (* Qed *)
 
 Lemma wf_bound2_cbv {o} :
   forall (arg : @NTerm o) x z b f a,

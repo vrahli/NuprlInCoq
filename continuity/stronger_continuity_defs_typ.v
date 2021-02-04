@@ -344,10 +344,11 @@ Proof.
     right; dands; spcast.
     + eapply cequivc_trans;[exact k5|].
       unfold spexc.
-      apply cequivc_mkc_exception; auto.
+
+      apply continuity_defs_ceq.cequivc_mkc_exception; auto.
     + eapply cequivc_trans;[exact k6|].
       unfold spexc.
-      apply cequivc_mkc_exception; auto.
+      apply continuity_defs_ceq.cequivc_mkc_exception; auto.
 
   - left; allrw @equality_in_tnat; auto.
 

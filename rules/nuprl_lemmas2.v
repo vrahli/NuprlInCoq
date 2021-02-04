@@ -35,6 +35,7 @@ Require Import rules_isect.
 Require Import rules_squiggle.
 Require Import rules_struct.
 Require Import tactics2.
+Require Export list.
 
 (** printing |- $\vdash$ *)
 (** printing ->  $\rightarrow$ *)
@@ -339,24 +340,17 @@ Lemma top_in_type {o} :
   @nuprove o emlib (mk_member mk_top (mk_uni 0)).
 Proof.
   start_proof.
-  Focus 2.
-
-  nuprl_tree;
-    [ nuprl_refine (isect_equality nvary 0);
-      [ use_lemma (@false_in_type o)
-
-      | rw @subst_mk_false; try prove_side_condition;
-        rw @subst_mk_false in pwf; try prove_side_condition;
-        assert ([mk_hyp nvary mk_false] = [] ++ [mk_hyp nvary (@mk_false o)]) as eq by (simpl; sp);
-        rw eq; rw eq in pwf; clear eq;
-
-        nuprl_refine thin_hyps;
-        [ use_lemma (@false_in_type o)
-        ]
-      ]
-    ].
-
-  end_proof.
+  { use_lemma (@false_in_type o). }
+  { nuprl_tree. nuprl_refine (isect_equality nvary 0).
+    use_lemma (@false_in_type o).
+    rw @subst_mk_false; try prove_side_condition.
+    rw @subst_mk_false in pwf; try prove_side_condition.
+    
+    assert ([mk_hyp nvary mk_false] = [] ++ [mk_hyp nvary (@mk_false o)]) as eq by (simpl; sp);
+        rw eq; rw eq in pwf; clear eq.
+    nuprl_refine thin_hyps.
+    use_lemma (@false_in_type o).
+  }
 Defined.
 
 (* end show *)
