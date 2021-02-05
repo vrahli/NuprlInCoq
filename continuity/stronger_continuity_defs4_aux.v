@@ -789,11 +789,9 @@ Proof.
 
   { pose proof (ex_fresh_var (v :: z :: [])) as fv.
     exrepnd; allsimpl; allrw not_over_or; repnd; GC.
-    (* apply (al_bterm_aux [v0]); simpl; auto;
-    repeat (boolvar; simpl); tcsp;
-    allrw disjoint_singleton_l; allsimpl; tcsp.*)
-  admit. }
-Admitted. (* Qed *)
+   rw (@lsubst_aux_trivial_cl_term2 o c'); eauto 3 with slow.
+  }
+Qed.
 
 Lemma wf_bound2_cbv {o} :
   forall (arg : @NTerm o) x z b f a,

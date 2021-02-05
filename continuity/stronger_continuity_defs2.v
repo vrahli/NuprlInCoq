@@ -33,6 +33,7 @@ Require Export computation_dec1.
 (*Require Export computation_dec.*)
 Require Export computation9.
 Require Export stronger_continuity_defs_typ.
+Require Export list.
 
 
 Definition old_bound_nat_aux {o} (arg : @NTerm o) x z (f : @NTerm o) :=
@@ -1982,10 +1983,8 @@ Proof.
 
   { pose proof (ex_fresh_var (v' :: z :: [])) as fv.
     exrepnd; allsimpl; allrw not_over_or; repnd; GC.
-   admit.
-   (* apply (al_bterm_aux [v1]); simpl; auto;
-   % repeat (boolvar; simpl); tcsp;
-   % allrw disjoint_singleton_l; allsimpl; tcsp. *)
+  
+  rw (@lsubst_aux_trivial_cl_term2 o c'); eauto 3 with slow.
    }
 
   apply (al_bterm_aux [v0]); allsimpl; tcsp.
@@ -1994,7 +1993,7 @@ Proof.
     apply disjoint_singleton_l; rw in_app_iff; sp. }
   rw (@lsubst_aux_trivial_cl_term2 o u'); eauto 3 with slow.
   rw (@lsubst_aux_trivial_cl_term2 o u); eauto 3 with slow.
-Admitted. (* Qed.*)
+Qed.
 
 Lemma alpha_eq_mk_integer {o} :
   forall i (u : @NTerm o),
