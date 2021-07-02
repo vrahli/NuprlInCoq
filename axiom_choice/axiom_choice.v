@@ -76,9 +76,9 @@ Proof.
 Qed.
 
 Lemma lib_extends_preserves_inhabited_type_bar {o} :
-  forall {lib lib'} (x : lib_extends lib' lib) (T : @CTerm o),
-    inhabited_type_bar lib T
-    -> inhabited_type_bar lib' T.
+  forall u {lib lib'} (x : lib_extends lib' lib) (T : @CTerm o),
+    inhabited_type_bar u lib T
+    -> inhabited_type_bar u lib' T.
 Proof.
   introv x inh.
   unfold inhabited_type_bar in *; eauto 3 with slow.
@@ -275,9 +275,9 @@ Proof.
 Qed.
 
 Lemma member_nat2nat {o} :
-  forall (lib : @library o) f,
-    member lib f nat2nat
-    <=> in_ext lib (fun lib => forall (k : nat), member lib (mkc_apply f (mkc_nat k)) mkc_tnat).
+  forall u (lib : @library o) f,
+    member u lib f nat2nat
+    <=> in_ext lib (fun lib => forall (k : nat), member u lib (mkc_apply f (mkc_nat k)) mkc_tnat).
 Proof.
   introv.
   rw @equality_in_fun.
@@ -287,7 +287,7 @@ Proof.
     apply h; eauto 3 with slow. }
 
   { introv ext q.
-    apply equality_in_tnat in q; apply e_all_in_ex_bar_as in q.
+    apply equality_in_tnat in q.
     apply all_in_ex_bar_equality_implies_equality.
     eapply in_open_bar_pres; eauto; clear q; introv xta q.
     unfold equality_of_nat in q; exrepnd.
@@ -317,6 +317,7 @@ Fixpoint to_list {T} i k (f : nat -> T) : list T :=
   | S m => f i :: to_list (S i) m f
   end.
 
+(*
 Lemma entry_extends_preserves_matching_entries_right_rev {o} :
   forall (e1 e2 e : @library_entry o),
     entry_extends e1 e2
@@ -784,6 +785,7 @@ Proof.
   apply reduces_to_if_step; tcsp.
 Qed.
 Hint Resolve mkc_apply_lam_ax_comp_ax : slow.
+*)
 
 
 (*
@@ -796,16 +798,16 @@ Hint Resolve mkc_apply_lam_ax_comp_ax : slow.
 
  *)
 Lemma axiom_of_choice_00 {o} :
-  forall lib f m n (P : @CTerm o),
+  forall u (lib : library) f m n (P : @CTerm o),
     n <> m
     -> f <> m
     -> safe_library lib
     -> (forall a b,
-          member lib a mkc_tnat
-          -> member lib b mkc_tnat
-          -> type lib (mkc_apply2 P a b))
+          member u lib a mkc_tnat
+          -> member u lib b mkc_tnat
+          -> type u lib (mkc_apply2 P a b))
     -> inhabited_type
-         lib
+         u lib
          (mkc_forall
             mkc_tnat
             m
@@ -820,7 +822,7 @@ Lemma axiom_of_choice_00 {o} :
                                (mk_cv_app_l [n] [m] (mkc_var m))
                                (mk_cv_app_r [m] [n] (mkc_var n))))))
     -> inhabited_type_bar
-         lib
+         u lib
          (mkc_exists
             nat2nat
             f
@@ -846,9 +848,9 @@ Proof.
   exrepnd.
 
   assert (forall k : CTerm,
-            member lib k mkc_tnat
+            member u lib k mkc_tnat
             -> inhabited_type_bar
-                 lib
+                 u lib
                  (mkc_exists
                     mkc_tnat
                     n
@@ -881,7 +883,7 @@ Proof.
                lib'
                (fun lib =>
                   exists (j : nat),
-                    inhabited_type lib (mkc_apply2 P (mkc_nat k) (mkc_nat j)))) as xx.
+                    inhabited_type u lib (mkc_apply2 P (mkc_nat k) (mkc_nat j)))) as xx.
   {
     introv.
     pose proof (q (mkc_nat k)) as q; autodimp q hyp; eauto 3 with slow;[].
