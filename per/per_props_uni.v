@@ -157,7 +157,7 @@ Proof.
   fold (@nuprli o i) in *.
   fold (@nuprli o j) in *.
   pose proof (typable_in_higher_univ i lib'2 A B eqa e0 (j - i)) as q.
-  rewrite minus_plus_n in q; auto; try omega.
+  rewrite minus_plus_n in q; auto; try lia.
 Qed.
 
 Lemma nuprl_mkc_uni {p} :

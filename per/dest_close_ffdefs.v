@@ -48,7 +48,7 @@ Proof.
   introv per.
 
   unfold per_ffdefs in *; exrepnd.
-  exists (trivial_bar lib) (per_ffdefs_eq_bar_lib_per eqa x1).
+  exists (trivial_bar lib) (per_ffdefs_eq_bar_lib_per lib eqa x1).
   dands; auto.
 
   {

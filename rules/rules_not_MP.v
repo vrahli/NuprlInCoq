@@ -314,7 +314,7 @@ Proof.
       apply entry_in_library_implies_find_cs_some in eil2; rewrite eil2; simpl.
       rewrite find_value_of_cs_at_is_select.
       rewrite select_map.
-      rewrite select_snoc_eq; boolvar; tcsp; try omega.
+      rewrite select_snoc_eq; boolvar; tcsp; try lia.
     }
 
     eapply inhabited_type_cequivc;
@@ -436,7 +436,7 @@ Proof.
       unfold find_cs_value_at.
       apply entry_in_library_implies_find_cs_some in blib0; allrw.
       rewrite find_value_of_cs_at_is_select; simpl.
-      rewrite select_ntimes; boolvar; try omega;[]; auto.
+      rewrite select_ntimes; boolvar; try lia;[]; auto.
     }
 
     eapply member_respects_cequivc_type in q1;

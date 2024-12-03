@@ -49,7 +49,6 @@ Lemma swap_apply_list {o} :
     swap s (apply_list t ts) = apply_list (swap s t) (map (swap s) ts).
 Proof.
   induction ts; simpl; introv; auto.
-  rw IHts; simpl; auto.
 Qed.
 
 Fixpoint so_swap {p} (l : swapping) (t : @SOTerm p) : SOTerm :=
@@ -180,7 +179,7 @@ Lemma alphaeq_sk_eq_length {o} :
 Proof.
   introv aeq.
   invertsn aeq; auto.
-  destruct a, b; allsimpl; ginv; omega.
+  destruct a, b; allsimpl; ginv; lia.
 Qed.
 
 Definition default_soterm {o} : @SOTerm o := soterm (Can NAxiom) [].
@@ -214,8 +213,8 @@ Proof.
   introv; unfold bin_rel_sk, binrel_list; simpl.
   split; intro k; repnd; cpx; dands; auto.
   - introv i.
-    pose proof (k (S n)) as h; autodimp h hyp; omega.
-  - pose proof (k 0) as h; autodimp h hyp; omega.
+    pose proof (k (S n)) as h; autodimp h hyp; lia.
+  - pose proof (k 0) as h; autodimp h hyp; lia.
   - introv i.
     destruct n; cpx.
 Qed.
@@ -463,7 +462,7 @@ Proof.
     applydup disj in lt0.
     allsimpl; allrw disjoint_app_r; repnd.
 
-    apply Hind with (vs0 := bvs1) (t := t1) in a; auto; allrw @sosize_so_swap; auto;
+    eapply (Hind t1 _ bvs1) in a; auto; allrw @sosize_so_swap; auto;
     try (complete (allrw disjoint_app_r; dands; auto;
                    apply disjoint_all_fo_vars_so_swap; auto;
                    try (apply disjoint_sym; auto))).
@@ -472,20 +471,20 @@ Proof.
     repeat (rw mk_swapping_app in a; auto).
 
     apply @soaeqbt with (vs := vs0); auto;
-    try (complete (rw length_swapbvars; omega)).
+    try (complete (rw length_swapbvars; lia)).
 
     allrw disjoint_app_r; repnd.
     pose proof (disjoint_swapbvars bvs1 vs0 vs1 vs2) as h1;
-      repeat (autodimp h1 hyp); try omega.
+      repeat (autodimp h1 hyp); try lia.
     pose proof (disjoint_swapbvars bvs2 vs0 vs1 vs2) as h2;
-      repeat (autodimp h2 hyp); try omega.
+      repeat (autodimp h2 hyp); try lia.
     pose proof (disjoint_all_fo_vars_so_swap t1 vs0 vs1 vs2) as h3;
-      repeat (autodimp h3 hyp); try omega.
+      repeat (autodimp h3 hyp); try lia.
     pose proof (disjoint_all_fo_vars_so_swap t2 vs0 vs1 vs2) as h4;
-      repeat (autodimp h4 hyp); try omega.
+      repeat (autodimp h4 hyp); try lia.
 
     allrw @so_swap_so_swap.
-    repeat (rw mk_swapping_app;[|complete omega]).
+    repeat (rw mk_swapping_app;[|complete lia]).
 
     rw <- @so_swap_app_so_swap; auto; try (complete (apply disjoint_sym; auto)).
     rw <- @so_swap_app_so_swap; auto; try (complete (apply disjoint_sym; auto)).
@@ -568,7 +567,7 @@ Proof.
                    sv) as a2;
       clear a1.
 
-    apply @soaeqbt with (vs := vs); auto; try omega.
+    apply @soaeqbt with (vs := vs); auto; try lia.
     allrw disjoint_app_r; repnd; dands; auto.
 
     unfold disjoint; introv x y.
@@ -608,7 +607,7 @@ Proof.
       as Hfresh.
     destruct Hfresh as [l' d]; repnd.
 
-    apply @soaeqbt with (vs := l'); auto; try omega.
+    apply @soaeqbt with (vs := l'); auto; try lia.
     allrw disjoint_app_r; sp.
 
     applydup in_combine in i; repnd.
@@ -640,7 +639,7 @@ Proof.
     try (complete (allrw disjoint_app_r; auto)).
 
     allrw @so_swap_so_swap.
-    repeat (rw mk_swapping_app in a0; try omega).
+    repeat (rw mk_swapping_app in a0; try lia).
 
     rw @so_swap_disj_chain in a0; auto;
     try (complete (allrw disjoint_app_r; sp; try (complete (apply disjoint_sym; auto)))).
@@ -1206,7 +1205,7 @@ Proof.
   - apply IHl in i; auto.
   - simpl in i; dorn i; cpx.
     apply IHl in i; auto.
-  - dorn i; cpx; try omega.
+  - dorn i; cpx; try lia.
     apply IHl; auto.
   - dorn i; cpx; simpl.
     right; apply IHl; auto.
@@ -1216,7 +1215,7 @@ Lemma in_filter_out_fo_vars2 :
   forall v n l,
     LIn (v, S n) (filter_out_fo_vars l) <=> LIn (v, S n) l.
 Proof.
-  introv; apply in_filter_out_fo_vars; omega.
+  introv; apply in_filter_out_fo_vars; lia.
 Qed.
 
 Lemma filter_out_fo_vars_app :
@@ -1280,7 +1279,7 @@ Proof.
       pose proof (filter_out_fo_vars_flat_map t so_free_vars ts i) as sv.
       eapply subsovars_trans; [exact sv|]; auto.
     + autodimp k0 hyp.
-      apply in_filter_out_fo_vars; auto; omega.
+      apply in_filter_out_fo_vars; auto; lia.
     + rw filter_out_fo_vars_app.
       rw subsovars_app_l; dands; tcsp.
       rw @subvars_filter_out_fo_vars_flat_map; introv i.
@@ -1420,7 +1419,7 @@ Proof.
 
     + dup Heqf as e.
       eapply sosub_find_some_implies_cswap_S in e; eauto;
-      try (complete (destruct ts; allsimpl; sp; apply gt_Sn_O)).
+        try (complete (destruct ts; allsimpl; sp; apply Nat.lt_0_succ));[].
       rw e; clear e.
       rw @lsubst_aux_cswap_cswap; auto.
       rw @cswap_sub_combine.
@@ -1803,7 +1802,7 @@ Proof.
     erewrite IHsks1; eauto.
     inversion aeqs; subst.
     apply eq_cons; auto.
-    f_equal; omega.
+    f_equal; lia.
 Qed.
 
 Lemma swapvar_implies3 :
@@ -2122,7 +2121,7 @@ Proof.
     apply i in k0; auto.
   - rw subsovars_prop in i0.
     pose proof (i0 (n,S n0)) as h; autodimp h hyp.
-    + apply in_filter_out_fo_vars; auto; omega.
+    + apply in_filter_out_fo_vars; auto; lia.
     + rw in_filter_out_fo_vars2 in h; tcsp.
 Qed.
 
@@ -2793,7 +2792,7 @@ Proof.
 
         {
           rw map_length; unfold num_bvars; simpl; auto.
-          apply sosub_find_some in Heqo; sp; omega.
+          apply sosub_find_some in Heqo; sp; lia.
         }
 
       * apply alphaeq_eq; apply h; clear h; auto.
@@ -2858,12 +2857,12 @@ Proof.
 
         {
           unfold num_bvars; simpl.
-          apply sosub_find_some in Heqo; repnd; omega.
+          apply sosub_find_some in Heqo; repnd; lia.
         }
 
       * clear h; allsimpl; clear d.
         apply sosub_find_some in Heqq; repnd.
-        rw @range_combine;[|rw map_length; omega].
+        rw @range_combine;[|rw map_length; lia].
         allrw disjoint_cons_r; repnd.
         rw flat_map_map; unfold compose.
         eapply disjoint_bound_vars_prop3; eauto.
@@ -2877,7 +2876,7 @@ Proof.
 
       * clear h; allsimpl; clear d.
         apply sosub_find_some in Heqq; repnd.
-        rw @range_combine;[|rw map_length; omega].
+        rw @range_combine;[|rw map_length; lia].
         allrw disjoint_cons_r; repnd.
         rw flat_map_map; unfold compose.
         eapply disjoint_bound_vars_prop3; eauto.
@@ -2891,7 +2890,7 @@ Proof.
 
       * clear h; allsimpl; clear d.
         apply sosub_find_some in Heqo; repnd.
-        rw @range_combine;[|rw map_length; omega].
+        rw @range_combine;[|rw map_length; lia].
         allrw disjoint_cons_r; repnd.
         rw flat_map_map; unfold compose.
         eapply disjoint_bound_vars_prop3; eauto.
@@ -2899,7 +2898,7 @@ Proof.
 
       * clear h; allsimpl; clear d.
         apply sosub_find_some in Heqo; repnd.
-        rw @range_combine;[|rw map_length; omega].
+        rw @range_combine;[|rw map_length; lia].
         allrw disjoint_cons_r; repnd.
         rw flat_map_map; unfold compose.
         eapply disjoint_bound_vars_prop3; eauto.
@@ -2907,7 +2906,7 @@ Proof.
 
       * clear h; allsimpl.
         apply sosub_find_some in Heqq; repnd.
-        rw @range_combine;[|rw map_length; omega].
+        rw @range_combine;[|rw map_length; lia].
         allrw disjoint_cons_r; repnd.
         rw flat_map_map; unfold compose.
         eapply disjoint_bound_vars_prop3; eauto.
@@ -2922,7 +2921,7 @@ Proof.
 
       * clear h; allsimpl.
         apply sosub_find_some in Heqq; repnd.
-        rw @range_combine;[|rw map_length; omega].
+        rw @range_combine;[|rw map_length; lia].
         allrw disjoint_cons_r; repnd.
         rw flat_map_map; unfold compose.
         eapply disjoint_bound_vars_prop3; eauto.
@@ -2992,8 +2991,8 @@ Proof.
     rw map_length in i.
     repeat (rw @selectbt_map_sosub_b_aux).
     assert (LIn (selectsobt lbt1 n, selectsobt bts2 n) (combine lbt1 bts2))
-      as j by (apply in_combine_sel_iff; exists n; dands; auto; try omega;
-               apply selectsobt_as_select; auto; try omega).
+      as j by (apply in_combine_sel_iff; exists n; dands; auto; try lia;
+               apply selectsobt_as_select; auto; try lia).
     remember (selectsobt lbt1 n) as bt1.
     remember (selectsobt bts2 n) as bt2.
     clear Heqbt1 Heqbt2.
@@ -3175,7 +3174,7 @@ Proof.
 
         pose proof (nth_in _ n0 ts1 default_sk) as i1.
         pose proof (nth_in _ n0 ts2 default_sk) as i2.
-        autodimp i1 hyp; autodimp i2 hyp; try omega.
+        autodimp i1 hyp; autodimp i2 hyp; try lia.
         remember (nth n0 ts1 default_sk) as sk1.
         remember (nth n0 ts2 default_sk) as sk2.
         clear Heqsk1 Heqsk2.
@@ -3413,7 +3412,7 @@ Proof.
   - Case "sovar".
     inversion aeq1 as [? ? ? len1 imp1 |]; subst; clear aeq1.
     inversion aeq2 as [? ? ? len2 imp2 |]; subst; clear aeq2.
-    constructor; try omega.
+    constructor; try lia.
     introv i.
     rw in_combine_sel_iff in i; exrepnd.
 
@@ -3425,13 +3424,13 @@ Proof.
     pose proof (imp2 (nth n ts2 default_soterm) (nth n ts3 default_soterm)) as h2.
     autodimp h1 hyp.
     {
-      apply in_combine_sel_iff; exists n; dands; auto; try omega;
-      symmetry; apply nth_select1; auto; omega.
+      apply in_combine_sel_iff; exists n; dands; auto; try lia;
+      symmetry; apply nth_select1; auto; lia.
     }
     autodimp h2 hyp.
     {
-      apply in_combine_sel_iff; exists n; dands; auto; try omega;
-      symmetry; apply nth_select1; auto; omega.
+      apply in_combine_sel_iff; exists n; dands; auto; try lia;
+      symmetry; apply nth_select1; auto; lia.
     }
 
     eapply ind1; eauto.
@@ -3440,7 +3439,7 @@ Proof.
   - Case "soterm".
     inversion aeq1 as [ |? ? ? len1 imp1]; subst; clear aeq1.
     inversion aeq2 as [ |? ? ? len2 imp2]; subst; clear aeq2.
-    constructor; try omega.
+    constructor; try lia.
     introv i.
     destruct b1, b2.
     rw in_combine_sel_iff in i; exrepnd.
@@ -3453,13 +3452,13 @@ Proof.
     pose proof (imp2 (nth n bts2 default_sobterm) (nth n bts0 default_sobterm)) as h2; clear imp2.
     autodimp h1 hyp.
     {
-      apply in_combine_sel_iff; exists n; dands; auto; try omega;
-      symmetry; apply nth_select1; auto; omega.
+      apply in_combine_sel_iff; exists n; dands; auto; try lia;
+      symmetry; apply nth_select1; auto; lia.
     }
     autodimp h2 hyp.
     {
-      apply in_combine_sel_iff; exists n; dands; auto; try omega;
-      symmetry; apply nth_select1; auto; omega.
+      apply in_combine_sel_iff; exists n; dands; auto; try lia;
+      symmetry; apply nth_select1; auto; lia.
     }
 
     pose proof (nth_in _ n bs1 default_sobterm i1) as j1.
@@ -3484,25 +3483,25 @@ Proof.
 
     inversion h2 as [? ? ? ? ? l3 l4 disj2 norep2 aeq2]; subst; clear h2.
     apply (soaeqbt vs vs1); auto;
-    try omega;
+    try lia;
     try (complete (allrw disjoint_app_r; sp)).
 
     apply so_alphaeq_vs_iff in aeq1.
     apply so_alphaeq_vs_iff in aeq2.
 
     apply (so_alphaeq_add_so_swap2 vs0 vs1) in aeq1; auto;
-    try omega;
+    try lia;
     try (complete (allrw disjoint_app_r; sp)).
 
     repeat (rw @so_swap_so_swap in aeq1).
     repeat (rw mk_swapping_app in aeq1; auto).
 
     rw @so_swap_disj_chain in aeq1; auto;
-    try omega;
+    try lia;
     try (complete (allrw disjoint_app_r; sp; eauto with slow)).
 
     rw @so_swap_disj_chain in aeq1; auto;
-    try omega;
+    try lia;
     try (complete (allrw disjoint_app_r; sp; eauto with slow)).
 
     apply so_alphaeq_vs_iff.
@@ -3559,9 +3558,8 @@ Proof.
   allrw not_over_or; repnd.
   allrw no_repeats_cons; repnd.
   unfold oneswapvar.
-  boolvar; tcsp.
-  - apply swapvar_not_in; auto.
-  - apply IHvs1; auto.
+  boolvar; tcsp;[].
+  apply swapvar_not_in; auto.
 Qed.
 
 Lemma in_combine_swap :
@@ -3598,7 +3596,7 @@ Proof.
     destruct b1, b2.
     inversion i0 as [? ? ? ? ? len1 len2 disj norep ae]; subst; clear i0.
     apply (soaeqbt vs vs0); auto;
-    try omega;
+    try lia;
     try (complete (allrw disjoint_app_r; sp)).
     apply in_combine in i; repnd.
     eapply ind; eauto.
@@ -3741,7 +3739,7 @@ Proof.
                      ++ all_fo_vars (fo_change_bvars_alpha vs (mk_foren l f0 ++ ren1 ++ foren_filter ren2 (foren_dom ren1)) s)
                   )
                ) as fv; exrepnd.
-    apply (soaeqbt [] lvn); simpl; auto; try omega.
+    apply (soaeqbt [] lvn); simpl; auto; try lia.
 
     + allrw disjoint_app_r; sp.
 
@@ -4008,7 +4006,7 @@ Proof.
                      ++ all_fo_vars (fo_change_bvars_alpha vs (mk_swapping (l ++ vs1) (f ++ vs2)) s)
                      ++ all_fo_vars (so_swap (mk_swapping (l ++ vs1) (f ++ vs2)) s)
                      ++ all_fo_vars s)) as h; exrepnd.
-    apply (soaeqbt [] lvn); simpl; auto; try omega.
+    apply (soaeqbt [] lvn); simpl; auto; try lia.
 
     + rw length_swapbvars; auto.
 
@@ -4017,7 +4015,7 @@ Proof.
     + pose proof (ind s l i3 vs (l ++ vs1) (f ++ vs2)) as h.
       repeat (autodimp h hyp); auto.
 
-      * allrw length_app; omega.
+      * allrw length_app; lia.
 
       * allrw disjoint_app_r; allrw disjoint_app_l; sp; eauto with slow.
         {
@@ -4053,7 +4051,7 @@ Proof.
                       (so_swap (mk_swapping (l ++ vs1) (f ++ vs2)) s)
                       (fo_change_bvars_alpha vs (mk_swapping (l ++ vs1) (f ++ vs2)) s)
                    ) as k.
-        repeat (autodimp k hyp); try omega.
+        repeat (autodimp k hyp); try lia.
 
         {
           allrw disjoint_app_r; sp.
@@ -4070,7 +4068,7 @@ Proof.
                          rw disjoint_app_r in i3; sp; eauto with slow)).
 
         allrw <- app_assoc.
-        rw @so_swap_disj_chain2; auto; try omega; eauto with slow;
+        rw @so_swap_disj_chain2; auto; try lia; eauto with slow;
           try (complete (allrw disjoint_app_r; sp; eauto with slow));
           try (complete (allrw disjoint_flat_map_r;
                          apply disj3 in i3; simpl in i3;

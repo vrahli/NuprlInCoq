@@ -1800,8 +1800,8 @@ Lemma length_mk_hs_subst {p} :
     length (@mk_hs_subst p ts hs) = length hs
     -> length ts >= length hs.
 Proof.
-  induction hs; simpl; sp; destruct ts; allsimpl; sp; try omega; inj.
-  apply_in_hyp pp; omega.
+  induction hs; simpl; sp; destruct ts; allsimpl; sp; try lia; inj.
+  apply_in_hyp pp; lia.
 Qed.
 
 Lemma wf_hypotheses_disj_subst {p} :
@@ -2883,8 +2883,8 @@ Proof.
   rw @similarity_app.
   exists s1a s1b s2 s3; sp; try (complete (allapply @similarity_length; sp)).
   rw @eq_hyps_app in eqh; exrepnd.
-  apply app_split in eqh0; try (complete (allapply @similarity_length; repd; omega)).
-  apply app_split in eqh2; try (complete (allapply @similarity_length; repd; omega)).
+  apply app_split in eqh0; try (complete (allapply @similarity_length; repd; lia)).
+  apply app_split in eqh2; try (complete (allapply @similarity_length; repd; lia)).
   sp; subst; sp.
 Qed.
 
@@ -3383,7 +3383,7 @@ Proof.
   rev_list_dest ts.
   apply hyps_true_at_length in hta; allsimpl.
   allrw length_app; allrw length_snoc.
-  omega.
+  lia.
 
   allrw snoc_append_l.
   inversion hta; cpx.
@@ -3439,14 +3439,14 @@ Proof.
   rev_list_dest ts.
   allapplydup @hyps_true_at_length; allsimpl.
   allrw length_app; allrw length_snoc.
-  omega.
+  lia.
 
   allrw snoc_append_l.
   inversion hta; cpx.
   apply IHhs2 in hta0; sp; subst.
   exists ts1 (snoc ts2 v); sp.
   rewrite snoc_append_l; auto.
-  repeat (rewrite length_snoc); omega.
+  repeat (rewrite length_snoc); lia.
   rewrite substitute_hyps_snoc.
 
   assert (wf_term (htyp (substitute_hyp (mk_hs_subst ts1 hs1) a))) as wh
@@ -4799,12 +4799,12 @@ Proof.
   {
     introv sim2; introv.
     generalize (h lib' ext s2); clear h; introv hyp; repd.
-    apply hyp with (s3 := s3) (p := sim2) in hf; auto.
+    pose proof (hyp sim hf s3 sim2) as q.
 
-    rewrite lsubstc_replace with (w2 := wt) (p2 := pC1) in hf; auto.
-    rewrite lsubstc_replace with (w2 := wt) (p2 := pC2) in hf; auto.
-    rewrite lsubstc_replace with (w2 := s1) (p2 := pt1) in hf; auto.
-    rewrite lsubstc_replace with (w2 := s1) (p2 := pt2) in hf; auto.
+    rewrite lsubstc_replace with (w2 := wt) (p2 := pC1) in q; auto.
+    rewrite lsubstc_replace with (w2 := wt) (p2 := pC2) in q; auto.
+    rewrite lsubstc_replace with (w2 := s1) (p2 := pt1) in q; auto.
+    rewrite lsubstc_replace with (w2 := s1) (p2 := pt2) in q; auto.
   }
 
   {
@@ -4849,7 +4849,7 @@ Proof.
   {
     introv sim2.
     generalize (h lib' ext s2); intros hyp; clear h.
-    apply hyp with (s3 := s3) (p := sim2) in hf; auto.
+    pose proof (hyp sim hf s3 sim2) as q; auto.
 
     exists (s_cover_typ1 lib' T s2 s3 hs ct sim2)
            (s_cover_typ2 lib' T s2 s3 hs ct sim2); sp.
@@ -4868,7 +4868,7 @@ Proof.
 
   {
     generalize (h lib' ext s2); intro hyp.
-    apply hyp with (s3 := s3) in hf; exrepd; auto.
+    pose proof (hyp sim hf s3 p) as q; exrepd; auto.
 
     rewrite lsubstc_replace with (w2 := wt) (p2 := pC1); auto.
     rewrite lsubstc_replace with (w2 := wt) (p2 := pC2); auto.

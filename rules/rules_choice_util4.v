@@ -454,9 +454,9 @@ Proof.
   induction vals; introv imp len; simpl in *.
   { exists ([] : list nat) l; simpl; tcsp. }
 
-  destruct l; simpl in *; ginv; try omega; ginv.
+  destruct l; simpl in *; ginv; try lia; ginv.
   pose proof (IHvals l) as IHvals.
-  repeat (autodimp IHvals hyp); try omega.
+  repeat (autodimp IHvals hyp); try lia.
   { introv sel.
     pose proof (imp (S n0) v) as imp; simpl in *; tcsp. }
   exrepnd; subst.
@@ -530,10 +530,10 @@ Lemma removen_all :
     -> removen n l = [].
 Proof.
   induction n; introv len; simpl in *; tcsp.
-  { destruct l; simpl in *; try omega; auto. }
+  { destruct l; simpl in *; try lia; auto. }
 
   destruct l; simpl in *; auto.
-  apply IHn; auto; try omega.
+  apply IHn; auto; try lia.
 Qed.
 
 Lemma select_sub_removen :
@@ -544,8 +544,8 @@ Lemma select_sub_removen :
 Proof.
   induction m; introv len; simpl in *; autorewrite with nat; auto.
   destruct l; simpl; autorewrite with list; auto.
-  destruct n; simpl; try omega.
-  apply IHm; try omega.
+  destruct n; simpl; try lia.
+  apply IHm; try lia.
 Qed.
 
 Lemma choice_sequence_satisfies_restriction_snoc_seq {o} :
@@ -564,21 +564,22 @@ Proof.
   unfold app_after in i.
   destruct (le_dec (length l) (length vals)) as [d1|d1].
 
-  { rewrite removen_all in i; autorewrite with list in *; try omega.
+  { rewrite removen_all in i; autorewrite with list in *; try lia.
     rewrite select_snoc_eq in i; boolvar; simpl in *; ginv; tcsp.
-    apply comp; eauto 3 with slow; try omega. }
+    apply comp; eauto 3 with slow; try lia. }
 
   { rewrite select_snoc_eq in i.
     autorewrite with list in *.
-    rewrite le_plus_minus_r in i; try omega.
+    rewrite (Nat.add_comm (Datatypes.length vals)) in i.
+    rewrite Nat.sub_add in i; try lia.
     boolvar; ginv.
 
     { destruct (lt_dec n (length vals)) as [d2|d2].
 
       { rewrite select_app_l in i; auto. }
 
-      { rewrite select_app_r in i; try omega.
-        rewrite select_sub_removen in i; try omega.
+      { rewrite select_app_r in i; try lia.
+        rewrite select_sub_removen in i; try lia.
         rewrite select_map in i.
         remember (select n l) as sel; symmetry in Heqsel.
         destruct sel; simpl in *; ginv.
@@ -628,9 +629,8 @@ Proof.
     destruct kind; subst; simpl in *; tcsp.
 
     { unfold correct_restriction; simpl; boolvar; subst; dands; eauto 3 with slow; tcsp.
-      { unfold choice_sequence_name2restriction; simpl; dands; tcsp. }
-      { unfold choice_sequence_name2restriction; simpl; dands; tcsp.
-        introv i; repeat (destruct n; simpl in *; tcsp); ginv; eauto 3 with slow. } }
+      unfold choice_sequence_name2restriction; simpl; dands; tcsp.
+      introv i; repeat (destruct n; simpl in *; tcsp); ginv; eauto 3 with slow. }
 
     { unfold compatible_cs_kind in comp; simpl in *; GC.
       unfold choice_sequence_name2restriction; simpl.
@@ -695,7 +695,7 @@ Proof.
   destruct name as [name kind]; simpl.
   destruct kind; simpl; tcsp; autorewrite with list; simpl; tcsp;
     rewrite find_value_of_cs_at_is_select;
-    rewrite select_snoc_eq; boolvar; tcsp; try omega.
+    rewrite select_snoc_eq; boolvar; tcsp; try lia.
 Qed.
 
 
@@ -718,7 +718,7 @@ Proof.
     unfold app_after; simpl.
     autorewrite with list; simpl.
     rewrite find_value_of_cs_at_is_select.
-    rewrite select_snoc_eq; autorewrite with list; boolvar; try omega; auto. }
+    rewrite select_snoc_eq; autorewrite with list; boolvar; try lia; auto. }
 
   destruct a; boolvar; subst; simpl in *; tcsp.
 

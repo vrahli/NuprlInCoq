@@ -547,6 +547,7 @@ Proof.
 Qed.
 Hint Resolve not_in_subset : slow.
 
+(*
 (* we should be able to prove that b = b'.  For that we would need something
    like what I started to prove in computation_preserves_utok.  That one there
    is not exactly right, but we should be able to prove that s and w only differ
@@ -615,7 +616,7 @@ Proof.
                 + unfold mk_choice_seq in *; allsimpl; ginv.
                   csunf; simpl.
                   dcwf h; simpl.
-                  boolvar; simpl; auto; try omega.
+                  boolvar; simpl; auto; try lia.
                   autorewrite with slow.
                   erewrite not_in_lib_preserves_find_cs_value_at_cons; eauto.
 
@@ -696,7 +697,7 @@ Proof.
               repndors; exrepnd; subst; auto.
               csunf; simpl.
               unfold compute_step_tuni; simpl.
-              boolvar; try omega.
+              boolvar; try lia.
               autorewrite with slow.
               eexists; dands; eauto.
             }
@@ -742,7 +743,7 @@ Proof.
               apply compute_step_comp_seq1_success in comp; exrepnd; subst.
               repndors; repnd; subst; csunf; simpl.
               { eexists; dands; eauto. }
-              boolvar; autorewrite with slow in *; try omega.
+              boolvar; autorewrite with slow in *; try lia.
               eexists; dands; eauto.
             }
 
@@ -752,9 +753,9 @@ Proof.
               csunf comp; allsimpl.
               apply compute_step_comp_seq2_success in comp; exrepnd; subst.
               repndors; repnd; subst; csunf; simpl.
-              { boolvar; autorewrite with slow in *; try omega.
+              { boolvar; autorewrite with slow in *; try lia.
                 eexists; dands; eauto. }
-              { boolvar; autorewrite with slow in *; try omega.
+              { boolvar; autorewrite with slow in *; try lia.
                 eexists; dands; eauto. }
             }
 
@@ -980,6 +981,7 @@ Proof.
     eexists; dands;[apply reduces_in_atmost_k_steps_S;eexists; dands; eauto|].
     eauto 2 with slow.
 Qed.
+*)
 
 Lemma matching_entry_sign_deq :
   forall oa1 oa2, decidable (matching_entry_sign oa1 oa2).
@@ -1663,7 +1665,7 @@ Proof.
                 + unfold mk_nseq in *; allsimpl; ginv.@136
                   csunf; simpl.
                   dcwf h; simpl.
-                  boolvar; simpl; auto; try omega.
+                  boolvar; simpl; auto; try lia.
                   rewrite Znat.Nat2Z.id; auto.
 
               - fold_terms; rewrite compute_step_eapply_iscan_isexc; auto.
@@ -1733,7 +1735,7 @@ Proof.
               repndors; exrepnd; subst; auto.
               csunf; simpl.
               unfold compute_step_tuni; simpl.
-              boolvar; try omega.
+              boolvar; try lia.
               rewrite Znat.Nat2Z.id; auto.
             }
 
@@ -2025,7 +2027,6 @@ Lemma cswap_apply_list {o} :
     = apply_list (cswap sw t) (map (cswap sw) ts).
 Proof.
   induction ts; introv; allsimpl; auto.
-  rewrite IHts; simpl; fold_terms; auto.
 Qed.
 
 Lemma all_abstractions_are_defined_sosub_preserves_alphaeq_sosub {o} :
@@ -2882,7 +2883,7 @@ Proof.
             + apply compute_step_eapply2_success in comp1; repnd; subst.
               repndors; exrepnd; subst; ginv; auto.
               csunf; simpl; auto;dcwf h; simpl; auto.
-              boolvar; try omega.
+              boolvar; try lia.
               rewrite Znat.Nat2Z.id; auto.
 
             + csunf; simpl; dcwf h; simpl.
@@ -2928,7 +2929,7 @@ Proof.
                   rewrite compute_step_eapply_lam_iscan; auto.
 
                 + inversion comp3; subst.
-                  csunf; simpl; dcwf h; simpl; boolvar; try omega.
+                  csunf; simpl; dcwf h; simpl; boolvar; try lia.
                   rewrite Znat.Nat2Z.id; auto.
 
               - fold_terms; rewrite compute_step_eapply_iscan_isexc; auto.
@@ -3003,7 +3004,7 @@ Proof.
               apply compute_step_tuni_success in comp.
               repndors; exrepnd; subst; simpl; auto.
               csunf; simpl.
-              unfold compute_step_tuni; simpl; boolvar; try omega.
+              unfold compute_step_tuni; simpl; boolvar; try lia.
               rewrite Znat.Nat2Z.id; auto.
             }
 
@@ -3048,7 +3049,7 @@ Proof.
                 repndors; exrepnd; subst; allsimpl; boolvar;
                 try (complete (subst; csunf; simpl; dcwf h; simpl;
                                unfold compute_step_comp; simpl;
-                               allrw; boolvar; tcsp; try omega)).
+                               allrw; boolvar; tcsp; try lia)).
 
               - pose proof (ind t t []) as q; clear ind.
                 repeat (autodimp q hyp); eauto 2 with slow.

@@ -41,12 +41,12 @@ Proof.
 
   repndors; exrepnd; [|allsimpl; subst; repnd; complete ginv].
 
-  assert (m <= S k) as XX by omega.
+  assert (m <= S k) as XX by lia.
   repnud Hcv.
   eapply reduces_atmost_split in XX; eauto.
   remember (S k - m) as skm.
-  destruct skm; [omega|].
-  assert (skm <= k) by (subst; omega).
+  destruct skm; [lia|].
+  assert (skm <= k) by (subst; lia).
   apply reduces_atmost_S in XX; exrepnd.
   applydup @reduces_atmost_preserves_program in Hcv4; auto.
   apply isprogram_comp_seq1_implies_ex in Hcv6; unfold nobnd in *; exrepnd; subst; cpx.
@@ -83,7 +83,7 @@ Proof.
           end
         end. (* this will be used later in this proof *)
         pose proof (reduces_to_preserves_program _ _ _ h1 Hprt') as Hispr.
-        apply reduces_atmost_preserves_program in Hcv4; auto; try omega.
+        apply reduces_atmost_preserves_program in Hcv4; auto; try lia.
 
         apply approx_open_implies_approx_star.
         apply reduces_to_implies_approx_open1; eauto 2 with slow.
@@ -115,7 +115,7 @@ Proof.
           end
         end. (* this will be used later in this proof *)
         pose proof (reduces_to_preserves_program _ _ _ h1 Hprt') as Hispr.
-        apply reduces_atmost_preserves_program in Hcv4; auto; try omega.
+        apply reduces_atmost_preserves_program in Hcv4; auto; try lia.
 
         make_red_val_like XX0 hh.
         applydup @isprogram_comp_seq1_implies in Hprt'; repnd.
@@ -130,7 +130,7 @@ Proof.
         eapply approx_star_open_trans;[eauto|].
         apply reduces_to_implies_approx_open1; eauto 2 with slow.
         eapply reduces_to_if_split1; eauto.
-        csunf; simpl; boolvar; autorewrite with slow in *; try omega; auto.
+        csunf; simpl; boolvar; autorewrite with slow in *; try lia; auto.
     }
 
   - apply isexc_implies in Hcv0; auto; exrepnd; subst.

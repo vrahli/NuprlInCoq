@@ -8557,9 +8557,9 @@ Theorem in_selectbt {p} :
 Proof.
   intros ? ? Hin. induction bts. inverts Hin.
   invertsn Hin.
-  - exists 0. split; simpl; auto. omega.
+  - exists 0. split; simpl; auto. lia.
   - destruct IHbts; auto. exists (S x). repnd.
-    split; simpl; try omega. auto.
+    split; simpl; try lia. auto.
 Qed.
 
 (**useful for rewriting in complicated formulae*)
@@ -8625,7 +8625,7 @@ Proof.
   induction lbt; introv Hlt. inverts Hlt.
   simpl. destruct n; subst. reflexivity.
   allunfold @selectbt. allsimpl.
-  assert (n < (length lbt)) by omega.
+  assert (n < (length lbt)) by lia.
   auto.
 Qed.
 
@@ -9476,7 +9476,7 @@ Proof.
   rw <- combine_nth; auto.
   apply nth_in; auto.
   rw combine_length; rw <- e.
-  rw Min.min_idempotent; auto.
+  rw Nat.min_id; auto.
 Qed.
 
 Theorem isprogram_ot_implies_eauto2 {p} :

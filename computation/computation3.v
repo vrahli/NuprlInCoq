@@ -1073,7 +1073,7 @@ Proof.
         apply reduces_in_atmost_k_steps_if_isvalue_like in r0; eauto with slow; ginv.
         inversion r0; subst; fold_terms; GC.
         exists (subst b v a); simpl; dands; auto.
-        eapply no_change_after_value2; eauto; try omega.
+        eapply no_change_after_value2; eauto; try lia.
 
       * Case "NCan".
         pose proof (IHk0 u) as h; repeat (autodimp h hyp); exrepnd.
@@ -1133,7 +1133,7 @@ Proof.
         apply reduces_in_atmost_k_steps_if_isvalue_like in r0; eauto with slow; ginv.
         inversion r0; subst; fold_terms; GC.
         exists (subst f x a); simpl; dands; auto.
-        eapply no_change_after_value2; eauto; try omega.
+        eapply no_change_after_value2; eauto; try lia.
 
       * Case "NCan".
         pose proof (IHk0 u) as h; repeat (autodimp h hyp); exrepnd.
@@ -1192,7 +1192,7 @@ Proof.
         apply reduces_in_atmost_k_steps_if_isvalue_like in r0; eauto with slow; ginv.
         inversion r0; subst; fold_terms; GC.
         exists (subst g y a); simpl; dands; auto.
-        eapply no_change_after_value2; eauto; try omega.
+        eapply no_change_after_value2; eauto; try lia.
 
       * Case "NCan".
         pose proof (IHk0 u) as h; repeat (autodimp h hyp); exrepnd.
@@ -1281,7 +1281,7 @@ Proof.
         unfold compute_step_comp; simpl.
         allrw @get_param_from_cop_pk2can.
         eexists; dands; eauto.
-        eapply no_change_after_value2; eauto; try omega.
+        eapply no_change_after_value2; eauto; try lia.
 
       * Case "NCan".
         rw compk1; simpl.
@@ -1310,7 +1310,7 @@ Proof.
       csunf compk1; allsimpl; ginv.
       apply reduces_in_atmost_k_steps_if_isvalue_like in compk0; tcsp; ginv.
       rw @pk2term_eq in compk0; ginv.
-      eapply no_change_after_value2; eauto; try omega.
+      eapply no_change_after_value2; eauto; try lia.
 
     + Case "NCan".
       rw @reduces_in_atmost_k_steps_S.
@@ -1666,14 +1666,14 @@ Lemma eq_num_bvars_if_alpha {o} :
 Proof.
   induction bs1; destruct bs2; introv l h; allsimpl; auto; cpx.
   apply eq_cons.
-  - pose proof (h 0) as k; autodimp k hyp; try omega.
+  - pose proof (h 0) as k; autodimp k hyp; try lia.
     unfold selectbt in k; simpl in k.
     inversion k; allsimpl.
     unfold num_bvars; simpl; auto.
   - apply IHbs1; auto.
     introv k.
     pose proof (h (S n)) as x.
-    autodimp x hyp; omega.
+    autodimp x hyp; lia.
 Qed.
 
 Lemma alpha_eq_lsubst_mk_abs_subst {o} :
@@ -2309,10 +2309,10 @@ Proof.
   allrw disjoint_app_r; repnd.
   apply (alphaeq_vs_implies_less _ _ _ []) in a; auto.
   apply alphaeq_eq in a.
-  apply (alpha_eq_same_cswap _ _ vs0 vs) in a; auto; try omega.
+  apply (alpha_eq_same_cswap _ _ vs0 vs) in a; auto; try lia.
   allrw @cswap_cswap.
   repeat (rw mk_swapping_app in a; auto).
-  repeat (rw @cswap_disj_chain in a; auto; try omega;
+  repeat (rw @cswap_disj_chain in a; auto; try lia;
           allrw disjoint_app_r; dands; eauto 3 with slow).
 Qed.
 
@@ -2578,7 +2578,6 @@ Proof.
     apply in_olist_oappl.
     apply in_olist_OLL_map.
     eexists; dands; eauto.
-    unfold oatomv; constructor.
   - allrw lin_flat_map; exrepnd.
     destruct x0 as [l t]; allsimpl.
     eapply ind in i0; eauto 3 with slow.
@@ -2646,7 +2645,7 @@ Proof.
   introv i; allsimpl; repndors; ginv; tcsp.
 Qed.
 
-Hint Rewrite Nat2Z.id : slow.
+Hint Rewrite Znat.Nat2Z.id : slow.
 
 
 (* end hide *)
@@ -2695,7 +2694,7 @@ Proof.
 
           { csunf Hcomp; allsimpl; ginv. }
 
-          inverts Hal as Hlen Hal. simpl in Hal. lapply (Hal 0); [introv H1al| omega].
+          inverts Hal as Hlen Hal. simpl in Hal. lapply (Hal 0); [introv H1al| lia].
           destruct lbt2 as [| bt2 lbt2]; [inverts Hlen|]; [].
           unfold selectbt in H1al. simpl in H1al. apply alphaeqbt_nilv in H1al. exrepnd.
           simpl in H1al1. symmetry in H1al1.
@@ -2717,7 +2716,7 @@ Proof.
               + (* some work required to get lbt2 to be of the right shape*)
                 allunfold @selectbt. repeat(alphahypsd).
                 csunf; simpl. eexists; split; eauto.
-                GC. clear backup H1al0 IHind. unfold subst.
+                GC. unfold subst.
                 apply al_bterm in H1alarg00bt0;sp.
                 eapply lsubst_alpha_congr4; simpl; eauto.
                 constructor; auto; apply alphaeq_eq; auto.
@@ -2745,7 +2744,7 @@ Proof.
                                  unfold selectbt in q; allsimpl;
                                  allapply @alpha_eq_bterm_nobnd; exrepnd; subst;
                                  allapply @alpha_eq_mk_nat; subst;
-                                 csunf; allsimpl; dcwf h; allsimpl; boolvar; try omega;
+                                 csunf; allsimpl; dcwf h; allsimpl; boolvar; try lia;
                                  allrw Znat.Nat2Z.id; allrw;
                                  eexists; dands; eauto));[].
 
@@ -2767,14 +2766,14 @@ Proof.
                 eapply lsubst_alpha_congr4; simpl; eauto.
                 constructor; auto; apply alphaeq_eq; auto.
 
-              + pose proof (Hal 1) as q; autodimp q hyp; try omega.
+              + pose proof (Hal 1) as q; autodimp q hyp; try lia.
                 unfold selectbt in q; allsimpl.
                 allapply @alpha_eq_bterm_nobnd; exrepnd; subst.
                 applydup @alphaeq_preserves_isexc in q0; auto.
                 applydup @alpha_eq_ot_numvars in H1al0; auto.
                 rw @compute_step_eapply_iscan_isexc; eauto 3 with slow.
 
-              + pose proof (Hal 1) as q; autodimp q hyp; try omega.
+              + pose proof (Hal 1) as q; autodimp q hyp; try lia.
                 unfold selectbt in q; allsimpl.
                 allapply @alpha_eq_bterm_nobnd; exrepnd; subst.
                 applydup @alphaeq_preserves_isnoncan_like in q0; auto.
@@ -2800,7 +2799,7 @@ Proof.
               csunf Hcomp; allsimpl.
               apply compute_step_apseq_success in Hcomp; exrepnd; subst; allsimpl; cpx.
               allunfold @selectbt; allsimpl; fold_terms.
-              csunf; simpl; boolvar; try omega.
+              csunf; simpl; boolvar; try lia.
               rw @Znat.Nat2Z.id.
               eexists; dands; eauto.*)
 
@@ -2835,7 +2834,7 @@ Proof.
               apply al_bterm in Hal1bt0 ;sp;[].
               apply apply_bterm_alpha_congr;sp.
               split;[sp|simpl];[].
-              introv Hlt. repeat (destruct n; try(omega));sp.
+              introv Hlt. repeat (destruct n; try(lia));sp.
 
             - SSSSSCase "NDsup".
 
@@ -2860,7 +2859,7 @@ Proof.
               apply al_bterm in Hal1bt0 ;sp;[].
               apply apply_bterm_alpha_congr;sp.
               split;[sp|simpl];[].
-              introv Hlt. repeat (destruct n; try(omega));sp.
+              introv Hlt. repeat (destruct n; try(lia));sp.
 
             - SSSSSCase "NDecide".
 
@@ -2875,12 +2874,12 @@ Proof.
               + apply (apply_bterm_alpha_congr _ _ [d] [nt2]) in Hal1bt0; allsimpl; tcsp.
                 split;[sp|simpl];[].
                 introv Hlt.
-                repeat (destruct n; try(omega));sp.
+                repeat (destruct n; try(lia));sp.
 
               + apply (apply_bterm_alpha_congr _ _ [d] [nt2]) in Hal2bt0; allsimpl; tcsp.
                 split;[sp|simpl];[].
                 introv Hlt.
-                repeat (destruct n; try(omega));sp.
+                repeat (destruct n; try(lia));sp.
 
             - SSSSSCase "NCbv".
 
@@ -2896,7 +2895,7 @@ Proof.
               apply al_bterm in Hal1bt0;sp.
               apply apply_bterm_alpha_congr;sp.
               split;[sp|simpl];[].
-              introv Hlt. repeat (destruct n; try(omega));sp.
+              introv Hlt. repeat (destruct n; try(lia));sp.
 
             - SSSSSCase "NSleep".
 
@@ -2914,7 +2913,7 @@ Proof.
               destruct lbt2; allsimpl; cpx; GC.
               exists (@mk_uni p n); dands; auto.
               unfold compute_step_tuni; simpl.
-              destruct (Z_le_gt_dec 0 (Z.of_nat n)); sp; try omega.
+              destruct (Z_le_gt_dec 0 (Z.of_nat n)); sp; try lia.
               rw Znat.Nat2Z.id; sp.
 
             - SSSSSCase "NMinus".
@@ -2959,7 +2958,7 @@ Proof.
               unfold selectbt in k1; simpl in k1.
               apply alpha_eq_bterm_nobnd in k1; exrepnd; subst.
               csunf; simpl.
-              boolvar; repndors; repnd; subst; autorewrite with slow in *; try omega; GC.
+              boolvar; repndors; repnd; subst; autorewrite with slow in *; try lia; GC.
 
               { eexists; dands; eauto. }
 
@@ -2976,7 +2975,7 @@ Proof.
               unfold selectbt in k1; simpl in k1.
               apply alpha_eq_bterm_nobnd in k1; exrepnd; subst.
               csunf; simpl.
-              boolvar; repndors; exrepnd; subst; autorewrite with slow in *; try omega.
+              boolvar; repndors; exrepnd; subst; autorewrite with slow in *; try lia.
 
               { eexists; dands; eauto. }
 
@@ -3078,7 +3077,7 @@ Proof.
                 * apply alpha_eq_bterm_congr.
                   eapply alpha_eq_lsubst_mk_abs_subst; eauto.
                 * pose proof (Hal (S (S n))) as x.
-                  autodimp x hyp; omega.
+                  autodimp x hyp; lia.
 
 
             - SSSSSCase "NArithOp".
@@ -3164,7 +3163,7 @@ Proof.
                 * apply alpha_eq_bterm_congr.
                   eapply alpha_eq_lsubst_mk_abs_subst; eauto.
                 * pose proof (Hal (S (S n))) as x.
-                  autodimp x hyp; omega.
+                  autodimp x hyp; lia.
 
             - SSSSSCase "NCanTest".
 
@@ -3277,7 +3276,7 @@ Proof.
             + apply alpha_eq_bterm_congr.
               eapply alpha_eq_lsubst_mk_abs_subst; eauto.
             + pose proof (Hal (S n)) as x.
-              autodimp x hyp; omega.
+              autodimp x hyp; lia.
           }
         }
 
@@ -3539,7 +3538,7 @@ Proof.
     exists m. allsimpl. split; spc.
   - Case "NCan".
     exists (S m).
-    split; spc; [omega|]. simpl.
+    split; spc; [lia|]. simpl.
     rw HeqHdeq1.
     apply compute_step_exact_implies_atmost in HeqHdeq1; auto.
   - Case "Exc".
@@ -3547,7 +3546,7 @@ Proof.
     exists m; sp.
   - Case "Abs".
     simpl in Hc.
-    exists (S m); dands; [omega|]; simpl.
+    exists (S m); dands; [lia|]; simpl.
     rw HeqHdeq1; simpl; auto.
 Qed.
 
@@ -3564,7 +3563,7 @@ Proof.
 
   - symmetry in HeqHdeq.
     apply compute_step_atmost_exact in HeqHdeq; exrepnd.
-    exists (S m); dands; try omega.
+    exists (S m); dands; try lia.
     rw computes_k_steps_S.
     rw HeqHdeq0; auto.
     apply compute_step_exception_implies_compute_1_step in Hc; auto.
@@ -3821,11 +3820,11 @@ Lemma compute_split {p} :
     -> compute_at_most_k_steps lib (m-n) t2 = csuccess t3.
 Proof.
   induction n as [| n Hind]; introv H1c H2c Hlt.
-  - allsimpl. inverts H1c. assert (m-0=m) as Heq by omega. rw Heq;sp.
+  - allsimpl. inverts H1c. assert (m-0=m) as Heq by lia. rw Heq;sp.
   - simpl in H1c. remember (compute_at_most_k_steps lib n t1) as cn.
     destruct cn; invertsn H1c. symmetry in Heqcn.
-    eapply Hind in H2c; eauto;sp;[| omega].
-    assert (S (m - S n) = (m-n)) as XX by omega.
+    eapply Hind in H2c; eauto;sp;[| lia].
+    assert (S (m - S n) = (m-n)) as XX by lia.
     rw <- XX in H2c. rw  @compute_at_most_k_steps_eq_f in H2c.
     simpl in H2c. rw H1c in H2c. rw  <- @compute_at_most_k_steps_eq_f in H2c.
     sp.
@@ -5070,9 +5069,9 @@ Proof.
     unfold selectbt.
     apply k.
     apply in_combine_sel_iff.
-    exists n; dands; auto; try omega.
+    exists n; dands; auto; try lia.
     + rw (nth_select1 n bs1 (@default_bt o)); auto.
-    + rw (nth_select1 n bs2 (@default_bt o)); auto; try omega.
+    + rw (nth_select1 n bs2 (@default_bt o)); auto; try lia.
 Qed.
 
 Lemma lsubst_subst_utokens_aux_disj {o} :
@@ -5204,7 +5203,7 @@ Proof.
         inversion h as [? ? ? ? ? disj len1 len2 norep al]; subst; clear h.
         allrw disjoint_app_r; allrw disjoint_cons_r; allrw disjoint_app_r; repnd.
 
-        apply (al_bterm _ _ lv); allrw disjoint_app_r; dands; try omega; eauto with slow.
+        apply (al_bterm _ _ lv); allrw disjoint_app_r; dands; try lia; eauto with slow.
 
         assert (!LIn v l1) as ni.
         { intro k; destruct ni2.
@@ -5216,7 +5215,7 @@ Proof.
         allrw @sub_free_vars_var_ren;
         allrw @get_utokens_sub_var_ren;
         allrw disjoint_singleton_l;
-        try omega; eauto with slow.
+        try lia; eauto with slow.
 
         pose proof (ind t1 (lsubst t1 (var_ren l1 lv)) l1) as h; clear ind.
         repeat (autodimp h hyp).
@@ -5230,7 +5229,7 @@ Proof.
           allrw in_app_iff; allsimpl; repndors; tcsp.
           destruct ni1; rw lin_flat_map; eexists; dands; eauto. }
 
-        { rw @boundvars_lsubst_vars; auto; try omega.
+        { rw @boundvars_lsubst_vars; auto; try lia.
           intro k; destruct ni2; rw lin_flat_map; eexists; dands; eauto; simpl.
           rw in_app_iff; sp. }
 
@@ -5243,13 +5242,13 @@ Proof.
             repeat (autodimp h hyp); simpl; eauto 2 with slow.
             allsimpl; rw @dom_sub_var_ren in h; auto; boolvar; tcsp.
             allrw @lsubst_nil.
-            repeat (rw <- @lsubst_lsubst_aux2 in al; try omega; eauto 2 with slow).
+            repeat (rw <- @lsubst_lsubst_aux2 in al; try lia; eauto 2 with slow).
             rw <- @cl_lsubst_lsubst_aux; eauto 2 with slow.
             rw @lsubst_sub_trivial in h; simpl;
             try (rw @sub_free_vars_var_ren); try (rw disjoint_singleton_r);
             eauto with slow.
 
-          - rw <- (lsubst_lsubst_aux2 t1) in al; try omega; eauto 2 with slow.
+          - rw <- (lsubst_lsubst_aux2 t1) in al; try lia; eauto 2 with slow.
             eapply alpha_eq_trans;[|exact al].
             rw <- (cl_lsubst_lsubst_aux t2); eauto 2 with slow.
             rw <- (cl_lsubst_lsubst_aux (lsubst t2 (var_ren l2 lv))); eauto 2 with slow.
@@ -5261,7 +5260,7 @@ Proof.
             rw @lsubst_sub_trivial; simpl;
             try (rw @sub_free_vars_var_ren); try (rw disjoint_singleton_r);
             eauto 2 with slow.
-            rw <- @lsubst_lsubst_aux2; try omega; eauto 2 with slow.
+            rw <- @lsubst_lsubst_aux2; try lia; eauto 2 with slow.
         }
 
       * apply alpha_eq_oterm_combine; allrw map_length; dands; auto.
@@ -5291,7 +5290,7 @@ Proof.
         inversion h as [? ? ? ? ? disj len1 len2 norep al]; subst; clear h.
         allrw disjoint_app_r; allrw disjoint_cons_r; allrw disjoint_app_r; repnd.
 
-        apply (al_bterm _ _ lv); allrw disjoint_app_r; dands; try omega; eauto with slow.
+        apply (al_bterm _ _ lv); allrw disjoint_app_r; dands; try lia; eauto with slow.
 
         assert (!LIn v l1) as ni.
         { intro k; destruct ni2.
@@ -5303,7 +5302,7 @@ Proof.
         allrw @sub_free_vars_var_ren;
         allrw @get_utokens_sub_var_ren;
         allrw disjoint_singleton_l;
-        try omega; eauto with slow.
+        try lia; eauto with slow.
 
         pose proof (ind t1 (lsubst t1 (var_ren l1 lv)) l1) as h; clear ind.
         repeat (autodimp h hyp).
@@ -5317,7 +5316,7 @@ Proof.
           allrw in_app_iff; allsimpl; repndors; tcsp.
           destruct ni1; rw lin_flat_map; eexists; dands; eauto. }
 
-        { rw @boundvars_lsubst_vars; auto; try omega.
+        { rw @boundvars_lsubst_vars; auto; try lia.
           intro k; destruct ni2; rw lin_flat_map; eexists; dands; eauto; simpl.
           rw in_app_iff; sp. }
 
@@ -5330,13 +5329,13 @@ Proof.
             repeat (autodimp h hyp); simpl; eauto 2 with slow.
             allsimpl; rw @dom_sub_var_ren in h; auto; boolvar; tcsp.
             allrw @lsubst_nil.
-            repeat (rw <- @lsubst_lsubst_aux2 in al; try omega; eauto 2 with slow).
+            repeat (rw <- @lsubst_lsubst_aux2 in al; try lia; eauto 2 with slow).
             rw <- @cl_lsubst_lsubst_aux; eauto 2 with slow.
             rw @lsubst_sub_trivial in h; simpl;
             try (rw @sub_free_vars_var_ren); try (rw disjoint_singleton_r);
             eauto with slow.
 
-          - rw <- (lsubst_lsubst_aux2 t1) in al; try omega; eauto 2 with slow.
+          - rw <- (lsubst_lsubst_aux2 t1) in al; try lia; eauto 2 with slow.
             eapply alpha_eq_trans;[|exact al].
             rw <- (cl_lsubst_lsubst_aux t2); eauto 2 with slow.
             rw <- (cl_lsubst_lsubst_aux (lsubst t2 (var_ren l2 lv))); eauto 2 with slow.
@@ -5348,7 +5347,7 @@ Proof.
             rw @lsubst_sub_trivial; simpl;
             try (rw @sub_free_vars_var_ren); try (rw disjoint_singleton_r);
             eauto 2 with slow.
-            rw <- @lsubst_lsubst_aux2; try omega; eauto 2 with slow.
+            rw <- @lsubst_lsubst_aux2; try lia; eauto 2 with slow.
         }
 Qed.
 

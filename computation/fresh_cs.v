@@ -67,8 +67,8 @@ Proof.
   induction v1; simpl in *; introv h1 h2; tcsp.
   destruct v2; simpl in *; tcsp.
   destruct v3; simpl in *; tcsp.
-  repndors; repnd; tcsp; try (complete (left; omega)).
-  right; dands; auto; try omega.
+  repndors; repnd; tcsp; try (complete (left; lia)).
+  right; dands; auto; try lia.
   eapply IHv1; eauto.
 Qed.
 Hint Resolve CSLe_trans : cs.
@@ -81,8 +81,8 @@ Proof.
     destruct v3; simpl in *; tcsp. }
   destruct v2; simpl in *; tcsp.
   destruct v3; simpl in *; tcsp.
-  repndors; repnd; tcsp; try (complete (left; omega)).
-  right; dands; auto; try omega.
+  repndors; repnd; tcsp; try (complete (left; lia)).
+  right; dands; auto; try lia.
   eapply IHv1; eauto.
 Qed.
 Hint Resolve CSLt_trans : cs.
@@ -95,8 +95,8 @@ Proof.
     destruct v3; simpl in *; tcsp. }
   destruct v2; simpl in *; tcsp.
   destruct v3; simpl in *; tcsp.
-  repndors; repnd; tcsp; try (complete (left; omega)).
-  right; dands; auto; try omega.
+  repndors; repnd; tcsp; try (complete (left; lia)).
+  right; dands; auto; try lia.
   eapply IHv1; eauto.
 Qed.
 Hint Resolve CSLe_CSLt_trans : cs.
@@ -138,7 +138,7 @@ Lemma not_CSLt_refl :
   forall v, ~ CSLt v v.
 Proof.
   induction v; introv h; simpl in *; tcsp.
-  repndors; repnd; tcsp; try omega.
+  repndors; repnd; tcsp; try lia.
 Qed.
 
 Lemma CSLe_implies_CSLt :
@@ -263,9 +263,9 @@ Proof.
   apply Decidable.not_and in h; auto;
     [|destruct (eq_nat_dec (Ascii.nat_of_ascii a) (Ascii.nat_of_ascii a0)); tcsp].
   repndors; tcsp.
-  - left; omega.
+  - left; lia.
   - destruct (eq_nat_dec (Ascii.nat_of_ascii a) (Ascii.nat_of_ascii a0)); tcsp.
-    left; omega.
+    left; lia.
 Qed.
 
 Lemma sort_cs_issorted_cs :

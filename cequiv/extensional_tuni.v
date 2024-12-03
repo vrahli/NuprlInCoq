@@ -63,7 +63,7 @@ Proof.
     apply reduces_to_if_step.
     csunf; simpl.
     unfold compute_step_tuni; simpl.
-    destruct (Z_le_gt_dec 0 (Z.of_nat n)); try omega.
+    destruct (Z_le_gt_dec 0 (Z.of_nat n)); try lia.
     rw Znat.Nat2Z.id; sp.
 
   - apply isexc_implies in Hcv3; auto; exrepnd; subst; GC.
@@ -76,9 +76,3 @@ Proof.
     apply reduces_to_prinarg; auto.
     apply reduces_to_if_step; reflexivity.
 Qed.
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/")
-*** End:
-*)

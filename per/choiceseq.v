@@ -278,9 +278,9 @@ Lemma select_follow_coq_law {o} :
     -> select k (follow_coq_law p i f) = Some (f (k + p)).
 Proof.
   induction k; introv h; simpl in *.
-  - destruct i; simpl in *; try omega; auto.
-  - destruct i; simpl in *; try omega; auto.
-    rewrite IHk; try omega.
+  - destruct i; simpl in *; try lia; auto.
+  - destruct i; simpl in *; try lia; auto.
+    rewrite IHk; try lia.
     rewrite <- plus_n_Sm; auto.
 Qed.
 
@@ -342,13 +342,12 @@ Proof.
   - applydup safe in d.
     rewrite select_app_l; auto.
 
-  - rewrite select_app_r; try omega.
+  - rewrite select_app_r; try lia.
     pose proof (Nat.le_exists_sub (length vals) i) as q.
-    autodimp q hyp; try omega.
+    autodimp q hyp; try lia.
     exrepnd; subst.
     rewrite Nat.add_sub.
-    rewrite le_plus_minus_r in j; try omega.
-    rewrite select_follow_coq_law; auto; try omega.
+    rewrite select_follow_coq_law; auto; try lia.
 Qed.
 Hint Resolve safe_library_entry_extend_library_entry_following_coq_law_upto : slow.
 
@@ -405,10 +404,10 @@ Lemma select_follow_coq_low_ite {o} :
     else None.
 Proof.
   induction k; introv; simpl in *.
-  - destruct i; simpl in *; try omega; auto.
-  - destruct i; simpl in *; try omega; auto.
-    rewrite IHk; try omega.
-    boolvar; try omega; auto.
+  - destruct i; simpl in *; try lia; auto.
+  - destruct i; simpl in *; try lia; auto.
+    rewrite IHk; try lia.
+    boolvar; try lia; auto.
     rewrite <- plus_n_Sm; auto.
 Qed.
 
@@ -427,10 +426,10 @@ Proof.
   destruct restr; simpl in *; tcsp;[].
 
   destruct (le_dec (length vals) n) as [z|z];
-    [|rewrite select_app_l in i; try omega; tcsp];[].
+    [|rewrite select_app_l in i; try lia; tcsp];[].
 
   rewrite select_app_r in i; auto.
-  rewrite select_follow_coq_low_ite in i; try omega.
+  rewrite select_follow_coq_low_ite in i; try lia.
   boolvar; ginv; cpx.
   rewrite Nat.sub_add; auto.
 
@@ -612,10 +611,10 @@ Proof.
   introv s.
   destruct (lt_dec n0 (length cse_vals)) as [d|d].
   - rewrite select_app_l in s; auto.
-  - rewrite select_app_r in s; try omega; simpl in *.
+  - rewrite select_app_r in s; try lia; simpl in *.
     rewrite select_follow_coq_low_ite in s; boolvar; tcsp; ginv.
     inversion s; subst; GC.
-    rewrite minus_plus_n; auto; try omega.
+    rewrite minus_plus_n; auto; try lia.
 Qed.
 Hint Resolve is_default_choice_seq_entry_extend_choice_seq_entry_following_coq_law_upto : slow.
 
@@ -748,12 +747,12 @@ Proof.
     rewrite find_cs_same_extend_library_following_coq_law_upto; allrw.
     simpl.
     rewrite find_value_of_cs_at_vals_as_select.
-    rewrite select_app_r; try omega;[].
-    rewrite select_follow_coq_low_ite; boolvar; try omega.
+    rewrite select_app_r; try lia;[].
+    rewrite select_follow_coq_low_ite; boolvar; try lia.
 
-    { rewrite Nat.sub_add; auto; try omega. }
+    { rewrite Nat.sub_add; auto; try lia. }
 
-    { remember (length vals) as lv; destruct lv; simpl in *; try omega. }
+    { remember (length vals) as lv; destruct lv; simpl in *; try lia. }
 Qed.
 
 Fixpoint map_in {A B} (l : list A) : (forall a : A, List.In a l -> B) -> list B :=
@@ -828,11 +827,11 @@ Proof.
     inversion h.
   - apply leb_correct in e.
     destruct n; allsimpl.
-    + left; omega.
+    + left; lia.
     + apply leb_complete in e.
       apply IHm in e; dorn e.
-      left; omega.
-      right; omega.
+      left; lia.
+      right; lia.
 Qed.
 
 Lemma P_search :
@@ -860,7 +859,7 @@ Proof.
       + left; exists (z,0); simpl; sp.
 
       + right; introv e.
-        assert (n = 0) by omega; subst; simpl; sp.
+        assert (n = 0) by lia; subst; simpl; sp.
 
     - dorn IHk.
 
@@ -893,7 +892,7 @@ Proof.
       + left; exists (0,n); simpl; sp.
 
       + right; introv e.
-        assert (z = 0) by omega; subst; simpl; sp.
+        assert (z = 0) by lia; subst; simpl; sp.
 
     - dorn IHk.
 
@@ -921,7 +920,7 @@ Proof.
       dorn h.
       + left; exists (0,0); simpl; sp.
       + right; introv e1 e2.
-        assert (z = 0) by omega; assert (n = 0) by omega; subst; simpl; sp.
+        assert (z = 0) by lia; assert (n = 0) by lia; subst; simpl; sp.
     - dorn IHk.
       + left; auto.
       + pose proof (hyp1 (S k) (S k)) as h1.
@@ -944,7 +943,7 @@ Proof.
   { left; auto. }
   right.
   introv e; subst.
-  apply hyp; omega.
+  apply hyp; lia.
 Qed.
 
 Definition inv_before_witness :
@@ -986,7 +985,7 @@ Proof.
     destruct lbt1; try (complete (right; intro k; inversion k)).
     assert ({Z.of_nat z < z0} + {Z.of_nat z > z0} + {Z.of_nat z = z0})%Z as h by (apply Z_dec).
     destruct h as [ h | h ]; subst.
-    + destruct h as [ h | h ]; sp; right; sp; inversion H; omega.
+    + destruct h as [ h | h ]; sp; right; sp; inversion H; lia.
     + left; sp.
 Qed.
 
@@ -1177,14 +1176,14 @@ Proof.
 
   destruct (lt_dec k (length vals)) as [z|z].
 
-  + rewrite select_app_l; auto; allrw length_app; try omega;[].
-    rewrite select_app_l; auto; allrw length_app; try omega;[].
+  + rewrite select_app_l; auto; allrw length_app; try lia;[].
+    rewrite select_app_l; auto; allrw length_app; try lia;[].
     apply find_cs_some_implies_entry_in_library in i.
     apply safe in i; simpl in i; repnd.
     apply i; auto.
 
   + pose proof (Nat.le_exists_sub (length vals) k) as q.
-    autodimp q hyp; try omega.
+    autodimp q hyp; try lia.
     exrepnd; subst.
 
     show_hyp Heqm.
@@ -1192,11 +1191,11 @@ Proof.
     rewrite <- plus_Sn_m.
     rewrite Nat.add_sub.
 
-    rewrite select_app_l; allrw length_app; allrw @length_follow_coq_law; try omega;[].
-    rewrite select_app_r; try omega;[].
+    rewrite select_app_l; allrw length_app; allrw @length_follow_coq_law; try lia;[].
+    rewrite select_app_r; try lia;[].
 
     rewrite Nat.add_sub.
-    rewrite select_follow_coq_law; auto; try omega.
+    rewrite select_follow_coq_law; auto; try lia.
 Qed.
 
 
@@ -1459,10 +1458,10 @@ Proof.
   induction k; introv i; simpl in *; tcsp.
   repndors; subst; tcsp.
 
-  - exists 0; dands; tcsp; try omega.
+  - exists 0; dands; tcsp; try lia.
 
   - apply IHk in i; exrepnd; subst; clear IHk.
-    exists (S n); simpl; dands; tcsp; try omega.
+    exists (S n); simpl; dands; tcsp; try lia.
 Qed.
 
 Lemma inf_choice_sequence_vals_extend_inf_choice_seq_vals2choice_seq_vals {o} :
@@ -1615,9 +1614,9 @@ Proof.
   { rewrite select_app_left in i; auto.
     apply ext0; apply safe; auto. }
 
-  { rewrite select_app_r in i; try omega.
+  { rewrite select_app_r in i; try lia.
     apply ext2 in i.
-    rewrite le_plus_minus_r in i; auto; try omega. }
+    rewrite Nat.add_comm in i; rewrite Nat.sub_add in i; auto; try lia. }
 Qed.
 Hint Resolve extend_library_entry_lawless_upto_preserves_safe_library_entry : slow.
 
@@ -1676,17 +1675,17 @@ Proof.
 
   - boolvar.
 
-    + destruct l3; simpl in *; ginv; try omega.
+    + destruct l3; simpl in *; ginv; try lia.
       apply le_S_n in l.
       inversion h; subst; clear h.
       match goal with
       | [ H : _ = _ |- _ ] => rename H into h
       end.
-      apply IHl1 in h; boolvar; try omega.
+      apply IHl1 in h; boolvar; try lia.
       exrepnd; subst.
       exists l5; dands; auto.
 
-    + assert (length l3 < S (length l1)) as q by omega; clear n.
+    + assert (length l3 < S (length l1)) as q by lia; clear n.
       destruct l3; simpl in *; ginv.
 
       * exists l1; dands; auto.
@@ -1695,7 +1694,7 @@ Proof.
         match goal with
         | [ H : _ = _ |- _ ] => rename H into h
         end.
-        apply IHl1 in h; boolvar; try omega.
+        apply IHl1 in h; boolvar; try lia.
         exrepnd; subst.
         exists l; dands; auto.
 Qed.
@@ -2332,9 +2331,9 @@ Lemma select_lt_length :
     k < length l
     -> exists a, select k l = Some a.
 Proof.
-  induction l; introv h; simpl in *; try omega.
+  induction l; introv h; simpl in *; try lia.
   destruct k; simpl in *; eauto.
-  apply IHl; try omega.
+  apply IHl; try lia.
 Qed.
 
 Lemma select_some_implies_list_in :
@@ -2342,7 +2341,7 @@ Lemma select_some_implies_list_in :
     select k l = Some a
     -> List.In a l.
 Proof.
-  induction l; introv h; simpl in *; try omega; destruct k; simpl in *; eauto; ginv; tcsp.
+  induction l; introv h; simpl in *; try lia; destruct k; simpl in *; eauto; ginv; tcsp.
 Qed.
 
 Lemma extend_library_lawless_upto_implies_right {o} :
@@ -2405,14 +2404,14 @@ Proof.
   destruct (le_dec (length vals) k) as [d1|d1].
 
   - rewrite select_app_r; auto.
-    pose proof (select_lt_length vals0 (k - length vals)) as h; autodimp h hyp; try omega;[].
+    pose proof (select_lt_length vals0 (k - length vals)) as h; autodimp h hyp; try lia;[].
     exrepnd; allrw.
     apply ext4 in h0; apply ext2 in h0.
-    rewrite le_plus_minus_r in h0; try omega;[].
+    rewrite Nat.add_comm in h0; rewrite Nat.sub_add in h0; try lia;[].
     eexists; dands; eauto.
 
-  - rewrite select_app_l; auto; try omega.
-    pose proof (select_lt_length vals k) as h; autodimp h hyp; try omega;[].
+  - rewrite select_app_l; auto; try lia.
+    pose proof (select_lt_length vals k) as h; autodimp h hyp; try lia;[].
     exrepnd; allrw.
     exists a; dands; auto.
     apply safe in i; simpl in i; apply i; auto.

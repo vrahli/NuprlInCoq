@@ -56,7 +56,7 @@ Proof.
      apply @computes_atmost_ksteps_prinarg with (lbt:= tl)
       (op:=no) in H1c
     end.
-    exrepnd. exists j. dands; spc. omega.
+    exrepnd. exists j. dands; spc. lia.
   - rename H2c into Hck. rename k2 into k.
     destruct ntp2 as [|ntp2o ntp2lbt];
       [rw @compute_at_most_steps_var in Hck; spc; fail|].
@@ -69,9 +69,9 @@ Proof.
 
     dopid csko as [cskoc| cskon | cskexc | cskabs] Case.
     + Case "Can".
-      simpl in Hck. inverts Hck. exists j; sp. omega.
+      simpl in Hck. inverts Hck. exists j; sp. lia.
     + Case "NCan".
-      exists (S j). dands;[|omega].
+      exists (S j). dands;[|lia].
       allsimpl.
       rw XX1.
       unfold iswfpk in H1v; destruct a.
@@ -84,9 +84,9 @@ Proof.
         unfold co_wf in Heqh; allrw @get_param_from_cop_pk2can; ginv.
     + Case "Exc".
       rw @compute_step_exception in Hck; sp; inversion Hck; subst; GC.
-      exists j; sp; omega.
+      exists j; sp; lia.
     + Case "Abs".
-      exists (S j). dands;[|omega].
+      exists (S j). dands;[|lia].
       simpl.
       rw XX1.
       unfold iswfpk in H1v; destruct a.
@@ -141,7 +141,7 @@ Proof.
      apply @computes_atmost_ksteps_prinarg with (lbt:= tl)
       (op:=no) in H1c
     end.
-    exrepnd. exists j. dands; spc. omega.
+    exrepnd. exists j. dands; spc. lia.
   - rename H2c into Hck. rename k2 into k.
     destruct ntp2 as [|ntp2o ntp2lbt];
       [rw @compute_at_most_steps_var in Hck; spc; fail|].
@@ -155,18 +155,18 @@ Proof.
 
     dopid csko as [cskoc| cskon | cskexc | cskabs] Case.
     + Case "Can".
-      simpl in Hck. inverts Hck. exists j; sp. omega.
+      simpl in Hck. inverts Hck. exists j; sp. lia.
     + Case "NCan".
-      exists (S j). dands;[|omega].
+      exists (S j). dands;[|lia].
       simpl.
       rw XX1.
       csunf; simpl.
       rw Hck;sp.
     + Case "Exc".
       rw @compute_step_exception in Hck; sp; inversion Hck; subst; GC.
-      exists j; sp; omega.
+      exists j; sp; lia.
     + Case "Abs".
-      exists (S j). dands;[|omega].
+      exists (S j). dands;[|lia].
       simpl.
       rw XX1.
       csunf; simpl.

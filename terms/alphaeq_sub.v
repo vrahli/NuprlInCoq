@@ -141,8 +141,8 @@ Proof.
   introv; unfold bin_rel_nterm, binrel_list; simpl.
   split; intro k; repnd; cpx; dands; auto.
   - introv i.
-    pose proof (k (S n)) as h; autodimp h hyp; omega.
-  - pose proof (k 0) as h; autodimp h hyp; omega.
+    pose proof (k (S n)) as h; autodimp h hyp; lia.
+  - pose proof (k 0) as h; autodimp h hyp; lia.
   - introv i.
     destruct n; cpx.
 Qed.
@@ -168,8 +168,8 @@ Proof.
   introv; unfold bin_rel_nterm, binrel_list; simpl.
   split; intro k; repnd; cpx; dands; auto.
   - introv i.
-    pose proof (k (S n)) as h; autodimp h hyp; omega.
-  - pose proof (k 0) as h; autodimp h hyp; allsimpl; try omega.
+    pose proof (k (S n)) as h; autodimp h hyp; lia.
+  - pose proof (k 0) as h; autodimp h hyp; allsimpl; try lia.
   - introv i.
     destruct n; cpx.
 Qed.

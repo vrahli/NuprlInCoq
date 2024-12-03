@@ -172,7 +172,7 @@ Lemma not_VarLt_refl :
   forall v, ~ VarLt v v.
 Proof.
   induction v; introv h; simpl in *; tcsp.
-  repndors; repnd; tcsp; try omega.
+  repndors; repnd; tcsp; try lia.
 Qed.
 
 Lemma VarLt_dec :
@@ -205,9 +205,9 @@ Proof.
   apply Decidable.not_and in h; auto;
     [|destruct (eq_nat_dec (Ascii.nat_of_ascii a) (Ascii.nat_of_ascii a0)); tcsp].
   repndors; tcsp.
-  - left; omega.
+  - left; lia.
   - destruct (eq_nat_dec (Ascii.nat_of_ascii a) (Ascii.nat_of_ascii a0)); tcsp.
-    left; omega.
+    left; lia.
 Qed.
 
 Lemma VarLe_trans :
@@ -216,8 +216,8 @@ Proof.
   induction v1; simpl in *; introv h1 h2; tcsp.
   destruct v2; simpl in *; tcsp.
   destruct v3; simpl in *; tcsp.
-  repndors; repnd; tcsp; try (complete (left; omega)).
-  right; dands; auto; try omega.
+  repndors; repnd; tcsp; try (complete (left; lia)).
+  right; dands; auto; try lia.
   eapply IHv1; eauto.
 Qed.
 Hint Resolve VarLe_trans : var.
@@ -230,8 +230,8 @@ Proof.
     destruct v3; simpl in *; tcsp. }
   destruct v2; simpl in *; tcsp.
   destruct v3; simpl in *; tcsp.
-  repndors; repnd; tcsp; try (complete (left; omega)).
-  right; dands; auto; try omega.
+  repndors; repnd; tcsp; try (complete (left; lia)).
+  right; dands; auto; try lia.
   eapply IHv1; eauto.
 Qed.
 Hint Resolve VarLt_trans : var.
@@ -244,8 +244,8 @@ Proof.
     destruct v3; simpl in *; tcsp. }
   destruct v2; simpl in *; tcsp.
   destruct v3; simpl in *; tcsp.
-  repndors; repnd; tcsp; try (complete (left; omega)).
-  right; dands; auto; try omega.
+  repndors; repnd; tcsp; try (complete (left; lia)).
+  right; dands; auto; try lia.
   eapply IHv1; eauto.
 Qed.
 Hint Resolve VarLe_VarLt_trans : var.
@@ -1139,7 +1139,7 @@ Proof.
   rewrite fold_assert in Heqb.
   rewrite assert_nullb in Heqb.
   rewrite null_iff_nil in Heqb; subst; allsimpl; sp.
-  apply maxl_prop in H1; omega.
+  apply maxl_prop in H1; lia.
 Qed.
 *)
 
@@ -1770,8 +1770,8 @@ Proof.
     destruct v3; simpl in *; tcsp. }
   destruct v2; simpl in *; tcsp.
   destruct v3; simpl in *; tcsp.
-  repndors; repnd; tcsp; try (complete (left; omega)).
-  right; dands; auto; try omega.
+  repndors; repnd; tcsp; try (complete (left; lia)).
+  right; dands; auto; try lia.
   eapply IHv1; eauto.
 Qed.
 Hint Resolve VarLt_VarLe_trans : var.

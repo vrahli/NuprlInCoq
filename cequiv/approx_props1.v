@@ -306,7 +306,7 @@ Proof.
     applydup comp0 in i.
     unfold blift; unfold blift in i0.
     exrepnd.
-    repeat (onerw @selectbt_map; auto; try omega).
+    repeat (onerw @selectbt_map; auto; try lia).
     remember (selectbt tl_subterms n) as b1.
     remember (selectbt tr_subterms n) as b2.
 
@@ -515,14 +515,14 @@ Proof.
   allunfold @approx_or_bts.
   allunfold @lblift; repnd.
   allunfold @alpha_eq_bterms; repnd.
-  dands; tcsp; try omega.
+  dands; tcsp; try lia.
   introv i.
   applydup apr in i.
 
   assert (alpha_eq_bterm (selectbt bs2 n) (selectbt bs3 n)) as a.
   { apply aeq.
     unfold selectbt.
-    apply in_nth_combine; auto; try omega. }
+    apply in_nth_combine; auto; try lia. }
 
   eapply blift_alpha_fun_r; eauto with slow.
 Qed.
@@ -572,13 +572,13 @@ Proof.
     eapply compute_to_value_alpha in comp1; eauto 3 with slow; exrepnd.
     applydup @alpha_eq_oterm_implies_combine in comp2; exrepnd; subst.
     exists bs'; dands; auto.
-    allunfold @lblift; repnd; dands; auto; try omega.
+    allunfold @lblift; repnd; dands; auto; try lia.
     introv i.
     applydup comp0 in i.
     allunfold @blift; exrepnd.
     pose proof (comp4 (selectbt tr_subterms n) (selectbt bs' n)) as h.
     autodimp h hyp.
-    { unfold selectbt; apply in_nth_combine; auto; try omega. }
+    { unfold selectbt; apply in_nth_combine; auto; try lia. }
 
     exists lv nt1 nt2; dands; eauto 3 with slow.
 
@@ -695,14 +695,14 @@ Proof.
     apply cl2 in comp1; clear cl2.
     exrepnd.
     exists tr_subterms; dands; auto.
-    allunfold @lblift; repnd; dands; auto; try omega.
+    allunfold @lblift; repnd; dands; auto; try lia.
     introv i.
     rw comp3 in i.
     applydup comp0 in i; clear comp0.
     allunfold @blift; exrepnd.
     pose proof (comp2 (selectbt tl_subterms n) (selectbt bs' n)) as h.
     autodimp h hyp.
-    { unfold selectbt; apply in_nth_combine; auto; try omega. }
+    { unfold selectbt; apply in_nth_combine; auto; try lia. }
 
     exists lv nt1 nt2; dands; eauto 3 with slow.
 
@@ -1112,8 +1112,8 @@ Proof.
     introv i.
     pose proof (apr3 n i) as bl; clear apr3.
 
-    repeat (rw @selectbt_lsubst_bterms_aux; auto; try omega).
-    repeat (rw @selectbt_lsubst_bterms_aux in bl; auto; try omega).
+    repeat (rw @selectbt_lsubst_bterms_aux; auto; try lia).
+    repeat (rw @selectbt_lsubst_bterms_aux in bl; auto; try lia).
 
     remember (selectbt bs n) as b1.
     remember (selectbt bs'' n) as b2.
@@ -1139,7 +1139,7 @@ Proof.
       assert (subset (get_utokens_b b2) (get_utokens_bs bs'')) as ss.
       { introv k; unfold get_utokens_bs; rw lin_flat_map.
         exists (selectbt bs'' n); rw <- Heqb2; dands; auto.
-        rw Heqb2; apply selectbt_in; auto; try omega. }
+        rw Heqb2; apply selectbt_in; auto; try lia. }
       eapply subset_disjoint_r;[|exact ss].
       eapply subset_disjoint_r;[|exact q4].
       eapply subset_disjoint_r;[|exact ss2].
@@ -1399,7 +1399,7 @@ XXXXXXXXXXXx
       assert (subset (free_vars_bterm b2) (free_vars_bterms bs'')) as ss.
       { unfold free_vars_bterms.
         apply subsetSingleFlatMap; rw Heqb2.
-        apply selectbt_in; auto; try omega. }
+        apply selectbt_in; auto; try lia. }
       eapply subset_disjoint;[exact ss|].
       apply disjoint_remove_nvars_l.
       erewrite <- free_vars_bterms_lsubst_bterms_aux_nrut_sub; eauto.
@@ -1465,12 +1465,12 @@ XXXXXXXXXXXx
       pose proof (aebs2 (selectbt tl_subterms n) (selectbt (lsubst_bterms_aux bs sub2) n)) as h.
       unfold selectbt, lsubst_bterms_aux in h.
       autodimp h hyp.
-      { apply in_nth_combine; allrw map_length; auto; try omega. }
+      { apply in_nth_combine; allrw map_length; auto; try lia. }
       rw (@map_nth2 (@BTerm o) (@BTerm o) (@default_bt o)) in h; tcsp.
       unfold selectbt in Heqb1; rw <- Heqb1 in h.
       pose proof (comp (nth n tl_subterms default_bt)) as k.
       autodimp k hyp.
-      { apply nth_in; auto; try omega. }
+      { apply nth_in; auto; try lia. }
       apply alpha_eq_bterm_preserves_isprogram_bt in h; auto.
 
     }
@@ -1749,7 +1749,7 @@ Proof.
     applydup comp0 in i.
     unfold blift; unfold blift in i0.
     exrepnd.
-    repeat (onerw @selectbt_map; auto; try omega).
+    repeat (onerw @selectbt_map; auto; try lia).
     remember (selectbt tl_subterms n) as b1.
     remember (selectbt tr_subterms n) as b2.
 
@@ -2103,7 +2103,7 @@ Proof.
     applydup comp0 in i.
     unfold blift; unfold blift in i0.
     exrepnd.
-    repeat (onerw @selectbt_map; auto; try omega).
+    repeat (onerw @selectbt_map; auto; try lia).
     remember (selectbt tl_subterms n) as b1.
     remember (selectbt tr_subterms n) as b2.
 
@@ -2247,7 +2247,7 @@ Proof.
     applydup comp0 in i.
     unfold blift; unfold blift in i0.
     exrepnd.
-    repeat (onerw @selectbt_map; auto; try omega).
+    repeat (onerw @selectbt_map; auto; try lia).
     remember (selectbt tl_subterms n) as b1.
     remember (selectbt tr_subterms n) as b2.
 

@@ -182,7 +182,7 @@ Proof.
   allrw @equality_in_fun; repnd; dands; eauto 3 with slow.
   { apply type_mkc_natk.
     apply in_ext_implies_all_in_ex_bar; introv y.
-    exists (Z.of_nat k); spcast; eauto 3 with slow. }
+    exists (Z.of_nat n0); spcast; eauto 3 with slow. }
 
   introv x en.
   apply equality_natk_to_tnat in en; apply e in en; auto.
@@ -215,11 +215,11 @@ Proof.
   introv e.
   unfold equality_of_nat in e; exrepnd; spcast.
   allrw @computes_to_valc_iff_reduces_in_atmost_k_stepsc; exrepnd.
-  exists (Peano.max k1 k0); exists k; dands; spcast.
-  - eapply reduces_in_atmost_k_stepsc_le;[|idtac|exact e4]; auto;
-    apply Nat.le_max_r; auto.
-  - eapply reduces_in_atmost_k_stepsc_le;[|idtac|exact e2]; auto;
+  exists (Peano.max k k0); exists n; dands; spcast.
+  - eapply reduces_in_atmost_k_stepsc_le;[|idtac|exact e4]; auto.
     apply Nat.le_max_l; auto.
+  - eapply reduces_in_atmost_k_stepsc_le;[|idtac|exact e2]; auto.
+    apply Nat.le_max_r; auto.
 Qed.
 
 Lemma equality_of_nat2_implies_nat {o} :

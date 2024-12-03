@@ -383,7 +383,7 @@ Proof.
       unfold find_cs_value_at.
       apply entry_in_library_implies_find_cs_some in blib1; allrw.
       rewrite find_value_of_cs_at_is_select; simpl.
-      rewrite select_ntimes; boolvar; try omega; [];auto.
+      rewrite select_ntimes; boolvar; try lia; [];auto.
     }
 
     eapply cequivc_preserving_equality in q1;
@@ -442,7 +442,7 @@ Proof.
       unfold find_cs_value_at.
       apply entry_in_library_implies_find_cs_some in blib1; allrw.
       rewrite find_value_of_cs_at_is_select; simpl.
-      rewrite select_snoc_eq; autorewrite with slow; boolvar; tcsp; try omega.
+      rewrite select_snoc_eq; autorewrite with slow; boolvar; tcsp; try lia.
     }
 
     eapply inhabited_type_respects_cequivc;

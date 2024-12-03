@@ -390,7 +390,7 @@ Proof.
   apply computes_to_valc_isvalue_eq in e3; eauto 3 with slow.
   rw @mkc_nat_eq in e3; ginv.
 
-  assert (m < n) as ltm by omega.
+  assert (m < n) as ltm by lia.
   clear e1.
 
   apply equality_in_tnat.
@@ -490,13 +490,13 @@ Proof.
 
   - destruct entry.
     destruct cse_restriction; repnd; exrepnd; subst; ginv;[].
-    rewrite length_app; allrw; omega.
+    rewrite length_app; allrw; lia.
 
   - unfold correct_restriction in *.
     subst.
     unfold is_primitive_kind in *.
     destruct name0 as [name kd]; simpl in *.
-    destruct kd; subst; boolvar; tcsp; try omega.
+    destruct kd; subst; boolvar; tcsp; try lia.
 Qed.
 Hint Resolve cs_entry_in_library_lawless_upto_implies_length_ge : slow.
 
@@ -551,7 +551,7 @@ Proof.
       * apply cor2 in sel; auto.
         eauto 3 with slow.
 
-      * apply cor in sel; auto; try omega.
+      * apply cor in sel; auto; try lia.
 
   - unfold correct_restriction in *.
     subst.
@@ -580,7 +580,7 @@ Proof.
   dands; eauto 3 with slow.
 Qed.
 
-Hint Rewrite Nat2Z.id : slow.
+Hint Rewrite Znat.Nat2Z.id : slow.
 
 Lemma choice_sequence_vals_extends_implies_select_some {o} :
   forall (vals1 vals2 : @ChoiceSeqVals o) m t,
@@ -613,10 +613,10 @@ Proof.
   pose proof (extend_library_lawless_upto_implies_exists_nats name lib' lib'' entry k) as q.
   repeat (autodimp q hyp); exrepnd.
   pose proof (q1 m (nth m vals mkc_zero)) as w.
-  autodimp w hyp;[apply nth_select1; omega|];[].
+  autodimp w hyp;[apply nth_select1; lia|];[].
   unfold is_nat in w; exrepnd.
   assert (select m vals = Some (mkc_nat i)) as xx.
-  { eapply nth_select3; eauto; unfold ChoiceSeqVal in *; try omega. }
+  { eapply nth_select3; eauto; unfold ChoiceSeqVal in *; try lia. }
 
   exists i.
   spcast.
@@ -625,7 +625,7 @@ Proof.
   eapply reduces_to_if_split2;[csunf; simpl; reflexivity|].
   apply reduces_to_if_step.
   csunf; simpl.
-  unfold compute_step_eapply; simpl; boolvar; try omega;[].
+  unfold compute_step_eapply; simpl; boolvar; try lia;[].
   autorewrite with slow.
 
   eapply lib_extends_preserves_find_cs in q0;[|eauto].
@@ -700,7 +700,6 @@ Proof.
   unfold cequivc; simpl.
   eapply cequiv_trans;[apply cequiv_beta; eauto 3 with slow;compute; tcsp|];[].
   unfsubst; simpl; fold_terms.
-  apply cequiv_refl; compute; fold_terms; dands; eauto 3 with slow.
 Qed.
 
 Lemma nat2all_in_ex_bar2bar {o} :
@@ -712,7 +711,7 @@ Lemma nat2all_in_ex_bar2bar {o} :
 Proof.
   induction n; introv F.
 
-  { exists (trivial_bar lib); introv h; omega. }
+  { exists (trivial_bar lib); introv h; lia. }
 
   pose proof (IHn lib f) as q.
   autodimp q hyp;[].
@@ -725,7 +724,7 @@ Proof.
 
   { eapply q0; eauto 3 with slow. }
 
-  { assert (m = n) as xx by omega; subst.
+  { assert (m = n) as xx by lia; subst.
     eapply w0; eauto 3 with slow. }
 Qed.
 
@@ -781,7 +780,7 @@ Proof.
 
   destruct l; simpl in *; autorewrite with slow; auto.
   rewrite IHn.
-  boolvar; tcsp; try omega.
+  boolvar; tcsp; try lia.
 Qed.
 
 Hint Rewrite length_snoc : slow.
@@ -807,7 +806,7 @@ Proof.
     introv; autorewrite with slow; introv w; ginv. }
 
   autodimp IHk hyp; exrepnd.
-  pose proof (h k) as h; autodimp h hyp; try omega; exrepnd.
+  pose proof (h k) as h; autodimp h hyp; try lia; exrepnd.
 
   exists (snoc l k0); autorewrite with slow; dands; auto.
   introv h; simpl in *.
@@ -903,7 +902,7 @@ Proof.
   apply computes_to_valc_isvalue_eq in e3; eauto 3 with slow.
   rw @mkc_nat_eq in e3; ginv.
 
-  assert (m < n) as ltm by omega.
+  assert (m < n) as ltm by lia.
   clear e1.
 
   apply equality_in_tnat.
@@ -935,7 +934,7 @@ Proof.
       unfold cterm_is_nth in Heqs0; exrepnd.
       rewrite h in Heqs0; ginv.
 
-    + apply nth_select2 in Heqs; omega.
+    + apply nth_select2 in Heqs; lia.
 
   - applydup sat in h.
     apply cor2 in h0; auto.
@@ -1297,7 +1296,7 @@ Proof.
   assert (compatible_choice_sequence_name 0 name) as comp by eauto 3 with slow.
 
   exists (@mkc_pair o (mkc_choice_seq name) mkc_axiom).
-  exists (extend_seq_to_bar lib safe k name isn).
+  exists (extend_seq_to_bar lib safe n0 name isn).
   introv br ext.
   exists (@mkc_choice_seq o name) (@mkc_axiom o).
   autorewrite with slow.
@@ -1322,17 +1321,17 @@ Proof.
   apply name_in_library_implies_entry_in_library in br2; exrepnd.
   applydup safe' in br2.
 
-  pose proof (extend_library_lawless_upto_implies_exists_nats name lib' lib'' entry k) as q.
+  pose proof (extend_library_lawless_upto_implies_exists_nats name lib' lib'' entry n0) as q.
   repeat (autodimp q hyp); exrepnd.
 
   apply implies_equality_natk2nat_prop.
   introv ltk.
 
   pose proof (q1 m (nth m vals mkc_zero)) as w.
-  autodimp w hyp;[apply nth_select1; omega|];[].
+  autodimp w hyp;[apply nth_select1; lia|];[].
   unfold is_nat in w; exrepnd.
   assert (select m vals = Some (mkc_nat i)) as xx.
-  { eapply nth_select3; eauto; unfold ChoiceSeqVal in *; try omega. }
+  { eapply nth_select3; eauto; unfold ChoiceSeqVal in *; try lia. }
 
   assert (safe_library_entry (lib_cs name (MkChoiceSeqEntry _ vals restr))) as safee.
   { eapply entry_in_library_implies_safe_library_entry; eauto 3 with slow. }
@@ -1340,7 +1339,7 @@ Proof.
 
   pose proof (enf0 m i) as enf0.
   autodimp enf0 hyp;
-    [eapply satisfies_cs_kind_seq_implies_select_iff; eauto; try omega|];[].
+    [eapply satisfies_cs_kind_seq_implies_select_iff; eauto; try lia|];[].
   repnd; spcast.
 
   exists i.
@@ -1351,7 +1350,7 @@ Proof.
   eapply reduces_to_if_split2;[csunf; simpl; reflexivity|].
   apply reduces_to_if_step.
   csunf; simpl.
-  unfold compute_step_eapply; simpl; boolvar; try omega;[].
+  unfold compute_step_eapply; simpl; boolvar; try lia;[].
   autorewrite with slow.
 
   eapply lib_extends_preserves_find_cs in q0;[|eauto].
@@ -1402,8 +1401,8 @@ Proof.
   apply in_ext_implies_all_in_ex_bar.
   introv ext.
   unfold equality_of_nat.
-  pose proof (imp k) as imp; exrepnd.
-  exists k0; dands; spcast; eauto 3 with slow.
+  pose proof (imp n) as imp; exrepnd.
+  exists k; dands; spcast; eauto 3 with slow.
 Qed.
 
 Lemma implies_member_nat2nat_bar2 {o} :
@@ -1442,11 +1441,11 @@ Proof.
      [apply ccequivc_ext_refl|apply computes_to_valc_implies_ccequivc_ext;eauto]
     |].
 
-  pose proof (imp k) as imp; exrepnd.
+  pose proof (imp n) as imp; exrepnd.
   apply equality_in_tnat.
   eapply all_in_ex_bar_modus_ponens1;[|exact imp]; clear imp; introv ext imo; exrepnd; spcast.
   unfold equality_of_nat.
-  exists k0; dands; spcast; eauto 3 with slow.
+  exists k; dands; spcast; eauto 3 with slow.
 Qed.
 
 Lemma implies_member_nat2nat_bar2_iff {o} :
@@ -1524,10 +1523,10 @@ Proof.
   pose proof (extend_library_lawless_upto_implies_exists_nats name lib' lib'' entry (S k)) as q.
   repeat (autodimp q hyp); exrepnd;[].
   pose proof (q1 k (nth k vals mkc_zero)) as w.
-  autodimp w hyp;[apply nth_select1; try omega|];[].
+  autodimp w hyp;[apply nth_select1; try lia|];[].
   unfold is_nat in w; exrepnd.
   assert (select k vals = Some (mkc_nat i)) as xx.
-  { eapply nth_select3; eauto; unfold ChoiceSeqVal in *; try omega. }
+  { eapply nth_select3; eauto; unfold ChoiceSeqVal in *; try lia. }
 
   exists i.
   spcast.
@@ -1536,7 +1535,7 @@ Proof.
   eapply reduces_to_if_split2;[csunf; simpl; reflexivity|].
   apply reduces_to_if_step.
   csunf; simpl.
-  unfold compute_step_eapply; simpl; boolvar; try omega;[].
+  unfold compute_step_eapply; simpl; boolvar; try lia;[].
   autorewrite with slow.
 
   eapply lib_extends_preserves_find_cs in q0;[|eauto].

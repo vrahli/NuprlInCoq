@@ -337,7 +337,7 @@ Lemma per_ffdefs_implies_per_bar {o} :
 Proof.
   introv per.
   unfold per_ffdefs in *; exrepnd.
-  exists (trivial_bar lib) (per_ffdefs_eq_bar_lib_per eqa x1).
+  exists (trivial_bar lib) (per_ffdefs_eq_bar_lib_per lib eqa x1).
   dands.
 
   - introv br ext; introv.
@@ -443,7 +443,7 @@ Hint Resolve per_func_ext_implies_per_bar : slow.
 
 Lemma local_per_union_eq_bar {o} :
   forall {lib} (bar : BarLib lib) (eqa eqb : lib-per(lib,o)) t1 t2,
-    per_bar_eq bar (per_union_eq_bar_lib_per eqa eqb) t1 t2
+    per_bar_eq bar (per_union_eq_bar_lib_per lib eqa eqb) t1 t2
     -> per_union_eq_bar lib eqa eqb t1 t2.
 Proof.
   introv alla.
@@ -458,7 +458,7 @@ Proof.
   introv per.
   unfold per_union in *; exrepnd.
 
-  exists (trivial_bar lib) (per_union_eq_bar_lib_per eqa eqb).
+  exists (trivial_bar lib) (per_union_eq_bar_lib_per lib eqa eqb).
   dands.
 
   - introv br ext; introv; simpl in *.
@@ -830,7 +830,7 @@ Lemma per_ffdefs_implies_per_bar_above {o} :
 Proof.
   introv per.
   unfold per_ffdefs in *; exrepnd.
-  exists bar (per_ffdefs_eq_bar_lib_per eqa x1).
+  exists bar (per_ffdefs_eq_bar_lib_per lib eqa x1).
   dands.
 
   - introv br ext; introv.
@@ -954,7 +954,7 @@ Proof.
   introv per.
   unfold per_union in *; exrepnd.
 
-  exists bar (per_union_eq_bar_lib_per eqa eqb).
+  exists bar (per_union_eq_bar_lib_per lib eqa eqb).
   dands.
 
   - introv br ext; introv; simpl in *.

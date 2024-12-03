@@ -837,7 +837,7 @@ Proof.
   repeat (autodimp q hyp);[].
   exrepnd.
 
-  assert (k < m + S k) as ltk by omega.
+  assert (k < m + S k) as ltk by lia.
   remember (m + S k) as m'; clear Heqm'.
   assert (safe_library lib') as safe' by eauto 3 with slow.
   eapply lib_extends_preserves_computes_to_valc in q2;[|eauto];[].

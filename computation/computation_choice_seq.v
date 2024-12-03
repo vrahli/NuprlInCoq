@@ -44,7 +44,7 @@ Proof.
 Qed.
 Hint Resolve eapply_wf_def_mk_choice_seq : slow.
 
-Hint Rewrite Nat2Z.id : slow.
+Hint Rewrite Znat.Nat2Z.id : slow.
 
 Lemma implies_reduces_to_eapply_choice_seq {o} :
   forall lib (f a : @NTerm o) name n v,
@@ -63,7 +63,7 @@ Proof.
   apply reduces_to_if_step.
   csunf; simpl.
   dcwf h; simpl.
-  boolvar; try omega.
+  boolvar; try lia.
   autorewrite with slow; allrw; auto.
 Qed.
 Hint Resolve implies_reduces_to_eapply_choice_seq : slow.
@@ -115,16 +115,16 @@ Proof.
 
     + apply isexc_implies2 in comp2; exrepnd; subst.
       apply reduces_in_atmost_k_steps_if_isvalue_like in comp0; eauto 3 with slow; subst.
-      right; exists 0; dands; eauto 3 with slow; try omega.
+      right; exists 0; dands; eauto 3 with slow; try lia.
       apply reduces_in_atmost_k_steps_refl; eauto 3 with slow.
 
     + apply IHk in comp0; auto.
       repndors; exrepnd.
 
-      * left; exists val n (S i) j; dands; auto; try omega.
+      * left; exists val n (S i) j; dands; auto; try lia.
         rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
 
-      * right; exists (S j); dands; auto; try omega.
+      * right; exists (S j); dands; auto; try lia.
         rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
 Qed.
 

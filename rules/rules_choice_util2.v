@@ -259,7 +259,7 @@ Proof.
   {
     unfold cequiv_bts, lblift; simpl; dands; auto.
     introv h.
-    repeat (destruct n; tcsp; try omega); unfold selectbt; simpl.
+    repeat (destruct n; tcsp; try lia); unfold selectbt; simpl.
 
     - unfold blift.
       exists ([] : list NVar) x0 x; dands; eauto 3 with slow.
@@ -474,7 +474,7 @@ Proof.
 
   clear lib ext.
   rename lib' into  lib.
-  unfold per_props_nat.equality_of_nat in ea; exrepnd; spcast.
+  unfold equality_of_nat in ea; exrepnd; spcast.
 
   eapply equality_respects_cequivc_left;
     [apply ccequivc_ext_sym;apply implies_ccequivc_ext_apply;
@@ -485,7 +485,7 @@ Proof.
      [apply ccequivc_ext_refl|apply computes_to_valc_implies_ccequivc_ext;eauto]
     |].
 
-  pose proof (imp k) as imp; exrepnd.
+  pose proof (imp n) as imp; exrepnd.
   apply equality_in_bool.
   eapply all_in_ex_bar_modus_ponens1;[|exact imp]; clear imp; introv ext imo; exrepnd; spcast.
   unfold equality_of_nat.
@@ -609,10 +609,10 @@ Proof.
   pose proof (extend_library_bool_seq_upto_implies_exists_nats name lib' lib'' entry (S k)) as q.
   repeat (autodimp q hyp); exrepnd;[].
   pose proof (q1 k (nth k vals mkc_zero)) as w.
-  autodimp w hyp;[apply nth_select1; try omega|];[].
+  autodimp w hyp;[apply nth_select1; try lia|];[].
   unfold is_bool in w; exrepnd.
   assert (select k vals = Some (mkc_boolean b)) as xx.
-  { eapply nth_select3; eauto; unfold ChoiceSeqVal in *; try omega. }
+  { eapply nth_select3; eauto; unfold ChoiceSeqVal in *; try lia. }
 
   exists b.
   spcast.
@@ -621,7 +621,7 @@ Proof.
   eapply reduces_to_if_split2;[csunf; simpl; reflexivity|].
   apply reduces_to_if_step.
   csunf; simpl.
-  unfold compute_step_eapply; simpl; boolvar; try omega;[].
+  unfold compute_step_eapply; simpl; boolvar; try lia;[].
   autorewrite with slow.
 
   eapply lib_extends_preserves_find_cs in q0;[|eauto].
@@ -814,7 +814,7 @@ Proof.
     pose proof (safe n v) as q.
     autodimp q hyp.
     { erewrite nth_select1; auto; rewrite q0 at 1; eauto. }
-    apply safe0 in q; auto; try omega.
+    apply safe0 in q; auto; try lia.
   }
   clear safe.
 
@@ -945,7 +945,8 @@ Proof.
     introv q.
     apply in_nth in q; exrepnd.
     pose proof (safe' (length bs + n) v) as q.
-    rewrite select_app_r in q; autorewrite with slow in *; try omega.
+    rewrite select_app_r in q; autorewrite with slow in *; try lia.
+    rewrite (Nat.add_comm _ n) in q; autorewrite with slow in *; try lia.
     autodimp q hyp.
     { erewrite nth_select1; auto; rewrite q0 at 1; eauto. }
     eapply same; eapply i2; eauto.
@@ -1080,7 +1081,7 @@ Proof.
     destruct name as [name kind]; simpl in *.
     unfold choice_sequence_satisfies_restriction in *.
     unfold is_primitive_nat_kind in *; simpl in *.
-    destruct kind; boolvar; subst; simpl in *; repnd; try omega.
+    destruct kind; boolvar; subst; simpl in *; repnd; try lia.
 
     + destruct r; simpl in *; tcsp; repnd.
       apply h0.
@@ -1101,7 +1102,7 @@ Proof.
     destruct name as [name kind]; simpl in *.
     unfold choice_sequence_satisfies_restriction in *.
     unfold is_primitive_nat_kind in *; simpl in *.
-    destruct kind; boolvar; subst; simpl in *; repnd; try omega.
+    destruct kind; boolvar; subst; simpl in *; repnd; try lia.
 Qed.
 Hint Resolve implies_safe_inf_choice_sequence_entry2inf_def : slow.
 
@@ -1345,10 +1346,11 @@ Proof.
     introv q.
     apply in_nth in q; exrepnd.
     pose proof (safe (length l + n) v) as q.
-    rewrite select_app_r in q; autorewrite with slow in *; try omega.
+    rewrite select_app_r in q; autorewrite with slow in *; try lia.
+    rewrite (Nat.add_comm _ n) in q; autorewrite with slow in *; try lia.
     autodimp q hyp.
     { erewrite nth_select1; auto; rewrite q0 at 1; eauto. }
-    apply safe0 in q; auto; try omega.
+    apply safe0 in q; auto; try lia.
   }
   clear safe.
 
@@ -1428,9 +1430,10 @@ Proof.
       apply in_nth in q; exrepnd.
       pose proof (ilib'0 (n + n0) (mkc_boolean v)) as q.
       rewrite map_app in q.
-      rewrite select_app_r in q; autorewrite with slow in *; try omega.
-      rewrite (select_none (n + n0)) in q; autorewrite with slow; try omega.
+      rewrite select_app_r in q; autorewrite with slow in *; try lia.
+      rewrite (select_none (n + n0)) in q; autorewrite with slow; try lia.
       rewrite select_map in q.
+      rewrite (Nat.add_comm _ n0) in q; autorewrite with slow in *; try lia.
       autodimp q hyp.
       { erewrite nth_select1; auto; unfold option_map; rewrite q0 at 1; eauto. }
       autorewrite with slow in q.
@@ -1471,9 +1474,9 @@ Proof.
     unfold natSeq2restrictionPred; autorewrite with slow.
     destruct (lt_dec n0 n) as [xx|xx].
 
-    - rewrite select_ntimes in h; boolvar; tcsp; try omega; ginv; eauto 3 with slow.
+    - rewrite select_ntimes in h; boolvar; tcsp; try lia; ginv; eauto 3 with slow.
 
-    - rewrite select_none in h; ginv; autorewrite with slow; try omega.
+    - rewrite select_none in h; ginv; autorewrite with slow; try lia.
   }
 Qed.
 Hint Resolve safe_library_entry_ff : slow.

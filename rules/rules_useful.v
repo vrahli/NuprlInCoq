@@ -98,7 +98,6 @@ Proof.
   rw remove_nvars_cons; simpl.
   destruct (eq_var_dec x f); subst; sp.
   rw remove_nvars_nil_l.
-  apply disjoint_nil_r.
   rw disjoint_singleton_r; auto.
   sp; cpx.
   apply isprogram_csubst; sp; rw @nt_wf_eq; sp.

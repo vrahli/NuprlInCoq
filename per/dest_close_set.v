@@ -49,7 +49,7 @@ Proof.
   introv per.
 
   unfold per_set in *; exrepnd.
-  exists (trivial_bar lib) (per_set_eq_bar_lib_per eqa eqb).
+  exists (trivial_bar lib) (per_set_eq_bar_lib_per lib eqa eqb).
   dands; auto.
 
   {

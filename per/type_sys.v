@@ -1863,7 +1863,7 @@ Proof.
   introv e.
   allrw @mkc_nat_eq.
   apply mkc_integer_eq in e.
-  apply Nat2Z.inj in e; auto.
+  apply Znat.Nat2Z.inj in e; auto.
 Qed.
 
 Lemma mkc_choice_seq_eq {o} :

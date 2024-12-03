@@ -48,7 +48,7 @@ Proof.
   introv per.
 
   unfold per_product_bar in *; exrepnd.
-  exists (trivial_bar lib) (per_product_eq_bar_lib_per eqa eqb).
+  exists (trivial_bar lib) (per_product_eq_bar_lib_per lib eqa eqb).
   dands; auto.
 
   {

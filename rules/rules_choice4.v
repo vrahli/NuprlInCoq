@@ -417,7 +417,7 @@ Lemma mk_comp_seq2_reduces_to_choice_seq {o} :
          (mk_comp_seq2 w (length w + length l) (mk_apply f (mk_nat (length w))) f)
          (mk_fresh_choice_nat_seq lib (w ++ l)).
 Proof.
-  induction l; introv cond imp; simpl in *; autorewrite with slow nat; try omega.
+  induction l; introv cond imp; simpl in *; autorewrite with slow nat; try lia.
 
   pose proof (imp 0 a) as q; simpl in q; autodimp q hyp.
   autorewrite with slow nat in *.
@@ -427,22 +427,22 @@ Proof.
   destruct (deq_nat (length l) 0) as [d|d].
 
   { apply reduces_to_if_step.
-    csunf; simpl; boolvar; autorewrite with slow in *; try omega.
+    csunf; simpl; boolvar; autorewrite with slow in *; try lia.
     destruct l; simpl in *; tcsp; GC.
     rewrite <- snoc_as_append; auto. }
 
   eapply reduces_to_if_split2.
-  { csunf; simpl; boolvar; try omega; autorewrite with slow; eauto. }
+  { csunf; simpl; boolvar; try lia; autorewrite with slow; eauto. }
   rewrite <- snoc_append_r.
-  rewrite <- plus_Snm_nSm.
+  rewrite Nat.add_succ_r.
 
   pose proof (IHl (snoc w a)) as h.
-  autodimp h hyp; try omega;[].
+  autodimp h hyp; try lia;[].
   allrw length_snoc.
   autodimp h hyp.
   introv s.
   pose proof (imp (S n) i) as z; simpl in z; autodimp z hyp.
-  rewrite <- plus_Snm_nSm in z; auto.
+  rewrite Nat.add_succ_r in z; auto.
 Qed.
 
 Lemma mk_comp_seq1_reduces_to_choice_seq {o} :
@@ -459,17 +459,17 @@ Proof.
   { subst.
     split; eauto 3 with slow.
     apply reduces_to_if_step; csunf; simpl.
-    boolvar; autorewrite with slow in *; try omega.
+    boolvar; autorewrite with slow in *; try lia.
     destruct l; simpl in *; tcsp. }
 
   eapply computes_to_value_step;
-    [|csunf; simpl; boolvar; autorewrite with slow in *; subst; try omega; eauto].
+    [|csunf; simpl; boolvar; autorewrite with slow in *; subst; try lia; eauto].
 
   split; eauto 2 with slow.
 
   pose proof (mk_comp_seq2_reduces_to_choice_seq lib f l []) as q.
   simpl in *; autorewrite with slow in *.
-  repeat (autodimp q hyp); try omega.
+  repeat (autodimp q hyp); try lia.
 Qed.
 
 Lemma ccomputes_to_valc_implies_ex {o} :
@@ -615,7 +615,7 @@ Proof.
     clear lib y safe.
     rename lib' into lib; rename safe' into safe.
 
-    unfold per_props_nat.equality_of_nat in ea; exrepnd; spcast.
+    unfold equality_of_nat in ea; exrepnd; spcast.
 
     eapply tequality_respects_alphaeqc_left;
       [apply alphaeqc_sym; apply implies_alphaeqc_mk_function;
@@ -715,7 +715,7 @@ Proof.
   clear lib y safe.
   rename lib' into lib; rename safe' into safe.
 
-  unfold per_props_nat.equality_of_nat in ea; exrepnd; spcast.
+  unfold equality_of_nat in ea; exrepnd; spcast.
 
   eapply alphaeqc_preserving_equality;
     [|apply alphaeqc_sym; apply implies_alphaeqc_mk_function;
@@ -875,7 +875,7 @@ Proof.
   assert (is_primitive_kind name) as isn by (subst; eauto 3 with slow; tcsp).
   assert (compatible_choice_sequence_name 0 name) as comp by (subst; eauto 3 with slow; tcsp).
 
-  exists (extend_seq_to_bar lib safe k name isn).
+  exists (extend_seq_to_bar lib safe n0 name isn).
   introv br ext.
 
   exists (mkc_comp_seq1 a0 a1) (mkc_comp_seq1 a' a'0) (@mkc_axiom o) (@mkc_axiom o).
@@ -936,17 +936,17 @@ Proof.
   apply name_in_library_implies_entry_in_library in br2; exrepnd.
   applydup safe' in br2.
 
-  pose proof (extend_library_lawless_upto_implies_exists_nats name lib' lib'' entry k) as q.
+  pose proof (extend_library_lawless_upto_implies_exists_nats name lib' lib'' entry n0) as q.
   repeat (autodimp q hyp); exrepnd;[].
 
   apply implies_equality_natk2nat_prop.
   introv ltk.
 
   pose proof (q1 m (nth m vals mkc_zero)) as w.
-  autodimp w hyp;[apply nth_select1; omega|];[].
+  autodimp w hyp;[apply nth_select1; lia|];[].
   unfold is_nat in w; exrepnd.
   assert (select m vals = Some (mkc_nat i)) as xx.
-  { eapply nth_select3; eauto; unfold ChoiceSeqVal in *; try omega. }
+  { eapply nth_select3; eauto; unfold ChoiceSeqVal in *; try lia. }
 
   assert (safe_library_entry (lib_cs name (MkChoiceSeqEntry _ vals restr))) as safee.
   { eapply entry_in_library_implies_safe_library_entry; eauto 3 with slow. }
@@ -954,7 +954,7 @@ Proof.
 
   pose proof (enf0 m i) as enf0.
   autodimp enf0 hyp;
-    [eapply satisfies_cs_kind_seq_implies_select_iff; eauto; try omega; subst; simpl; auto|];[].
+    [eapply satisfies_cs_kind_seq_implies_select_iff; eauto; try lia; subst; simpl; auto|];[].
   repnd; spcast.
 
   exists i.
@@ -965,7 +965,7 @@ Proof.
   eapply reduces_to_if_split2;[csunf; simpl; reflexivity|].
   apply reduces_to_if_step.
   csunf; simpl.
-  unfold compute_step_eapply; simpl; boolvar; try omega;[].
+  unfold compute_step_eapply; simpl; boolvar; try lia;[].
   autorewrite with slow.
 
   eapply lib_extends_preserves_find_cs in q0;[|eauto].

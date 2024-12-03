@@ -71,16 +71,16 @@ Proof.
 
     + apply isexc_implies2 in comp2; exrepnd; subst.
       apply reduces_in_atmost_k_steps_if_isvalue_like in comp0; eauto 3 with slow; subst.
-      right; exists 0; dands; eauto 3 with slow; try omega.
+      right; exists 0; dands; eauto 3 with slow; try lia.
       apply reduces_in_atmost_k_steps_refl; eauto 3 with slow.
 
     + apply IHk in comp0; auto.
       repndors; exrepnd.
 
-      * left; exists c (S i) j; dands; auto; try omega.
+      * left; exists c (S i) j; dands; auto; try lia.
         rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
 
-      * right; exists (S j); dands; auto; try omega.
+      * right; exists (S j); dands; auto; try lia.
         rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
 Qed.
 
@@ -303,16 +303,16 @@ Proof.
 
     + apply compute_step_eapply2_success in comp1; repnd; GC.
       repndors; exrepnd; subst; ginv.
-      exists 0; dands; try omega.
+      exists 0; dands; try lia.
       apply has_value_like_0; eauto 3 with slow.
 
-    + exists 0; dands; try omega.
+    + exists 0; dands; try lia.
       apply has_value_like_0; eauto 3 with slow.
 
     + applydup @preserve_nt_wf_compute_step in comp1; auto.
       apply IHk in comp0; auto.
       exrepnd.
-      exists (S j); dands; auto; try omega.
+      exists (S j); dands; auto; try lia.
       apply has_value_like_S; eexists; dands; eauto.
 Qed.
 

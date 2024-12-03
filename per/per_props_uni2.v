@@ -224,7 +224,7 @@ Proof.
     computes_to_value_isvalue.
   }
 
-  exists (S i1); dands; try omega.
+  exists (S i1); dands; try lia.
   unfold univ, univi_bar, per_bar in *; exrepnd.
   exists bar eqa; dands; auto.
   introv br ext; introv.
@@ -343,8 +343,8 @@ Proof.
     pose proof (computes_to_valc_tuni lib' b (Z.of_nat n)) as c2.
     allrw @Znat.Nat2Z.id; fold_terms.
     allrw <- @mkc_nat_eq.
-    repeat (autodimp c1 hyp); try omega.
-    repeat (autodimp c2 hyp); try omega.
+    repeat (autodimp c1 hyp); try lia.
+    repeat (autodimp c2 hyp); try lia.
     eapply tequality_respects_cequivc_left;
       [apply ccequivc_ext_sym; apply computes_to_valc_implies_ccequivc_ext;eauto|].
     eapply tequality_respects_cequivc_right;

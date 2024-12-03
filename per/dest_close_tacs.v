@@ -853,7 +853,7 @@ Proof.
       subst; apply implies_isprogram_bt0; eauto with slow.
     + unfold lblift. allsimpl. split; auto.
       introv Hin. unfold selectbt.
-      repeat(destruct n; try (omega;fail); allsimpl);
+      repeat(destruct n; try (lia;fail); allsimpl);
       apply blift_approx_open_nobnd2; sp.
 Qed.
 

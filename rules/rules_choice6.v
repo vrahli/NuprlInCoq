@@ -103,7 +103,7 @@ Proof.
   apply equality_in_tnat in ea.
   apply all_in_ex_bar_equality_implies_equality.
   eapply all_in_ex_bar_modus_ponens1;[|exact ea]; clear ea; introv y ea; exrepnd; spcast.
-  unfold per_props_nat.equality_of_nat in *; exrepnd; spcast.
+  unfold equality_of_nat in *; exrepnd; spcast.
 
   assert (safe_library lib') as safe' by eauto 3 with slow.
   clear dependent lib.
@@ -235,12 +235,12 @@ Proof.
   clear inh0 inh1.
   exrepnd.
 
-  pose proof (inh0 (extend_choice_sequence_with lib name (S k0))) as inh0.
+  pose proof (inh0 (extend_choice_sequence_with lib name (S n0))) as inh0.
   autodimp inh0 hyp; eauto 3 with slow;[].
 
   pose proof (inh0
-                (mkc_nat (Nat.pred (size_of_cs (extend_choice_sequence_with lib name (S k0)) name)))
-                (mkc_nat (Nat.pred (size_of_cs (extend_choice_sequence_with lib name (S k0)) name)))) as inh0.
+                (mkc_nat (Nat.pred (size_of_cs (extend_choice_sequence_with lib name (S n0)) name)))
+                (mkc_nat (Nat.pred (size_of_cs (extend_choice_sequence_with lib name (S n0)) name)))) as inh0.
   autodimp inh0 hyp; eauto 3 with slow;[].
   autorewrite with slow in *.
 
@@ -256,7 +256,7 @@ Proof.
   clear dependent a1.
   clear dependent a'0.
 
-  pose proof (find_cs_value_at_in_extend_choice_sequence_with name (S k0) lib) as xx.
+  pose proof (find_cs_value_at_in_extend_choice_sequence_with name (S n0) lib) as xx.
   eapply implies_compute_to_valc_apply_choice_seq in xx;
     try apply computes_to_valc_refl; eauto 3 with slow.
 
@@ -268,8 +268,8 @@ Proof.
       eapply lib_extends_preserves_computes_to_valc;[|eauto];
       eauto 3 with slow].
   apply equality_in_tnat in inh1.
-  apply (non_dep_all_in_ex_bar_implies (extend_choice_sequence_with lib name (S k0))).
+  apply (non_dep_all_in_ex_bar_implies (extend_choice_sequence_with lib name (S n0))).
   eapply all_in_ex_bar_modus_ponens1;[|exact inh1]; clear inh1; introv y inh1; exrepnd; spcast.
-  unfold per_props_nat.equality_of_nat in inh1; exrepnd; spcast.
-  computes_to_value_isvalue; try omega.
+  unfold equality_of_nat in inh1; exrepnd; spcast.
+  computes_to_value_isvalue; try lia.
 Qed.

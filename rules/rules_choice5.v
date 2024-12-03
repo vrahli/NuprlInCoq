@@ -540,13 +540,13 @@ Proof.
 
     - destruct entry.
       destruct cse_restriction; repnd; exrepnd; subst; ginv;[].
-      rewrite length_app; allrw; simpl in *; try omega.
+      rewrite length_app; allrw; simpl in *; try lia.
 
     - unfold correct_restriction in *.
       subst.
       unfold is_primitive_kind in *.
       destruct name0 as [name kd]; simpl in *.
-      destruct kd; subst; boolvar; tcsp; try omega. }
+      destruct kd; subst; boolvar; tcsp; try lia. }
 
   { eapply IHlib; eauto.
     destruct l; simpl in *; tcsp;[].
@@ -640,7 +640,7 @@ Proof.
     + apply cor; auto; eauto 3 with slow.
 
   - introv h; autorewrite with slow in *.
-    rewrite select_snoc_eq; boolvar; tcsp; subst; try omega.
+    rewrite select_snoc_eq; boolvar; tcsp; subst; try lia.
     unfold correct_restriction in *.
     unfold compatible_choice_sequence_name in *.
     unfold compatible_cs_kind in *; boolvar; tcsp; GC.
@@ -1072,7 +1072,7 @@ Proof.
     rename safe' into safe.
     rename lib' into lib.
 
-    pose proof (fresh_choice_seq_name_in_library lib []) as fresh; exrepnd.
+    pose proof (fresh_choice_seq_name_in_library lib) as fresh; exrepnd.
     remember (library2inf lib (simple_inf_choice_seq name1)) as ilib.
 
     remember (Peano.max
@@ -1111,7 +1111,7 @@ Proof.
     {
       pose proof (cs_entry_in_library_lawless_upto_implies_length_eq lib' lib name m vals0 restr0) as zz.
       repeat (autodimp zz hyp); eauto 3 with slow;[].
-      subst m; eapply le_trans;[|apply max_prop2]; apply max_prop1.
+      subst m; eapply Nat.le_trans;[|apply max_prop2]; apply max_prop1.
     }
     clear xx2.
 
@@ -1120,7 +1120,7 @@ Proof.
       pose proof (cs_entry_in_library_lawless_upto_implies_length_eq lib'0 lib' name0 m vals restr) as zz.
       repeat (autodimp zz hyp); eauto 3 with slow;[].
       eapply extend_library_lawless_upto_doesnt_change_size_others in q3;eauto.
-      subst m; rewrite q3; eapply le_trans;[|apply max_prop2]; apply max_prop2.
+      subst m; rewrite q3; eapply Nat.le_trans;[|apply max_prop2]; apply max_prop2.
     }
     clear yy2.
 
@@ -1130,13 +1130,13 @@ Proof.
     clear entry q6.
     clear entry0 q1 q7.
     clear ilib Heqilib q4.
-    clear name1 fresh1 fresh0.
+    clear name1 fresh0.
 
     assert (length vals0 = length vals) as eqlen by congruence.
     assert (cs_name_size name <= length vals0) as leq1.
-    { allrw; eapply le_trans;[|apply max_prop1];apply max_prop1. }
+    { allrw; eapply Nat.le_trans;[|apply max_prop1];apply max_prop1. }
     assert (cs_name_size name0 <= length vals) as leq2.
-    { allrw; eapply le_trans;[|apply max_prop1];apply max_prop2. }
+    { allrw; eapply Nat.le_trans;[|apply max_prop1];apply max_prop2. }
 
     clear m Heqm le1 le2.
 
@@ -1170,11 +1170,11 @@ Proof.
 
     apply (equality_nat2nat_apply _ _ _ (mkc_nat (length vals)) (mkc_nat (length vals))) in inh; eauto 3 with slow;[].
     apply equality_in_tnat in inh.
-    unfold per_props_nat.equality_of_nat_bar, all_in_ex_bar in inh; exrepnd.
+    unfold equality_of_nat_bar, all_in_ex_bar in inh; exrepnd.
 
     pose proof (bar_non_empty bar) as q; exrepnd.
     pose proof (inh0 _ q0 lib') as inh0; autodimp inh0 hyp; eauto 3 with slow; simpl in *.
-    unfold per_props_nat.equality_of_nat in inh0; exrepnd; spcast.
+    unfold equality_of_nat in inh0; exrepnd; spcast.
 
     assert (lib_extends lib' lib) as ext by eauto 3 with slow.
     clear bar q0.
@@ -1192,8 +1192,8 @@ Proof.
     {
       unfold find_cs_value_at; allrw; simpl.
       rewrite find_value_of_cs_at_vals_as_select.
-      rewrite select_app_l; autorewrite with slow; try omega.
-      rewrite select_snoc_eq; boolvar; try omega; tcsp.
+      rewrite select_app_l; autorewrite with slow; try lia.
+      rewrite select_snoc_eq; boolvar; try lia; tcsp.
     }
 
     pose proof (implies_compute_to_valc_apply_choice_seq lib' (mkc_nat (length vals)) name (length vals) mkc_zero) as z.
@@ -1202,8 +1202,8 @@ Proof.
     {
       unfold find_cs_value_at; allrw; simpl.
       rewrite find_value_of_cs_at_vals_as_select.
-      rewrite select_app_l; autorewrite with slow; try omega.
-      rewrite select_snoc_eq; boolvar; try omega; tcsp.
+      rewrite select_app_l; autorewrite with slow; try lia.
+      rewrite select_snoc_eq; boolvar; try lia; tcsp.
     }
 
     simpl in *.

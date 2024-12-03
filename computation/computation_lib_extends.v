@@ -826,7 +826,7 @@ Proof.
             repndors; exrepnd; subst; ginv.
             csunf; simpl.
             dcwf h; simpl.
-            boolvar; try omega.
+            boolvar; try lia.
             rewrite Znat.Nat2Z.id; auto.
 
           + csunf; simpl.
@@ -872,7 +872,7 @@ Proof.
                 + unfold mk_nseq in *; allsimpl; ginv.
                   csunf; simpl.
                   dcwf h; simpl.
-                  boolvar; simpl; auto; try omega.
+                  boolvar; simpl; auto; try lia.
                   rewrite Znat.Nat2Z.id; auto.
 
               - fold_terms; rewrite compute_step_eapply_iscan_isexc; auto.
@@ -942,7 +942,7 @@ Proof.
               repndors; exrepnd; subst; auto.
               csunf; simpl.
               unfold compute_step_tuni; simpl.
-              boolvar; try omega.
+              boolvar; try lia.
               rewrite Znat.Nat2Z.id; auto.
             }
 
@@ -1378,7 +1378,7 @@ Proof.
                 + unfold mk_choice_seq in *; allsimpl; ginv.
                   csunf; simpl.
                   dcwf h; simpl.
-                  boolvar; simpl; auto; try omega.
+                  boolvar; simpl; auto; try lia.
                   rewrite Znat.Nat2Z.id; auto.
                   erewrite lib_extends_preserves_find_cs_value_at;eauto.
 
@@ -1457,7 +1457,7 @@ Proof.
               repndors; exrepnd; subst; auto.
               csunf; simpl.
               unfold compute_step_tuni; simpl.
-              boolvar; try omega.
+              boolvar; try lia.
               rewrite Znat.Nat2Z.id; auto.
               eexists; dands; eauto.
             }
@@ -1502,7 +1502,7 @@ Proof.
               apply compute_step_comp_seq1_success in comp; exrepnd; subst.
               repndors; repnd; subst; csunf; simpl.
               { eexists; dands; eauto. }
-              boolvar; autorewrite with slow in *; try omega.
+              boolvar; autorewrite with slow in *; try lia.
               eexists; dands; eauto.
             }
 
@@ -1512,9 +1512,9 @@ Proof.
               csunf comp; allsimpl.
               apply compute_step_comp_seq2_success in comp; exrepnd; subst.
               repndors; repnd; subst; csunf; simpl.
-              { boolvar; autorewrite with slow in *; try omega.
+              { boolvar; autorewrite with slow in *; try lia.
                 eexists; dands; eauto. }
-              { boolvar; autorewrite with slow in *; try omega.
+              { boolvar; autorewrite with slow in *; try lia.
                 eexists; dands; eauto. }
             }
 
@@ -1625,7 +1625,7 @@ Proof.
           eexists; dands; eauto.
 
         - fold (mk_fresh n t).
-          rewrite compute_step_fresh_if_isnoncan_like; auto.
+          unfold mk_fresh;rewrite compute_step_fresh_if_isnoncan_like; auto.
 
           remember (get_fresh_atom lib1 t) as a.
           pose proof (get_fresh_atom_prop_and_lib lib1 t) as prop; rewrite <- Heqa in prop.

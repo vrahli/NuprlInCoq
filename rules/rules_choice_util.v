@@ -202,7 +202,7 @@ Proof.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
-        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+        unfold compute_step_comp; simpl; boolvar; tcsp; try lia. }
 
       assert (ccequivc_ext
                 lib
@@ -212,7 +212,7 @@ Proof.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
-        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+        unfold compute_step_comp; simpl; boolvar; tcsp; try lia. }
 
       eapply equality_respects_cequivc_left;[exact c3|].
       eapply equality_respects_cequivc_right;[exact c4|].
@@ -220,7 +220,7 @@ Proof.
       eapply equality_respects_cequivc_right;[exact c2|].
       auto.
 
-    + right; right; left; dands; auto; try omega.
+    + right; right; left; dands; auto; try lia.
 
       assert (ccequivc_ext
                 lib
@@ -230,7 +230,7 @@ Proof.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
-        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+        unfold compute_step_comp; simpl; boolvar; tcsp; try lia. }
 
       assert (ccequivc_ext
                 lib
@@ -240,7 +240,7 @@ Proof.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
-        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+        unfold compute_step_comp; simpl; boolvar; tcsp; try lia. }
 
       eapply equality_respects_cequivc_left;[exact c3|].
       eapply equality_respects_cequivc_right;[exact c4|].
@@ -248,7 +248,7 @@ Proof.
       eapply equality_respects_cequivc_right;[exact c2|].
       auto.
 
-    + right; right; right; dands; auto; try omega.
+    + right; right; right; dands; auto; try lia.
 
       assert (ccequivc_ext
                 lib
@@ -258,7 +258,7 @@ Proof.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
-        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+        unfold compute_step_comp; simpl; boolvar; tcsp; try lia. }
 
       assert (ccequivc_ext
                 lib
@@ -268,7 +268,7 @@ Proof.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
-        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+        unfold compute_step_comp; simpl; boolvar; tcsp; try lia. }
 
       eapply equality_respects_cequivc_left;[exact c3|].
       eapply equality_respects_cequivc_right;[exact c4|].
@@ -276,7 +276,7 @@ Proof.
       eapply equality_respects_cequivc_right;[exact c2|].
       auto.
 
-    + right; left; dands; auto; try omega.
+    + right; left; dands; auto; try lia.
 
       assert (ccequivc_ext
                 lib
@@ -286,7 +286,7 @@ Proof.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
-        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+        unfold compute_step_comp; simpl; boolvar; tcsp; try lia. }
 
       assert (ccequivc_ext
                 lib
@@ -296,7 +296,7 @@ Proof.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
-        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+        unfold compute_step_comp; simpl; boolvar; tcsp; try lia. }
 
       eapply equality_respects_cequivc_left;[exact c3|].
       eapply equality_respects_cequivc_right;[exact c4|].
@@ -317,7 +317,7 @@ Proof.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
-        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+        unfold compute_step_comp; simpl; boolvar; tcsp; try lia. }
 
       assert (ccequivc_ext
                 lib
@@ -327,7 +327,7 @@ Proof.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
-        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+        unfold compute_step_comp; simpl; boolvar; tcsp; try lia. }
 
       eapply equality_respects_cequivc_left;[apply ccequivc_ext_sym; exact c3|].
       eapply equality_respects_cequivc_right;[apply ccequivc_ext_sym; exact c4|].
@@ -341,7 +341,7 @@ Proof.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
-        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+        unfold compute_step_comp; simpl; boolvar; tcsp; try lia. }
 
       assert (ccequivc_ext
                 lib
@@ -351,7 +351,7 @@ Proof.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
-        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+        unfold compute_step_comp; simpl; boolvar; tcsp; try lia. }
 
       eapply equality_respects_cequivc_left;[apply ccequivc_ext_sym; exact c3|].
       eapply equality_respects_cequivc_right;[apply ccequivc_ext_sym; exact c4|].
@@ -365,7 +365,7 @@ Proof.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
-        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+        unfold compute_step_comp; simpl; boolvar; tcsp; try lia. }
 
       assert (ccequivc_ext
                 lib
@@ -375,7 +375,7 @@ Proof.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
-        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+        unfold compute_step_comp; simpl; boolvar; tcsp; try lia. }
 
       eapply equality_respects_cequivc_left;[apply ccequivc_ext_sym; exact c3|].
       eapply equality_respects_cequivc_right;[apply ccequivc_ext_sym; exact c4|].
@@ -389,7 +389,7 @@ Proof.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
-        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+        unfold compute_step_comp; simpl; boolvar; tcsp; try lia. }
 
       assert (ccequivc_ext
                 lib
@@ -399,7 +399,7 @@ Proof.
         destruct_cterms; unfold reduces_toc; simpl.
         apply reduces_to_if_step; csunf; simpl.
         dcwf h; simpl.
-        unfold compute_step_comp; simpl; boolvar; tcsp; try omega. }
+        unfold compute_step_comp; simpl; boolvar; tcsp; try lia. }
 
       eapply equality_respects_cequivc_left;[apply ccequivc_ext_sym; exact c3|].
       eapply equality_respects_cequivc_right;[apply ccequivc_ext_sym; exact c4|].
@@ -471,16 +471,16 @@ Proof.
     destruct (Z_lt_ge_dec ka kb); destruct (Z_lt_ge_dec ke kf).
 
     + left; dands; auto.
-      repndors; repnd; try omega; auto.
+      repndors; repnd; try lia; auto.
 
-    + right; right; left; dands; auto; try omega.
-      repndors; repnd; try omega; auto.
+    + right; right; left; dands; auto; try lia.
+      repndors; repnd; try lia; auto.
 
-    + right; right; right; dands; auto; try omega.
-      repndors; repnd; try omega; auto.
+    + right; right; right; dands; auto; try lia.
+      repndors; repnd; try lia; auto.
 
-    + right; left; dands; auto; try omega.
-      repndors; repnd; try omega; auto.
+    + right; left; dands; auto; try lia.
+      repndors; repnd; try lia; auto.
 Qed.
 
 Lemma false_in_uni {p} :
@@ -700,7 +700,7 @@ Proof.
     pose proof (safe n v) as q.
     autodimp q hyp.
     { erewrite nth_select1; auto; rewrite q0 at 1; eauto. }
-    apply safe0 in q; auto; try omega.
+    apply safe0 in q; auto; try lia.
   }
   clear safe.
 
@@ -897,7 +897,7 @@ Proof.
     rewrite select_map in q.
     autodimp q hyp.
     { erewrite nth_select1; auto; unfold option_map; rewrite i0 at 1; eauto. }
-    rewrite safe2 in q; try omega.
+    rewrite safe2 in q; try lia.
     rewrite mkc_zero_eq in q.
     apply mkc_nat_eq_implies in q; auto.
 Qed.
@@ -913,10 +913,10 @@ Proof.
 
   - destruct m; simpl; auto.
     rewrite IHn.
-    boolvar; try omega; tcsp.
+    boolvar; try lia; tcsp.
 Qed.
 
-Hint Rewrite minus_plus : slow nat.
+Hint Rewrite Nat.add_sub : slow nat.
 
 Lemma entry_extends_cs_zeros {o} :
   forall (entry : @library_entry o) name n restr,
@@ -945,10 +945,11 @@ Proof.
     introv q.
     apply in_nth in q; exrepnd.
     pose proof (safe (n + n0) v) as q.
-    rewrite select_app_r in q; autorewrite with slow nat in *; try omega.
+    rewrite select_app_r in q; autorewrite with slow nat in *; try lia.
     autodimp q hyp.
-    { erewrite nth_select1; auto; rewrite q0 at 1; eauto. }
-    apply safe0 in q; auto; try omega.
+    { rewrite (Nat.add_comm n n0); autorewrite with slow nat in *.
+      erewrite nth_select1; auto; rewrite q0 at 1; eauto. }
+    apply safe0 in q; auto; try lia.
   }
   clear safe.
 
@@ -972,9 +973,9 @@ Proof.
   }
 
   unfold same_restrictions; simpl; dands; auto.
-  { introv; rewrite safe2; try omega.
+  { introv; rewrite safe2; try lia.
     unfold natSeq2default; autorewrite with slow; auto. }
-  { introv; rewrite safe0; try omega.
+  { introv; rewrite safe0; try lia.
     unfold natSeq2restrictionPred; autorewrite with slow; tcsp. }
 Qed.
 
@@ -1056,7 +1057,7 @@ Proof.
     rewrite select_map in q.
     autodimp q hyp.
     { erewrite nth_select1; auto; unfold option_map; rewrite i0 at 1; eauto. }
-    rewrite safe2 in q; try omega.
+    rewrite safe2 in q; try lia.
     rewrite mkc_zero_eq in q.
     apply mkc_nat_eq_implies in q; auto.
 Qed.
@@ -1229,12 +1230,11 @@ Proof.
   exrepnd; spcast.
   apply computes_to_valc_isvalue_eq in inh1; eauto 3 with slow.
   rewrite <- inh1 in *.
-  clear dependent k.
 
-  pose proof (implies_compute_to_valc_apply_choice_seq lib a name k0 mkc_zero) as q.
+  pose proof (implies_compute_to_valc_apply_choice_seq lib a name k mkc_zero) as q.
   repeat (autodimp q hyp); eauto 3 with slow; try computes_to_eqval.
 
-  pose proof (computes_to_valc_apply_choice_seq_implies_find_cs_value_at_some lib name a k0 mkc_one) as w.
+  pose proof (computes_to_valc_apply_choice_seq_implies_find_cs_value_at_some lib name a k mkc_one) as w.
   repeat (autodimp w hyp); eauto 3 with slow;[]; exrepnd.
 
   apply entry_in_library_implies_find_cs_some in blib0.
@@ -1344,9 +1344,9 @@ Proof.
     destruct (lt_dec n0 n) as [xx|xx].
 
     - rewrite select_app_l in h; autorewrite with slow; auto.
-      rewrite select_ntimes in h; boolvar; tcsp; try omega; ginv; eauto 3 with slow.
+      rewrite select_ntimes in h; boolvar; tcsp; try lia; ginv; eauto 3 with slow.
 
-    - rewrite select_app_r in h; autorewrite with slow in *; auto; try omega.
+    - rewrite select_app_r in h; autorewrite with slow in *; auto; try lia.
       destruct (n0 - n); simpl in *; ginv; eauto 3 with slow.
       autorewrite with slow in *; ginv.
   }
@@ -1480,7 +1480,7 @@ Proof.
     apply safe.
     apply implies_entry_in_library_snoc; eauto 3 with slow.
 
-  - introv h; simpl in .
+  - introv h; simpl in *.
     apply list_in_snoc in h.
     repndors; subst; tcsp.
 
@@ -1582,6 +1582,6 @@ Proof.
   unfold find_cs_value_at.
   allrw.
   rewrite find_value_of_cs_at_vals_as_select; simpl.
-  rewrite select_app_r; autorewrite with slow; try omega.
+  rewrite select_app_r; autorewrite with slow; try lia.
   simpl; auto.
 Qed.

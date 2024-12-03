@@ -42,12 +42,12 @@ Proof.
 
   repndors; exrepnd; [|allsimpl; subst; repnd; complete ginv].
 
-  assert (m <= S k) as XX by omega.
+  assert (m <= S k) as XX by lia.
   repnud Hcv.
   eapply reduces_atmost_split in XX; eauto.
   remember (S k - m) as skm.
-  destruct skm; [omega|].
-  assert (skm <= k) by (subst; omega).
+  destruct skm; [lia|].
+  assert (skm <= k) by (subst; lia).
   apply reduces_atmost_S in XX; exrepnd.
   applydup @reduces_atmost_preserves_program in Hcv4; auto.
   apply isprogram_eapply_implies in Hcv6; exrepnd; subst; cpx.
@@ -122,14 +122,14 @@ Proof.
 
           repndors; exrepnd.
 
-          + apply no_change_after_val_like with (k2:=k) in XX2; eauto 2 with slow; try omega;[].
+          + apply no_change_after_val_like with (k2:=k) in XX2; eauto 2 with slow; try lia;[].
             make_red_val_like XX2 cak.
 
             applydup @preserve_compute_step in XX1; auto.
             applydup @reduces_atmost_preserves_program in XX5; auto.
             assert (reduces_in_atmost_k_steps lib arg2 c (S i)) as ra2.
             { rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto. }
-            apply no_change_after_val_like with (k2:=k) in ra2; eauto 2 with slow; try omega;[].
+            apply no_change_after_val_like with (k2:=k) in ra2; eauto 2 with slow; try lia;[].
             make_red_val_like ra2 cck.
             pose proof (Hi arg2 c a0r) as z.
             repeat (autodimp z hyp); eauto 2 with slow;[].
@@ -164,7 +164,7 @@ Proof.
             assert (reduces_in_atmost_k_steps lib arg2 (mk_exception a0 e) (S j)) as ra2.
             { rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto. }
 
-            apply no_change_after_val_like with (k2:=k) in ra2; try splr; try omega.
+            apply no_change_after_val_like with (k2:=k) in ra2; try splr; try lia.
             make_red_val_like ra2 ca0.
             pose proof (Hi arg2 (mk_exception a0 e) a0r) as z.
             repeat (autodimp z hyp); eauto 2 with slow;[].
@@ -219,7 +219,7 @@ Proof.
             assert (reduces_in_atmost_k_steps lib arg2 (mk_nat n0) (S i)) as ra2.
             { rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto. }
 
-            apply no_change_after_val_like with (k2:=k) in ra2; eauto 2 with slow; try omega;[].
+            apply no_change_after_val_like with (k2:=k) in ra2; eauto 2 with slow; try lia;[].
             make_red_val_like ra2 cck.
             pose proof (Hi arg2 (mk_nat n0) a0r) as z.
             repeat (autodimp z hyp); eauto 2 with slow;[].
@@ -239,7 +239,7 @@ Proof.
             assert (reduces_in_atmost_k_steps lib arg2 (mk_exception a0 e) (S j)) as ra2.
             { rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto. }
 
-            apply no_change_after_val_like with (k2:=k) in ra2; try splr; try omega.
+            apply no_change_after_val_like with (k2:=k) in ra2; try splr; try lia.
             make_red_val_like ra2 ca0.
             pose proof (Hi arg2 (mk_exception a0 e) a0r) as z.
             repeat (autodimp z hyp); eauto 2 with slow;[].

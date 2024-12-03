@@ -432,7 +432,7 @@ Proof.
   introv aeq.
   inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
-  pose proof (i 0) as h1; autodimp h1 hyp; allsimpl; try omega.
+  pose proof (i 0) as h1; autodimp h1 hyp; allsimpl; try lia.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
   pose proof (i 2) as h3; autodimp h3 hyp; allsimpl.
   pose proof (i 3) as h4; autodimp h4 hyp; allsimpl.
@@ -516,7 +516,7 @@ Proof.
   introv aeq.
   inversion aeq as [|? ? ? len i]; subst; allsimpl.
   destruct lbt2; allsimpl; repeat cpx.
-  pose proof (i 0) as h1; autodimp h1 hyp; allsimpl; try omega.
+  pose proof (i 0) as h1; autodimp h1 hyp; allsimpl; try lia.
   pose proof (i 1) as h2; autodimp h2 hyp; allsimpl.
   pose proof (i 2) as h3; autodimp h3 hyp; allsimpl.
   pose proof (i 3) as h4; autodimp h4 hyp; allsimpl.
