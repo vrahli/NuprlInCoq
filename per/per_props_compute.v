@@ -71,7 +71,7 @@ Proof.
   csunf; simpl.
   dcwf q; allsimpl.
   unfold compute_step_comp; simpl.
-  boolvar; auto; try omega.
+  boolvar; auto; try lia.
 Qed.
 
 Lemma mkc_less_than_comp2 {o} :
@@ -102,7 +102,7 @@ Proof.
   csunf; simpl.
   dcwf q; allsimpl.
   unfold compute_step_comp; simpl.
-  boolvar; auto; try omega.
+  boolvar; auto; try lia.
 Qed.
 
 (*Lemma computes_to_valc_implies_ccequivc_ext {o} :
@@ -154,7 +154,7 @@ Proof.
   apply reduces_to_if_step.
   csunf; simpl.
   unfold compute_step_tuni; simpl.
-  destruct (Z_le_gt_dec 0 k); auto; omega.
+  destruct (Z_le_gt_dec 0 k); auto; lia.
 Qed.
 
 Lemma ccomputes_to_valc_tuni {o} :
@@ -179,7 +179,7 @@ Proof.
   apply reduces_to_if_step.
   csunf; simpl.
   unfold compute_step_tuni; simpl.
-  destruct (Z_le_gt_dec 0 k); auto; omega.
+  destruct (Z_le_gt_dec 0 k); auto; lia.
 Qed.
 
 Lemma computes_to_valc_implies_hasvaluec {o} :

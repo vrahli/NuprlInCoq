@@ -224,7 +224,7 @@ Proof.
     repeat ccomputes_to_valc_ext_val; auto.
   }
 
-  exists (S i1); dands; try omega.
+  exists (S i1); dands; try lia.
   unfold univ, univi_bar, per_bar in *; exrepnd.
   exists eqa; dands; auto.
   eapply in_open_bar_ext_pres; eauto; clear u1; introv u1.
@@ -288,11 +288,11 @@ Proof.
     try (apply isprogram_tuni; apply isprog_implies; auto).
 
   { unfold lblift; simpl; dands; auto; introv w.
-    repeat (destruct n; try omega); unfold selectbt; simpl;
+    repeat (destruct n; try lia); unfold selectbt; simpl;
       apply blift_approx_open_nobnd2; eauto 2 with slow. }
 
   { unfold lblift; simpl; dands; auto; introv w.
-    repeat (destruct n; try omega); unfold selectbt; simpl;
+    repeat (destruct n; try lia); unfold selectbt; simpl;
       apply blift_approx_open_nobnd2; eauto 2 with slow. }
 Qed.
 
@@ -314,7 +314,7 @@ Proof.
   eapply cequivc_trans;[eauto|]; clear ext.
   apply computes_to_valc_implies_cequivc; eauto 2 with slow.
   pose proof (computes_to_valc_tuni lib' (mkc_nat i) (Z.of_nat i)) as xx.
-  autorewrite with slow in xx; apply xx; try omega.
+  autorewrite with slow in xx; apply xx; try lia.
   rewrite <- mkc_nat_eq; eauto 3 with slow.
 Qed.
 

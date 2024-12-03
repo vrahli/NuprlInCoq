@@ -88,7 +88,7 @@ Proof.
   clear dependent a.
   clear dependent a'.
 
-  assert (m < n) as ltm by omega.
+  assert (m < n) as ltm by lia.
   clear e0.
 
   apply equality_in_tnat.
@@ -128,7 +128,7 @@ Proof.
   { eapply equality_in_natk_aux;
     allrw @mkc_nat_eq; eauto 3 with slow.
     apply in_ext_implies_all_in_ex_bar; introv x.
-    exists m; dands; try omega; rw @mkc_nat_eq; eauto 3 with slow. }
+    exists m; dands; try lia; rw @mkc_nat_eq; eauto 3 with slow. }
 
   eapply equality_in_tnat in h.
   eapply all_in_ex_bar_modus_ponens1;try exact h; clear h; introv x h; exrepnd; spcast.

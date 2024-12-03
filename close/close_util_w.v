@@ -33,6 +33,7 @@ Require Export nuprl_mon_func.
 Require Export close_util_bar.
 
 
+(*
 Definition weq_bar_lib_per
            {o}
            {lib : @library o}
@@ -54,6 +55,7 @@ Proof.
   - eapply weq_eq_term_equals; try exact h; try apply lib_per_cond.
     introv; apply lib_per_fam_cond.
 Defined.
+*)
 
 Lemma implies_eq_term_equals_weq_bar {o} :
   forall lib (eqa eqb : lib-per(lib,o)) (eqc : lib-per-fam(lib,eqa,o)) (eqd : lib-per-fam(lib,eqb,o)),
@@ -85,7 +87,7 @@ Qed.
 
 Lemma per_bar_eq_weq_bar_lib_per {o} :
   forall (lib : @library o) (eqa : lib-per(lib,o)) eqb,
-    (per_bar_eq lib (weq_bar_lib_per eqa eqb))
+    (per_bar_eq lib (weq_bar_lib_per lib eqa eqb))
     <=2=> (weq_bar lib eqa eqb).
 Proof.
   introv; simpl; unfold per_bar_eq; split; intro h; eauto 3 with slow.

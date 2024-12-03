@@ -48,7 +48,7 @@ Proof.
   - unfold extensional_op_ind in Hi.
     unfold computes_to_can_in_max_k_steps in Hcv2; repnd.
     applydup @reduces_atmost_preserves_program in Hcv4 as ispc1; auto.
-    apply @no_change_after_value_ra with (k2:=k) in Hcv4; auto; try omega; [].
+    apply @no_change_after_value_ra with (k2:=k) in Hcv4; auto; try lia; [].
     applydup @reduces_atmost_preserves_program in Hcv4; auto.
     make_red_val_like Hcv4 h1.
     eapply Hi in h1; try exact Has0bt; auto.
@@ -57,7 +57,7 @@ Proof.
     allapply @approx_starbts_nil_left; subst.
 
     unfold computes_to_val_like_in_max_k_steps in Hcv0; repnd.
-    apply @no_change_after_val_like with (k2:=k) in Hcv6; auto; try omega; [].
+    apply @no_change_after_val_like with (k2:=k) in Hcv6; auto; try lia; [].
     make_red_val_like Hcv6 g.
     assert (isprogram (oterm (Can can) lbt')) as isp' by eauto 3 with slow.
     apply Hi with (v := push_swap_cs_can (swap_cs_nfo_name1 nfo) (swap_cs_nfo_name2 nfo) can lbt') in g; auto;
@@ -79,7 +79,7 @@ Proof.
   - unfold extensional_op_ind in Hi.
     unfold computes_to_exception_in_max_k_steps in Hcv3; repnd.
     apply @no_change_after_val_like with (k2:=k) in Hcv3; auto;
-      try omega; try (unfold isvalue_like; allsimpl; sp).
+      try lia; try (unfold isvalue_like; allsimpl; sp).
     make_red_val_like Hcv3 h1.
     apply Hi with (v := a1) in h1; auto.
     apply howe_lemma2_exc in h1; auto; prove_isprogram.

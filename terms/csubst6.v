@@ -457,7 +457,7 @@ Proof.
   constructor; simpl; auto.
   introv j.
   apply alphaeqbt_eq.
-  repeat (destruct n; tcsp; try omega); unfold selectbt; simpl.
+  repeat (destruct n; tcsp; try lia); unfold selectbt; simpl.
   - apply alphaeqbt_nilv2.
     apply alphaeq_eq; auto.
   - pose proof (ex_fresh_var (all_vars c ++ all_vars d)) as h; exrepnd.

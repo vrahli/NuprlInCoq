@@ -716,7 +716,7 @@ Tactic Notation "constructors" :=
     anything else *)
 
 Tactic Notation "false_goal" :=
-  elimtype False.
+  assert False;[|auto].
 
 (** [false_post] is the underlying tactic used to prove goals
     of the form [False]. In the default implementation, it proves
@@ -745,12 +745,15 @@ Tactic Notation "tryfalse" :=
     It is equivalent to [try solve \[ false; tac \]]. 
     Example: [tryfalse by congruence/] *)
 
+(*
 Tactic Notation "tryfalse" "by" tactic(tac) "/" :=
   try solve [ false; instantiate; tac ].
+*)
 
 (** [false T] tries [false; apply T], or otherwise adds [T] as
     an assumption and calls [false]. *)
 
+(*
 Tactic Notation "false" constr(T) "by" tactic(tac) "/" :=
   false_goal; first  
     [ first [ apply T | eapply T | rapply T]; instantiate; tac  (* todo: sapply?*)
@@ -758,9 +761,12 @@ Tactic Notation "false" constr(T) "by" tactic(tac) "/" :=
       first [ discriminate H  (* optimization *)
             | false; instantiate; tac ] ].
    (* todo: false (>> H X1 X2)... *)
+*)
 
+(*
 Tactic Notation "false" constr(T) :=
   false T by idtac/.
+*)
 
 (** [false_invert] proves any goal provided there is at least 
     one hypothesis [H] in the context that can be proved absurd
@@ -779,8 +785,10 @@ Tactic Notation "false_invert" :=
     [false] or [false_invert], and leaves the goal
     unchanged if it does not succeed. *)
 
+(*
 Tactic Notation "tryfalse_invert" :=
   try solve [ false | false_invert ].
+*)
 
 (** [asserts H: T] is another syntax for [assert (H : T)], which
     also works with introduction patterns. For instance, one can write:
@@ -2561,7 +2569,6 @@ Tactic Notation "destruct_if" :=
 Tactic Notation "destruct_if" "in" hyp(H) :=
   let Eq := fresh "C" in destruct_if in H as Eq Eq.
 
-
 (** [destruct_head_match] performs a case analysis on the argument
     of the head pattern matching when the goal has the form 
     [match ?E with ...] or [match ?E with ... = _] or
@@ -2591,7 +2598,6 @@ Tactic Notation "destruct_head_match" "as" simple_intropattern(I) :=
 
 Tactic Notation "destruct_head_match" :=
   destruct_head_match_core ltac:(fun E => destruct E).
-
 
 (**--provided for compatibility with [remember] *)
 
@@ -3043,10 +3049,11 @@ Tactic Notation "auto" "*" constr(E1) constr(E2) constr(E3) :=
 (** [auto_false] is a version of [auto] able to spot some contradictions.
     [auto_false~] and [auto_false*] are also available. *)
 
+(*
 Ltac auto_false_base cont := 
   try solve [ cont tt | tryfalse by congruence/ 
             | try split; intros_all; tryfalse by congruence/ ].
-
+*)
 
 (* ---------------------------------------------------------------------- *)
 (** ** Definitions for parsing compatibility *)

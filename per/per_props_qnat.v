@@ -105,11 +105,11 @@ Proof.
     try (apply implies_isprogram_last_cs; apply isprog_implies; auto).
 
   { unfold lblift; simpl; dands; auto; introv w.
-    repeat (destruct n; try omega); unfold selectbt; simpl;
+    repeat (destruct n; try lia); unfold selectbt; simpl;
       apply blift_approx_open_nobnd2; eauto 2 with slow. }
 
   { unfold lblift; simpl; dands; auto; introv w.
-    repeat (destruct n; try omega); unfold selectbt; simpl;
+    repeat (destruct n; try lia); unfold selectbt; simpl;
       apply blift_approx_open_nobnd2; eauto 2 with slow. }
 Qed.
 
@@ -191,7 +191,7 @@ Proof.
     { apply cor0 in iv1; auto.
       unfold cterm_is_nth in iv1; exrepnd; exrepnd.
       pose proof (cor0 n v) as q; autodimp q hyp; subst; eauto 2 with slow. }
-    { apply cor in iv1; auto; try omega. }
+    { apply cor in iv1; auto; try lia. }
   }*)
 Qed.
 

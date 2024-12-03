@@ -610,6 +610,20 @@ Proof.
   autorewrite with slow; auto.
 Qed.
 
+Lemma equality_in_csname_implies_equality_in_nat {o} :
+  forall uk (lib : library) (a b m n : @CTerm o),
+    no_repeats_library lib
+    -> safe_library lib
+    -> lib_cond_sat_def lib
+    -> equality uk lib a b (mkc_csname 0)
+    -> equality uk lib m n mkc_tnat
+    -> equality uk lib (mkc_apply a m) (mkc_apply b n) mkc_tnat.
+Proof.
+  introv norep safe sat ea em.
+  pose proof (equality_in_csname_implies_equality_in_nat2nat uk lib a b norep safe sat ea) as k.
+  apply (equality_in_fun uk lib a b mkc_tnat mkc_tnat) in k; repnd.
+  apply k; eauto 3 with slow.
+Qed.
 
 
 (**
@@ -821,7 +835,11 @@ Proof.
   autorewrite with slow.
   rewrite substc2_mk_cv_app_r; auto.
 
-  apply equality_in_product.
+(**)
+
+  apply inhabited_type_implies_inhabited_type_bar.
+  apply inhabited_exists.
+(*  apply equality_in_product.*)
   dands; eauto 3 with slow;[|].
 
   {
@@ -838,10 +856,16 @@ Proof.
     rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat.
 
     autorewrite with slow.
-    apply tequality_mkc_equality_sp; dands; eauto 3 with slow.
-
-    apply in_ext_implies_all_in_ex_bar; introv xt; right; eauto 3 with slow.
+    apply tequality_mkc_equality_sp; dands; eauto 3 with slow;
+      [|apply in_ext_implies_all_in_ex_bar; introv xt; right; eauto 3 with slow].
+    apply in_ext_implies_all_in_ex_bar; introv xt; left.
+    eapply equality_in_csname_implies_equality_in_nat; eauto; eauto 3 with slow.
+    eapply equality_refl; eauto 3 with slow.
   }
+
+Search
+
+  exists (mkc_pair (mkc_apply a0 a1) (@mkc_axiom o)).
 
   apply in_ext_implies_all_in_ex_bar.
   introv xt.
@@ -856,8 +880,13 @@ Proof.
   clear lib xt safe norep sat.
   rename lib' into lib; rename safe' into safe; rename norep' into norep; rename sat' into sat.
 
-  exists (mkc_apply a0 a1) (mkc_apply a' a'0) (@mkc_axiom o) (@mkc_axiom o).
-  dands; spcast; eauto 3 with slow;[].
+  exists (mkc_apply a0 a1) (@mkc_axiom o).
+  dands; spcast; eauto 3 with slow;[|].
+
+  {
+    eapply equality_in_csname_implies_equality_in_nat; eauto; eauto 3 with slow;
+      try (complete (eapply equality_refl; eauto 3 with slow)).
+  }
 
   autorewrite with slow.
   apply member_equality.

@@ -382,7 +382,7 @@ Proof.
   sp.
   assert (nuprli (i2 + i1) uk lib T T' eq) as c1 by (apply typable_in_higher_univ; auto).
   assert (nuprli (i1 + i2) uk lib T T' eq') as c2 by (apply typable_in_higher_univ; auto).
-  assert (i1 + i2 = i2 + i1) as e by omega.
+  assert (i1 + i2 = i2 + i1) as e by lia.
   rww e.
   generalize (@nuprli_type_system o (i2 + i1)); intro nts.
   destruct nts; sp.
@@ -399,7 +399,7 @@ Proof.
   sp.
   assert (nuprli (i1 + i2) uk lib T1 T2 eq) as c1 by (apply typable_in_higher_univ_r; auto).
   assert (nuprli (i1 + i2) uk lib T2 T3 eq) as c2 by (apply typable_in_higher_univ; auto).
-  exists (i1 + i2); sp; try omega.
+  exists (i1 + i2); sp; try lia.
   generalize (@nuprli_type_system o (i1 + i2)); intro nts.
   destruct nts; sp.
   apply p2 with (T2 := T2); sp.
@@ -414,7 +414,7 @@ Proof.
   introv u v.
   assert (univi (i2 + i1) uk lib T T' eq) as c1 by (apply uni_in_higher_univ; auto).
   assert (univi (i1 + i2) uk lib T T' eq') as c2 by (apply uni_in_higher_univ; auto).
-  assert (i1 + i2 = i2 + i1) as e by omega.
+  assert (i1 + i2 = i2 + i1) as e by lia.
   rww e.
   eapply uniquely_valued_univi; eauto.
 Qed.
@@ -445,7 +445,7 @@ Proof.
   unfold univ_ex in *; exrepnd.
   assert (univi (i + i0) uk lib T1 T2 eq) as c1 by (apply uni_in_higher_univ; auto).
   assert (univi (i0 + i) uk lib T2 T3 eq) as c2 by (apply uni_in_higher_univ; auto).
-  assert (i + i0 = i0 + i) as e by omega.
+  assert (i + i0 = i0 + i) as e by lia.
   rewrite e in c1; clear e.
 
   exists (i0 + i).

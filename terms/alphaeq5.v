@@ -47,7 +47,7 @@ Proof.
   apply (al_bterm_aux lvn); auto.
   { allrw disjoint_app_r; tcsp. }
   rw @lsubst_aux_trivial_cl_term;[|rw @dom_sub_var_ren;eauto with slow].
-  rw @lsubst_aux_trivial_cl_term;[|rw @dom_sub_var_ren;eauto with slow; try omega].
+  rw @lsubst_aux_trivial_cl_term;[|rw @dom_sub_var_ren;eauto with slow; try lia].
   eauto with slow.
 Qed.
 

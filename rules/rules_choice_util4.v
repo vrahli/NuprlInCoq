@@ -116,7 +116,7 @@ Proof.
 
     unfold lblift; simpl; dands; auto.
     introv ltn.
-    repeat (destruct n; try omega); clear ltn; unfold selectbt; simpl.
+    repeat (destruct n; try lia); clear ltn; unfold selectbt; simpl.
 
     {
       exists ([] : list NVar) u1 u2; dands; eauto 3 with slow.
@@ -186,7 +186,6 @@ Proof.
         allrw @isprog_vars_eq; repnd.
         allrw subvars_eq.
         apply isp3 in ix; allsimpl; tcsp. }
-      apply h.
 
   - introv comp.
     apply can_doesnt_raise_an_exception in comp; sp.
@@ -1234,7 +1233,7 @@ Proof.
   constructor; simpl; auto.
   introv j.
   apply alphaeqbt_eq.
-  repeat (destruct n; tcsp; try omega); unfold selectbt; simpl;
+  repeat (destruct n; tcsp; try lia); unfold selectbt; simpl;
     apply alphaeqbt_nilv2; apply alphaeq_eq; auto.
 Qed.
 Hint Resolve alphaeq_mk_equality : slow.
@@ -1633,7 +1632,7 @@ Proof.
   csunf comp0; simpl in *; ginv.
   eapply reduces_to_split2 in comp1; repndors; ginv; exrepnd.
   csunf comp1; simpl in *.
-  dcwf h; simpl in *; boolvar; try omega.
+  dcwf h; simpl in *; boolvar; try lia.
   autorewrite with slow in *.
   remember (find_cs_value_at lib name m) as xx; symmetry in Heqxx; destruct xx; ginv.
   exists c; dands; auto.
@@ -1671,7 +1670,7 @@ Proof.
   csunf comp0; simpl in *; ginv.
   eapply reduces_to_split2 in comp1; repndors; ginv; exrepnd.
   csunf comp1; simpl in *.
-  dcwf h; simpl in *; boolvar; try omega.
+  dcwf h; simpl in *; boolvar; try lia.
   autorewrite with slow in *.
   remember (find_cs_value_at lib name m) as xx; symmetry in Heqxx; destruct xx; ginv.
   unfold find_cs_value_at in Heqxx.
@@ -1725,7 +1724,7 @@ Proof.
     }
 
     {
-      apply safe0 in Heqxx; auto; try omega.
+      apply safe0 in Heqxx; auto; try lia.
       unfold is_nat in Heqxx; exrepnd; subst; simpl in *.
       apply reduces_to_if_value in comp0; eauto 3 with slow.
       apply mk_nat_eq_implies in comp0; subst; auto.
@@ -1751,7 +1750,7 @@ Hint Resolve find_cs_value_at_implies_lt_cs_size : slow.
 Hint Resolve Nat.le_max_l : num.
 Hint Resolve Nat.le_max_r : num.
 Hint Resolve Nat.le_refl : num.
-Hint Resolve le_trans : num.
+Hint Resolve Nat.le_trans : num.
 
 Lemma cs_size_le_lib_depth {o} :
   forall name (lib : @library o),
@@ -1772,7 +1771,7 @@ Lemma find_cs_value_at_implies_lt_lib_depth {o} :
 Proof.
   introv h.
   apply find_cs_value_at_implies_lt_cs_size in h.
-  pose proof (cs_size_le_lib_depth name lib) as q; omega.
+  pose proof (cs_size_le_lib_depth name lib) as q; lia.
 Qed.
 Hint Resolve find_cs_value_at_implies_lt_lib_depth : slow.
 
@@ -1990,7 +1989,7 @@ Proof.
     { apply cor0 in i1; auto.
       unfold cterm_is_nth in i1; exrepnd; subst; eauto. }
 
-    { pose proof (cor n x) as z; autodimp z hyp; try omega;[].
+    { pose proof (cor n x) as z; autodimp z hyp; try lia;[].
       apply z in i1.
       unfold is_nat in *; exrepnd; subst; eauto. } }*)
 Qed.
@@ -2390,7 +2389,7 @@ Proof.
       repeat rewrite isn0; auto; autorewrite with slow; tcsp. }
 
     { unfold swap_cs_restriction_pred.
-      repeat rewrite isn; try omega; auto; autorewrite with slow; tcsp. } }
+      repeat rewrite isn; try lia; auto; autorewrite with slow; tcsp. } }
 Qed.
 Hint Resolve is_nat_seq_restriction_implies_same_swap_cs_choice_seq_restr : slow.
 
@@ -2583,7 +2582,7 @@ Proof.
   - applydup (@cterm_is_nth_natSeq2default o) in l0.
     unfold cterm_is_nth in *; exrepnd; allrw.
     rewrite (nth_select1 _ _ 0) in l1; auto; ginv.
-  - rewrite natSeq2default_eq_zero; auto; try omega.
+  - rewrite natSeq2default_eq_zero; auto; try lia.
 Qed.
 
 Lemma is_nat_seq_restriction_implies_same {o} :
@@ -2601,7 +2600,7 @@ Proof.
       rewrite isn2; unfold cterm_is_nth; allrw.
       split; intro h; exrepnd; ginv; subst; eauto.
     - applydup @nth_select2 in Heqsel.
-      pose proof (isn n v) as isn; autodimp isn hyp; try omega.
+      pose proof (isn n v) as isn; autodimp isn hyp; try lia.
       rewrite isn; tcsp. }
 Qed.
 Hint Resolve is_nat_seq_restriction_implies_same : slow.
@@ -3887,7 +3886,7 @@ Proof.
         rewrite q0; autorewrite with slow; auto. }
 
       { applydup @nth_select2 in Heqsel.
-        pose proof (safe2 n) as q; autodimp q hyp; try omega; rewrite q.
+        pose proof (safe2 n) as q; autodimp q hyp; try lia; rewrite q.
         rewrite mkc_zero_eq; autorewrite with slow; auto. } } }
 
   { destruct n1 as [n1 k1]; simpl in *; unfold cs_name2restr; simpl.
@@ -3951,7 +3950,7 @@ Proof.
         rewrite q0; autorewrite with slow; auto. }
 
       { applydup @nth_select2 in Heqsel.
-        pose proof (safe2 n) as q; autodimp q hyp; try omega; rewrite q.
+        pose proof (safe2 n) as q; autodimp q hyp; try lia; rewrite q.
         rewrite mkc_zero_eq; autorewrite with slow; auto. } } }
 Qed.*)
 
@@ -4687,7 +4686,7 @@ Proof.
       destruct (lt_dec n0 (length l)).
       { pose proof (safe3 n0 a) as q; autodimp q hyp; apply q in safe4.
         unfold cterm_is_nth in safe4; exrepnd; allrw; autorewrite with slow; eauto 3 with slow. }
-      { pose proof (safe0 n0 a) as q; autodimp q hyp; try omega; apply q in safe4.
+      { pose proof (safe0 n0 a) as q; autodimp q hyp; try lia; apply q in safe4.
         unfold cterm_is_nth in safe4; exrepnd; allrw; autorewrite with slow; eauto 3 with slow. }
     }
 
@@ -4730,7 +4729,7 @@ Proof.
           unfold cterm_is_nth in q0; exrepnd.
           allrw; autorewrite with slow; eauto 3 with slow. }
 
-        { pose proof (safe0 n0 a) as q; autodimp q hyp; try omega.
+        { pose proof (safe0 n0 a) as q; autodimp q hyp; try lia.
           apply q in q0; unfold is_nat in q0; exrepnd; subst; autorewrite with slow; eauto 3 with slow. } } } }
 
   { unfold compatible_choice_sequences in *; simpl in *.
@@ -4746,7 +4745,7 @@ Proof.
       destruct (lt_dec n (length l)).
       { pose proof (safe3 n a) as q; apply q in q0; auto.
         unfold cterm_is_nth in q0; exrepnd; allrw; autorewrite with slow; eauto 3 with slow. }
-      { pose proof (safe0 n a) as q; apply q in q0; try omega.
+      { pose proof (safe0 n a) as q; apply q in q0; try lia.
         unfold is_nat in q0; exrepnd; subst; autorewrite with slow; eauto 3 with slow. } }
 
     { introv; unfold swap_cs_inf_choice_seq_vals; autorewrite with slow.
@@ -4785,7 +4784,7 @@ Proof.
           unfold cterm_is_nth in q0; exrepnd.
           allrw; autorewrite with slow; eauto 3 with slow. }
 
-        { apply safe0 in q0; auto; try omega; unfold is_nat in q0; exrepnd; subst; autorewrite with slow; eauto 3 with slow. } } } }
+        { apply safe0 in q0; auto; try lia; unfold is_nat in q0; exrepnd; subst; autorewrite with slow; eauto 3 with slow. } } } }
 Qed.
 Hint Resolve implies_safe_swap_norm_cs_inf_choice_sequence_entry : slow.*)
 
@@ -5100,7 +5099,6 @@ Lemma swap_apply_list {o} :
     = apply_list (swap_cs_term sw t) (map (swap_cs_term sw) l).
 Proof.
   induction l; introv; simpl; auto.
-  rewrite IHl; simpl; tcsp.
 Qed.
 
 Lemma swap_cs_term_soterm2nterm {o} :
@@ -5666,7 +5664,7 @@ Proof.
   dands; eauto 3 with slow.
   introv ltk.
   destruct j; auto.
-  apply i2; omega.
+  apply i2; lia.
 Qed.
 
 (* The 2 names have different names but the same kind/space *)
@@ -7906,7 +7904,7 @@ Lemma entry_in_sw_cs_lib {o} :
            entry = lib_abs abs vars rhs cor /\ entry_in_library entry lib).
 Proof.
   induction lib; introv h; simpl in *; tcsp;[].
-  destruct a; simpl in ; tcsp; boolvar; subst; simpl in *; tcsp;
+  destruct a; simpl in *; tcsp; boolvar; subst; simpl in *; tcsp;
     repndors; repnd; subst; simpl in *; tcsp.
   { right; left.
     exists entry0; dands; tcsp. }
@@ -7973,7 +7971,7 @@ Lemma if_in_sw_cs_lib {o} :
            entry = lib_abs abs vars rhs cor /\ entry_in_library entry (sw_cs_lib lib n1 n2)).
 Proof.
   induction lib; introv h; simpl in *; tcsp;[].
-  destruct a; simpl in ; tcsp; boolvar; subst; simpl in *; tcsp;
+  destruct a; simpl in *; tcsp; boolvar; subst; simpl in *; tcsp;
     repndors; repnd; subst; simpl in *; tcsp.
   { left.
     exists entry0; dands; tcsp. }
@@ -8186,7 +8184,7 @@ Lemma in_sw_cs_lib {o} :
            entry = lib_abs abs vars rhs cor /\ List.In entry lib).
 Proof.
   induction lib; introv h; simpl in *; tcsp;[].
-  destruct a; simpl in ; tcsp; boolvar; subst; simpl in *; tcsp;
+  destruct a; simpl in *; tcsp; boolvar; subst; simpl in *; tcsp;
     repndors; repnd; subst; simpl in *; tcsp.
   { right; left.
     exists entry0; dands; tcsp. }
@@ -8627,9 +8625,9 @@ Proof.
 
     destruct (same_entry_name_dec (inf_entry2name (inflib 0)) (inf_entry2name entry)) as [d|d].
 
-    + exists 1 (inflib 0); dands; eauto 3 with slow; try omega; simpl; tcsp.
+    + exists 1 (inflib 0); dands; eauto 3 with slow; try lia; simpl; tcsp.
 
-    + exists (S k) entry; dands; try omega; eauto 3 with slow; simpl; tcsp.
+    + exists (S k) entry; dands; try lia; eauto 3 with slow; simpl; tcsp.
 Qed.
 
 (*Lemma entry_in_inf_library_n_implies_safe {o} :
@@ -8679,7 +8677,7 @@ Proof.
     destruct (ext0 (length lib)).
     unfold inf_matching_entries; simpl.
     unfold library2inf.
-    rewrite select_none; try omega; auto. }
+    rewrite select_none; try lia; auto. }
 Qed.
 Hint Resolve inf_lib_extends_sing3 : slow.*)
 
@@ -8790,7 +8788,7 @@ Proof.
     destruct (ext0 (length lib)).
     unfold inf_matching_entries; simpl.
     unfold library2inf.
-    rewrite select_none; simpl; try omega; auto. }
+    rewrite select_none; simpl; try lia; auto. }
 Qed.
 Hint Resolve inf_lib_extends_sing4 : slow.*)
 
@@ -8930,9 +8928,8 @@ Proof.
   destruct can; try (complete (right; intro xx; exrepnd; inversion xx0));[].
   destruct bs; try (complete (right; intro xx; exrepnd; inversion xx0));[].
   destruct (Z_lt_le_dec z 0).
-  { right; intro xx; exrepnd; inversion xx0; subst.
-    pose proof (Zle_0_nat k) as q; try omega. }
-  pose proof (Z_of_nat_complete_inf z) as h; autodimp h hyp; exrepnd; subst.
+  { right; intro xx; exrepnd; inversion xx0; subst; try lia. }
+  pose proof (Wf_Z.Z_of_nat_complete_inf z) as h; autodimp h hyp; exrepnd; subst.
   left.
   exists n.
   apply cterm_eq; simpl; auto.
@@ -9121,7 +9118,7 @@ Proof.
   { rewrite select_snoc_eq in sel; boolvar; subst; tcsp; ginv; tcsp. }
 
 (*  { rewrite length_snoc in sel.
-    rewrite select_snoc_eq; boolvar; subst; tcsp; try omega. }
+    rewrite select_snoc_eq; boolvar; subst; tcsp; try lia. }
 
   { rewrite select_snoc_eq in sel; boolvar; subst; tcsp; ginv; tcsp. }*)
 Qed.
@@ -10067,7 +10064,7 @@ Proof.
 
       { SSCase "NTUni".
         ginv; csunf; simpl in *; eauto.
-        unfold compute_step_tuni; simpl; boolvar; try omega; autorewrite with slow; auto. }
+        unfold compute_step_tuni; simpl; boolvar; try lia; autorewrite with slow; auto. }
 
       { SSCase "NSwapCs2".
         ginv; csunf; simpl in *; eauto.
@@ -10110,7 +10107,7 @@ Proof.
             unfold compute_step_eapply; simpl; unfold apply_bterm; autorewrite with slow; auto. }
           { inversion comp1; subst; clear comp1; simpl in *.
             csunf; simpl.
-            unfold compute_step_eapply; simpl; boolvar; try omega; autorewrite with slow.
+            unfold compute_step_eapply; simpl; boolvar; try lia; autorewrite with slow.
             rewrite find_cs_value_at_swap; allrw; unfold CSVal2term; autorewrite with slow.
             destruct v; simpl; auto. } }
 
@@ -10133,12 +10130,12 @@ Proof.
       { inversion comp3; subst; csunf; simpl; autorewrite with slow; tcsp. }
 
       { inversion comp4; subst; clear comp4; repndors; repnd; subst; simpl in *; csunf; simpl; fold_terms; tcsp.
-        boolvar; autorewrite with slow in *; subst; try omega; tcsp. }
+        boolvar; autorewrite with slow in *; subst; try lia; tcsp. }
 
       { inversion comp4; subst; clear comp4; repndors; repnd; subst; simpl in *; csunf; simpl; fold_terms; tcsp.
         { unfold sumbool_rec, sumbool_rect; simpl.
-          boolvar; try omega; GC; tcsp. }
-        { boolvar; subst; try omega.
+          boolvar; try lia; GC; tcsp. }
+        { boolvar; subst; try lia.
           autorewrite with slow; tcsp. } }
 
       { dcwf h; dterms w; simpl in *.
@@ -13025,8 +13022,8 @@ Proof.
 
   { remember (lib_depth lib) as ls; symmetry in Heqls; destruct ls; simpl in *; tcsp.
     clear IHlib.
-    pose proof (Max.le_max_r (length (cse_vals entry)) (S ls)) as q.
-    rewrite len in q; omega. }
+    pose proof (Nat.le_max_r (length (cse_vals entry)) (S ls)) as q.
+    rewrite len in q; lia. }
 Qed.
 
 Inductive cs_entry_extends {o} : @ChoiceSeqEntry o -> @ChoiceSeqEntry o -> Prop :=
@@ -13081,7 +13078,7 @@ Proof.
   unfold choice_sequence_satisfies_restriction in *.
   destruct restr; simpl in *; simpl in *; introv sel.
   { apply sat; rewrite select_app_l; auto; eauto 3 with slow. }
-(*  { rewrite <- sat; try rewrite length_app; try omega.
+(*  { rewrite <- sat; try rewrite length_app; try lia.
     rewrite select_app_l; auto; eauto 3 with slow. }
   { apply sat; rewrite select_app_l; auto; eauto 3 with slow. }*)
 Qed.
@@ -13105,17 +13102,17 @@ Proof.
 
   - boolvar.
 
-    + destruct l3; simpl in *; ginv; try omega.
+    + destruct l3; simpl in *; ginv; try lia.
       apply le_S_n in l.
       inversion h; subst; clear h.
       match goal with
       | [ H : _ = _ |- _ ] => rename H into h
       end.
-      apply IHl1 in h; boolvar; try omega.
+      apply IHl1 in h; boolvar; try lia.
       exrepnd; subst.
       exists l5; dands; auto.
 
-    + assert (length l3 < S (length l1)) as q by omega; clear n.
+    + assert (length l3 < S (length l1)) as q by lia; clear n.
       destruct l3; simpl in *; ginv.
 
       * exists (a :: l1); dands; auto.
@@ -13124,7 +13121,7 @@ Proof.
         match goal with
         | [ H : _ = _ |- _ ] => rename H into h
         end.
-        apply IHl1 in h; boolvar; try omega.
+        apply IHl1 in h; boolvar; try lia.
         exrepnd; subst.
         exists l; dands; auto.
 Qed.
@@ -13327,7 +13324,7 @@ Lemma find_cs_implies_greater_lib_depth {o} :
 Proof.
   induction lib; introv fcs; simpl in *; ginv.
   destruct a; simpl in *; boolvar; ginv; tcsp; eauto 3 with slow; eauto.
-  eapply IHlib in fcs; eapply le_trans;[eauto|]; eauto 3 with slow.
+  eapply IHlib in fcs; eapply Nat.le_trans;[eauto|]; eauto 3 with slow.
 Qed.
 
 Lemma find_cs_implies_cs_entry_extends_firstn_cs_entry {o} :
@@ -13344,7 +13341,7 @@ Proof.
   destruct e as [vals' restr]; simpl in *.
   applydup @find_cs_implies_greater_lib_depth in fcsb; simpl in *.
   rewrite firstn_app.
-  rewrite (firstn_all2 vals'); try omega; eauto.
+  rewrite (firstn_all2 vals'); try lia; eauto.
 Qed.
 Hint Resolve find_cs_implies_cs_entry_extends_firstn_cs_entry : slow.
 
@@ -13789,7 +13786,7 @@ Proof.
   introv h.
   assert (length (l ++ k) = length k) as q by (rewrite h; auto).
   rewrite length_app in q.
-  remember (length l) as ll; destruct ll; simpl in *; try omega.
+  remember (length l) as ll; destruct ll; simpl in *; try lia.
   destruct l; simpl in *; auto; ginv.
 Qed.
 
@@ -15059,9 +15056,9 @@ Lemma implies_eq_firstn :
 Proof.
   induction n; introv imp; simpl; tcsp.
   destruct l, k; simpl in *; tcsp;
-    pose proof (imp 0) as q; autodimp q hyp; try omega; simpl in *; ginv.
+    pose proof (imp 0) as q; autodimp q hyp; try lia; simpl in *; ginv.
   f_equal; apply IHn; introv h.
-  pose proof (imp (S i)) as imp; simpl in *; apply imp; try omega.
+  pose proof (imp (S i)) as imp; simpl in *; apply imp; try lia.
 Qed.
 
 Lemma select_firstn :
@@ -15071,7 +15068,7 @@ Lemma select_firstn :
       else select n l.
 Proof.
   induction n; introv; simpl; destruct k, l; simpl; tcsp; boolvar; subst; tcsp;
-    rewrite IHn; boolvar; try omega; auto.
+    rewrite IHn; boolvar; try lia; auto.
 Qed.
 
 Lemma is_nat_cs_implies_sane_swapping :
@@ -15583,12 +15580,12 @@ Proof.
 
   remember (find_cs lib2 name) as fcsa; symmetry in Heqfcsa.
   destruct fcsa;
-    try (complete (pose proof (imp 0) as imp; autodimp imp hyp; try omega; exrepnd;
+    try (complete (pose proof (imp 0) as imp; autodimp imp hyp; try lia; exrepnd;
                    unfold find_cs_value_at in *; rewrite Heqfcsa in *; ginv)).
 
   remember (find_cs lib2 name') as fcsb; symmetry in Heqfcsb.
   destruct fcsb;
-    try (complete (pose proof (imp 0) as imp; autodimp imp hyp; try omega; exrepnd;
+    try (complete (pose proof (imp 0) as imp; autodimp imp hyp; try lia; exrepnd;
                    unfold find_cs_value_at in *; rewrite Heqfcsb in *; ginv)).
 
   destruct (dec_has_first_name lib1) as [d|d]; exrepnd; subst; simpl in *.
@@ -15674,7 +15671,7 @@ Proof.
     f_equal.
 
     { apply implies_eq_firstn; introv ltd.
-      pose proof (imp i) as imp; autodimp imp hyp; try omega; exrepnd.
+      pose proof (imp i) as imp; autodimp imp hyp; try lia; exrepnd.
       unfold find_cs_value_at in imp1, imp0.
       rewrite Heqfcsa, Heqfcsb in *; simpl in *.
       rewrite @find_value_of_cs_at_is_select in *; try congruence. }
@@ -15725,7 +15722,7 @@ Proof.
       rewrite Heqfcsa in *; ginv.
       destruct c0 as [vals restr]; simpl in *.
       rewrite select_firstn in fcs; boolvar; ginv.
-      pose proof (imp m) as imp; autodimp imp hyp; try omega; exrepnd; GC.
+      pose proof (imp m) as imp; autodimp imp hyp; try lia; exrepnd; GC.
       unfold find_cs_value_at in *.
       rewrite Heqfcsa in *; simpl in *.
       rewrite find_value_of_cs_at_is_select in imp1.
@@ -15735,7 +15732,7 @@ Proof.
       rewrite @find_value_of_cs_at_is_select in *.
       destruct c as [vals restr]; simpl in *.
       rewrite select_firstn in fcs; boolvar; ginv.
-      pose proof (imp m) as imp; autodimp imp hyp; try omega; exrepnd; GC.
+      pose proof (imp m) as imp; autodimp imp hyp; try lia; exrepnd; GC.
       unfold find_cs_value_at in *.
       rewrite Heqfcsa, Heqfcsb in *; simpl in *.
       rewrite find_value_of_cs_at_is_select in imp1.
@@ -17665,7 +17662,7 @@ Proof.
 
       { apply compute_step_eapply2_success in comp1; repeat (repndors; exrepnd; subst; simpl in *; tcsp).
         { inversion comp4; subst; simpl in *; csunf; simpl; unfold compute_step_eapply; simpl; dterms w; tcsp; GC; eauto. }
-        { inversion comp1; subst; simpl in *; csunf; simpl; unfold compute_step_eapply; simpl; boolvar; try omega.
+        { inversion comp1; subst; simpl in *; csunf; simpl; unfold compute_step_eapply; simpl; boolvar; try lia.
           autorewrite with slow.
           rewrite (swapped_css_preserves_find_cs_value_at (sw0,sw) lib' lib name n); eauto 3 with slow;
             try apply swapped_css_sym; auto; allrw; eauto. } }
@@ -17861,7 +17858,7 @@ Proof.
       apply alpha_eq_bterms_implies_alpha_eq_bterm_selectbt; auto. }
     { eapply alpha_eq_bterm_trans;[|eauto].
       apply alpha_eq_bterm_sym.
-      apply alpha_eq_bterms_implies_alpha_eq_bterm_selectbt; auto; omega. } }
+      apply alpha_eq_bterms_implies_alpha_eq_bterm_selectbt; auto; lia. } }
 
   { introv compa.
     eapply swapped_css_reduces_to in compa;

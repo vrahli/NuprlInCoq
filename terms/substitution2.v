@@ -89,7 +89,7 @@ Proof.
     allrw @length_dom.
     allrw @length_range.
     allrw disjoint_app_r; repnd.
-    repeat (autodimp h2 hyp); try omega.
+    repeat (autodimp h2 hyp); try lia.
 
     allrw <- @sub_eta.
     eapply alpha_eq_trans;[apply alpha_eq_sym; exact h1|].

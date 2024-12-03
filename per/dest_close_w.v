@@ -49,7 +49,7 @@ Proof.
   introv per.
 
   unfold per_w_bar in *; exrepnd.
-  exists (weq_bar_lib_per eqa eqb).
+  exists (weq_bar_lib_per lib eqa eqb).
   dands; auto.
 
   {

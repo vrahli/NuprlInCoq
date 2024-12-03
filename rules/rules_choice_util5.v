@@ -307,7 +307,7 @@ Proof.
   introv ext equb eqa.
   unfold equality_of_int in *; exrepnd.
   eapply tequality_mkc_le_aux; eauto.
-  destruct (Z_le_gt_dec k k0); [left|right]; dands; auto; try omega.
+  destruct (Z_le_gt_dec k k0); [left|right]; dands; auto; try lia.
 Qed.
 
 Lemma zero_equal_in_int {o} :
@@ -1037,7 +1037,7 @@ Proof.
   apply reduces_to_if_step.
   csunf; simpl; dcwf h; simpl; auto.
   assert (1%Z = Z.of_nat 1) as xx; auto; rewrite xx.
-  rewrite <- Nat2Z.inj_add.
+  rewrite <- Znat.Nat2Z.inj_add.
   rewrite Nat.add_1_r; auto.
 Qed.
 Hint Resolve computes_to_valc_lib_depth1 : slow.
@@ -1063,7 +1063,7 @@ Proof.
   { apply reduce_to_prinargs_arith_can; eauto; try apply reduces_to_symm; eauto 3 with slow. }
   apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
   assert (1%Z = Z.of_nat 1) as xx; auto; rewrite xx.
-  rewrite <- Nat2Z.inj_add.
+  rewrite <- Znat.Nat2Z.inj_add.
   rewrite Nat.add_1_r; auto.
 Qed.
 Hint Resolve plus1_preserves_computes_to_valc : slow.
@@ -1201,7 +1201,7 @@ Lemma lib_extends_monotone_lib_depth {o} :
     -> lib_depth lib1 <= lib_depth lib2.
 Proof.
   introv ext.
-  lib_ext_ind ext Case; try omega.
+  lib_ext_ind ext Case; try lia.
 Qed.
 Hint Resolve lib_extends_monotone_lib_depth : slow.
 
@@ -1671,7 +1671,7 @@ Proof.
 
       unfold equality_of_qnat in mn; repnd.
       pose proof (mn lib' lib'1 n0 n1) as mn.
-      repeat (autodimp mn hyp); eauto 3 with slow; try omega. }
+      repeat (autodimp mn hyp); eauto 3 with slow; try lia. }
     { apply in_ext_implies_in_open_bar; introv xta.
       unfold equality_of_qnat; dands; eauto 3 with slow. } }
 

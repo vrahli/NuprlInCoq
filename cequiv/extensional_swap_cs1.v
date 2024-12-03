@@ -50,8 +50,8 @@ Proof.
     unfold computes_to_can_in_max_k_steps in Hcv3; repnd.
     applydup @reduces_atmost_preserves_program in Hcv5 as ispc1; auto.
     applydup @reduces_atmost_preserves_program in Hcv6 as ispc2; auto.
-    apply @no_change_after_value_ra with (k2:=k) in Hcv5; auto; try omega; [].
-    apply @no_change_after_value_ra with (k2:=k) in Hcv6; auto; try omega; [].
+    apply @no_change_after_value_ra with (k2:=k) in Hcv5; auto; try lia; [].
+    apply @no_change_after_value_ra with (k2:=k) in Hcv6; auto; try lia; [].
     applydup @reduces_atmost_preserves_program in Hcv5; auto.
     applydup @reduces_atmost_preserves_program in Hcv6; auto.
     make_red_val_like Hcv5 h1.
@@ -64,7 +64,7 @@ Proof.
     allapply @approx_starbts_nil_left; subst.
 
     unfold computes_to_val_like_in_max_k_steps in Hcv1; repnd.
-    apply @no_change_after_val_like with (k2:=k) in Hcv9; auto; try omega; [].
+    apply @no_change_after_val_like with (k2:=k) in Hcv9; auto; try lia; [].
     make_red_val_like Hcv9 g.
     apply Hi with (v := mk_swap_cs2 c1 c2 c0) in g; auto;
       try (complete (destruct d1; auto)); eauto 2 with slow.
@@ -82,7 +82,7 @@ Proof.
   - unfold extensional_op_ind in Hi.
     unfold computes_to_exception_in_max_k_steps in Hcv3; repnd.
     apply @no_change_after_val_like with (k2:=k) in Hcv3; auto;
-      try omega; try (unfold isvalue_like; allsimpl; sp).
+      try lia; try (unfold isvalue_like; allsimpl; sp).
     make_red_val_like Hcv3 h1.
     apply Hi with (v := a1) in h1; auto.
     apply howe_lemma2_exc in h1; auto; prove_isprogram.
@@ -103,8 +103,8 @@ Proof.
     unfold computes_to_can_in_max_k_steps in Hcv3; repnd.
     unfold computes_to_exception_in_max_k_steps in Hcv4; repnd.
     applydup @reduces_atmost_preserves_program in Hcv2 as ispx; auto.
-    apply @no_change_after_value_ra with (k2:=k) in Hcv2; auto; try omega; [].
-    apply @no_change_after_val_like with (k2:=k) in Hcv4; auto; try omega;
+    apply @no_change_after_value_ra with (k2:=k) in Hcv2; auto; try lia; [].
+    apply @no_change_after_val_like with (k2:=k) in Hcv4; auto; try lia;
       try (unfold isvalue_like; allsimpl; tcsp);[].
     make_red_val_like Hcv2 h1.
     apply Hi with (v := a1) in h1; auto.

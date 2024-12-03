@@ -29,8 +29,9 @@ Export List.ListNotations.
 Require Export Coq.Program.Tactics.
 (*Require Import SfLib.*)
 Require Import String. Open Scope string_scope.
-Require Import Omega.
+Require Import Lia.
 Require Export eq_rel.
+Require Export Arith.PeanoNat.
 
 
 (** Taken from SfLib *)
@@ -184,7 +185,7 @@ Ltac sp_step :=
     | [ H : _ :: _ :: _ :: _ = [_;_] |- _ ] => inversion H (* 3+/2 *)
     | [ H : 0 = S _ |- _ ] => inversion H
     | [ H : S _ = 0 |- _ ] => inversion H
-    | [ H : ?n < 0 |- _ ] => inversion H || omega
+    | [ H : ?n < 0 |- _ ] => inversion H || lia
     | [ H : ?x <> ?x |- _ ] => provefalse; apply H; symmetry
     | [ H : not (?x = ?x) |- _ ] => provefalse; apply H; symmetry
     | [ H : notT (?x = ?x) |- _ ] => provefalse; apply H; symmetry
@@ -754,7 +755,7 @@ Ltac make_and H1 H2 :=
 (** From Adam's LibTactics.v ... ,move to tactics.v*)
 Definition ltac_something (P:Type) (e:P) := e.
 
-Notation "'Something'" := 
+Notation "'Something'" :=
   (@ltac_something _ _).
 
 Lemma ltac_something_eq : forall (e:Type),
@@ -780,6 +781,13 @@ Ltac show_hyps :=
   repeat match goal with
     H: @ltac_something _ _ |- _ => show_hyp H end.
 
+Theorem lt_S_n n m : S n < S m -> n < m.
+Proof.
+  intros h.
+  inversion h; subst; auto.
+  eapply Nat.le_trans;[|eauto]; eauto.
+Qed.
+
 Ltac dlt Hyp :=
 match type of Hyp with
 | 0 < _ => fail 1
@@ -804,12 +812,12 @@ Ltac revert_dependents x :=
          end;
   revert x.
 Ltac dtiffs2 := repeat match goal with
-[ H: forall _ : ?X, _ <=> _ |- _] => 
+[ H: forall _ : ?X, _ <=> _ |- _] =>
     let Hl:= fresh H "tl" in
     let Hr:= fresh H "tr" in
     pose proof (fun x:X => tiff_fst (H x)) as Hl;
     pose proof (fun x:X => tiff_snd (H x)) as Hr; hide_hyp H
-| [ H: forall (_ : ?X) (_ : ?Y), _ <=> _ |- _] => 
+| [ H: forall (_ : ?X) (_ : ?Y), _ <=> _ |- _] =>
     let Hl:= fresh H "tl" in
     let Hr:= fresh H "tr" in
     pose proof (fun x:X => (fun y:Y => tiff_fst (H x y))) as Hl;
@@ -826,7 +834,7 @@ Ltac prove_iff h :=
   end.
 
 Ltac rep_eexists :=
-repeat match goal with 
+repeat match goal with
   [ |-  sigT _  ] =>  eexists
   end.
 

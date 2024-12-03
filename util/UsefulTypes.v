@@ -32,7 +32,7 @@ Require Export Basics.
 Require Export Bool.
 Require Export Arith.
 Require Export Arith.EqNat.
-Require Export Omega.
+Require Export Lia.
 
 
 (* Prop/Type exists depending on the switch universe-type.v/universe-prop.v *)
@@ -55,6 +55,8 @@ Notation "{ a , b , c , d , e , f : T $ P }" :=
 
 (* Some extra notation from SfLib *)
 Notation "[ x , .. , y ]" := (cons x .. (cons y []) ..).
+
+Notation beq_nat := Nat.eqb (only parsing).
 
 (* Some lemmas from SfLib *)
 Theorem beq_nat_sym :
@@ -152,26 +154,32 @@ Qed.
 Lemma max_prop1 :
   forall a b, a <= max a b.
 Proof.
-  induction a; simpl; sp; try omega.
+  induction a; simpl; sp; try lia.
   destruct b; auto.
-  assert (a <= max a b); auto; omega.
+  assert (a <= max a b); auto; lia.
 Qed.
 
 Lemma max_prop2 :
   forall a b, b <= max a b.
 Proof.
-  induction a; simpl; sp; try omega.
-  destruct b; auto; try omega.
-  assert (b <= max a b); auto; omega.
+  induction a; simpl; sp; try lia.
+  destruct b; auto; try lia.
 Qed.
 
 Lemma max_or :
   forall a b,
     (max a b = a) \/ (max a b = b).
 Proof.
-  induction a; simpl; sp; try omega.
+  induction a; simpl; sp; try lia.
   destruct b; auto.
   assert (max a b = a \/ max a b = b) by apply IHa; sp.
+Qed.
+
+Theorem le_lt_or_eq n m : n <= m -> n < m \/ n = m.
+Proof.
+  intros h.
+  induction h as [|? h IHh]; eauto.
+  destruct IHh as [q|q]; subst; eauto.
 Qed.
 
 Theorem comp_ind:
@@ -198,9 +206,9 @@ Proof.
  intros P H n.
  assert (forall n:nat , forall m:nat, m < n -> P m).
  intro n0. induction n0 as [| n']; intros.
- omega.
+ lia.
  destruct (eq_nat_dec m n'); subst; auto.
- apply IHn'; omega.
+ apply IHn'; lia.
  apply H; apply X.
 Defined.
 
@@ -278,13 +286,13 @@ Qed.
 Lemma S_le_inj :
   forall a b, S a <= S b -> a <= b.
 Proof.
-  sp; omega.
+  sp; lia.
 Qed.
 
 Lemma S_lt_inj :
   forall a b, S a < S b -> a < b.
 Proof.
-  sp; omega.
+  sp; lia.
 Qed.
 
 Lemma not_or :
@@ -450,7 +458,7 @@ Lemma min_eq : forall n1 n2,
   n1=n2 -> min n1 n2 = n2.
 Proof.
   introv H. rewrite  H.
-  apply Min.min_idempotent.
+  apply Nat.min_id.
 Qed.
 
 Lemma negb_eq_true :
@@ -607,20 +615,26 @@ Proof. sp; split; sp. Qed.
 Lemma not_false_is_true : !False <=> True.
 Proof. sp; split; sp. Qed.
 
+Theorem lt_n_S n m : n < m -> S n < S m.
+Proof.
+  intros h; induction h; eauto.
+Qed.
+
 Lemma forall_num_lt_d : forall m P,
   (forall n, n < S m -> P n)
   -> P 0 # (forall n, n <  m -> P (S n) ).
 Proof.
   introv Hlt.
-  dimp (Hlt 0); auto; [omega|].
+  dimp (Hlt 0); auto; [lia|].
   dands; auto.
   introv Hgt.
   apply lt_n_S in Hgt.
   eauto.
 Qed.
-Ltac dforall_lt_hyp name := 
+
+Ltac dforall_lt_hyp name :=
   repeat match goal with
-  [ H : forall  n : nat , n< S ?m -> ?C |- _ ] => 
+  [ H : forall  n : nat , n< S ?m -> ?C |- _ ] =>
     apply forall_num_lt_d in H;
     let Hyp := fresh name in
     destruct H as [Hyp H]

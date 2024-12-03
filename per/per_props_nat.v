@@ -475,11 +475,11 @@ Proof.
     try (apply isprogram_less; apply isprog_implies; auto).
 
   { unfold lblift; simpl; dands; auto; introv w.
-    repeat (destruct n; try omega); unfold selectbt; simpl;
+    repeat (destruct n; try lia); unfold selectbt; simpl;
       apply blift_approx_open_nobnd2; eauto 2 with slow. }
 
   { unfold lblift; simpl; dands; auto; introv w.
-    repeat (destruct n; try omega); unfold selectbt; simpl;
+    repeat (destruct n; try lia); unfold selectbt; simpl;
       apply blift_approx_open_nobnd2; eauto 2 with slow. }
 Qed.
 
@@ -508,7 +508,7 @@ Proof.
   destruct_cterms; unfold reduces_toc; simpl.
   apply reduces_to_if_step; csunf; simpl.
   dcwf h; simpl.
-  unfold compute_step_comp; simpl; boolvar; tcsp; try omega.
+  unfold compute_step_comp; simpl; boolvar; tcsp; try lia.
 Qed.
 Hint Resolve ccequivc_ext_mkc_less_integer_if_lt : slow.
 
@@ -517,7 +517,7 @@ Lemma ccequivc_ext_mkc_less_integer_if_gt {o} :
     (kb > ka)%Z
     -> ccequivc_ext lib (mkc_less (mkc_integer ka) (mkc_integer kb) c d) c.
 Proof.
-  introv ltk; apply ccequivc_ext_mkc_less_integer_if_lt; try omega.
+  introv ltk; apply ccequivc_ext_mkc_less_integer_if_lt; try lia.
 Qed.
 Hint Resolve ccequivc_ext_mkc_less_integer_if_gt : slow.
 
@@ -531,7 +531,7 @@ Proof.
   destruct_cterms; unfold reduces_toc; simpl.
   apply reduces_to_if_step; csunf; simpl.
   dcwf h; simpl.
-  unfold compute_step_comp; simpl; boolvar; tcsp; try omega.
+  unfold compute_step_comp; simpl; boolvar; tcsp; try lia.
 Qed.
 Hint Resolve ccequivc_ext_mkc_less_integer_if_ge : slow.
 
@@ -540,7 +540,7 @@ Lemma ccequivc_ext_mkc_less_integer_if_le {o} :
     (kb <= ka)%Z
     -> ccequivc_ext lib (mkc_less (mkc_integer ka) (mkc_integer kb) c d) d.
 Proof.
-  introv ltk; apply ccequivc_ext_mkc_less_integer_if_ge; try omega.
+  introv ltk; apply ccequivc_ext_mkc_less_integer_if_ge; try lia.
 Qed.
 Hint Resolve ccequivc_ext_mkc_less_integer_if_le : slow.
 
@@ -599,7 +599,7 @@ Proof.
       eapply tequality_respects_cequivc_right;[exact c2|].
       auto.
 
-    + right; right; left; dands; auto; try omega.
+    + right; right; left; dands; auto; try lia.
 
       assert (ccequivc_ext
                 lib
@@ -617,7 +617,7 @@ Proof.
       eapply tequality_respects_cequivc_right;[exact c2|].
       auto.
 
-    + right; right; right; dands; auto; try omega.
+    + right; right; right; dands; auto; try lia.
 
       assert (ccequivc_ext
                 lib
@@ -635,7 +635,7 @@ Proof.
       eapply tequality_respects_cequivc_right;[exact c2|].
       auto.
 
-    + right; left; dands; auto; try omega.
+    + right; left; dands; auto; try lia.
 
       assert (ccequivc_ext
                 lib
@@ -838,16 +838,16 @@ Proof.
     destruct (Z_lt_ge_dec ka kb); destruct (Z_lt_ge_dec ke kf).
 
     + left; dands; auto.
-      repndors; repnd; try omega; auto.
+      repndors; repnd; try lia; auto.
 
-    + right; right; left; dands; auto; try omega.
-      repndors; repnd; try omega; auto.
+    + right; right; left; dands; auto; try lia.
+      repndors; repnd; try lia; auto.
 
-    + right; right; right; dands; auto; try omega.
-      repndors; repnd; try omega; auto.
+    + right; right; right; dands; auto; try lia.
+      repndors; repnd; try lia; auto.
 
-    + right; left; dands; auto; try omega.
-      repndors; repnd; try omega; auto.
+    + right; left; dands; auto; try lia.
+      repndors; repnd; try lia; auto.
 Qed.
 *)
 
@@ -934,7 +934,7 @@ Proof.
     clear h k; introv y h k.
     exrepnd; spcast.
     repeat computes_to_eqval.
-    omega.
+    lia.
 Qed.
 
 Lemma inhabited_le {o} :
@@ -1034,7 +1034,7 @@ Proof.
                 d) as c1 by eauto 3 with slow.
 
       eapply cequivc_preserving_equality in k;[|eauto]; tcsp.
-      right; dands; auto; try omega.
+      right; dands; auto; try lia.
 
   - eapply cequivc_preserving_equality;[|apply ccequivc_ext_sym;eauto].
     clear c1.
@@ -1108,7 +1108,7 @@ Proof.
 
   split; intro k; exrepnd; spcast; dands.
 
-  - repndors; repnd; tcsp; try omega.
+  - repndors; repnd; tcsp; try lia.
     pose proof (k _ (lib_extends_refl _)) as k; simpl in k.
     destruct k.
     eapply inhabited_less_than_aux; eauto.
@@ -1116,7 +1116,7 @@ Proof.
   - right; auto.
 
   - introv ext inh.
-    eapply inhabited_less_than_aux in inh; eauto 3 with slow; try omega.
+    eapply inhabited_less_than_aux in inh; eauto 3 with slow; try lia.
 Qed.
 
 Lemma inhabited_le_aux {o} :
@@ -1332,11 +1332,11 @@ Proof.
 
         apply Z.ltb_lt in Heqb.
 
-        pose proof (mkc_less_than_comp1 lib a mkc_one k 1) as h1; repeat (autodimp h1 hyp); try omega.
+        pose proof (mkc_less_than_comp1 lib a mkc_one k 1) as h1; repeat (autodimp h1 hyp); try lia.
         unfold computes_to_valc; simpl; unfold mk_one, mk_nat; simpl.
         apply computes_to_value_isvalue_refl; apply isvalue_mk_integer.
 
-        pose proof (mkc_less_than_comp1 lib a' mkc_one k 1) as h2; repeat (autodimp h2 hyp); try omega.
+        pose proof (mkc_less_than_comp1 lib a' mkc_one k 1) as h2; repeat (autodimp h2 hyp); try lia.
         unfold computes_to_valc; simpl; unfold mk_one, mk_nat; simpl.
         apply computes_to_value_isvalue_refl; apply isvalue_mk_integer.
 
@@ -1348,11 +1348,11 @@ Proof.
 
         apply Z.ltb_ge in Heqb.
 
-        pose proof (mkc_less_than_comp2 lib a mkc_one k 1) as h1; repeat (autodimp h1 hyp); try omega.
+        pose proof (mkc_less_than_comp2 lib a mkc_one k 1) as h1; repeat (autodimp h1 hyp); try lia.
         unfold computes_to_valc; simpl; unfold mk_one, mk_nat; simpl.
         apply computes_to_value_isvalue_refl; apply isvalue_mk_integer.
 
-        pose proof (mkc_less_than_comp2 lib a' mkc_one k 1) as h2; repeat (autodimp h2 hyp); try omega.
+        pose proof (mkc_less_than_comp2 lib a' mkc_one k 1) as h2; repeat (autodimp h2 hyp); try lia.
         unfold computes_to_valc; simpl; unfold mk_zero, mk_nat; simpl.
         apply computes_to_value_isvalue_refl; apply isvalue_mk_integer.
 
@@ -1530,7 +1530,7 @@ Proof.
     destruct lbt1; try (complete (right; intro k; inversion k)).
     assert ({z < z0} + {z > z0} + {z = z0})%Z as h by (apply Z_dec).
     destruct h as [ h | h ]; subst.
-    destruct h as [ h | h ]; sp; right; sp; inversion H; omega.
+    destruct h as [ h | h ]; sp; right; sp; inversion H; lia.
     left; sp.
 Qed.
 
@@ -1630,11 +1630,11 @@ Proof.
     inversion h.
   - apply leb_correct in e.
     destruct n; allsimpl.
-    + left; omega.
+    + left; lia.
     + apply leb_complete in e.
       apply IHm in e; dorn e.
-      left; omega.
-      right; omega.
+      left; lia.
+      right; lia.
 Qed.
 
 (* This is the crux of linear_search *)
@@ -1662,7 +1662,7 @@ Proof.
   dorn j.
   left; exists (Z.opp (Z.of_nat z),0); simpl; sp.
   right; introv e.
-  assert (n = 0) by omega; subst; simpl; sp.
+  assert (n = 0) by lia; subst; simpl; sp.
   dorn IHk.
   left; auto.
   pose proof (dec (Z.of_nat z) (S k)) as h.
@@ -1688,7 +1688,7 @@ Proof.
   dorn h.
   left; exists (0%Z,n); simpl; sp.
   right; introv e.
-  assert (z = 0) by omega; subst; simpl; sp.
+  assert (z = 0) by lia; subst; simpl; sp.
   dorn IHk.
   left; auto.
   pose proof (dec (Z.of_nat (S k)) n) as h.
@@ -1711,7 +1711,7 @@ Proof.
   dorn h.
   left; exists (0%Z,0); simpl; sp.
   right; introv e1 e2.
-  assert (z = 0) by omega; assert (n = 0) by omega; subst; simpl; sp.
+  assert (z = 0) by lia; assert (n = 0) by lia; subst; simpl; sp.
   dorn IHk.
   left; auto.
   pose proof (hyp1 (S k) (S k)) as h1.
@@ -1733,7 +1733,7 @@ Proof.
   left; auto.
   right.
   introv e; subst.
-  apply hyp; omega.
+  apply hyp; lia.
 Qed.
 
 Fixpoint linear_search
@@ -2042,7 +2042,7 @@ Proof.
 
     apply k in inh.
     destruct (Z_lt_le_dec k0 k1); destruct (Z_lt_le_dec k0 k2); tcsp;
-    try (complete (assert False; repndors; repnd; tcsp; try omega)).
+    try (complete (assert False; repndors; repnd; tcsp; try lia)).
 Qed.
 
 
@@ -2304,7 +2304,7 @@ Proof.
 
     + exists (Z.of_nat m) k; dands; spcast; auto; eauto 3 with slow.
 
-    + exists 0%Z (Z.of_nat m); dands; spcast; tcsp; try omega; eauto 3 with slow.
+    + exists 0%Z (Z.of_nat m); dands; spcast; tcsp; try lia; eauto 3 with slow.
       rw @mkc_zero_eq; rw @mkc_nat_eq; simpl; apply computes_to_valc_refl; eauto 3 with slow.
 
     + exists (Z.of_nat m) k; dands; spcast; auto; eauto 3 with slow.
@@ -2403,7 +2403,7 @@ Proof.
 
     { apply inhabited_type_implies_inhabited_type_bar.
       eapply inhabited_le_aux; eauto 3 with slow;
-        allrw @mkc_integer_as_mk_zero; eauto 2 with slow; try omega. }
+        allrw @mkc_integer_as_mk_zero; eauto 2 with slow; try lia. }
 
     { apply inhabited_type_implies_inhabited_type_bar.
       eapply inhabited_less_than_aux; eauto 3 with slow. }
@@ -2422,7 +2422,7 @@ Proof.
 
   - unfold cequiv_bts, lblift; simpl; dands; auto.
     introv k.
-    repeat (destruct n; tcsp; try omega); clear k; unfold selectbt; simpl;
+    repeat (destruct n; tcsp; try lia); clear k; unfold selectbt; simpl;
       try (fold (bcequiv lib)); eauto 4 with slow.
     apply bcequiv_nobnd; eauto 3 with slow.
 
@@ -2443,7 +2443,7 @@ Proof.
   apply cequiv_congruence; fold_terms.
   - unfold cequiv_bts, lblift; simpl; dands; auto.
     introv k.
-    repeat (destruct n; tcsp; try omega); clear k; unfold selectbt; simpl;
+    repeat (destruct n; tcsp; try lia); clear k; unfold selectbt; simpl;
       try (fold (bcequiv lib)); eauto 4 with slow.
     apply bcequiv_nobnd; eauto 3 with slow.
   - apply isprogram_decide_iff2; dands; eauto 3 with slow.
@@ -2565,7 +2565,7 @@ Proof.
     allrw @mkc_integer_as_mk_zero; eauto 2 with slow.
 
   destruct (Z_le_gt_dec 0 k); tcsp.
-  right; dands; omega.
+  right; dands; lia.
 Qed.
 Hint Resolve type_tnat : slow.
 
@@ -2608,7 +2608,7 @@ Proof.
     eapply tequality_mkc_le_aux; eauto 3 with slow;
       allrw @mkc_integer_as_mk_zero; eauto 2 with slow.
     destruct (Z_le_gt_dec 0 k0); sp.
-    right; sp; omega.
+    right; sp; lia.
 
   - eapply in_open_bar_pres; try exact k; clear k; introv ext k.
     unfold equality_of_int, equality_of_nat in *; exrepnd; spcast.
@@ -2617,7 +2617,7 @@ Proof.
   - eapply in_open_bar_pres; try exact k; clear k; introv ext k.
     unfold equality_of_int, equality_of_nat in *; exrepnd; spcast.
     eapply inhabited_le_aux; eauto 3 with slow;
-      allrw @mkc_integer_as_mk_zero; eauto 2 with slow; try omega.
+      allrw @mkc_integer_as_mk_zero; eauto 2 with slow; try lia.
 Qed.
 
 Lemma equality_in_int_and_inhabited_le_implies_equality_in_nat {o} :
@@ -2635,7 +2635,7 @@ Proof.
   unfold equality_of_int in h; exrepnd.
 
   eapply inhabited_le_aux in inh; eauto 3 with slow;
-      allrw @mkc_integer_as_mk_zero; eauto 2 with slow; try omega.
+      allrw @mkc_integer_as_mk_zero; eauto 2 with slow; try lia.
   apply Wf_Z.Z_of_nat_complete in inh; exrepnd; subst.
   exists n; dands; spcast; auto.
 Qed.

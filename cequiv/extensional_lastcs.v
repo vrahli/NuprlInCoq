@@ -69,12 +69,12 @@ Proof.
 
   repndors; exrepnd; [|allsimpl; subst; repnd; complete ginv|simpl in *; ginv];[].
 
-  assert (m <= S k) as XX by omega.
+  assert (m <= S k) as XX by lia.
   repnud Hcv.
   eapply reduces_atmost_split in XX; eauto.
   remember (S k - m) as skm.
-  destruct skm; [omega|].
-  assert (skm <= k) by (subst; omega).
+  destruct skm; [lia|].
+  assert (skm <= k) by (subst; lia).
   apply reduces_atmost_S in XX; exrepnd.
   applydup @reduces_atmost_preserves_program in Hcv4; auto.
   apply isprogram_last_cs_implies_ex in Hcv6; unfold nobnd in *; exrepnd; subst; cpx.
@@ -113,7 +113,7 @@ Proof.
         end
       end. (* this will be used later in this proof *)
       pose proof (reduces_to_preserves_program _ _ _ h1 Hprt') as Hispr.
-      apply reduces_atmost_preserves_program in Hcv4; auto; try omega.
+      apply reduces_atmost_preserves_program in Hcv4; auto; try lia.
 
       make_red_val_like XX0 hh.
       applydup @isprogram_last_cs_implies in Hprt'; repnd.

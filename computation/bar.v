@@ -417,7 +417,7 @@ Proof.
   revert dependent extra.
   induction l; introv s; allsimpl; tcsp.
   rw string_append_assoc.
-  introv k; repndors;[|apply IHl in k;auto;rw string_length_append; omega].
+  introv k; repndors;[|apply IHl in k;auto;rw string_length_append; lia].
   destruct a as [nm ki].
   inversion k as [xx]; clear k.
   subst ki.
@@ -429,7 +429,7 @@ Proof.
                  (append_string_list (map csn_name l)))) as e.
   { rewrite xx at 1; auto. }
   allrw string_length_append.
-  omega.
+  lia.
 Defined.
 
 Fixpoint library2choice_sequence_names {o} (lib : @plibrary o) : list choice_sequence_name :=
@@ -1809,18 +1809,18 @@ Proof.
   induction n; introv h; simpl in *; tcsp.
   repndors; repnd; tcsp.
 
-  - exists 0; dands; auto; try omega.
+  - exists 0; dands; auto; try lia.
     { left; exists 1; simpl; tcsp. }
-    introv q; try omega.
+    introv q; try lia.
 
   - applydup IHn in h; exrepnd.
-    exists (S k); simpl; dands; auto; try omega; eauto 3 with slow.
+    exists (S k); simpl; dands; auto; try lia; eauto 3 with slow.
     { apply entry_in_inf_library_shift_implies; auto.
       introv xx; apply matching_inf_entries_sym in xx.
       eapply inf_entry_extends_implies_inf_matching_entries3 in xx; eauto. }
     introv q.
     destruct j; auto.
-    apply h2; try omega.
+    apply h2; try lia.
 Qed.*)
 
 (*Lemma inf_library_extends_two_matching_entries {o} :
@@ -1849,7 +1849,7 @@ Proof.
     eapply matching_entries_preserves_inf_matching_entries;[|eauto].
     apply matching_entries_sym; auto.
 
-  - exists k0; dands; auto; try omega.
+  - exists k0; dands; auto; try lia.
 
   - pose proof (ext0 k0) as q; autodimp q hyp.
     destruct q.
@@ -2343,14 +2343,14 @@ Lemma implies_entry_in_inf_library_n {o} :
     -> (forall m, m < n -> ~ matching_inf_entries (infLib m) (infLib n))
     -> entry_in_inf_library_n k (infLib n) infLib.
 Proof.
-  induction k; introv ltnk imp; simpl in *; try omega.
+  induction k; introv ltnk imp; simpl in *; try lia.
   destruct n; simpl; tcsp.
   right; dands; auto.
 
-  { apply imp; omega. }
+  { apply imp; lia. }
 
-  apply (IHk n (fun n => infLib (S n))); try omega.
-  introv ltmn; apply imp; omega.
+  apply (IHk n (fun n => infLib (S n))); try lia.
+  introv ltmn; apply imp; lia.
 Qed.
 Hint Resolve implies_entry_in_inf_library_n : slow.
 
@@ -2539,7 +2539,7 @@ Proof.
     applydup h in x; subst.
     rewrite safe1; auto.
 
-  - unfold is_primitive_kind in *; simpl in *; try omega.
+  - unfold is_primitive_kind in *; simpl in *; try lia.
 
   - destruct restr in *; simpl in *; tcsp; repnd.
     dands; tcsp.
@@ -2684,12 +2684,12 @@ Lemma fun2list_lt0 :
   forall {A} n (f : nat -> A),
     0 < n -> fun2list n f = f 0 :: fun2list (pred n) (fun m => f (S m)).
 Proof.
-  induction n; introv lt0; simpl in *; try omega.
+  induction n; introv lt0; simpl in *; try lia.
   destruct (lt_dec 0 n).
   - rewrite IHn; auto; simpl.
     f_equal.
-    destruct n; simpl; auto; try omega.
-  - destruct n; try omega; simpl; auto.
+    destruct n; simpl; auto; try lia.
+  - destruct n; try lia; simpl; auto.
 Qed.
 
 Lemma select_fun2list :
@@ -2700,15 +2700,15 @@ Proof.
 
   - rewrite fun2list_lt0; auto.
 
-  - assert (m = 0) by omega; subst; simpl; auto.
+  - assert (m = 0) by lia; subst; simpl; auto.
 
-  - rewrite fun2list_lt0; auto; try omega.
-    rewrite IHn; boolvar; try omega; auto.
+  - rewrite fun2list_lt0; auto; try lia.
+    rewrite IHn; boolvar; try lia; auto.
 
   - destruct (lt_dec 0 m).
     + rewrite fun2list_lt0; auto; simpl.
-      apply nth_select2; autorewrite with slow; omega.
-    + assert (m = 0) by omega; subst; simpl; auto.
+      apply nth_select2; autorewrite with slow; lia.
+    + assert (m = 0) by lia; subst; simpl; auto.
 Qed.
 
 Lemma select_none :
@@ -2748,7 +2748,7 @@ Proof.
     apply select_implies_eq_lists; autorewrite with slow; auto.
     introv.
 
-    rewrite select_fun2list; boolvar;[|apply nth_select2; try omega].
+    rewrite select_fun2list; boolvar;[|apply nth_select2; try lia].
     apply (nth_select1 _ _ mkc_zero) in l.
     unfold ChoiceSeqVal; rewrite l.
     apply h in l; rewrite l.
@@ -2758,19 +2758,19 @@ Proof.
     apply select_implies_eq_lists; autorewrite with slow; auto.
     introv.
 
-    rewrite select_fun2list; boolvar;[|apply nth_select2; try omega].
+    rewrite select_fun2list; boolvar;[|apply nth_select2; try lia].
     apply (nth_select1 _ _ mkc_zero) in l.
     unfold ChoiceSeqVal; rewrite l.
     apply h in l; rewrite l.
     rewrite h4; auto.
 
-  - unfold is_primitive_kind in *; simpl in *; try omega.
+  - unfold is_primitive_kind in *; simpl in *; try lia.
 
   - destruct restr; simpl in *; tcsp; repnd.
     apply select_implies_eq_lists; autorewrite with slow; auto.
     introv.
 
-    rewrite select_fun2list; boolvar;[|apply nth_select2; try omega].
+    rewrite select_fun2list; boolvar;[|apply nth_select2; try lia].
     unfold natSeq2default.
     apply (nth_select1 _ _ mkc_zero) in l.
     unfold ChoiceSeqVal; rewrite l.
@@ -2838,7 +2838,7 @@ Proof.
   unfold is_primitive_kind in *.
   unfold same_restrictions.
   destruct name as [name k]; simpl in *.
-  destruct k as [n|seq]; simpl in *; boolvar; tcsp; subst; GC; try omega;[| |].
+  destruct k as [n|seq]; simpl in *; boolvar; tcsp; subst; GC; try lia;[| |].
 
   - unfold is_nat_restriction in *.
     destruct r1, r2; simpl in *; repnd; dands; introv; allrw; tcsp.
@@ -2852,8 +2852,8 @@ Proof.
     { destruct (le_dec (length seq) n).
       - rw cora; auto.
         rw corb; auto; tcsp.
-      - rw cora0; try omega.
-        rw corb0; try omega; tcsp. }
+      - rw cora0; try lia.
+        rw corb0; try lia; tcsp. }
 Qed.
 Hint Resolve correct_restriction_implies_same_restrictions : slow.*)
 
@@ -2873,7 +2873,7 @@ Lemma fun2list_lt0_snoc :
   forall {A} n (f : nat -> A),
     0 < n -> fun2list n f = snoc (fun2list (pred n) f) (f (pred n)).
 Proof.
-  destruct n; simpl; introv lt0; try omega; auto.
+  destruct n; simpl; introv lt0; try lia; auto.
 Qed.
 
 Lemma pred_sub_add_succ :
@@ -2881,7 +2881,7 @@ Lemma pred_sub_add_succ :
     0 < n - m
     -> pred (n - m) + S m = n.
 Proof.
-  introv ltn; omega.
+  introv ltn; lia.
 Qed.
 
 Lemma fun2list_split :
@@ -2892,13 +2892,13 @@ Lemma fun2list_split :
 Proof.
   induction n; introv ltn; simpl; autorewrite with slow nat.
 
-  { assert (m = 0) by omega; subst; simpl; auto. }
+  { assert (m = 0) by lia; subst; simpl; auto. }
 
   destruct m; simpl; autorewrite with slow nat.
 
   { f_equal; apply fun2list_eta; introv q; autorewrite with slow nat; auto. }
 
-  rewrite (IHn m); try omega; clear IHn.
+  rewrite (IHn m); try lia; clear IHn.
   rewrite <- snoc_append_l.
   rewrite snoc_append_r.
   f_equal.
@@ -2912,8 +2912,8 @@ Proof.
     f_equal.
     apply fun2list_eta; introv q; autorewrite with slow nat; auto. }
 
-  assert (n - m = 0) as xx by omega; rewrite xx; simpl; auto.
-  assert (n = m) as xxx by omega; subst; auto.
+  assert (n - m = 0) as xx by lia; rewrite xx; simpl; auto.
+  assert (n = m) as xxx by lia; subst; auto.
 Qed.
 
 (*Lemma entry_extends_choice_sequence_name2entry_upto {o} :
@@ -2941,8 +2941,8 @@ Proof.
 Qed.
 Hint Resolve entry_extends_choice_sequence_name2entry_upto : slow.*)
 
-Hint Resolve Max.le_max_l : slow.
-Hint Resolve Max.le_max_r : slow.
+Hint Resolve Nat.le_max_l : slow.
+Hint Resolve Nat.le_max_r : slow.
 
 Lemma is_nat_natSeq2default {o} :
   forall n seq, @is_nat o n (natSeq2default seq n).
@@ -2966,7 +2966,7 @@ Proof.
   unfold choice_sequence_satisfies_restriction.
   unfold correct_restriction in *.
   unfold is_primitive_kind in *.
-  destruct name as [name k], k as [k|seq]; simpl in *; boolvar; subst; tcsp; GC; try omega;[| |].
+  destruct name as [name k], k as [k|seq]; simpl in *; boolvar; subst; tcsp; GC; try lia;[| |].
 
   - destruct restr; simpl in *; tcsp; repnd.
 
@@ -2988,7 +2988,7 @@ Proof.
     unfold choice_sequence_name2default; simpl.
     destruct (lt_dec n0 (length seq)) as [xx|xx].
     { apply cor0; auto; eauto 3 with slow. }
-    { apply cor; eauto 3 with slow; try omega. }
+    { apply cor; eauto 3 with slow; try lia. }
 Qed.
 Hint Resolve safe_library_entry_choice_sequence_name2entry_upto : slow.
 
@@ -3380,7 +3380,7 @@ Lemma inf_entry_extends_implies_entry_in_inf_library_extends {o} :
     -> entry_in_inf_library_extends e (S n) infLib.
 Proof.
   induction n; introv ext m imp; simpl in *; tcsp.
-  pose proof (imp 0) as q; autodimp q hyp; try omega.
+  pose proof (imp 0) as q; autodimp q hyp; try lia.
   right.
   dands; auto.
 
@@ -3389,7 +3389,7 @@ Proof.
   pose proof (IHn e a (fun n => infLib (S n))) as h; simpl in h.
   repeat (autodimp h hyp).
   introv ltmn.
-  apply imp; auto; try omega.
+  apply imp; auto; try lia.
 Qed.
 Hint Resolve inf_entry_extends_implies_entry_in_inf_library_extends : slow.
 
@@ -3401,12 +3401,12 @@ Lemma le_preserves_entry_in_inf_library_extends {o} :
 Proof.
   induction k; introv lenk i; simpl in *.
 
-  - assert (n = 0) as xx by omega; subst; simpl in *; tcsp.
+  - assert (n = 0) as xx by lia; subst; simpl in *; tcsp.
 
   - destruct n; simpl in *; tcsp.
     repndors; repnd; tcsp.
     pose proof (IHk n e (shift_inf_lib infLib)) as q.
-    repeat (autodimp q hyp); try omega.
+    repeat (autodimp q hyp); try lia.
 Qed.
 
 Lemma inf_entry_extends_implies_entry_in_inf_library_extends_lt {o} :
@@ -3420,7 +3420,7 @@ Proof.
   introv ltnk i m imp.
   eapply le_preserves_entry_in_inf_library_extends;
     [|eapply inf_entry_extends_implies_entry_in_inf_library_extends; eauto];
-    try omega.
+    try lia.
 Qed.
 Hint Resolve inf_entry_extends_implies_entry_in_inf_library_extends_lt : slow.
 
@@ -3487,9 +3487,9 @@ Lemma select_app_left :
   forall {A} (l1 l2 : list A) n,
     n < length l1 -> select n (l1 ++ l2) = select n l1.
 Proof.
-  induction l1; introv h; simpl in *; try omega.
+  induction l1; introv h; simpl in *; try lia.
   destruct n; simpl in *; auto.
-  pose proof (IHl1 l2 n) as q; autodimp q hyp; try omega.
+  pose proof (IHl1 l2 n) as q; autodimp q hyp; try lia.
 Qed.
 
 Lemma entry_extends_preserves_safe_library_entry {o} :
@@ -3514,7 +3514,7 @@ Proof.
   - introv h.
     pose proof (safe i) as q.
     allrw length_app.
-    autodimp q hyp; try omega.
+    autodimp q hyp; try lia.
     rewrite select_app_left in q; auto.
 
   - introv i.
@@ -3927,9 +3927,9 @@ Proof.
   destruct name as [name k]; simpl in *.
   unfold choice_sequence_name2choice_seq_vals_upto.
   destruct k as [k|seq]; simpl in *; boolvar; subst; tcsp; GC;
-    destruct restr; simpl in *; simpl; auto; tcsp; try omega;
+    destruct restr; simpl in *; simpl; auto; tcsp; try lia;
       introv h; repnd; rewrite select_fun2list in h; boolvar; tcsp; ginv;
-        try (complete (allrw; auto)); try omega;[].
+        try (complete (allrw; auto)); try lia;[].
   unfold natSeq2default.
 
   remember (select n0 seq) as s; symmetry in Heqs; destruct s.
@@ -4687,15 +4687,15 @@ Proof.
   unfold choice_sequence_satisfies_restriction in *.
   destruct restr; simpl in *; introv q; eauto.
   { apply h.
-    rewrite select_snoc_eq; boolvar; eauto 3 with slow; subst; try omega.
+    rewrite select_snoc_eq; boolvar; eauto 3 with slow; subst; try lia.
     { rewrite implies_select_none in q; auto; ginv. }
-    { apply select_lt in q; try omega. } }
+    { apply select_lt in q; try lia. } }
 (*  { pose proof (h i) as h; allrw length_snoc; autodimp h hyp.
     rewrite select_snoc_eq in h; boolvar; tcsp. }
   { apply h.
-    rewrite select_snoc_eq; boolvar; eauto 3 with slow; subst; try omega.
+    rewrite select_snoc_eq; boolvar; eauto 3 with slow; subst; try lia.
     { rewrite implies_select_none in q; auto; ginv. }
-    { apply select_lt in q; try omega. } }*)
+    { apply select_lt in q; try lia. } }*)
 Qed.
 Hint Resolve choice_sequence_satisfies_restriction_snoc_implies : slow.
 
@@ -4811,17 +4811,17 @@ Proof.
 
   { apply (lib_extends_cs _ name a (length vals) typ); simpl; boolvar; tcsp;
       try (apply cond; apply in_snoc; tcsp).
-    apply safe; rewrite select_snoc_eq; boolvar; tcsp; try omega. }
+    apply safe; rewrite select_snoc_eq; boolvar; tcsp; try lia. }
 
 (*
   { apply (lib_extends_law _ name a (length vals) f); simpl; boolvar; tcsp.
     pose proof (safe (length vals)) as safe1; allrw length_snoc.
     autodimp safe1 hyp.
-    rewrite select_snoc_eq in safe1; boolvar; tcsp; try omega.
+    rewrite select_snoc_eq in safe1; boolvar; tcsp; try lia.
     inversion safe1; auto. }
 
   { pose proof (safe (length vals) a) as safe'.
-    rewrite select_snoc_eq in safe'; boolvar; subst; try omega;[].
+    rewrite select_snoc_eq in safe'; boolvar; subst; try lia;[].
     autodimp safe' hyp; exrepnd.
 
     pose proof (lib_extends_res
@@ -5038,10 +5038,10 @@ Proof.
   unfold same_restrictions.
   unfold is_primitive_kind in *.
   destruct name as [name k]; simpl in *.
-  destruct k; boolvar; subst; tcsp; try omega.
+  destruct k; boolvar; subst; tcsp; try lia.
 
   unfold is_nat_seq_restriction in *.
-  destruct restr; simpl in *; repnd; dands; tcsp; introv; try omega.
+  destruct restr; simpl in *; repnd; dands; tcsp; introv; try lia.
 
   - remember (select n l) as s; symmetry in Heqs; destruct s.
 
@@ -5253,9 +5253,9 @@ Lemma select_app_l :
     -> select i (l1 ++ l2) = select i l1.
 Proof.
   induction i; introv h; simpl in *; tcsp.
-  - destruct l1; simpl in *; try omega; auto.
-  - destruct l1; simpl in *; try omega; tcsp.
-    apply IHi; auto; try omega.
+  - destruct l1; simpl in *; try lia; auto.
+  - destruct l1; simpl in *; try lia; tcsp.
+    apply IHi; auto; try lia.
 Qed.
 
 Lemma select_app_r :
@@ -5264,9 +5264,9 @@ Lemma select_app_r :
     -> select i (l1 ++ l2) = select (i - length l1) l2.
 Proof.
   induction i; introv h; simpl in *; tcsp.
-  - destruct l1; simpl in *; try omega; auto.
-  - destruct l1; simpl in *; try omega; tcsp.
-    apply IHi; auto; try omega.
+  - destruct l1; simpl in *; try lia; auto.
+  - destruct l1; simpl in *; try lia; tcsp.
+    apply IHi; auto; try lia.
 Qed.
 
 Lemma implies_lt_minus :
@@ -5275,8 +5275,8 @@ Lemma implies_lt_minus :
     -> a < b
     -> a - c < b - c.
 Proof.
-  induction a; introv h q; simpl in *; try omega.
-  destruct c; simpl in *; try omega.
+  induction a; introv h q; simpl in *; try lia.
+  destruct c; simpl in *; try lia.
 Qed.
 
 Lemma extend_library_entry_lawless_upto_preserves_safe_library {o} :
@@ -5298,9 +5298,10 @@ Proof.
 
     { rewrite select_app_left in i; auto. }
 
-    { rewrite select_app_r in i; try omega.
+    { rewrite select_app_r in i; try lia.
       apply ext'3 in i.
-      rewrite le_plus_minus_r in i; auto; try omega. } }
+      rewrite (Nat.add_comm (Datatypes.length vals2) (n0 - Datatypes.length vals2)) in i.
+      rewrite Nat.sub_add in i; auto; try lia. } }
 
 (*
   { unfold extend_choice_seq_vals_lawless_upto in *; exrepnd; subst.
@@ -5311,12 +5312,12 @@ Proof.
 
     { rewrite select_app_left; auto. }
 
-    { rewrite select_app_r; try omega.
+    { rewrite select_app_r; try lia.
       pose proof (ext'0 (i - length vals2) (nth (i - length vals2) vals mkc_zero)) as ext'0.
-      autodimp ext'0 hyp; try (complete (apply nth_select1; try omega)).
-      rewrite le_plus_minus_r in ext'0; auto; try omega.
+      autodimp ext'0 hyp; try (complete (apply nth_select1; try lia)).
+      rewrite le_plus_minus_r in ext'0; auto; try lia.
       rewrite (nth_select1 _ _ mkc_zero); simpl in *; allrw; auto.
-      apply (implies_lt_minus _ _ (length vals2)) in len; try omega.
+      apply (implies_lt_minus _ _ (length vals2)) in len; try lia.
       rewrite minus_plus in len; auto. } }
 
   { unfold extend_choice_seq_vals_lawless_upto in *; exrepnd; subst.
@@ -5326,9 +5327,9 @@ Proof.
 
     { rewrite select_app_left in i; auto. }
 
-    { rewrite select_app_r in i; try omega.
+    { rewrite select_app_r in i; try lia.
       apply ext'0 in i.
-      rewrite le_plus_minus_r in i; auto; try omega. } }*)
+      rewrite le_plus_minus_r in i; auto; try lia. } }*)
 Qed.
 Hint Resolve extend_library_entry_lawless_upto_preserves_safe_library : slow.
 
@@ -5530,7 +5531,7 @@ Proof.
     { introv sel.
       apply ext'3.
       applydup @select_lt in sel.
-      rewrite select_snoc_eq; boolvar; subst; tcsp; try omega. }
+      rewrite select_snoc_eq; boolvar; subst; tcsp; try lia. }
 
     { introv i; apply ext'0; apply in_snoc; tcsp. }
 
@@ -5543,7 +5544,7 @@ Proof.
 
     { autorewrite with list.
       apply ext'3.
-      rewrite select_snoc_eq; boolvar; tcsp; simpl in *; try omega;
+      rewrite select_snoc_eq; boolvar; tcsp; simpl in *; try lia;
         try (complete (apply Nat.lt_irrefl in l; tcsp));
         try (complete (destruct n1; auto)). }
 
@@ -5559,7 +5560,7 @@ Proof.
     { introv sel.
       apply ext'0.
       applydup @select_lt in sel.
-      rewrite select_snoc_eq; boolvar; subst; tcsp; try omega. }
+      rewrite select_snoc_eq; boolvar; subst; tcsp; try lia. }
 
     rewrite snoc_append_l.
     eapply lib_extends_trans;[|eauto].
@@ -5569,7 +5570,7 @@ Proof.
 
     autorewrite with list.
     apply ext'0.
-    rewrite select_snoc_eq; boolvar; tcsp; simpl in *; try omega;
+    rewrite select_snoc_eq; boolvar; tcsp; simpl in *; try lia;
       try (complete (apply Nat.lt_irrefl in l; tcsp));
       try (complete (destruct n1; auto)). }
 
@@ -5582,7 +5583,7 @@ Proof.
     { introv sel.
       apply ext'0.
       applydup @select_lt in sel.
-      rewrite select_snoc_eq; boolvar; subst; tcsp; try omega. }
+      rewrite select_snoc_eq; boolvar; subst; tcsp; try lia. }
 
     rewrite snoc_append_l.
     eapply lib_extends_trans;[|eauto].
@@ -5592,7 +5593,7 @@ Proof.
 
     autorewrite with list.
     apply ext'0.
-    rewrite select_snoc_eq; boolvar; tcsp; simpl in *; try omega;
+    rewrite select_snoc_eq; boolvar; tcsp; simpl in *; try lia;
       try (complete (apply Nat.lt_irrefl in l; tcsp));
       try (complete (destruct n1; auto)). }*)
 Qed.
@@ -6425,7 +6426,7 @@ Proof.
     remember (iseq 0) as v; symmetry in Heqv; destruct v;simpl; auto;
       try (complete (pose proof (reg 0) as reg; rewrite Heqv in *; tcsp));[].
   rewrite IHn; eauto 3 with slow.
-  boolvar; try omega; auto.
+  boolvar; try lia; auto.
 Qed.
 
 Lemma entry_extends_preserves_inf_matching_entries {o} :
@@ -6449,10 +6450,10 @@ Proof.
     try (complete (pose proof (reg 0) as reg; rewrite Heqx in *; tcsp)).
   destruct n; simpl in *; ginv.
 
-  - dands; tcsp; try omega.
+  - dands; tcsp; try lia.
 
   - applydup IHk in i; exrepnd; subst; eauto 3 with slow.
-    dands; auto; try omega.
+    dands; auto; try lia.
 Qed.
 
 Lemma on_some_prop_eta :
@@ -6484,7 +6485,6 @@ Lemma shift_inf_choice_seq_vals_ntimes_app {o} :
     shift_inf_choice_seq_vals_ntimes iseq n k = iseq (n + k).
 Proof.
   induction n; introv; simpl; auto.
-  rewrite IHn; clear IHn; simpl; auto.
 Qed.
 Hint Rewrite @shift_inf_choice_seq_vals_ntimes_app : slow.
 
@@ -6507,7 +6507,7 @@ Lemma inf_entry_extends_implies_entry_in_inf_library_extends_same_names {o} :
     -> entry_in_inf_library_extends e (S n) infLib.
 Proof.
   induction n; introv ext m imp; simpl in *; tcsp.
-  pose proof (imp 0) as q; autodimp q hyp; try omega.
+  pose proof (imp 0) as q; autodimp q hyp; try lia.
   right.
   dands; auto.
 
@@ -6516,7 +6516,7 @@ Proof.
   pose proof (IHn e a (fun n => infLib (S n))) as h; simpl in h.
   repeat (autodimp h hyp).
   introv ltmn.
-  apply imp; auto; try omega.
+  apply imp; auto; try lia.
 Qed.
 Hint Resolve inf_entry_extends_implies_entry_in_inf_library_extends_same_names : slow.
 
@@ -6531,7 +6531,7 @@ Proof.
   introv ltnk i m imp.
   eapply le_preserves_entry_in_inf_library_extends;
     [|eapply inf_entry_extends_implies_entry_in_inf_library_extends_same_names; eauto];
-    try omega.
+    try lia.
 Qed.
 Hint Resolve inf_entry_extends_implies_entry_in_inf_library_extends_same_names_lt : slow.
 
@@ -6665,7 +6665,7 @@ Proof.
   unfold is_primitive_kind in *.
   unfold correct_restriction in *.
   destruct name as [name kd]; simpl in *.
-  destruct kd as [kd|seq]; subst; boolvar; subst; tcsp; try omega;[| |].
+  destruct kd as [kd|seq]; subst; boolvar; subst; tcsp; try lia;[| |].
 
   - unfold is_nat_restriction in *.
     destruct restr; auto; tcsp; repnd; GC; simpl in *; autorewrite with slow;
@@ -6673,7 +6673,7 @@ Proof.
 
     { rewrite (fun2list_split n m); auto.
       exists (fun2list (n - m) (fun _ => @mkc_zero o)); autorewrite with slow.
-      dands; auto; try omega.
+      dands; auto; try lia.
       { introv h.
         rewrite select_fun2list in h; boolvar; ginv.
         apply cor; eauto 3 with slow. }
@@ -6685,7 +6685,7 @@ Proof.
 
     { rewrite (fun2list_split n m); auto.
       exists (fun2list (n - m) (fun _ => @tt o)); autorewrite with slow.
-      dands; auto; try omega.
+      dands; auto; try lia.
       { introv h.
         rewrite select_fun2list in h; boolvar; ginv.
         apply cor; eauto 3 with slow. }
@@ -6697,7 +6697,7 @@ Proof.
     unfold choice_sequence_name2choice_seq_vals_upto; simpl.
     rewrite (fun2list_split n m); auto.
     exists (fun2list (n - m) (fun k => @natSeq2default o seq (k + m))); autorewrite with slow.
-    dands; auto; try omega;
+    dands; auto; try lia;
       try (introv i; apply in_fun2list in i; exrepnd; subst; simpl in *; apply sat).
 
     introv h.
@@ -6715,7 +6715,7 @@ Qed.
 Hint Resolve extend_library_entry_lawless_upto_choice_sequence_name2entry_upto_same : slow.
 
 Hint Rewrite Nat.sub_diag : slow nat.
-Hint Rewrite Max.max_0_r : slow nat.
+Hint Rewrite Nat.max_0_r : slow nat.
 
 Lemma extend_library_entry_lawless_upto_choice_sequence_name2entry_upto_same_max {o} :
   forall C n m name (restr : @ChoiceSeqRestriction o),
@@ -6734,7 +6734,7 @@ Proof.
   unfold is_primitive_kind in *.
   unfold correct_restriction in *.
   destruct name as [name kd]; simpl in *.
-  destruct kd as [kd|seq]; subst; boolvar; subst; tcsp; try omega;[| |].
+  destruct kd as [kd|seq]; subst; boolvar; subst; tcsp; try lia;[| |].
 
   - unfold is_nat_restriction in *.
     destruct restr; auto; tcsp; repnd; GC; simpl in *; autorewrite with slow;

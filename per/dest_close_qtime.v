@@ -48,7 +48,7 @@ Lemma per_qtime_implies_per_bar {o} :
 Proof.
   introv per.
   unfold per_qtime, per_bar in *; exrepnd.
-  exists (per_qtime_eq_bar_lib_per eqa).
+  exists (per_qtime_eq_bar_lib_per lib eqa).
   dands; auto.
 
   {
@@ -90,7 +90,7 @@ Proof.
       repndors; subst; tcsp; apply implies_isprogram_bt0; eauto 3 with slow.
     + unfold lblift. allsimpl. split; auto.
       introv Hin. unfold selectbt.
-      repeat(destruct n; try (omega;fail); allsimpl);
+      repeat(destruct n; try (lia;fail); allsimpl);
       apply blift_approx_open_nobnd2; sp.
 Qed.
 

@@ -214,7 +214,7 @@ Lemma univi_exists {p} :
 Proof.
   induction i; introv u; simpl in *; tcsp.
   repndors; repnd; try (complete (apply IHi in u; exrepnd; exists j; sp)).
-  exists i; dands; tcsp; try omega.
+  exists i; dands; tcsp; try lia.
 Qed.
 
 Lemma univi_exists_iff {p} :
@@ -233,7 +233,7 @@ Proof.
   destruct (eq_nat_dec j i); subst; sp.
   right.
   apply IHi with (T := T) (T' := T') (eq := eq); sp.
-  exists j; sp; omega.
+  exists j; sp; lia.
 Qed.
 
 
@@ -565,7 +565,7 @@ Lemma typable_in_higher_univ_r {p} :
 Proof.
   unfold nuprli; introv n; sp.
   generalize (typable_in_higher_univ i uk lib T T' eq n k); sp.
-  assert (k + i = i + k) as e by omega.
+  assert (k + i = i + k) as e by lia.
   rww e; sp.
 Qed.
 
@@ -574,11 +574,11 @@ Lemma minus_plus_n :
     n <= k -> (k - n) + n = k.
 Proof.
   induction n; simpl; sp.
-  omega.
+  lia.
   destruct k; simpl; sp.
-  omega.
+  lia.
   rw <- plus_n_Sm.
-  rw IHn; sp; omega.
+  rw IHn; sp; lia.
 Qed.
 
 Lemma typable_in_higher_univ_max {p} :
@@ -621,7 +621,7 @@ Lemma uni_in_higher_univ_r {p} :
 Proof.
   introv u; sp.
   generalize (uni_in_higher_univ i uk lib T T' eq u k); sp.
-  assert (k + i = i + k) as e by omega.
+  assert (k + i = i + k) as e by lia.
   rww e; sp.
 Qed.
 
@@ -674,7 +674,7 @@ Proof.
   unfold univ; sp.
   exists (S n).
   apply univi_exists_iff.
-  exists n; sp; omega.
+  exists n; sp; lia.
 Qed.
 *)
 

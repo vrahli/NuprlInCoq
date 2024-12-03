@@ -595,7 +595,7 @@ Lemma univ_implies_univi_bar {o} :
     -> exists j, i < j # univi_bar j uk lib (mkc_uni uk i) (mkc_uni uk i) eq.
 Proof.
   introv u.
-  exists (S i); dands; try omega.
+  exists (S i); dands; try lia.
   unfold univ, univi_bar, per_bar in *; exrepnd.
   exists eqa; dands; auto.
   eapply in_open_bar_ext_pres; eauto; clear u1; introv u1.

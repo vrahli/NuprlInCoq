@@ -39,7 +39,7 @@ Proof.
   try (apply isprogram_spread_iff2; dands; eauto 3 with slow).
 
   - split; simpl; auto.
-    introv j; repeat (destruct n; try omega); unfold selectbt; simpl; eauto 3 with slow.
+    introv j; repeat (destruct n; try lia); unfold selectbt; simpl; eauto 3 with slow.
 
     + apply blift_sub_nobnd_congr; apply approx_implies_approx_open; auto.
 
@@ -48,7 +48,7 @@ Proof.
       intro xxx; ginv.
 
   - split; simpl; auto.
-    introv j; repeat (destruct n; try omega); unfold selectbt; simpl; eauto 3 with slow.
+    introv j; repeat (destruct n; try lia); unfold selectbt; simpl; eauto 3 with slow.
 
     + apply blift_sub_nobnd_congr; apply approx_implies_approx_open; auto.
 

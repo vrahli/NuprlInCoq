@@ -28,6 +28,7 @@
 Require Export terms2.
 Require Export terms_tacs.
 Require Export tactics2.
+Require Export list.
 
 
 

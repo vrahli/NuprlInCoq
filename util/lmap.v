@@ -59,7 +59,8 @@ Proof.
    induction sub as [| (a', b') sub Hind]; intro a.
    - right.  sp.
    - destruct (eqdec a' a) as [Hc|Hc]; subst.
-      + left. exists b'. exists 0. split; simpl; auto. apply  lt_0_Sn.
+      + left. exists b'. exists 0. split; simpl; auto.
+        apply Nat.lt_0_succ.
         split; auto. introv Hm; inverts Hm.
       + destruct (Hind a) as [Hl | Hr]; exrepnd ;[left | right].
           * exists b. exists (S n). repeat(split); auto; simpl. apply lt_n_S. auto.

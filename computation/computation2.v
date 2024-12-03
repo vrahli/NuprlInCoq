@@ -657,7 +657,7 @@ Lemma no_change_after_value2 {p} :
          k1 <= k2
          -> compute_at_most_k_steps lib k2 t = csuccess v1.
 Proof.
-  intros. assert(k2=(k2-k1) + k1) as rwa by omega.
+  intros. assert(k2=(k2-k1) + k1) as rwa by lia.
   rewrite rwa. apply no_change_after_value; auto.
 Qed.
 
@@ -667,7 +667,7 @@ Lemma no_change_after_ovalue2 {p} :
     -> isovalue v1
     -> forall k2, k1<k2 -> (compute_at_most_k_steps lib k2 t = csuccess v1).
 Proof.
- intros. assert(k2 = (k2 - k1) + k1) as rwa by omega.
+ intros. assert(k2 = (k2 - k1) + k1) as rwa by lia.
  rewrite rwa. apply no_change_after_ovalue; auto.
 Qed.
 
@@ -758,7 +758,7 @@ Lemma no_change_after_exception2 {p} :
          -> computes_to_exception_in_max_k_steps lib a t v1 k2.
 Proof.
   intros.
-  assert(k2 = (k2 - k1) + k1) as rwa by omega.
+  assert(k2 = (k2 - k1) + k1) as rwa by lia.
   rewrite rwa.
   apply no_change_after_exception; auto.
 Qed.
@@ -776,16 +776,16 @@ Proof.
  destruct Hex1 as [k1 Heq1].
  destruct Hex2 as [Hex2 Hv2].
  destruct Hex2 as [k2 Heq2].
- assert(k1=k2 \/ k1<k2 \/ k2<k1) as Htri by omega.
+ assert(k1=k2 \/ k1<k2 \/ k2<k1) as Htri by lia.
  destruct Htri as [Htri| Htri];[subst | destruct Htri as [Htri| Htri] ].
    apply compute_at_most_k_steps_eqp with lib k2 t; auto.
 
    assert(compute_at_most_k_steps lib k2 t = csuccess v1) as Heqcs.
-   apply no_change_after_value2 with k1; auto; try omega.
+   apply no_change_after_value2 with k1; auto; try lia.
     rewrite Heq2 in Heqcs. inversion Heqcs. auto.
 
    assert(compute_at_most_k_steps lib k1 t = csuccess v2) as Heqcs.
-   apply no_change_after_value2 with k2; auto; try omega.
+   apply no_change_after_value2 with k2; auto; try lia.
    rewrite Heq1 in Heqcs. inversion Heqcs. auto.
 Qed.
 (* begin hide *)
@@ -802,7 +802,7 @@ Proof.
  destruct Hex1 as [k1 Heq1].
  destruct Hex2 as [Hex2 Hv2].
  destruct Hex2 as [k2 Heq2].
- assert(k1=k2 \/ k1<k2 \/ k2<k1) as Htri by omega.
+ assert(k1=k2 \/ k1<k2 \/ k2<k1) as Htri by lia.
  destruct Htri as [Htri| Htri];[subst | destruct Htri as [Htri| Htri] ].
    apply compute_at_most_k_steps_eqp with lib k2 t; auto.
 
@@ -1018,8 +1018,8 @@ Lemma  compute_at_most_k_steps_trans {p} :
 Proof.  intros ? ? ?. remember (n+m) as smn.
  generalize dependent m. generalize dependent n.
  revert smn. induction smn; intros  ? ? Heq  ? ? ? Hca Hcb.
- assert(m=0) by omega.  assert(n=0) by omega. subst. inverts Hca. inverts Hcb. auto.
- destruct m. inverts Hcb. rewrite Heq. assert (n+0=n) as H99  by omega .
+ assert(m=0) by lia.  assert(n=0) by lia. subst. inverts Hca. inverts Hcb. auto.
+ destruct m. inverts Hcb. rewrite Heq. assert (n+0=n) as H99  by lia .
  rewrite H99. auto.
  rewrite <- plus_n_Sm in Heq. inverts Heq. simpl in Hcb.
  simpl. remember (compute_at_most_k_steps lib m b) as ckb.
@@ -2310,7 +2310,7 @@ Proof.
 
   - left.
     gpdest can1; gpdest can2.
-    boolvar; ginv; eexists; eexists; dands; eauto; boolvar; tcsp; try omega.
+    boolvar; ginv; eexists; eexists; dands; eauto; boolvar; tcsp; try lia.
 
   - right.
     gpdest can1; gpdest can2; ginv; boolvar; ginv; tcsp;
@@ -2481,7 +2481,7 @@ Proof.
   simpl in h; allrw app_nil_r; apply h.
   constructor; simpl; tcsp.
   introv i.
-  destruct n1; try omega.
+  destruct n1; try lia.
   unfold selectbt; allsimpl; auto.
 Qed.
 
@@ -2712,7 +2712,7 @@ Proof.
     allrw @wf_sovar.
     introv i.
     pose proof (combine_in_right _ _ ts2 ts1) as h.
-    autodimp h hyp; try omega.
+    autodimp h hyp; try lia.
     pose proof (h t i) as k; clear h; exrepnd.
     applydup imp in k0.
     applydup in_combine in k0; repnd.
@@ -2728,11 +2728,11 @@ Proof.
       apply eq_maps3; auto.
       introv i.
       applydup imp in i.
-      inversion i0 as [? ? ? ? ? len1 len2 disj norep aeq]; subst; allsimpl; omega.
+      inversion i0 as [? ? ? ? ? len1 len2 disj norep aeq]; subst; allsimpl; lia.
 
     + introv i.
       pose proof (combine_in_right _ _ bts2 bs1) as h.
-      autodimp h hyp; try omega.
+      autodimp h hyp; try lia.
       pose proof (h (sobterm vs t) i) as k; clear h; exrepnd.
       applydup imp in k0.
       applydup in_combine in k0; repnd.
@@ -7363,9 +7363,6 @@ Lemma get_utokens_subst_utokens_aux_subset {o} :
 Proof.
   nterm_ind t as [v|op bs ind] Case; introv; auto.
 
-  - Case "vterm".
-    allsimpl; auto.
-
   - Case "oterm".
     rw @subst_utokens_aux_oterm.
     remember (get_utok op) as guo; symmetry in Heqguo; destruct guo; allsimpl.
@@ -7790,13 +7787,13 @@ Proof.
     allrw disjoint_app_l.
     dands; eauto with slow.
 
-  - allrw length_app; f_equal; try omega.
+  - allrw length_app; f_equal; try lia.
 
-  - allrw length_app; f_equal; try omega.
+  - allrw length_app; f_equal; try lia.
 
   - apply no_repeats_app; dands; eauto with slow.
 
-  - repeat (rw @lsubst_aux_lsubst_aux_sub_filter_var_ren in a; eauto 3 with slow; try omega).
+  - repeat (rw @lsubst_aux_lsubst_aux_sub_filter_var_ren in a; eauto 3 with slow; try lia).
 
     rw @lsubst_aux_app in a;
       allrw <- @sub_free_vars_is_flat_map_free_vars_range;
@@ -7811,18 +7808,18 @@ Proof.
       try (apply disjoint_bv_vars; auto).
 
     rw @lsubst_sub_disjoint_var_ren in a; allrw @dom_sub_var_ren; auto.
-    rw @lsubst_sub_disjoint_var_ren in a; allrw @dom_sub_var_ren; auto; try omega.
+    rw @lsubst_sub_disjoint_var_ren in a; allrw @dom_sub_var_ren; auto; try lia.
 
     unfold lsubst.
     allrw <- @sub_free_vars_is_flat_map_free_vars_range;
       allrw <- @sub_bound_vars_is_flat_map_bound_vars_range;
       allrw @sub_bound_vars_var_ren.
-    repeat (rw @sub_free_vars_var_ren; allrw length_app; try omega).
+    repeat (rw @sub_free_vars_var_ren; allrw length_app; try lia).
     boolvar; allrw disjoint_app_r; repnd;
     try (complete (destruct n; dands; eauto with slow)).
 
     rw @var_ren_app; auto.
-    rw @var_ren_app; auto; try omega.
+    rw @var_ren_app; auto; try lia.
 Qed.
 
 Lemma split_list_r :
@@ -7834,11 +7831,11 @@ Lemma split_list_r :
         # l = l1 ++ l2}}.
 Proof.
   induction l using rev_list_indT; introv e; allsimpl.
-  - destruct n; try omega.
+  - destruct n; try lia.
     exists ([] : list T) ([] : list T); simpl; auto.
   - destruct n; cpx.
     + exists (snoc l a) ([] : list T); simpl; allrw app_nil_r; auto.
-    + pose proof (IHl n) as h; autodimp h hyp; try omega; exrepnd; subst.
+    + pose proof (IHl n) as h; autodimp h hyp; try lia; exrepnd; subst.
       exists l1 (snoc l2 a).
       rw length_snoc.
       rw <- snoc_append_l; dands; auto.
@@ -8285,14 +8282,14 @@ Proof.
       apply alpha_eq_if3 in a.
 
       allrw length_app; allsimpl.
-      allrw (plus_comm (length l1) 1).
-      allrw (plus_comm (length l2) 1).
+      allrw (Nat.add_comm (length l1) 1).
+      allrw (Nat.add_comm (length l2) 1).
       allsimpl.
 
       pose proof (split_list_r _ lv 1) as h.
-      autodimp h hyp; try omega; exrepnd; subst; allsimpl; cpx.
+      autodimp h hyp; try lia; exrepnd; subst; allsimpl; cpx.
       allrw length_app; allsimpl.
-      allrw (plus_comm (length l0) 1); allsimpl; cpx.
+      allrw (Nat.add_comm (length l0) 1); allsimpl; cpx.
 
       allrw disjoint_app_l; allrw disjoint_singleton_l.
       allunfold @all_vars; allsimpl.
@@ -8309,14 +8306,14 @@ Proof.
       pose proof (lsubst_lsubst_aux (mk_fresh (maybe_new_var v1 l1 t1) t1) (var_ren l1 l0)) as e.
       autodimp e hyp.
       { simpl; rw <- @sub_free_vars_is_flat_map_free_vars_range; rw app_nil_r.
-        rw @sub_free_vars_var_ren; allrw length_app; try omega; eauto with slow.
+        rw @sub_free_vars_var_ren; allrw length_app; try lia; eauto with slow.
         rw disjoint_cons_l; dands; eauto with slow. }
       rw e; clear e.
 
       pose proof (lsubst_lsubst_aux (mk_fresh (maybe_new_var v2 l2 t2) t2) (var_ren l2 l0)) as e.
       autodimp e hyp.
       { simpl; rw <- @sub_free_vars_is_flat_map_free_vars_range; allrw app_nil_r.
-        rw @sub_free_vars_var_ren; allrw length_app; try omega; eauto with slow.
+        rw @sub_free_vars_var_ren; allrw length_app; try lia; eauto with slow.
         rw disjoint_cons_l; dands; eauto with slow. }
       rw e; clear e.
 
@@ -8343,7 +8340,7 @@ Proof.
           rw in_app_iff in k.
           allrw in_remove_nvars; allsimpl; allrw not_over_or.
           allrw <- @dom_sub_sub_filter.
-          rw @dom_sub_var_ren in k; auto; try omega.
+          rw @dom_sub_var_ren in k; auto; try lia.
           allrw in_remove_nvars.
           repndors; repnd; tcsp.
           apply in_sub_free_vars in k; exrepnd.
@@ -8429,7 +8426,7 @@ Proof.
       repeat (autodimp h2 hyp).
       { apply disjoint_singleton_r; intro k.
         apply subset_sub_free_vars_sub_filter in k.
-        rw @sub_free_vars_var_ren in k; auto; try omega. }
+        rw @sub_free_vars_var_ren in k; auto; try lia. }
       { apply disjoint_singleton_l; intro k.
         apply subset_sub_bound_vars_sub_filter in k.
         rw @sub_bound_vars_var_ren in k; allsimpl; sp. }
@@ -8464,27 +8461,27 @@ Proof.
       apply (alpha_eq_trans _ (lsubst_aux t2 (var_ren (l2 ++ [v2]) (l0 ++ [x])))); auto.
 
       { apply alpha_eq_lsubst_aux_if_ext_eq; auto.
-        - rw @var_ren_app; auto; try omega.
+        - rw @var_ren_app; auto; try lia.
           unfold ext_alpha_eq_subs; simpl; introv i.
           allrw @sub_find_app; allrw @sub_find_sub_filter_eq; allrw memvar_singleton.
           boolvar; simpl; boolvar; simpl; tcsp.
           + apply maybe_new_var_in_implies in i; repnd.
             rw i.
             rw @sub_find_none_if; simpl; auto.
-            rw @dom_sub_var_ren; auto; try omega.
+            rw @dom_sub_var_ren; auto; try lia.
           + apply maybe_new_var_in_implies in i; repnd; sp.
           + apply maybe_new_var_diff_implies in Heqb; repnd.
             remember (sub_find (var_ren l2 l0) v) as sf; symmetry in Heqsf; destruct sf; simpl; auto.
             apply sub_find_none2 in Heqsf.
-            rw @dom_sub_var_ren in Heqsf; auto; try omega.
+            rw @dom_sub_var_ren in Heqsf; auto; try lia.
           + remember (sub_find (var_ren l2 l0) v) as sf; symmetry in Heqsf; destruct sf; simpl; auto.
-        - rw @sub_free_vars_var_ren; allrw length_app; allsimpl; try omega.
+        - rw @sub_free_vars_var_ren; allrw length_app; allsimpl; try lia.
           rw disjoint_app_r; rw disjoint_singleton_r; dands; eauto with slow.
         - rw @sub_free_vars_app.
           rw @sub_free_vars_var_ren; simpl; auto.
           rw disjoint_app_r; rw disjoint_singleton_r; dands; auto.
           eapply subvars_disjoint_r;[apply subvars_sub_free_vars_sub_filter|].
-          rw @sub_free_vars_var_ren; eauto with slow; try omega.
+          rw @sub_free_vars_var_ren; eauto with slow; try lia.
       }
 Qed.
 
@@ -9111,7 +9108,6 @@ Proof.
       rw in_map_iff.
       eexists; dands; auto.
       apply in_range_iff; eexists; eauto.
-    + apply osubset_nil_l.
 
   - Case "oterm".
     eapply osubset_trans;

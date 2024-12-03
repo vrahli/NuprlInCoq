@@ -148,7 +148,7 @@ Proof.
         apply compute_step_swap_cs1_aux_success_implies in comp1; exrepnd; subst; simpl in *; ginv.
         inversion comp6; subst; simpl in *; clear comp6.
         left.
-        exists n1 n2 0 0; simpl; dands; auto; try omega;
+        exists n1 n2 0 0; simpl; dands; auto; try lia;
           allrw @computes_to_can_in_max_k_steps_0;
           allrw @reduces_in_atmost_k_steps_0;
           autorewrite with slow; dands; eauto 3 with slow.
@@ -159,18 +159,18 @@ Proof.
         apply IHk in comp0; eauto 3 with slow;[].
         repndors; exrepnd; subst; simpl in *.
 
-        { left; exists c1 c2 k1 (S k2); simpl; dands; auto; try omega.
+        { left; exists c1 c2 k1 (S k2); simpl; dands; auto; try lia.
           { rw @computes_to_can_in_max_k_steps_S; eexists; eauto. }
           { rw  <- plus_n_Sm; rw @reduces_in_atmost_k_steps_S.
             unfold nobnd; rewrite compute_step_swap_cs1_if_isnoncan_like; allrw; eauto 2 with slow; tcsp;[].
             eexists; dands; eauto. }
           rw  <- plus_n_Sm; autorewrite with slow.
-          assert (k1 + S k2 = k1 + k2 + 1) as e by omega; rewrite e; auto. }
+          assert (k1 + S k2 = k1 + k2 + 1) as e by lia; rewrite e; auto. }
 
         { apply computes_to_exception_in_max_k_steps_can in comp4; tcsp. }
 
         { right; right.
-          exists en e w k1 (S k2); dands; auto; try omega.
+          exists en e w k1 (S k2); dands; auto; try lia.
           { rw @computes_to_exception_in_max_k_steps_S; allrw; eexists; dands; eauto. }
           { rw  <- plus_n_Sm; rw @reduces_in_atmost_k_steps_S.
             unfold nobnd; rewrite compute_step_swap_cs1_if_isnoncan_like; allrw; eauto 2 with slow; tcsp;[].
@@ -181,7 +181,7 @@ Proof.
         right; right.
         apply wf_exception_implies in wf2; exrepnd; tcsp; subst; fold_terms.
         apply computes_to_val_like_in_max_k_steps_exc_iff in comp0; subst.
-        exists a t (oterm (Can can1) l) 0 0; simpl; dands; auto; try omega;
+        exists a t (oterm (Can can1) l) 0 0; simpl; dands; auto; try lia;
           allrw @computes_to_can_in_max_k_steps_0;
           allrw @reduces_in_atmost_k_steps_0; tcsp.
 
@@ -191,18 +191,18 @@ Proof.
         apply IHk in comp0; eauto 3 with slow;[].
         repndors; exrepnd; subst; simpl in *.
 
-        { left; exists c1 c2 k1 (S k2); simpl; dands; auto; try omega.
+        { left; exists c1 c2 k1 (S k2); simpl; dands; auto; try lia.
           { rw @computes_to_can_in_max_k_steps_S; eexists; eauto. }
           { rw  <- plus_n_Sm; rw @reduces_in_atmost_k_steps_S.
             unfold nobnd; rewrite compute_step_swap_cs1_if_isnoncan_like; allrw; eauto 2 with slow; tcsp;[].
             eexists; dands; eauto. }
           rw  <- plus_n_Sm; autorewrite with slow.
-          assert (k1 + S k2 = k1 + k2 + 1) as e by omega; rewrite e; auto. }
+          assert (k1 + S k2 = k1 + k2 + 1) as e by lia; rewrite e; auto. }
 
         { apply computes_to_exception_in_max_k_steps_can in comp4; tcsp. }
 
         { right; right.
-          exists en e w k1 (S k2); dands; auto; try omega.
+          exists en e w k1 (S k2); dands; auto; try lia.
           { rw @computes_to_exception_in_max_k_steps_S; allrw; eexists; dands; eauto. }
           { rw  <- plus_n_Sm; rw @reduces_in_atmost_k_steps_S.
             unfold nobnd; rewrite compute_step_swap_cs1_if_isnoncan_like; allrw; eauto 2 with slow; tcsp;[].
@@ -214,19 +214,19 @@ Proof.
       apply IHk in comp0; repndors; exrepnd; subst; simpl in *; eauto 3 with slow.
 
       * left.
-        exists c1 c2 (S k1) k2; dands; simpl; auto; try omega.
+        exists c1 c2 (S k1) k2; dands; simpl; auto; try lia.
         { rw @computes_to_can_in_max_k_steps_S; allrw; eexists; dands; eauto. }
         rw @reduces_in_atmost_k_steps_S.
         csunf; simpl; allrw; simpl; eexists; dands; eauto.
 
       * right; left.
-        exists en e (S k1); simpl; dands; auto; try omega.
+        exists en e (S k1); simpl; dands; auto; try lia.
         { rw @computes_to_exception_in_max_k_steps_S; allrw; eexists; dands; eauto. }
         rw @reduces_in_atmost_k_steps_S.
         csunf; simpl; allrw; simpl; eexists; eauto.
 
       * right; right.
-        exists en e w (S k1) k2; dands; simpl; auto; try omega.
+        exists en e w (S k1) k2; dands; simpl; auto; try lia.
         { rw @computes_to_can_in_max_k_steps_S; allrw; eexists; dands; eauto. }
         rw @reduces_in_atmost_k_steps_S.
         csunf; simpl; allrw; simpl; eexists; dands; eauto.
@@ -236,7 +236,7 @@ Proof.
       apply wf_exception_implies in wf1; exrepnd; subst; simpl in *; fold_terms.
       apply computes_to_val_like_in_max_k_steps_exc in comp0; subst.
       right; left.
-      exists a t 0; dands; auto; try omega.
+      exists a t 0; dands; auto; try lia.
       apply computes_to_exception_in_max_k_steps_exc; sp.
       unfold reduces_in_atmost_k_steps; simpl; sp.
 
@@ -246,19 +246,19 @@ Proof.
       apply IHk in comp0; repndors; exrepnd; subst; simpl in *; eauto 3 with slow.
 
       * left.
-        exists c1 c2 (S k1) k2; dands; simpl; auto; try omega.
+        exists c1 c2 (S k1) k2; dands; simpl; auto; try lia.
         { rw @computes_to_can_in_max_k_steps_S; allrw; eexists; dands; eauto. }
         rw @reduces_in_atmost_k_steps_S.
         csunf; simpl; allrw; simpl; eexists; dands; eauto.
 
       * right; left.
-        exists en e (S k1); simpl; dands; auto; try omega.
+        exists en e (S k1); simpl; dands; auto; try lia.
         { rw @computes_to_exception_in_max_k_steps_S; allrw; eexists; dands; eauto. }
         rw @reduces_in_atmost_k_steps_S.
         csunf; simpl; allrw; simpl; eexists; eauto.
 
       * right; right.
-        exists en e w (S k1) k2; dands; simpl; auto; try omega.
+        exists en e w (S k1) k2; dands; simpl; auto; try lia.
         { rw @computes_to_can_in_max_k_steps_S; allrw; eexists; dands; eauto. }
         rw @reduces_in_atmost_k_steps_S.
         csunf; simpl; allrw; simpl; eexists; dands; eauto.
@@ -354,7 +354,7 @@ Proof.
   induction k2; introv isc comp1 comp2; simpl in *; ginv.
 
   { apply (computes_atmost_ksteps_prinarg lib NSwapCs1 _ [nobnd u, nobnd t]) in comp1; exrepnd; fold_terms.
-    exists j; dands; try omega; auto. }
+    exists j; dands; try lia; auto. }
 
   remember (compute_at_most_k_steps lib k2 b) as comp; symmetry in Heqcomp; destruct comp; ginv;[].
   eapply (IHk2 a b t) in Heqcomp; eauto; exrepnd.
@@ -362,15 +362,15 @@ Proof.
   { csunf comp2; simpl in *; ginv. }
   destruct op; simpl in *.
   { csunf comp2; simpl in *; ginv.
-    exists j; dands; try omega; auto. }
-  { exists (S j); dands; try omega.
+    exists j; dands; try lia; auto. }
+  { exists (S j); dands; try lia.
     simpl; allrw.
     unfold mk_swap_cs1, nobnd, mk_choice_seq.
     apply iscan_implies in isc; exrepnd; subst.
     rewrite compute_step_swap_cs1_if_isnoncan_like; eauto 3 with slow; allrw; auto. }
   { csunf comp2; simpl in *; ginv.
-    exists j; dands; try omega; auto. }
-  { exists (S j); dands; try omega.
+    exists j; dands; try lia; auto. }
+  { exists (S j); dands; try lia.
     simpl; allrw.
     unfold mk_swap_cs1, nobnd, mk_choice_seq.
     apply iscan_implies in isc; exrepnd; subst.
@@ -447,7 +447,7 @@ Proof.
     + Case "Can".
       csunf comp1; simpl in *; ginv.
       left.
-      exists can1 l 0; simpl; dands; try omega;
+      exists can1 l 0; simpl; dands; try lia;
         allrw @computes_to_can_in_max_k_steps_0;
         allrw @reduces_in_atmost_k_steps_0;
         autorewrite with slow; dands; eauto 3 with slow.
@@ -458,13 +458,13 @@ Proof.
       apply IHk in comp0; repndors; exrepnd; subst; simpl in *; eauto 3 with slow.
 
       * left.
-        exists can bs (S k1); dands; simpl; auto; try omega.
+        exists can bs (S k1); dands; simpl; auto; try lia.
         { rw @computes_to_can_in_max_k_steps_S; allrw; eexists; dands; eauto. }
         rw @reduces_in_atmost_k_steps_S.
         csunf; simpl; allrw; simpl; eexists; dands; eauto.
 
       * right.
-        exists en e (S k1); simpl; dands; auto; try omega.
+        exists en e (S k1); simpl; dands; auto; try lia.
         { rw @computes_to_exception_in_max_k_steps_S; allrw; eexists; dands; eauto. }
         rw @reduces_in_atmost_k_steps_S.
         csunf; simpl; allrw; simpl; eexists; eauto.
@@ -474,7 +474,7 @@ Proof.
       apply wf_exception_implies in wf; exrepnd; subst; simpl in *; fold_terms.
       apply computes_to_val_like_in_max_k_steps_exc in comp0; subst.
       right.
-      exists a t 0; dands; auto; try omega.
+      exists a t 0; dands; auto; try lia.
       apply computes_to_exception_in_max_k_steps_exc; sp.
       unfold reduces_in_atmost_k_steps; simpl; sp.
 
@@ -484,13 +484,13 @@ Proof.
       apply IHk in comp0; repndors; exrepnd; subst; simpl in *; eauto 3 with slow.
 
       * left.
-        exists can bs (S k1); dands; simpl; auto; try omega.
+        exists can bs (S k1); dands; simpl; auto; try lia.
         { rw @computes_to_can_in_max_k_steps_S; allrw; eexists; dands; eauto. }
         rw @reduces_in_atmost_k_steps_S.
         csunf; simpl; allrw; simpl; eexists; dands; eauto.
 
       * right.
-        exists en e (S k1); simpl; dands; auto; try omega.
+        exists en e (S k1); simpl; dands; auto; try lia.
         { rw @computes_to_exception_in_max_k_steps_S; allrw; eexists; dands; eauto. }
         rw @reduces_in_atmost_k_steps_S.
         csunf; simpl; allrw; simpl; eexists; eauto.
@@ -515,7 +515,7 @@ Proof.
   introv aeq.
   inversion aeq as [? ? ? ? ? disj lena lenb norep aeq']; subst.
   eapply al_bterm; autorewrite with slow; eauto.
-  repeat (rewrite lsubst_mk_swap_cs2_choice_seq_var_ren; try rewrite computation_mark.sub_free_vars_var_ren; eauto 3 with slow; try omega).
+  repeat (rewrite lsubst_mk_swap_cs2_choice_seq_var_ren; try rewrite computation_mark.sub_free_vars_var_ren; eauto 3 with slow; try lia).
 Qed.
 Hint Resolve implies_alpha_eq_bterm_mk_swap_cs2 : slow.
 
@@ -567,7 +567,7 @@ Lemma implies_compute_at_most_k_steps_mk_swap_cs2 {o} :
 Proof.
   introv comp.
   apply (computes_atmost_ksteps_prinarg lib (NSwapCs2 (MkSwapCsNfo a b)) _ []) in comp; exrepnd; fold_terms.
-  exists j; dands; try omega; auto.
+  exists j; dands; try lia; auto.
 Qed.
 
 Lemma implies_reduces_to_mk_swap_cs2 {o} :

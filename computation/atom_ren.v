@@ -1050,7 +1050,6 @@ Lemma ren_utokens_apply_list {o} :
     = apply_list (ren_utokens ren t) (map (ren_utokens ren) ts).
 Proof.
   induction ts; introv; simpl; tcsp.
-  rw IHts; simpl; auto.
 Qed.
 
 Lemma implies_ren_utok_op_id {o} :
@@ -1940,7 +1939,7 @@ Proof.
                 rw @subst_ren_utokens; auto. }
 
               { allunfold @mk_choice_seq; ginv; allsimpl; fold_terms; GC.
-                csunf; simpl; dcwf h; simpl; boolvar; try omega.
+                csunf; simpl; dcwf h; simpl; boolvar; try lia.
                 rw Znat.Nat2Z.id; auto.
                 allrw; autorewrite with slow.
 
@@ -2000,7 +1999,7 @@ Proof.
             clear ind; csunf comp; csunf; simpl in comp.
             apply compute_step_apseq_success in comp; exrepnd; subst; allsimpl.
             rw @Znat.Nat2Z.id.
-            boolvar; try omega; auto.
+            boolvar; try lia; auto.
           }*)
 
           { SSSCase "NFix".
@@ -2055,7 +2054,7 @@ Proof.
             clear ind; csunf comp; csunf; simpl in comp.
             apply compute_step_tuni_success in comp; exrepnd; subst; allsimpl; fold_terms.
             unfold compute_step_tuni; simpl.
-            boolvar; try omega.
+            boolvar; try lia.
             rw Znat.Nat2Z.id; auto.
           }
 
@@ -2136,7 +2135,7 @@ Proof.
             apply compute_step_comp_seq1_success in comp; exrepnd; subst.
             csunf; simpl.
             repndors; repnd; subst; simpl in *; tcsp;
-              boolvar; autorewrite with slow in *; try omega; tcsp.
+              boolvar; autorewrite with slow in *; try lia; tcsp.
           }
 
           { SSSCase "NCompSeq2".
@@ -2144,7 +2143,7 @@ Proof.
             apply compute_step_comp_seq2_success in comp; exrepnd; subst.
             csunf; simpl.
             repndors; repnd; subst; simpl in *; tcsp;
-              boolvar; autorewrite with slow in *; try omega; tcsp.
+              boolvar; autorewrite with slow in *; try lia; tcsp.
           }
 
           { SSSCase "NCompOp".
@@ -3795,7 +3794,7 @@ Proof.
   introv aeq w i.
   unfold alpha_eq_bterms in aeq; repnd.
   pose proof (combine_in_right _ _ bs2 bs1) as h.
-  autodimp h hyp; try omega.
+  autodimp h hyp; try lia.
   applydup h in i; clear h; exrepnd.
   applydup in_combine in i1; repnd.
   pose proof (w u1) as k; autodimp k hyp.
@@ -3982,8 +3981,8 @@ Proof.
   allunfold @closed_bt; allsimpl.
   rw disjoint_app_r in disj; repnd.
   rw @freevars_lsubst_allvars2 in a0; auto.
-  rw @freevars_lsubst_allvars2 in a0; auto; try omega.
-  apply lmap_lapply_eq_implies in a0; auto; try omega;
+  rw @freevars_lsubst_allvars2 in a0; auto; try lia.
+  apply lmap_lapply_eq_implies in a0; auto; try lia;
   [|rw disjoint_app_r; allrw disjoint_app_l; dands; complete (eauto with slow)].
   rw <- a0; auto.
 Qed.
@@ -4417,7 +4416,6 @@ Proof.
   induction s; allsimpl.
 
   - exists ([] : @Sub o); allsimpl; dands; auto.
-    apply nrut; unfold get_utokens_sub; simpl; auto.
 
   - destruct a as [v t]; allsimpl.
     allrw @wf_sub_cons_iff; repnd.
@@ -4508,7 +4506,6 @@ Lemma pull_out_nrut_sub_sub {o} :
 Proof.
   induction s; introv nrut norep wf disj; allsimpl.
   - exists ([] : @Sub o); allsimpl; dands; auto.
-    unfold get_utokens_sub; allsimpl; auto.
   - destruct a as [v t]; allrw @wf_sub_cons_iff; repnd.
     allrw disjoint_app_l; repnd.
     pose proof (IHs sub l) as h; clear IHs; repeat (autodimp h hyp); exrepnd.

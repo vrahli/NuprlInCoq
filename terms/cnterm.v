@@ -251,13 +251,13 @@ Proof.
   prove_alpha_eq4.
 
   introv j.
-  repeat (destruct n; tcsp; try omega); clear j;[].
+  repeat (destruct n; tcsp; try lia); clear j;[].
   apply alphaeqbt_nilv2.
 
   unfold mk_natk, mk_natk_aux, mk_set, nobnd.
   prove_alpha_eq4;[].
   introv j.
-  repeat (destruct n; tcsp; try omega); clear j;[].
+  repeat (destruct n; tcsp; try lia); clear j;[].
 
   pose proof (ex_fresh_var (newvar (mk_less_than (mk_var (newvar (@mk_var o v))) (@mk_var o v))
                                    :: (newvar (mk_less_than (mk_var (newvar x)) x))
@@ -301,35 +301,35 @@ Proof.
   unfold mk_product, nobnd.
   prove_alpha_eq4.
   introv j.
-  repeat (destruct n; tcsp; try omega); clear j;[|].
+  repeat (destruct n; tcsp; try lia); clear j;[|].
 
   { apply alphaeqbt_nilv2.
 
     unfold mk_function, nobnd.
     prove_alpha_eq4.
     introv j.
-    repeat (destruct n; tcsp; try omega); clear j;[|].
+    repeat (destruct n; tcsp; try lia); clear j;[|].
 
     { apply alphaeqbt_nilv2.
       unfold mk_less, nobnd.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alphaeqbt_nilv2.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alphaeqbt_nilv2.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alphaeqbt_nilv2.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alpha_eq_bterm_congr.
       repeat (boolvar; simpl); tcsp.
@@ -338,17 +338,17 @@ Proof.
     { apply alpha_eq_bterm_congr.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alpha_eq_bterm_congr.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alpha_eq_bterm_congr.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alpha_eq_bterm_congr.
       repeat (boolvar; simpl); tcsp.
@@ -407,22 +407,22 @@ Proof.
     unfold mk_less, nobnd.
     prove_alpha_eq4.
     introv j.
-    repeat (destruct n; tcsp; try omega); clear j;[].
+    repeat (destruct n; tcsp; try lia); clear j;[].
 
     apply alpha_eq_bterm_congr.
     prove_alpha_eq4.
     introv j.
-    repeat (destruct n; tcsp; try omega); clear j;[].
+    repeat (destruct n; tcsp; try lia); clear j;[].
 
     apply alpha_eq_bterm_congr.
     prove_alpha_eq4.
     introv j.
-    repeat (destruct n; tcsp; try omega); clear j;[].
+    repeat (destruct n; tcsp; try lia); clear j;[].
 
     apply alpha_eq_bterm_congr.
     prove_alpha_eq4.
     introv j.
-    repeat (destruct n; tcsp; try omega); clear j;[].
+    repeat (destruct n; tcsp; try lia); clear j;[].
 
     apply alpha_eq_bterm_congr.
     repeat (boolvar; subst; simpl; tcsp);
@@ -515,7 +515,7 @@ Proof.
 
   constructor; simpl; auto.
   introv ltn.
-  repeat (destruct n; try omega);unfold selectbt; simpl;
+  repeat (destruct n; try lia);unfold selectbt; simpl;
   eauto 3 with slow;[].
 
   apply alphaeqbt_nilv2.

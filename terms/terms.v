@@ -1960,10 +1960,10 @@ Lemma size_subterm2 {p} :
 Proof.
   simpl. induction lb; intros ? Hin; inverts Hin as; simpl.
   - unfold lt. apply le_n_S.
-    apply le_plus_l.
+    apply Nat.le_add_r.
   - intros Hin. apply IHlb in Hin. clear IHlb.
-    eapply lt_le_trans; eauto.
-    apply le_n_S. apply le_plus_r.
+    eapply Nat.lt_le_trans; eauto.
+    apply le_n_S. apply Nat.le_add_l.
 Defined.
 
 Lemma size_subterm3 {p} :
@@ -2000,9 +2000,9 @@ Proof.
  apply Hbt.
  introv Hin Hs; allsimpl.
  apply (Hind (size nt')); auto.
- eapply le_lt_trans;[exact Hs|].
+ eapply Nat.le_lt_trans;[exact Hs|].
  pose proof (size_subterm3 op bs nt lv Hin) as h; allsimpl.
- eapply lt_le_trans;[exact h|].
+ eapply Nat.lt_le_trans;[exact h|].
  rewrite Hsz; auto.
 Defined.
 

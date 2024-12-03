@@ -82,7 +82,7 @@ Proof.
 
     unfold lblift; simpl; dands; auto.
     introv ltn.
-    destruct n; try omega;[|destruct n; try omega]; clear ltn;
+    destruct n; try lia;[|destruct n; try lia]; clear ltn;
       unfold selectbt; simpl;
         unfold blift.
 
@@ -158,7 +158,6 @@ Proof.
         allrw @isprog_vars_eq; repnd.
         allrw subvars_eq.
         apply isp7 in ix; allsimpl; tcsp. }
-      apply h.
 
   - introv comp.
     apply can_doesnt_raise_an_exception in comp; sp.
@@ -207,7 +206,7 @@ Proof.
 
     unfold lblift; simpl; dands; auto.
     introv ltn.
-    destruct n; try omega;[|destruct n; try omega]; clear ltn;
+    destruct n; try lia;[|destruct n; try lia]; clear ltn;
       unfold selectbt; simpl;
         unfold blift.
 
@@ -283,7 +282,6 @@ Proof.
         allrw @isprog_vars_eq; repnd.
         allrw subvars_eq.
         apply isp7 in ix; allsimpl; tcsp. }
-      apply h.
 
   - introv comp.
     apply can_doesnt_raise_an_exception in comp; sp.
@@ -352,8 +350,6 @@ Proof.
 
   apply simple_implies_cequiv_product; eauto 3 with slow; tcsp.
 
-  { split; eauto 3 with slow; tcsp. }
-
   { apply isprog_vars_eq; dands; tcsp; eauto 3 with slow.
     simpl; autorewrite with slow; auto. }
 
@@ -398,8 +394,6 @@ Proof.
 
   { apply isprogram_apply; eauto 3 with slow.
     split; simpl; tcsp; eauto 3 with slow. }
-
-  apply isprogram_set; eauto 3 with slow.
 Qed.
 
 Ltac aeq_lsubstc_vars_prod h :=
@@ -614,7 +608,7 @@ Proof.
   allrw; simpl in *.
   rewrite find_value_of_cs_at_is_select.
   unfold choice_sequence_vals_extend in *; exrepnd; subst.
-  rewrite select_app_l; autorewrite with slow nat; simpl; try omega;[].
+  rewrite select_app_l; autorewrite with slow nat; simpl; try lia;[].
   rewrite select_app_r; autorewrite with slow; simpl; auto.
   rewrite mkc_one_eq; auto.
 Qed.

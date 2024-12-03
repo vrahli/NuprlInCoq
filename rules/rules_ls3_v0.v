@@ -190,9 +190,9 @@ Proof.
     apply in_ext_implies_in_open_bar; introv xt e.
     unfold equality_of_nat in e; exrepnd.
     eapply tequality_natk2nat_aux;eauto.
-    introv xx; apply Z_of_nat_complete in xx; exrepnd; subst.
+    introv xx; apply Wf_Z.Z_of_nat_complete in xx; exrepnd; subst.
     destruct (lt_dec n0 n);[left|right]; dands;
-      allrw <- Nat2Z.inj_lt; allrw <- Nat2Z.inj_le; auto; try omega. }
+      allrw <- Znat.Nat2Z.inj_lt; allrw <- Znat.Nat2Z.inj_le; auto; try lia. }
 
   { apply equality_nat2nat_to_natk2nat.
     { apply equality_refl in eque; eauto 3 with slow. }
@@ -1130,7 +1130,7 @@ Proof.
              , ccomputes_to_valc_ext lib (mkc_apply (mkc_choice_seq name) (mkc_nat m)) (mkc_nat k)
              # ccomputes_to_valc_ext lib (mkc_apply (mkc_choice_seq name') (mkc_nat m)) (mkc_nat k)}) as imp.
   {
-    introv h; pose proof (eb0 m) as eb0; autodimp eb0 hyp; try omega; exrepnd.
+    introv h; pose proof (eb0 m) as eb0; autodimp eb0 hyp; try lia; exrepnd.
     exists k; dands; spcast; auto.
     eapply implies_ccomputes_to_valc_ext_left; eauto.
   }

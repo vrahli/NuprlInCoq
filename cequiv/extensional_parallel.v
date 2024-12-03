@@ -41,7 +41,7 @@ Proof.
 
   unfold lblift_sub in Has; simpl in Has; repnd; GC.
   destruct lbt'; allsimpl; cpx.
-  pose proof (Has 0) as h; autodimp h hyp; try omega.
+  pose proof (Has 0) as h; autodimp h hyp; try lia.
   unfold selectbt in h; allsimpl.
   unfold blift_sub in h; exrepnd; destruct h1 as [h1|h1]; exrepnd; ginv.
   allapply @alpha_eq_bterm_nobnd; exrepnd; allunfold @nobnd; ginv.

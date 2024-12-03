@@ -43,12 +43,9 @@ Proof.
   introv ltn h.
   unfold correct_restriction; simpl.
   rewrite h; simpl; auto.
-  boolvar; subst; tcsp; try omega.
-  apply Nat.lt_irrefl in ltn; tcsp.
+  boolvar; subst; tcsp; try lia.
 Qed.
 Hint Resolve correct_restriction_csc_seq : slow.
-
-SearchAbout csc_nat correct_restriction.
 
 Lemma correct_restriction_csc_nat_0 {o} :
   forall name,
@@ -532,7 +529,7 @@ Proof.
   apply implies_equality_natk2nat_prop.
   introv ltn.
   pose proof (enf0 m (nth m l 0)) as w.
-  autodimp w hyp;[apply nth_select1; omega|];[].
+  autodimp w hyp;[apply nth_select1; lia|];[].
   repnd; clear w.
 
   assert (lib_extends lib'1 lib) as xte by eauto 4 with slow.
@@ -542,7 +539,7 @@ Proof.
   assert (entry_in_library (new_lib_cs_seq name l) (add_one_entry (new_lib_cs_seq name l) lib')) as i by tcsp.
   apply implies_lib_extends_ext in xtf.
   apply xtf in i.
-  apply ccomputes_to_valc_ext_choice_seq_if_extends_new_lib_cs_seq; auto; try omega.
+  apply ccomputes_to_valc_ext_choice_seq_if_extends_new_lib_cs_seq; auto; try lia.
 Qed.
 Hint Resolve rule_ls1_true : slow.
 

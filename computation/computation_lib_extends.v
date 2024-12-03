@@ -533,7 +533,7 @@ Proof.
 
   destruct l; simpl in *; autorewrite with slow list; auto.
   rewrite IHn.
-  boolvar; tcsp; try omega.
+  boolvar; tcsp; try lia.
 Qed.
 
 Lemma add_choice_csc_type_preserves_safe {o} :
@@ -577,7 +577,7 @@ Proof.
   repndors; exrepnd; subst; tcsp; simpl in *; tcsp; ginv.
   apply safe in add0; simpl in *; exrepnd; dands; tcsp.
   introv h; autorewrite with slow in *.
-  rewrite select_snoc_eq; boolvar; tcsp; subst; tcsp; try omega.
+  rewrite select_snoc_eq; boolvar; tcsp; subst; tcsp; try lia.
 Qed.
 Hint Resolve add_choice_csc_coq_law_preserves_safe : slow.
 
@@ -593,7 +593,7 @@ Proof.
   repndors; exrepnd; subst; tcsp; simpl in *; tcsp; ginv.
   apply safe in add0; simpl in *; exrepnd; dands; tcsp.
   introv h; autorewrite with slow in *.
-  rewrite select_snoc_eq in h; boolvar; tcsp; subst; try omega; ginv; auto.
+  rewrite select_snoc_eq in h; boolvar; tcsp; subst; try lia; ginv; auto.
 Qed.
 Hint Resolve add_choice_csc_res_preserves_safe : slow.*)
 
@@ -1472,7 +1472,7 @@ Proof.
             repndors; exrepnd; subst; ginv.
             csunf; simpl.
             dcwf h; simpl.
-            boolvar; try omega.
+            boolvar; try lia.
             rewrite Znat.Nat2Z.id; auto.
 
           + csunf; simpl.
@@ -1518,7 +1518,7 @@ Proof.
                 + unfold mk_nseq in *; allsimpl; ginv.
                   csunf; simpl.
                   dcwf h; simpl.
-                  boolvar; simpl; auto; try omega.
+                  boolvar; simpl; auto; try lia.
                   rewrite Znat.Nat2Z.id; auto.
 
               - fold_terms; rewrite compute_step_eapply_iscan_isexc; auto.
@@ -1588,7 +1588,7 @@ Proof.
               repndors; exrepnd; subst; auto.
               csunf; simpl.
               unfold compute_step_tuni; simpl.
-              boolvar; try omega.
+              boolvar; try lia.
               rewrite Znat.Nat2Z.id; auto.
             }
 
@@ -2030,7 +2030,7 @@ Proof.
                 + unfold mk_choice_seq in *; allsimpl; ginv.
                   csunf; simpl.
                   dcwf h; simpl.
-                  boolvar; simpl; auto; try omega.
+                  boolvar; simpl; auto; try lia.
                   rewrite Znat.Nat2Z.id; auto.
                   erewrite lib_extends_preserves_find_cs_value_at;eauto.
 
@@ -2109,7 +2109,7 @@ Proof.
               repndors; exrepnd; subst; auto.
               csunf; simpl.
               unfold compute_step_tuni; simpl.
-              boolvar; try omega.
+              boolvar; try lia.
               rewrite Znat.Nat2Z.id; auto.
               eexists; dands; eauto.
             }
@@ -2154,7 +2154,7 @@ Proof.
               apply compute_step_comp_seq1_success in comp; exrepnd; subst.
               repndors; repnd; subst; csunf; simpl.
               { eexists; dands; eauto. }
-              boolvar; autorewrite with slow in *; try omega.
+              boolvar; autorewrite with slow in *; try lia.
               eexists; dands; eauto.
             }
 
@@ -2164,9 +2164,9 @@ Proof.
               csunf comp; allsimpl.
               apply compute_step_comp_seq2_success in comp; exrepnd; subst.
               repndors; repnd; subst; csunf; simpl.
-              { boolvar; autorewrite with slow in *; try omega.
+              { boolvar; autorewrite with slow in *; try lia.
                 eexists; dands; eauto. }
-              { boolvar; autorewrite with slow in *; try omega.
+              { boolvar; autorewrite with slow in *; try lia.
                 eexists; dands; eauto. }
             }
 

@@ -1672,7 +1672,7 @@ Proof.
 Qed.
 Hint Resolve iscan_lsubst_aux_change_utoken : slow.
 
-Hint Rewrite Nat2Z.id : slow.
+Hint Rewrite Znat.Nat2Z.id : slow.
 
 Lemma lsubst_aux_eq_can_nil_implies {o} :
   forall (t : @NTerm o) v a can,
@@ -1768,7 +1768,6 @@ Lemma ren_utok_apply_list {o} :
     = apply_list (ren_utok t a b) (map (fun x => ren_utok x a b) ts).
 Proof.
   induction ts; introv; simpl; auto.
-  apply IHts.
 Qed.
 
 Definition ren_utok_sosub_kind {o} (sk : @sosub_kind o) a b :=
@@ -2406,7 +2405,7 @@ Proof.
                   subst; simpl in *; GC.
                   csunf; simpl.
                   unfold compute_step_eapply; simpl.
-                  boolvar; try omega.
+                  boolvar; try lia.
                   autorewrite with slow.
                   allrw; auto.
 
@@ -2664,7 +2663,7 @@ Proof.
               repeat (destruct bts; simpl in *; ginv).
 
               csunf; simpl.
-              unfold compute_step_tuni; simpl; boolvar; try omega.
+              unfold compute_step_tuni; simpl; boolvar; try lia.
               unfold ren_utok_op; simpl; autorewrite with slow; auto.
             }
 
@@ -2769,7 +2768,7 @@ Proof.
                   inversion comp3; simpl in *; tcsp. }
                 unfold ren_utok_op; simpl.
                 rewrite ren_utok_match_can_as.
-                rewrite subst_aux_oterm; simpl.
+(*                rewrite subst_aux_oterm; simpl.*)
                 unfold subst_bterm_aux; simpl.
                 rewrite compute_step_swap_cs1_if_isnoncan_like; eauto 3 with slow;[].
                 rewrite <- subst_aux_oterm2 in comp2.
@@ -2864,7 +2863,7 @@ Proof.
               destruct b0; simpl in *.
               destruct l; simpl in *; ginv.
               repndors; repnd; subst; simpl in *; csunf; simpl; boolvar;
-                autorewrite with slow in *; ginv; try omega; tcsp.
+                autorewrite with slow in *; ginv; try lia; tcsp.
 
               repeat (rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow).
               rewrite (not_in_get_utokens_implies_ren_utok_same _ _ n);[|eauto 4 with slow].
@@ -2882,7 +2881,7 @@ Proof.
               destruct b0; simpl in *.
               destruct l0; simpl in *; ginv.
               repndors; repnd; subst; simpl in *; csunf; simpl; boolvar;
-                autorewrite with slow in *; ginv; try omega; tcsp.
+                autorewrite with slow in *; ginv; try lia; tcsp.
 
               repeat (rewrite ren_utok_lsubst_aux_gen; simpl; autorewrite with slow).
               rewrite (not_in_get_utokens_implies_ren_utok_same _ _ n);[|eauto 4 with slow].

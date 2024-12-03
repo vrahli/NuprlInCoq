@@ -1296,7 +1296,7 @@ XXXXXXXXXX
              , ccomputes_to_valc_ext lib (mkc_apply (mkc_choice_seq name) (mkc_nat m)) (mkc_nat k)
              # ccomputes_to_valc_ext lib (mkc_apply (mkc_choice_seq name') (mkc_nat m)) (mkc_nat k)}) as imp.
   {
-    introv h; pose proof (eb1 m) as eb1; autodimp eb1 hyp; try omega; exrepnd.
+    introv h; pose proof (eb1 m) as eb1; autodimp eb1 hyp; try lia; exrepnd.
     exists k; dands; spcast; auto.
     eapply implies_ccomputes_to_valc_ext_left; eauto.
   }

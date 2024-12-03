@@ -53,7 +53,7 @@ Proof.
   introv per.
 
   unfold per_union, per_bar in *; exrepnd.
-  exists (per_union_eq_bar_lib_per eqa eqb).
+  exists (per_union_eq_bar_lib_per lib eqa eqb).
   dands; auto.
 
   {

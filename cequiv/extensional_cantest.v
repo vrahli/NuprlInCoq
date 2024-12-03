@@ -41,12 +41,12 @@ Proof.
 
   repndors; exrepnd;[|allsimpl; subst; repnd; complete ginv|subst;ginv];[].
 
-  assert (m <= S k) as XX by omega.
+  assert (m <= S k) as XX by lia.
   repnud Hcv.
   eapply reduces_atmost_split in XX; eauto.
   remember (S k - m) as skm.
-  destruct skm; [omega|].
-  assert (skm <= k) by (subst; omega).
+  destruct skm; [lia|].
+  assert (skm <= k) by (subst; lia).
   apply reduces_atmost_S in XX; exrepnd.
   applydup @reduces_atmost_preserves_program in Hcv4; auto.
   allapply @isprogram_cantest_implies; exrepnd; subst; cpx.

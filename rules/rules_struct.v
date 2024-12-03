@@ -457,8 +457,8 @@ Proof.
   allrw @similarity_snoc; exrepd; subst; cpx.
   revert c1 cT c0 cT0; rewrite hvar_mk_hyp; intros.
   allrw @eq_hyps_app; exrepd; simphyps; cpx.
-  apply app_split in e; repd; subst; allrewrite length_snoc; try omega; cpx; GC.
-  apply app_split in e0; repd; subst; allrewrite length_snoc; try omega; cpx; GC.
+  apply app_split in e; repd; subst; allrewrite length_snoc; try lia; cpx; GC.
+  apply app_split in e0; repd; subst; allrewrite length_snoc; try lia; cpx; GC.
   allrw @eq_hyps_snoc; exrepd; cpx; simphyps; cpx; GC; clear_irr.
 
   assert (disjoint (free_vars (@mk_var o x)) (dom_csub s1b0)) as dxs1
@@ -623,8 +623,8 @@ Proof.
   revert c1 cT c0 cT0.
   simpl; intros.
   allrw @eq_hyps_app; exrepd; simphyps; cpx.
-  apply app_split in e; repd; subst; allrewrite length_snoc; try omega; cpx; GC.
-  apply app_split in e0; repd; subst; allrewrite length_snoc; try omega; cpx; GC.
+  apply app_split in e; repd; subst; allrewrite length_snoc; try lia; cpx; GC.
+  apply app_split in e0; repd; subst; allrewrite length_snoc; try lia; cpx; GC.
   allrw @eq_hyps_snoc; exrepd; cpx; simphyps; cpx; GC; clear_irr.
 
   assert (disjoint (free_vars (@mk_var o x)) (dom_csub s1b0)) as dxs1
@@ -890,8 +890,8 @@ Proof.
   applydup @eq_hyps_length in h6; repnd.
 
   apply similarity_app in sim; exrepnd.
-  apply app_split in sim0; allrw length_snoc; auto; try omega.
-  apply app_split in sim2; allrw length_snoc; auto; try omega.
+  apply app_split in sim0; allrw length_snoc; auto; try lia.
+  apply app_split in sim2; allrw length_snoc; auto; try lia.
   repnd; subst.
 
   apply similarity_snoc in sim5; exrepnd; cpx; allsimpl.
@@ -1037,7 +1037,7 @@ Proof.
   intros lib'' xt s3 sim3.
   rw @similarity_app in sim3; exrepnd; subst.
   apply app_split in sim0; sp; subst;
-  try (complete (allapply @similarity_length; sp; omega)).
+  try (complete (allapply @similarity_length; sp; lia)).
   generalize (eqh _ xt (snoc s2a (x, t1) ++ s2b0)); intro h.
   autodimp h hyp.
 
@@ -1055,7 +1055,7 @@ Proof.
   rw @eq_hyps_app in h; exrepnd.
   apply app_split in h0; apply app_split in h2; sp; subst;
   allrewrite length_snoc; sp;
-  try (complete (allapply @similarity_length; sp; omega)).
+  try (complete (allapply @similarity_length; sp; lia)).
   allrw @eq_hyps_snoc; exrepnd; allsimpl; cpx; GC.
 
   rw @eq_hyps_app.

@@ -173,7 +173,7 @@ Lemma length_sub_filter_le {o} :
 Proof.
   induction sub as [|p sub]; introv; allsimpl; tcsp.
   destruct p as [v t]; boolvar; simpl; tcsp.
-  pose proof (IHsub vs) as h; omega.
+  pose proof (IHsub vs) as h; lia.
 Qed.
 
 Definition ext_subs {o} (vs : list NVar) (sub1 sub2 : @Sub o) :=
@@ -250,7 +250,7 @@ Proof.
 
     pose proof (ind (length (sub_filter sub1 [p0]))) as h; clear ind.
     autodimp h hyp.
-    { pose proof (length_sub_filter_le sub1 [p0]) as l; omega. }
+    { pose proof (length_sub_filter_le sub1 [p0]) as l; lia. }
     
     pose proof (h (sub_filter sub1 [p0])) as q; clear h; autodimp q hyp.
     pose proof (q (sub_filter sub2 [p0])) as ih; clear q.

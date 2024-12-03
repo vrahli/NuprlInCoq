@@ -157,7 +157,8 @@ Proof.
     destruct l0; ginv.
     destruct bs; allsimpl; ginv.
     exists a (Z.to_nat z) n.
-    rewrite Z2Nat.id; dands; tcsp. }
+    dands; tcsp.
+    rewrite Znat.Z2Nat.id; dands; tcsp. }
 
   { destruct bts; allsimpl; ginv.
     destruct bs; allsimpl; ginv.
@@ -165,8 +166,8 @@ Proof.
     destruct l0; ginv.
     destruct bs; allsimpl; ginv.
     exists a (Z.to_nat z) n0.
-    rewrite Z2Nat.id; dands; tcsp.
-    right; dands; auto; try omega. }
+    rewrite Znat.Z2Nat.id; dands; tcsp.
+    right; dands; auto; try lia. }
 Qed.
 
 Lemma compute_step_comp_seq2_success {o} :
@@ -202,8 +203,8 @@ Proof.
     destruct l1; ginv.
     destruct bs; allsimpl; ginv.
     exists (Z.to_nat z) n.
-    rewrite Z2Nat.id; auto.
-    dands; auto; try omega. }
+    rewrite Znat.Z2Nat.id; auto.
+    dands; auto; try lia. }
 
   { destruct bts; allsimpl; ginv.
     destruct bs; allsimpl; ginv.
@@ -211,9 +212,9 @@ Proof.
     destruct l1; ginv.
     destruct bs; allsimpl; ginv.
     exists (Z.to_nat z) n0.
-    rewrite Z2Nat.id; auto.
-    dands; auto; try omega.
-    right; dands; try omega; auto. }
+    rewrite Znat.Z2Nat.id; auto.
+    dands; auto; try lia.
+    right; dands; try lia; auto. }
 Qed.
 
 Lemma implies_nt_wf_mk_comp_seq2 {o} :

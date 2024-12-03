@@ -1063,12 +1063,12 @@ Proof.
     [|rw @selectbt_map; auto;
       apply (alpha_eq_bterm_ren_utokens_b _ _ ren) in i2;
       allsimpl; auto
-     |unfold ren_utokens_bs; rw @selectbt_map; auto; try omega;
+     |unfold ren_utokens_bs; rw @selectbt_map; auto; try lia;
       apply (alpha_eq_bterm_ren_utokens_b _ _ (ren ++ ren')) in i1;
       allsimpl; auto].
 
     pose proof (selectbt_in n bs1) as in1; autodimp in1 hyp.
-    pose proof (selectbt_in n lbt1') as in2; autodimp in2 hyp; try omega.
+    pose proof (selectbt_in n lbt1') as in2; autodimp in2 hyp; try lia.
     remember (selectbt bs1 n) as b1.
     remember (selectbt lbt1' n) as b2.
     destruct b1 as [l1 u1]; destruct b2 as [l2 u2].

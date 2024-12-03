@@ -160,7 +160,7 @@ Proof.
     apply @al_bterm with (lv:=lv0); auto.
     disjoint_reasoningv.
     change_to_lsubst_aux4.
-    apply Hind with(lv0:=lv)(lv:=lv1)(nt:=nt1); auto.
+    eapply Hind; eauto.
     rewrite Hb6. apply selectbt_in; auto.
     rewrite lsubst_aux_allvars_preserves_osize; [ eauto 3 with slow |].
     apply allvars_combine; fail.
@@ -336,7 +336,7 @@ Proof.
 Qed.
 
 Theorem alpha_eq3_if {p} : forall nt1 nt2,
-    (@alpha_eq p nt1 nt2) -> forall lv, (alpha_eq3 lv nt1 nt2).
+    (@alpha_eq p nt1 nt2) -> forall lv0, (alpha_eq3 lv0 nt1 nt2).
 Proof.
   nterm_ind1s nt1 as [v1| o1 lbt1 Hind] Case; introv Hyp;
   destruct nt2 as [v2| o2 lbt2]; 
@@ -346,15 +346,14 @@ Proof.
   destructr (selectbt lbt1 n) as [lv1 nnt1];
   destructr (selectbt lbt2 n) as [lv2 nnt2];
   inverts Hlt0 as Hb1 Hb2 Hb3 Hb4 Hb5.
-    pose proof (fresh_vars (length lv1) 
-    (all_vars nnt1 ++ all_vars nnt2 ++lv)) 
-         as Hfresh.
+    pose proof (fresh_vars (length lv1)
+    (all_vars nnt1 ++ all_vars nnt2 ++lv0)) as Hfresh.
     exrepnd.
     apply @al_bterm3 with(lv:=lvn);auto.
     pose proof (selectbt_in   _ _ Hlt) as XX.
     rewrite <- HeqHdeq in XX.
-    eapply Hind with(lv0:=(lv4++lvn++lv)) (nt:=nnt1) (lv:=lv1) in Hb5; auto.
-    Focus 2. change_to_lsubst_aux4. 
+    eapply Hind with(lv0:=(lv++lvn++lv0)) (nt:=nnt1) (lv:=lv1) in Hb5; auto.
+    Focus 2. change_to_lsubst_aux4.
     rewrite lsubst_aux_allvars_preserves_osize; [ eauto 3 with slow |]. apply allvars_combine; fail.
     try (rw fold_var_ren in Hb5).
     try (rw fold_var_ren in Hb5).
@@ -600,8 +599,8 @@ Lemma alpha_eq_trans {p} :
   forall nt1 nt2 nt3, @alpha_eq p nt1 nt2 -> alpha_eq nt2 nt3 -> alpha_eq nt1 nt3.
 Proof.
   nterm_ind1s nt1 as [v1|o1 lbt1 Hind] Case;
-  introv Hal1 Hal2; apply alpha_eq3_if with (lv:=[]) in Hal1;
-  apply alpha_eq3_if with (lv:=[]) in Hal2;
+  introv Hal1 Hal2; apply alpha_eq3_if with (lv0:=[]) in Hal1;
+  apply alpha_eq3_if with (lv0:=[]) in Hal2;
   apply alpha_eq_if3 with (lv:=[]);
   inverts Hal1 as Hlen1 Hal1; inverts Hal2 as Hlen2 Hal2; constructor
   ;try(congruence).
@@ -629,7 +628,7 @@ Proof.
     try congruence;[disjoint_reasoningv| ].
     apply @alpha_eq_if3 with (lv:=[]) in Hl1t.
     apply @alpha_eq_if3 with (lv:=[]) in Hl2t.
-    apply @alpha_eq3_if with (lv:=[]).
+    apply @alpha_eq3_if with (lv0:=[]).
     eapply Hind with(lv:=lv1) (nt:=nt1); eauto.
     rewrite lsubst_aux_allvars_preserves_osize; [ eauto 3 with slow |].
     apply allvars_combine.
@@ -686,9 +685,9 @@ Proof.
   induction l1; introv len i; allsimpl; cpx.
   destruct l2; allsimpl; cpx.
   repndors; ginv.
-  - exists 0; sp; try omega.
+  - exists 0; sp; try lia.
   - apply IHl1 in i; auto; exrepnd; subst.
-    exists (S n); sp; try omega.
+    exists (S n); sp; try lia.
 Qed.
 
 Definition get_utokens_sub {o} (sub : @Sub o) :=
@@ -810,7 +809,7 @@ Proof.
     apply in_map_iff in Hinc1. exrepnd.
     destruct a as [blv bnt].
     allsimpl. subst.
-    eapply Hind with (lv0:=lv) in Hinc1.
+    eapply Hind in Hinc1.
     duplicate Hin.
     apply Hinc1 in Hin0.
     allsimpl; repnd.
@@ -856,8 +855,7 @@ Proof.
       change_to_lsubst_aux4.
       apply alpha3_lsubst_aux_allvars_congr2;sp;[| complete disjoint_reasoningv].
       apply alpha_eq3_if.
-      eapply Hind with (lv0:=lv) in XX1; eauto.
-      cpx.
+      eapply Hind in XX1; repnd; eauto.
 Qed.
 
 Ltac t_change s :=
@@ -912,9 +910,9 @@ Proof.
     unfold selectbt.
     apply k.
     apply in_combine_sel_iff.
-    exists n; dands; auto; try omega.
+    exists n; dands; auto; try lia.
     + rw (nth_select1 n bs1 (@default_bt o)); auto.
-    + rw (nth_select1 n bs2 (@default_bt o)); auto; try omega.
+    + rw (nth_select1 n bs2 (@default_bt o)); auto; try lia.
 Qed.
 
 Lemma alpha_eq_oterm_implies_combine {o} :
@@ -1014,7 +1012,7 @@ Proof.
       apply eq_flat_maps_diff; auto.
       introv i.
       applydup (in_combine_implies_nth (@default_bt p) (@default_bt p)) in i; auto; exrepnd; subst.
-      pose proof (Hal n) as aeq; autodimp aeq hyp; try omega.
+      pose proof (Hal n) as aeq; autodimp aeq hyp; try lia.
       unfold selectbt in aeq.
 
       remember (nth n lbt1 default_bt) as b1.
@@ -1022,7 +1020,7 @@ Proof.
       destruct b1 as [l1 t1].
       destruct b2 as [l2 t2]; simpl.
       inverts aeq as Hi1 Hi2 Hi3 Hi4 Haln.
-      apply selectbt_eq_in in Heqb1; trivial; try omega.
+      apply selectbt_eq_in in Heqb1; trivial; try lia.
       eapply Hind in Haln; eauto; repnd;
       [|rw @lsubst_aux_allvars_preserves_osize2;eauto 3 with slow;fail].
       repeat (rw @get_utokens_lsubst_aux_allvars_sub in Haln; eauto 3 with slow). }
@@ -1052,7 +1050,7 @@ Lemma alphaeq_preserves_wf {p} :
   forall t1 t2, @alpha_eq p t1 t2 -> (nt_wf t2 <=> nt_wf t1).
 Proof.
   introv Hal.
-  apply alpha_eq3_if with (lv:=[]) in Hal.
+  apply alpha_eq3_if with (lv0:=[]) in Hal.
   apply alphaeq3_preserves_wf;sp.
 Qed.
 (**     % \noindent \\* %
@@ -1180,7 +1178,7 @@ Theorem alphaeq_preserves_free_vars {p} :
      (free_vars t1) = (free_vars t2). 
 Proof.
   introv aeq.
-  apply alpha_eq3_if with (lv := []) in aeq.
+  apply alpha_eq3_if with (lv0 := []) in aeq.
   apply alphaeq3_preserves_wf_and_free_vars in aeq; sp.
 Qed.
 
@@ -1298,7 +1296,7 @@ Lemma alphaeq_bterm3_if {p} : forall bt1 bt2,
   -> forall lva, alpha_eq_bterm3 lva bt1 bt2.
 Proof.
   introv Hal. intro. invertsna Hal Hal.
-  apply @alpha_eq3_if with  (lv:=lva) in Hal3.
+  apply @alpha_eq3_if with  (lv0:=lva) in Hal3.
   assert (alpha_eq_bterm3 [] (bterm lv1 nt1) (bterm lv2 nt2)) as XX.
   - eapply @al_bterm3 with (lv:=lv); simpl_vlist; eauto.
     rw <- @lsubst_lsubst_aux; spcls; disjoint_reasoningv.
@@ -1450,7 +1448,7 @@ Proof. introv Hind Hlt1 H1len H2len H1dis H2dis Hall.
       disjoint_sub_filter.
 
     + eapply Hind with (lvi:=lvi)  (lnt1:=lnt1) (lnt2:=lnt2) in XX; eauto.
-      Focus 2. rewrite lsubst_aux_allvars_preserves_size; [ omega |]. apply allvars_combine; fail.
+      Focus 2. rewrite lsubst_aux_allvars_preserves_size; [ lia |]. apply allvars_combine; fail.
       Focus 2. rewrite boundvars_lsubst_aux_vars;spc; disjoint_reasoningv;fail.
       Focus 2. rewrite boundvars_lsubst_aux_vars;spc; disjoint_reasoningv;fail.
       (** domains of subsitutions in the conclusion are different because
@@ -1816,16 +1814,16 @@ Ltac alphahypsd :=
   | [H: (forall _:nat, (_< ?m) -> alpha_eq_bterm _ _)  |- _ ] => 
     fail_if_not_number m;
     (let XXX:= fresh H "0bt" in
-      assert (0<m) as XXX by omega; apply H in XXX; 
+      assert (0<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simphyps);
     try (let XXX:= fresh H "1bt" in
-      assert (1<m) as XXX by omega; apply H in XXX; 
+      assert (1<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simphyps);
     try (let XXX:= fresh H "2bt" in
-      assert (2<m) as XXX by omega; apply H in XXX; 
+      assert (2<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simphyps);
     try (let XXX:= fresh H "3bt" in
-      assert (3<m) as XXX by omega; apply H in XXX; 
+      assert (3<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simphyps); clear H
   | [H: alpha_eq_bterm (bterm [] _) (bterm [] _) |- _] => apply alphaeqbt_nilv2 in H; exrepnd; subst
   | [H: alpha_eq_bterm (bterm [] _) _ |- _] => apply alphaeqbt_nilv in H; exrepnd; subst
@@ -1837,13 +1835,13 @@ Ltac alphahypdfv H :=
 match type of H with
 | (forall _:nat, (_< ?m) -> alpha_eq_bterm _ _) => 
   (let XXX:= fresh H "0bt" in
-  assert (0<m) as XXX by omega; apply H in XXX; 
+  assert (0<m) as XXX by lia; apply H in XXX; 
   unfold selectbt in XXX; simphyps);
   try (let XXX:= fresh H "1bt" in
-  assert (1<m) as XXX by omega; apply H in XXX; 
+  assert (1<m) as XXX by lia; apply H in XXX; 
   unfold selectbt in XXX; simphyps);
   try (let XXX:= fresh H "2bt" in
-  assert (2<m) as XXX by omega; apply H in XXX; 
+  assert (2<m) as XXX by lia; apply H in XXX; 
   unfold selectbt in XXX; simphyps); try (fail_if_not_number m; clear H)
 end.
 
@@ -1997,7 +1995,8 @@ Proof.
   intros. 
   pose proof (split_combine sub) as XX.
   pose proof (split_length_eq sub) as XL. repnd.
-  destruct (split sub) as [lv lnt]. allrw <- XX. GC.
+  destruct (split sub) as [lv lnt]; repnd.
+  rw <- (XX lv lnt); GC; auto.
   apply lsubst_alpha_congr;sp.
   apply bin_rel_list_refl.
   exact alpha_eq_refl.
@@ -2440,7 +2439,7 @@ match goal with
       let n := fresh "XXn" in
       constructor; [simpl; congruence| ];[]; unfold selectbt;
       simpl; intros n Hlt;
-        repeat(destruct n;simpl;try(omega);try(apply alphaeqbt_nilv2;auto)); auto;
+        repeat(destruct n;simpl;try(lia);try(apply alphaeqbt_nilv2;auto)); auto;
       try ( let Hyp := (get_alphabt_hyp Hlt)  in 
         unfold selectbt in Hlt;
         apply Hyp in Hlt; allsimpl; auto
@@ -2478,7 +2477,7 @@ Proof.
   simpl in Ha.
   invertsna Ha Hbal.
   allsimpl.
-  assert (0< 1) as Hlt by omega.
+  assert (0< 1) as Hlt by lia.
   apply_clear Hbal1 in Hlt.
   unfold selectbt in Hlt. simpl in Hlt.
   change_to_lsubst_aux4;spc;[|];
@@ -3018,7 +3017,7 @@ Qed.
 
 Ltac prove_bin_rel_nterm := 
   split;[sp|simpl];[];
-  intros n Hlt; repeat (destruct n; try(omega));sp.
+  intros n Hlt; repeat (destruct n; try(lia));sp.
   (*-> disjoint (lvio++(flat_map free_vars lnt)) (bound_vars t)*)
 (* end hide *)
 
@@ -3062,16 +3061,16 @@ Ltac alphahypsd2 := simpl;
   | [H: (forall _:nat, (_< ?m) -> alpha_eq_bterm _ _)  |- _ ] => 
     
     (let XXX:= fresh H "0bt" in
-      assert (0<m) as XXX by omega; apply H in XXX; simpl in XXX;
+      assert (0<m) as XXX by lia; apply H in XXX; simpl in XXX;
       unfold selectbt in XXX; simphyps);
     try (let XXX:= fresh H "1bt" in
-      assert (1<m) as XXX by omega; apply H in XXX; simpl in XXX;
+      assert (1<m) as XXX by lia; apply H in XXX; simpl in XXX;
       unfold selectbt in XXX; simphyps);
     try (let XXX:= fresh H "2bt" in
-      assert (2<m) as XXX by omega; apply H in XXX;  simpl in XXX;
+      assert (2<m) as XXX by lia; apply H in XXX;  simpl in XXX;
       unfold selectbt in XXX; simphyps);
     try (let XXX:= fresh H "3bt" in
-      assert (3<m) as XXX by omega; apply H in XXX;  simpl in XXX;
+      assert (3<m) as XXX by lia; apply H in XXX;  simpl in XXX;
       unfold selectbt in XXX; simphyps); hide_hyp H
   | [H: alpha_eq_bterm (bterm [] _) (bterm [] _) |- _] => apply alphaeqbt_nilv2 in H; exrepnd; subst
   | [H: alpha_eq_bterm (bterm [] _) _ |- _] => apply alphaeqbt_nilv in H; exrepnd; subst
@@ -3097,7 +3096,7 @@ Proof.
   - simpl. rw @sub_filter_nil_r.
     rw <- @lsubst_lsubst_aux;[| disjoint_reasoningv].
     eauto with slow.
-  - dimp (Hfr0bts (S n));[omega|]. unfold selectbt in hyp. simpl in hyp.
+  - dimp (Hfr0bts (S n));[lia|]. unfold selectbt in hyp. simpl in hyp.
     revert hyp. repeat(fold_selectbt). introv Hlt.
     repeat(rw @selectbt_map);spc;[].
     dimp (selectbt_in n rlbt).
@@ -3128,7 +3127,7 @@ Proof.
   - simpl. rw @sub_filter_nil_r.
     rw <- @lsubst_lsubst_aux;[| disjoint_reasoningv].
     eauto with slow.
-  - dimp (Hfr0bts (S (S n)));[omega|]. unfold selectbt in hyp. simpl in hyp.
+  - dimp (Hfr0bts (S (S n)));[lia|]. unfold selectbt in hyp. simpl in hyp.
     revert hyp. repeat(fold_selectbt). introv Hlt.
     repeat(rw @selectbt_map);spc;[].
     dimp (selectbt_in n rlbt).

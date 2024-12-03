@@ -1861,7 +1861,7 @@ Proof.
 
                 introv nrut' eqdoms diff'.
                 unflsubst; simpl; fold_terms.
-                csunf; simpl; dcwf h; simpl; boolvar; try omega;[].
+                csunf; simpl; dcwf h; simpl; boolvar; try lia;[].
                 rw Znat.Nat2Z.id.
                 unflsubst; allrw; autorewrite with slow.
                 eexists; dands; eauto.
@@ -1967,7 +1967,7 @@ Proof.
             introv nrut' eqdoms diff'.
             unflsubst; simpl.
             csunf; simpl.
-            boolvar; try omega.
+            boolvar; try lia.
             rw @Znat.Nat2Z.id.
             eexists; dands; eauto.
           }*)
@@ -2371,7 +2371,7 @@ Proof.
               repeat (unflsubst; simpl).
               csunf; simpl.
               unfold compute_step_tuni; simpl.
-              boolvar; try omega.
+              boolvar; try lia.
               eexists; dands; eauto.
               rw Znat.Nat2Z.id; auto.
           }
@@ -2703,7 +2703,7 @@ Proof.
             exists (mk_comp_seq2 a [] i (mk_apply (lsubst n sub') mk_zero) (lsubst n sub')).
             unflsubst; simpl.
             csunf; simpl.
-            boolvar; autorewrite with slow in *; try omega;[].
+            boolvar; autorewrite with slow in *; try lia;[].
             unflsubst; dands; auto.
             unflsubst; simpl; autorewrite with slow; auto.
           }
@@ -2729,7 +2729,7 @@ Proof.
               unflsubst; simpl.
               dands; auto.
               csunf; simpl.
-              boolvar; ginv; autorewrite with slow; try omega; auto. }
+              boolvar; ginv; autorewrite with slow; try lia; auto. }
 
             autorewrite with slow.
             exists (mk_comp_seq2 a (snoc l k) i (mk_apply n (mk_nat (S (length l)))) n).
@@ -2749,7 +2749,7 @@ Proof.
             exists (mk_comp_seq2 a (snoc l k) i (mk_apply (lsubst n sub') (mk_nat (S (length l)))) (lsubst n sub')).
             unflsubst; simpl.
             csunf; simpl.
-            boolvar; autorewrite with slow in *; try omega;[].
+            boolvar; autorewrite with slow in *; try lia;[].
             unflsubst; dands; auto.
             unflsubst; simpl; autorewrite with slow; auto.
           }
@@ -2812,7 +2812,7 @@ Proof.
                   boolvar; allsimpl; tcsp; GC.
                   dcwf h; allsimpl;[].
                   unfold compute_step_comp; simpl.
-                  boolvar; tcsp; try omega.
+                  boolvar; tcsp; try lia.
                   unflsubst.
 
                 * exists u3; unflsubst; allsimpl; autorewrite with slow in *.
@@ -2837,7 +2837,7 @@ Proof.
                   csunf; simpl; boolvar; allsimpl; tcsp; GC.
                   dcwf h; allsimpl;[].
                   unfold compute_step_comp; simpl.
-                  boolvar; tcsp; try omega.
+                  boolvar; tcsp; try lia.
                   eexists; dands; eauto.
                   unflsubst.
 

@@ -198,7 +198,7 @@ Proof.
       eapply equality_respects_cequivc_right;[exact c2|].
       auto.
 
-    + right; right; left; dands; auto; try omega.
+    + right; right; left; dands; auto; try lia.
 
       assert (ccequivc_ext
                 lib
@@ -216,7 +216,7 @@ Proof.
       eapply equality_respects_cequivc_right;[exact c2|].
       auto.
 
-    + right; right; right; dands; auto; try omega.
+    + right; right; right; dands; auto; try lia.
 
       assert (ccequivc_ext
                 lib
@@ -234,7 +234,7 @@ Proof.
       eapply equality_respects_cequivc_right;[exact c2|].
       auto.
 
-    + right; left; dands; auto; try omega.
+    + right; left; dands; auto; try lia.
 
       assert (ccequivc_ext
                 lib
@@ -379,16 +379,16 @@ Proof.
     destruct (Z_lt_ge_dec ka kb); destruct (Z_lt_ge_dec ke kf).
 
     + left; dands; auto.
-      repndors; repnd; try omega; auto.
+      repndors; repnd; try lia; auto.
 
-    + right; right; left; dands; auto; try omega.
-      repndors; repnd; try omega; auto.
+    + right; right; left; dands; auto; try lia.
+      repndors; repnd; try lia; auto.
 
-    + right; right; right; dands; auto; try omega.
-      repndors; repnd; try omega; auto.
+    + right; right; right; dands; auto; try lia.
+      repndors; repnd; try lia; auto.
 
-    + right; left; dands; auto; try omega.
-      repndors; repnd; try omega; auto.
+    + right; left; dands; auto; try lia.
+      repndors; repnd; try lia; auto.
 Qed.*)
 
 Lemma false_in_uni {p} :
@@ -442,15 +442,15 @@ Proof.
     apply tequality_sym in k.
     apply true_not_equal_to_false in k; sp.
 
-  - destruct (Z_lt_le_dec ka kb); destruct (Z_lt_le_dec kc kd); tcsp; try omega.
+  - destruct (Z_lt_le_dec ka kb); destruct (Z_lt_le_dec kc kd); tcsp; try lia.
 
     + left; dands; auto; eauto 3 with slow.
 
-    + assert False; tcsp; repndors; repnd; tcsp; try omega.
+    + assert False; tcsp; repndors; repnd; tcsp; try lia.
 
-    + assert False; tcsp; repndors; repnd; tcsp; try omega.
+    + assert False; tcsp; repndors; repnd; tcsp; try lia.
 
-    + right; left; dands; auto; eauto 3 with slow; try omega.
+    + right; left; dands; auto; eauto 3 with slow; try lia.
 Qed.
 
 (*Lemma mkc_less_than_in_uni {o} :
@@ -542,7 +542,7 @@ Proof.
   allrw @mkc_le_eq.
   rw @not_in_uni.
   rw (mkc_less_than_in_uni_aux i uk lib b a d c kb ka kd kc compb compa compd compc).
-  split; intro k; repndors; repnd; tcsp; try omega.
+  split; intro k; repndors; repnd; tcsp; try lia.
 Qed.
 
 (*Lemma mkc_le_in_uni {o} :
@@ -645,7 +645,7 @@ Proof.
     pose proof (safe n v) as q.
     autodimp q hyp.
     { erewrite nth_select1; auto; rewrite q0 at 1; eauto. }
-    apply safe0 in q; auto; try omega.
+    apply safe0 in q; auto; try lia.
   }
   clear safe.
 
@@ -841,7 +841,7 @@ Proof.
     rewrite select_map in q.
     autodimp q hyp.
     { erewrite nth_select1; auto; unfold option_map; rewrite i0 at 1; eauto. }
-    rewrite safe2 in q; try omega.
+    rewrite safe2 in q; try lia.
     rewrite mkc_zero_eq in q.
     apply mkc_nat_eq_implies in q; auto.
 Qed.*)
@@ -857,10 +857,10 @@ Proof.
 
   - destruct m; simpl; auto.
     rewrite IHn.
-    boolvar; try omega; tcsp.
+    boolvar; try lia; tcsp.
 Qed.
 
-Hint Rewrite minus_plus : slow nat.
+Hint Rewrite Nat.add_sub : slow nat.
 
 Lemma is_nat_seq_restriction_implies_same_restrictions {o} :
   forall l (restr : @ChoiceSeqRestriction o),
@@ -874,8 +874,8 @@ Proof.
     destruct (lt_dec n (length l)) as [x|x].
     { rewrite h0; auto.
       rewrite natSeq2restrictionPred_iff_cterm_is_nth; tcsp. }
-    { rewrite h; try omega.
-      rewrite natSeq2restrictionPred_iff_is_nat; tcsp; try omega. } }
+    { rewrite h; try lia.
+      rewrite natSeq2restrictionPred_iff_is_nat; tcsp; try lia. } }
 Qed.
 Hint Resolve is_nat_seq_restriction_implies_same_restrictions : slow.
 
@@ -906,10 +906,11 @@ Proof.
     introv q.
     apply in_nth in q; exrepnd.
     pose proof (safe (n + n0) v) as q.
-    rewrite select_app_r in q; autorewrite with slow nat in *; try omega.
+    rewrite select_app_r in q; autorewrite with slow nat in *; try lia.
+    rewrite (Nat.add_comm _ n0) in q; autorewrite with slow nat in *; try lia.
     autodimp q hyp.
     { erewrite nth_select1; auto; rewrite q0 at 1; eauto. }
-    apply safe0 in q; auto; try omega.
+    apply safe0 in q; auto; try lia.
   }
   clear safe.
 
@@ -933,7 +934,7 @@ Proof.
   }
 
   unfold same_restrictions; simpl; dands; auto.
-  { introv; rewrite safe0; try omega.
+  { introv; rewrite safe0; try lia.
     unfold natSeq2restrictionPred; autorewrite with slow; tcsp. }
 Qed.
 
@@ -1015,7 +1016,7 @@ Proof.
     rewrite select_map in q.
     autodimp q hyp.
     { erewrite nth_select1; auto; unfold option_map; rewrite i0 at 1; eauto. }
-    rewrite safe2 in q; try omega.
+    rewrite safe2 in q; try lia.
     rewrite mkc_zero_eq in q.
     apply mkc_nat_eq_implies in q; auto.
 Qed.*)
@@ -1153,9 +1154,9 @@ Proof.
     destruct (lt_dec n0 n) as [xx|xx].
 
     - rewrite select_app_l in h; autorewrite with slow; auto.
-      rewrite select_ntimes in h; boolvar; tcsp; try omega; ginv; eauto 3 with slow.
+      rewrite select_ntimes in h; boolvar; tcsp; try lia; ginv; eauto 3 with slow.
 
-    - rewrite select_app_r in h; autorewrite with slow in *; auto; try omega.
+    - rewrite select_app_r in h; autorewrite with slow in *; auto; try lia.
       destruct (n0 - n); simpl in *; ginv; eauto 3 with slow.
       autorewrite with slow in *; ginv.
   }
@@ -1367,7 +1368,7 @@ Proof.
     { rewrite add_one_choice_if_not_in_left; tcsp.
       rewrite snoc_append_l; auto. }
     { apply safe.
-      rewrite select_snoc_eq; boolvar; tcsp; try omega. }
+      rewrite select_snoc_eq; boolvar; tcsp; try lia. }
     { simpl; apply sat; apply in_snoc; tcsp. } }
 
 (*
@@ -1376,14 +1377,14 @@ Proof.
       rewrite snoc_append_l; auto. }
     pose proof (safe (length (vals ++ vals'))) as safe; autorewrite with slow in *.
     autodimp safe hyp.
-    rewrite select_snoc_eq in safe; boolvar; try omega; ginv.
+    rewrite select_snoc_eq in safe; boolvar; try lia; ginv.
     inversion safe; auto. }
 
   { apply (lib_extends_res _ name a (length (vals ++ vals')) typ); auto.
     { rewrite add_choice_if_not_in_left; tcsp.
       rewrite snoc_append_l; auto. }
     apply safe.
-    rewrite select_snoc_eq; boolvar; tcsp; try omega. }*)
+    rewrite select_snoc_eq; boolvar; tcsp; try lia. }*)
 Qed.
 
 Lemma lib_extends_middle0 {o} :
@@ -1441,7 +1442,7 @@ Proof.
         destruct (lt_dec n0 n) as [xx|xx].
         { rewrite select_app_l in sel; autorewrite with slow; auto.
           rewrite select_ntimes in sel; boolvar; ginv; eauto 3 with slow. }
-        rewrite select_app_r in sel; autorewrite with slow in *; auto; try omega.
+        rewrite select_app_r in sel; autorewrite with slow in *; auto; try lia.
         remember (n0 - n) as k; clear Heqk; destruct k; simpl in *; ginv; eauto 3 with slow.
         autorewrite with slow in *; ginv. } }
 
@@ -1544,7 +1545,7 @@ Proof.
   dands; spcast; eauto 3 with slow.
 
   eapply implies_mkc_apply_mkc_choice_seq_ccomputes_to_valc_ext; eauto; eauto 3 with slow.
-  rewrite select_app_r; autorewrite with slow; try omega.
+  rewrite select_app_r; autorewrite with slow; try lia.
   simpl; auto.
 Qed.
 

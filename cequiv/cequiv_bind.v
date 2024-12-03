@@ -328,7 +328,7 @@ Proof.
 
     unfold lblift; simpl; dands; auto.
     introv ltn.
-    destruct n; try omega; clear ltn.
+    destruct n; try lia; clear ltn.
     unfold selectbt; simpl.
     unfold blift.
     exists [v] x0 x; dands; eauto 3 with slow.
@@ -396,7 +396,7 @@ Proof.
 
     unfold lblift; simpl; dands; auto.
     introv ltn.
-    destruct n; try omega; clear ltn.
+    destruct n; try lia; clear ltn.
     unfold selectbt; simpl.
     unfold blift.
     exists [v1] t1 (subst t2 v2 (mk_var v1)); dands; eauto 3 with slow.
@@ -459,7 +459,6 @@ Proof.
         allrw @isprog_vars_eq; repnd.
         allrw subvars_eq.
         apply isp3 in ix; allsimpl; tcsp. }
-      apply h.
 
   - introv comp.
     apply can_doesnt_raise_an_exception in comp; sp.

@@ -2029,7 +2029,6 @@ Lemma cswap_apply_list {o} :
     = apply_list (cswap sw t) (map (cswap sw) ts).
 Proof.
   induction ts; introv; allsimpl; auto.
-  rewrite IHts; simpl; fold_terms; auto.
 Qed.
 
 Lemma all_abstractions_are_defined_sosub_preserves_alphaeq_sosub {o} :

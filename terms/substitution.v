@@ -1612,7 +1612,7 @@ Proof.
   rw <- beq_var_refl in H; sp.
   remember (beq_var a0 v).
   destruct b; sp.
-  apply IHsub with (u0 := u0) in H; auto.
+  eapply IHsub in H; eauto.
 Qed.
 
 Lemma sub_find_none2 {p} :
@@ -2474,7 +2474,7 @@ Proof.
   Case "->".
   - introv Hin. apply disjoint_flat_map_l.
     intros nt Hinr. pose proof (sub_eta_length sub) as XXX.
-    apply combine_in_right with (l1:=dom_sub sub) in Hinr;[| omega];[].
+    apply combine_in_right with (l1:=dom_sub sub) in Hinr;[| lia];[].
     exrepnd. rewrite <- sub_eta in Hinr0.
     apply Hin in Hinr0. sp.
   - introv Hdis. introv Hin. apply in_sub_eta in Hin. repnd.
@@ -2537,8 +2537,8 @@ Theorem dom_sub_combine {p} :
 Proof.
   intros.
   rw @dom_sub_is_split_snd.
-  revert lnt H; induction lv; sp; simpl; destruct lnt; allsimpl; sp; try omega.
-  rw split_eta; simpl; allrw; sp; omega.
+  revert lnt H; induction lv; sp; simpl; destruct lnt; allsimpl; sp; try lia.
+  rw split_eta; simpl; allrw; sp; lia.
 Qed.
 
 Theorem dom_sub_combine_le {p} :
@@ -2548,8 +2548,8 @@ Theorem dom_sub_combine_le {p} :
 Proof.
   intros.
   rw @dom_sub_is_split_snd.
-  revert lnt H; induction lv; sp; simpl; destruct lnt; allsimpl; sp; try omega.
-  rw split_eta; simpl; allrw; sp; omega.
+  revert lnt H; induction lv; sp; simpl; destruct lnt; allsimpl; sp; try lia.
+  rw split_eta; simpl; allrw; sp; lia.
 Qed.
 
 Ltac simpl_sub :=
@@ -2609,8 +2609,8 @@ Proof.
   introv.
   unfold prog_sub, sub_range_sat; simpl; split; intro k; sp; cpx; discover; sp.
 
-  apply k with (v0 := v); sp.
-  apply k with (v0 := v0); sp.
+  eapply k; eauto.
+  eapply k; eauto.
 Qed.
 
 Lemma in_range_iff {p} :
@@ -2813,7 +2813,7 @@ Theorem disjoint_sub_filter_r_flatmap {p} :
 Proof.
   introv Hsf Hlen Hle1n Hdis. introv Hin Hc.
   apply lin_flat_map in Hin. exrepnd.
-  apply combine_in_right with (l1:=lvis) in Hin1; auto; [| omega];[].
+  apply combine_in_right with (l1:=lvis) in Hin1; auto; [| lia];[].
   rename Hin1 into Hinc. exrepnd. rw <- Hsf in Hinc0.
   apply in_sub_filter in Hinc0. repnd. apply in_combine in Hinc1. repnd.
   assert({x : NTerm $ LIn x lnt # LIn t (f x)}) as XX by(eexists; eauto).
@@ -3652,7 +3652,7 @@ Lemma isprogram_bt_implies {p} :
         -> num_bvars bt = length lnt
         -> isprogram (apply_bterm bt lnt).
 Proof.
-  intros ? Hprog ?  Hprognt Hlen. apply isprogram_bt_implies2; auto. omega.
+  intros ? Hprog ?  Hprognt Hlen. apply isprogram_bt_implies2; auto. lia.
 Qed.
 
 (*
@@ -4051,19 +4051,19 @@ Lemma apply_bterm_append_program_id {p} :
 Proof.
  intros ?  ? ? Hisp Hnt Hnta. destruct bt as [lv nt].
   unfold apply_bterm. simpl.
-  assert(length lv <= length lnt \/ length lnt < length lv ) as Hdi by omega.
+  assert(length lv <= length lnt \/ length lnt < length lv ) as Hdi by lia.
   destruct Hdi. rw <- combine_app_eq; auto.
-  rw combine_app_app; auto; try omega.
+  rw combine_app_app; auto; try lia.
   rw <- @simple_lsubst_app.
   unfold apply_bterm in Hisp.
   apply lsubst_trivial2 with
    (sub:= (combine (skipn (length lnt) lv) (firstn (length lv - length lnt) lnta)))
    in Hisp; auto.
   - intros ? ? Hin. apply in_combine in Hin; exrepnd.
-    apply in_firstn in Hin; try omega; auto.
+    apply in_firstn in Hin; try lia; auto.
   - intros ? ? Hin. apply in_combine in Hin. sp.
   - intros ? ? Hin. apply in_combine in Hin. exrepnd.
-    apply in_firstn in Hin; try omega; auto.
+    apply in_firstn in Hin; try lia; auto.
 Qed.
 
 Lemma lsubst_aux_nt_wf {p} :
@@ -5772,7 +5772,7 @@ Proof.
   unfold get_sub_dom_vars. rewrite  gmap_length.
   rewrite combine_length.
   rewrite map_length.
-  rewrite H. rewrite Min.min_idempotent; refl.
+  rewrite H. rewrite Nat.min_id; refl.
 Qed.
 
 
@@ -5826,7 +5826,7 @@ Proof.
        apply in_sub_filter in Hc0.
        repnd. apply in_combine in Hc1. repnd. sp.
        apply lin_lift_vterm in Hc1. sp.
-       rewrite map_length. omega.
+       rewrite map_length. lia.
 Qed.
 
 Fixpoint diff_vars {p} (l : list NVar) (ts : list (@NTerm p)) : list NTerm :=
@@ -5984,7 +5984,7 @@ Proof.
             apply in_combine in Hin1. repnd.
             apply lin_lift_vterm in Hin1.
             apply Hvo in Hin1. sp.
-            rewrite map_length. omega.
+            rewrite map_length. lia.
 Qed.
 
 
@@ -6145,7 +6145,7 @@ Lemma sub_filter_disjoint {p} :
 Proof.
   intros. apply sub_filter_disjoint1.
   unfold var_ren. rewrite dom_sub_combine. auto.
-  rewrite map_length; auto; try omega.
+  rewrite map_length; auto; try lia.
 Qed.
 
 
@@ -6189,7 +6189,7 @@ Proof.
   apply in_sub_filter in Hin0. repnd. apply in_combine in Hin1. repnd.
   apply in_map_iff in  Hin1. exrepnd. inverts Hin3.
   apply Hdis in Hin1. sp.
-  omega.
+  lia.
 Qed.
 
 Theorem disjoint_sub_filter_l {p} : forall lvi lnt lvis lnts ld lv,
@@ -6805,7 +6805,7 @@ Proof.
         simpl.  rewrite  Hl1 in s1s0.
         allfold (@dom_sub p). 
         allunfold (@var_ren p). spcls. 
-        assert (n0<n \/ n0=n \/ n<n0) as Htri by omega.
+        assert (n0<n \/ n0=n \/ n<n0) as Htri by lia.
         (dorn Htri);[|(dorn Htri)];
           try (apply s1s1 in Htri); cpx;
           try (apply s3s1 in Htri); cpx.

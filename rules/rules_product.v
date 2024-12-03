@@ -379,7 +379,7 @@ Proof.
     rw @similarity_snoc in sim'7; exrepnd; subst.
     rw @similarity_snoc in sim'8; exrepnd; subst.
     allrw length_snoc; cpx.
-    apply app_split in sim'0;[|repeat (rw length_snoc); omega].
+    apply app_split in sim'0;[|repeat (rw length_snoc); lia].
     repnd; subst; cpx; simpl in *; GC; ginv.
     autorewrite with slow core in *.
 
@@ -401,7 +401,7 @@ Proof.
 
     {
       apply similarity_app.
-      eexists; eexists; eexists; eexists; dands; eauto; allrw length_snoc; try omega.
+      eexists; eexists; eexists; eexists; dands; eauto; allrw length_snoc; try lia.
 
       - sim_snoc; dands; auto.
         eapply equality_respects_cequivc_left;
@@ -502,8 +502,8 @@ Proof.
     apply eq_hyps_app in h; exrepnd.
     apply eq_hyps_snoc in h5; exrepnd; subst.
     allrw length_snoc.
-    apply app_split in h2;[|repeat (rw length_snoc); omega]; repnd; subst.
-    apply app_split in h0;[|repeat (rw length_snoc); omega]; repnd; subst.
+    apply app_split in h2;[|repeat (rw length_snoc); lia]; repnd; subst.
+    apply app_split in h0;[|repeat (rw length_snoc); lia]; repnd; subst.
     cpx; simpl in *; GC; ginv.
     repeat (match goal with
               | [ H : context[htyp (mk_hyp _ _)] |- _ ] => simpl in H
@@ -524,7 +524,7 @@ Proof.
 
     apply eq_hyps_app.
     eexists; eexists; eexists; eexists; dands; eauto;
-    repeat (rw length_snoc); try omega;[|].
+    repeat (rw length_snoc); try lia;[|].
 
     { apply eq_hyps_snoc; simpl.
       eexists; eexists; eexists; eexists.
@@ -612,7 +612,7 @@ Proof.
 
   { apply similarity_app.
     eexists; eexists; eexists; eexists; dands; eauto;
-    repeat (rw length_snoc); try omega;[|].
+    repeat (rw length_snoc); try lia;[|].
 
     - sim_snoc2.
       { apply wf_term_subst; eauto 3 with slow. }

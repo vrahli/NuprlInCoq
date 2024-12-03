@@ -561,7 +561,7 @@ Proof.
       eauto 3 with slow; exrepnd.
     inversion aeq0 as [| ? ? ? leq aeqbt]; subst; eauto 3 with slow.
     exists lbt2; dands; auto.
-    allunfold @lblift; dands; repnd; auto; try omega.
+    allunfold @lblift; dands; repnd; auto; try lia.
     introv k.
     applydup ca0 in k.
     rw ca2 in k.
@@ -623,7 +623,7 @@ Proof.
     inversion aeq0 as [| ? ? ? leq aeqbt]; subst.
     apply cv in aeq1; exrepnd; clear cv.
     exists tr_subterms; dands; auto.
-    allunfold @lblift; dands; repnd; auto; try omega.
+    allunfold @lblift; dands; repnd; auto; try lia.
     introv k.
     applydup aeqbt in k.
     rw leq in k.
@@ -692,7 +692,7 @@ Proof.
       split;spcf;[].
       introv Hlt. duplicate Hlt.
       apply_clear Hcal in Hlt.
-      dimp (Hcv0 n); [omega|].
+      dimp (Hcv0 n); [lia|].
       repnud hyp.
       exrepnd.
       unfold blift.
@@ -770,7 +770,7 @@ Proof.
 
     introv Hlt. duplicate Hlt.
     apply_clear Hcv0 in Hlt.
-    dimp (Hbal0 n); [omega|].
+    dimp (Hbal0 n); [lia|].
     repnud Hlt.
     exrepnd.
     unfold blift.
@@ -1080,7 +1080,7 @@ Proof.
     rename Hcv0 into Hcb.
     applydup_clear Hbc2 in Hcb. exrepnd.
     exists tr_subterms0; sp.
-    allunfold @lblift; dands; spcf; try omega;[].
+    allunfold @lblift; dands; spcf; try lia;[].
 
     introv Hlt.
     applydup Hcv1 in Hlt. repnd.
@@ -1088,7 +1088,7 @@ Proof.
     applydup Hcb1 in Hlt.
     rename Hlt1 into H1rb.
     rename Hlt0 into H2rb.
-    allunfold @blift; exrepnd; try omega.
+    allunfold @blift; exrepnd; try lia.
     pose proof (fresh_vars (length lv)
                            (all_vars nt1
                                      ++ all_vars nt2
@@ -1720,16 +1720,16 @@ Ltac alpharelbtd :=
   | [H: (forall _:nat, (_< ?m) -> blift _ _ _)  |- _ ] => 
     fail_if_not_number m;
     (let XXX:= fresh H "0bt" in
-      assert (0<m) as XXX by omega; apply H in XXX; 
+      assert (0<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simphyps);
     try (let XXX:= fresh H "1bt" in
-      assert (1<m) as XXX by omega; apply H in XXX; 
+      assert (1<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simphyps);
     try (let XXX:= fresh H "2bt" in
-      assert (2<m) as XXX by omega; apply H in XXX; 
+      assert (2<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simphyps);
     try (let XXX:= fresh H "3bt" in
-      assert (3<m) as XXX by omega; apply H in XXX; 
+      assert (3<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simphyps); clear H
   | [H: alpha_eq_bterm (bterm [] _) (bterm _ _) |- _] => apply alphaeqbt_nilv3 in H; exrepnd; subst
   | [H: alpha_eq_bterm _ (bterm [] _) |- _] => apply alpha_eq_bterm_sym in H
@@ -2213,7 +2213,7 @@ Proof.
       subst; apply implies_isprogram_bt0; eauto with slow.
     + unfold lblift. allsimpl. split; auto.
       introv Hin. unfold selectbt.
-      repeat(destruct n; try (omega;fail); allsimpl);
+      repeat(destruct n; try (lia;fail); allsimpl);
       apply blift_approx_open_nobnd2; sp.
 Qed.
 
@@ -2233,9 +2233,9 @@ Proof.
   unfold approx_open_bterm in Ha0.
   repnud Ha0. exrepnd.
   dimp (isprogram_bt_implies2 _ H1p _ Hlp); allunfold @num_bvars;
-     allsimpl; [omega|].
+     allsimpl; [lia|].
   dimp (isprogram_bt_implies2 _ H2p _ Hlp); allunfold @num_bvars;
-     allsimpl; [omega|].
+     allsimpl; [lia|].
   allunfold @apply_bterm. allsimpl.
   pose proof (fresh_vars (length lv1) (all_vars nt1 ++ all_vars nt2
                ++ all_vars t1 ++ all_vars t2)).

@@ -699,7 +699,7 @@ Proof.
   destruct a; destruct n1; allsimpl; tcsp.
   - apply IHl in i; tcsp.
   - dorn i; cpx.
-    + sp; omega.
+    + sp; lia.
     + apply IHl in i; repnd; tcsp.
   - dorn i; cpx.
     + provefalse; inversion i0.
