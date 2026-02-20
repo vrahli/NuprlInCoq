@@ -1024,3 +1024,16 @@ Proof.
   allrw <- @sub_free_vars_is_flat_map_free_vars_range.
   allrw @sub_free_vars_csub2sub; boolvar; tcsp.
 Qed.
+
+Lemma substc3_squash {o} :
+  forall (x y : NVar) (u : @CTerm o) (z : NVar) (a : CVTerm [x,y,z]),
+    substc3 x y u z (mkcv_squash [x,y,z] a)
+    = mkcv_squash [x,y] (substc3 x y u z a).
+Proof.
+  introv.
+  destruct_cterms.
+  apply cvterm_eq; simpl.
+  repeat unfsubst.
+Qed.
+
+Hint Rewrite @substc3_squash : slow.
