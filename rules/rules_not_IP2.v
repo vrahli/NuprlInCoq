@@ -63,6 +63,30 @@ Qed.
 Hint Rewrite @substc3_lsubstc_vars : slow.
 
 
+(* the infinite search: fix(\R.\n.if d(n) = 1 then n else R(n+1)) *)
+Definition search {o} (d : choice_sequence_name) (R n : NVar) : @CTerm o :=
+  mkc_fix (mkc_lam R (mkcv_lam [R] n
+                        (mkcv_inteq [n, R]
+                           (mkcv_apply [n,R]
+                              (mkcv_choice_seq [n,R] d)
+                              (mk_cv_app_r [R] [n] (mkc_var n)))
+                           (mkcv_nat [n,R] 1)
+                           (mk_cv_app_r [R] [n] (mkc_var n))
+                           (mkcv_apply [n,R]
+                              (mk_cv_app_l [n] [R] (mkc_var R))
+                              (mkcv_add [n,R]
+                                 (mk_cv_app_r [R] [n] (mkc_var n))
+                                 (mkcv_nat [n,R] 1)))))).
+
+(* makes use of search to realise the antecedent of IP below *)
+Definition search0 {o} (d : choice_sequence_name) (R n : NVar) : @CTerm o :=
+  mkc_pair (search d R n) mkc_axiom.
+
+(* makes use of search to realise the antecedent of IP below *)
+Definition search1 {o} (d : choice_sequence_name) (v R n : NVar) : @CTerm o :=
+  mkc_lam v (mk_cv [v] (search0 d R n)).
+
+
 Definition IP {o} (A B n : NVar) (i : nat) : @NTerm o :=
   mk_all
     (mk_uni i)
@@ -325,11 +349,6 @@ Proof.
 
     {
       apply tequality_mkc_squash; eauto 3 with slow.
-
-Search substc2 lsubstc_vars.
-Check substc3.
-Check lsubstc_vars.
-
     }
 
     introv xt''' inh.
@@ -637,11 +656,15 @@ Check lsubstc_vars.
   apply equality_in_fun in q; repnd.
   clear q0 q1.
 
-(* Do something else here. Instead of id it should search for a number n such
-   that csn(n) is 1 *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXX *)
+  remember (nvar "v") as vv.
+  remember (nvar "R") as vR.
+  remember (nvar "n") as vn.
 
-  pose proof (q _ (lib_extends_refl _) mkc_id mkc_id) as q.
+(* Because the antecedent is squashed but the consequent is not,
+   instead of using identity, we should search for a number n such
+   that csn(n) is 1, using "search" *)
+
+  pose proof (q _ (lib_extends_refl _) (search' name vv vR vn) (search' name vv vR vn)) as q.
   autodimp q hyp.
 
   {

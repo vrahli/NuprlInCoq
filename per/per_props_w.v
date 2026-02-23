@@ -51,6 +51,7 @@ Proof.
   - unfold equality in e; exrepnd.
     unfold nuprl in e1.
     inversion e1; try not_univ.
+
     allunfold @per_w; allunfold @type_family; exrepnd.
     computes_to_value_isvalue.
     allfold (@nuprl p lib).
