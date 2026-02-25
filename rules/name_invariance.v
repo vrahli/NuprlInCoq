@@ -81,7 +81,6 @@ Lemma rename_term_apply_list {o} :
     = apply_list (rename_term r t) (map (rename_term r) ts).
 Proof.
   induction ts; introv; simpl; tcsp.
-  rewrite IHts; simpl; auto.
 Qed.
 
 Lemma soterm2nterm_rename_soterm {o} :
@@ -2659,7 +2658,7 @@ Lemma eq_rename_per_idem {o} :
   forall r (e : per(o)),
     (rename_per r (rename_per r e)) <=2=> e.
 Proof.
-  repeat introv; unfold rename_per; autorewrite with slow; auto.
+  repeat introv; unfold rename_per; autorewrite with slow; auto; tcsp.
 Qed.
 
 Lemma eq_rename_per_idem2 {o} :
@@ -2709,7 +2708,7 @@ Proof.
     revert e1 w.
     unfold rename_per.
     autorewrite with slow; introv.
-    rewrite (UIP_refl _ _ w); auto.
+    rewrite (UIP_refl _ _ w); tcsp.
 
   - unfold rename_per_fam, rename_per.
     unfold eq_ind, eq_rect; simpl.
@@ -2717,7 +2716,7 @@ Proof.
     revert e1 w.
     unfold rename_per.
     autorewrite with slow; introv.
-    rewrite (UIP_refl _ _ w); auto.
+    rewrite (UIP_refl _ _ w); tcsp.
 Qed.
 
 Lemma implies_rename_per2 {o} :
@@ -2758,7 +2757,7 @@ Proof.
   revert e1 w.
   unfold rename_per.
   autorewrite with slow; introv.
-  rewrite (UIP_refl _ _ w); auto.
+  rewrite (UIP_refl _ _ w); tcsp.
 Qed.
 Hint Resolve weq_rename_implies : slow.
 
@@ -2794,7 +2793,7 @@ Proof.
   revert e1 w.
   unfold rename_per.
   autorewrite with slow; introv.
-  rewrite (UIP_refl _ _ w); auto.
+  rewrite (UIP_refl _ _ w); tcsp.
 Qed.
 Hint Resolve meq_rename_implies : slow.
 

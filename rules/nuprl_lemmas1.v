@@ -86,7 +86,7 @@ Proof.
   try (complete inversion e);
   try (complete wfseq).
 
-  Grab Existential Variables.
+  Unshelve.
   wfseq.
 Qed.
 
@@ -142,7 +142,7 @@ Proof.
   try (complete inversion e);
   try (complete wfseq).
 
-  Grab Existential Variables.
+  Unshelve.
   wfseq.
 Defined.
 
@@ -194,6 +194,6 @@ Proof.
   wfseq.
   wfseq.
 
-  Grab Existential Variables.
+  Unshelve.
   wfseq.
 Qed.

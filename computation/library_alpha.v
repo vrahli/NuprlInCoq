@@ -2618,6 +2618,12 @@ Proof.
   rw IHl; auto.
 Qed.
 
+(* MOVE *)
+Lemma le_refl : forall (n : nat), n <= n.
+Proof.
+  lia.
+Qed.
+
 Lemma so_alphaeq_soswap_so_change_bvars_alpha {o} :
   forall (t : @SOTerm o) vs1 vs2 vs,
     disjoint vs2 vs

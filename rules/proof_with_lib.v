@@ -431,7 +431,7 @@ Lemma Vin_iff :
 Proof.
   introv.
   unfold Vin.
-  rw <- (@assert_memberb NVar eq_var_dec); auto.
+  rw <- (@assert_memberb NVar eq_var_dec); tcsp.
 Qed.
 
 Definition NVin_dec : forall v vs, decidable (NVin v vs).

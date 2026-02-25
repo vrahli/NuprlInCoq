@@ -209,7 +209,7 @@ Lemma bot_in_partial_type {o} : forall lib (T : @CTerm o),
 Proof.
   introv Ht.
   apply equality_in_mkc_partial.
-  dands; auto;[].
+  dands; tcsp;[].
   introv Hc.
   provefalse.
   apply (not_chavaluec_bot lib); auto.

@@ -378,8 +378,9 @@ Proof.
   allrw <- @member_equality_iff.
   allrw <- @member_member_iff.
   apply @tequality_in_uni_implies_tequality in hyp1.
-  sp.
-  
+  sp; eauto 3 with slow.
+  sp; eauto 3 with slow.
+
   autodimp hyp2 hyp.
   rw @similarity_snoc; simpl.
   exists s1 s1 t t w0 c0; sp.
@@ -411,6 +412,7 @@ Proof.
   allrw <- @member_equality_iff.
   allrw <- @member_member_iff.
   apply @tequality_in_uni_implies_tequality in hyp1.
+  sp.
   sp.
   
   autodimp hyp2 hyp.
@@ -497,6 +499,7 @@ Proof.
   apply @tequality_mkc_equality_if_equal; auto.
 
   applydup @sequent_true_equality_refl in hyp1; exrepnd.
+  rename hyp4 into hyp5.
   vr_seq_true in hyp5.
   generalize (hyp5 s1 s2 eqh sim); clear hyp1; intro hyp4; exrepnd.
   lsubst_tac.
@@ -505,26 +508,26 @@ Proof.
   allrw <- @member_member_iff.
   apply @tequality_mkc_member in hyp1; repnd.
   apply equality_in_mkc_partial.
-  apply hyp1 in hyp4. clear hyp1 hyp7.
+  apply hyp1 in hyp3. clear hyp1.
 
   dands; auto.
 
   apply @tequality_refl in teqpart; auto.
-  
+
  { split; intro k; try (complete sp); apply hyp0.
-   apply equality_sym in hyp4; apply equality_refl in hyp4; auto.
-   apply equality_refl in hyp4; auto.
+   apply equality_sym in hyp3; apply equality_refl in hyp3; auto.
+   apply equality_refl in hyp3; auto.
  }
 
   applydup @sequent_true_equality_sym in hyp1; exrepnd.
-  applydup @sequent_true_equality_refl in hyp5; exrepnd.
-  vr_seq_true in hyp6.
-  generalize (hyp6 s1 s2 eqh sim); clear hyp6; intro hyp6; exrepnd.
+  applydup @sequent_true_equality_refl in hyp4; exrepnd.
+  vr_seq_true in hyp5.
+  generalize (hyp5 s1 s2 eqh sim); clear hyp5; intro hyp5; exrepnd.
   lsubst_tac.
   allrw @member_eq.
   allrw <- @member_equality_iff.
   allrw <- @member_member_iff.
-  apply @tequality_mkc_member in hyp4; repnd.
+  apply @tequality_mkc_member in hyp3; repnd.
   apply equality_in_mkc_partial.
   sp.
 
@@ -533,15 +536,15 @@ Proof.
   apply @tequality_refl in teqpart; auto.
 
   split; intro k; try (complete sp); apply hyp0; auto.
-  apply equality_sym in hyp4; apply equality_refl in hyp4; auto.
-  
+  apply equality_sym in hyp3; apply equality_refl in hyp3; auto.
+
   (* - equality part - *)
   vr_seq_true in hyp1.
   generalize (hyp1 s1 s2 eqh sim); clear hyp1; intro hyp1; exrepnd.
   lsubst_tac.
   allrw @member_eq.
   allrw <- @member_equality_iff.
-  apply @tequality_mkc_equality in hyp4; repnd.
+  apply @tequality_mkc_equality in hyp3; repnd.
   apply equality_in_mkc_partial.
   sp.
 
@@ -652,8 +655,8 @@ Proof.
   allrw @member_eq.
   allrw <- @member_equality_iff.
   allrw <- @member_member_iff.
-  apply @tequality_in_uni_implies_tequality in hyp0; repnd. sp.
-  
+  apply @tequality_in_uni_implies_tequality in hyp0; repnd; sp.
+
   (* - equality part - *)
   clear dependent s1.
   clear dependent s2.

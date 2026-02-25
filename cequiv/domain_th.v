@@ -36,6 +36,7 @@ Require Export subst_props.
 Require Export library_alpha.
 Require Export computation8.
 Require Export terms5.
+(*Require Import computation_mark.*)
 
 
 (** printing #  $\times$ #×# *)
@@ -669,12 +670,6 @@ Lemma bound_vars_subst_utokens_aux_subset {o} :
            (bound_vars t ++ bound_vars_utok_sub sub).
 Proof.
   nterm_ind t as [v|f|op bs ind] Case; introv; auto.
-
-  - Case "vterm".
-    allsimpl; auto.
-
-  - Case "sterm".
-    allsimpl; auto.
 
   - Case "oterm".
     rw @subst_utokens_aux_oterm.
@@ -2211,7 +2206,7 @@ Proof.
                            apply disjoint_singleton_r; introv i;
                            try (apply Xsss1 in i); try (apply Xsss in i);
                            allsimpl; tcsp)).
-            rw (map_nth2 BTerm (@BTerm p) (@default_bt p)); auto.
+            rw (library_alpha.map_nth2 BTerm (@BTerm p) (@default_bt p)); auto.
             pose proof (nth_in _ n2 e1bt1lbt default_bt) as i; autodimp i hyp.
             remember (nth n2 e1bt1lbt default_bt) as b; clear Heqb.
             rw @lsubst_bterm_aux_trivial_cl_term; simpl; auto.
@@ -2351,7 +2346,7 @@ Proof.
 
               repeat(prove_alpha_eq4).
 
-              { rw (map_nth2 BTerm (@BTerm p) (@default_bt p)); auto.
+              { rw (library_alpha.map_nth2 BTerm (@BTerm p) (@default_bt p)); auto.
                 pose proof (nth_in _ n e1bt1lbt default_bt) as i; autodimp i hyp; try lia.
                 remember (nth n e1bt1lbt default_bt) as b; clear Heqb.
                 rw @lsubst_bterm_aux_trivial_cl_term; simpl; auto.
@@ -2359,7 +2354,7 @@ Proof.
                 rw subset_flat_map in Xsss0; apply Xsss0 in i; apply i in j; allsimpl; sp.
               }
 
-              { rw (map_nth2 BTerm (@BTerm p) (@default_bt p)); auto.
+              { rw (library_alpha.map_nth2 BTerm (@BTerm p) (@default_bt p)); auto.
                 pose proof (nth_in _ n e1lbt default_bt) as i; autodimp i hyp; try lia.
                 remember (nth n e1lbt default_bt) as b; clear Heqb.
                 rw @lsubst_bterm_aux_trivial_cl_term; simpl; auto.
@@ -2567,7 +2562,7 @@ Proof.
                            apply disjoint_singleton_r; introv i;
                            try (apply Xsss1 in i); try (apply Xsss in i);
                            allsimpl; tcsp)).
-            rw (map_nth2 BTerm (@BTerm p) (@default_bt p)); auto.
+            rw (library_alpha.map_nth2 BTerm (@BTerm p) (@default_bt p)); auto.
             pose proof (nth_in _ n0 e1bt1lbt default_bt) as i; autodimp i hyp.
             remember (nth n0 e1bt1lbt default_bt) as b; clear Heqb.
             rw @lsubst_bterm_aux_trivial_cl_term; simpl; auto.
@@ -2699,7 +2694,7 @@ Proof.
 
               repeat(prove_alpha_eq4).
 
-              { rw (map_nth2 BTerm (@BTerm p) (@default_bt p)); auto.
+              { rw (library_alpha.map_nth2 BTerm (@BTerm p) (@default_bt p)); auto.
                 pose proof (nth_in _ n e1bt1lbt default_bt) as i; autodimp i hyp; try lia.
                 remember (nth n e1bt1lbt default_bt) as b; clear Heqb.
                 rw @lsubst_bterm_aux_trivial_cl_term; simpl; auto.
@@ -2707,7 +2702,7 @@ Proof.
                 rw subset_flat_map in Xsss0; apply Xsss0 in i; apply i in j; allsimpl; sp.
               }
 
-              { rw (map_nth2 BTerm (@BTerm p) (@default_bt p)); auto.
+              { rw (library_alpha.map_nth2 BTerm (@BTerm p) (@default_bt p)); auto.
                 pose proof (nth_in _ n e1lbt default_bt) as i; autodimp i hyp; try lia.
                 remember (nth n e1lbt default_bt) as b; clear Heqb.
                 rw @lsubst_bterm_aux_trivial_cl_term; simpl; auto.
@@ -8782,7 +8777,7 @@ Lemma apply_bterm_var {o} : forall v t,
   @apply_bterm o (bterm [v] (vterm v)) [t] = t.
 Proof.
   intros. unfold apply_bterm. simpl.
-  change_to_lsubst_aux4; [| simpl; spcl; disjoint_reasoning; fail].
+  change_to_lsubst_aux4; tcsp.
   simpl. autorewrite with slow. auto.
 Qed.
 

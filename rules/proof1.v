@@ -103,7 +103,7 @@ Lemma Vin_iff :
 Proof.
   introv.
   unfold Vin.
-  rw <- (@assert_memberb NVar eq_var_dec); auto.
+  rw <- (@assert_memberb NVar eq_var_dec); auto; tcsp.
 Qed.
 
 Inductive Llist {A} (f : A -> Type) : list A -> Type :=
@@ -641,6 +641,7 @@ Ltac clear_eq1 x :=
     | [ H : x = _ |- _ ] => clear H
   end.
 
+(*
 Lemma computes_to_valc_consistent_with_new_definition {o} {lib} :
   forall (a b : @CTerm o)
          (r   : computes_to_valc lib a b)
@@ -653,6 +654,7 @@ Proof.
   allunfold @computes_to_value; repnd; dands; auto.
   eapply reduces_to_consistent_with_new_definition; auto.
 Qed.
+*)
 
 Lemma approx_stable_iff {o} :
   forall lib (a b : @CTerm o),

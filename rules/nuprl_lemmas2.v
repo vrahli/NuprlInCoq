@@ -35,6 +35,7 @@ Require Import rules_isect.
 Require Import rules_squiggle.
 Require Import rules_struct.
 Require Import tactics2.
+Require Import list.
 
 (** printing |- $\vdash$ *)
 (** printing ->  $\rightarrow$ *)
