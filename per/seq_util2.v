@@ -76,9 +76,9 @@ Proof.
     allrw @mkcv_zero_substc.
     allrw @mkc_zero_eq.
     eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-    boolvar; try omega.
+    boolvar; try lia.
     eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-    boolvar; try omega.
+    boolvar; try lia.
     apply computes_to_valc_implies_cequivc; auto.
 
   - apply cequivc_nat_implies_computes_to_valc.
@@ -93,9 +93,9 @@ Proof.
     allrw @mkcv_zero_substc.
     allrw @mkc_zero_eq.
     eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-    boolvar; try omega.
+    boolvar; try lia.
     eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-    boolvar; try omega.
+    boolvar; try lia.
     apply computes_to_valc_implies_cequivc; auto.
 Qed.
 
@@ -186,7 +186,7 @@ Proof.
   introv e.
   apply equality_in_natk in e; exrepnd; spcast.
   apply computes_to_valc_isvalue_eq in e3; eauto 3 with slow.
-  allrw @mkc_nat_eq; ginv; omega.
+  allrw @mkc_nat_eq; ginv; lia.
 Qed.
 
 Lemma is_kseq_0 {o} : forall lib (t : @CTerm o), is_kseq lib t 0.
@@ -230,7 +230,7 @@ Proof.
       boolvar; tcsp.
 
   - pose proof (equality_natk2nat_implies lib m0 s1 s2 n) as h.
-    repeat (autodimp h hyp); try omega.
+    repeat (autodimp h hyp); try lia.
     exrepnd.
     exists k.
     dands.
@@ -299,7 +299,7 @@ Proof.
     [apply isprogram_apply;eauto 3 with slow;apply isprogram_mk_nseq|].
   eapply reduces_to_if_split2;[csunf;simpl;auto|].
   apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
-  boolvar; try omega.
+  boolvar; try lia.
   rw Znat.Nat2Z.id; auto.
 Qed.
 
@@ -403,7 +403,7 @@ Proof.
   allrw @mkcv_zero_substc.
 
   eapply cequivc_trans;
-    [allrw @mkc_zero_eq; apply cequivc_inteq_less_swap1; try omega|].
+    [allrw @mkc_zero_eq; apply cequivc_inteq_less_swap1; try lia|].
   allrw <- @mkc_zero_eq.
 
   apply implies_cequivc_mkc_less1.
@@ -446,7 +446,7 @@ Proof.
     ].
 
   eapply cequivc_trans;
-    [apply cequivc_inteq_less_swap1; try omega|].
+    [apply cequivc_inteq_less_swap1; try lia|].
 
   eapply cequivc_trans;
     [apply cequivc_mkc_less;
@@ -470,7 +470,7 @@ Proof.
   eapply cequivc_trans;
     [|apply cequivc_sym;apply cequivc_mkc_less_nat].
 
-  boolvar; subst; tcsp; try omega.
+  boolvar; subst; tcsp; try lia.
 Qed.
 
 Lemma eq_kseq_seq2kseq_0 {o} :
@@ -479,7 +479,7 @@ Lemma eq_kseq_seq2kseq_0 {o} :
 Proof.
   introv.
   apply implies_equality_natk2nat.
-  introv ltm; omega.
+  introv ltm; lia.
 Qed.
 
 Lemma cequivc_seq2kseq_0 {o} :
@@ -548,7 +548,7 @@ Lemma is_kseq_seq2kseq_0 {o} :
 Proof.
   introv.
   apply implies_equality_natk2nat.
-  introv ltm; omega.
+  introv ltm; lia.
 Qed.
 
 Lemma cequivc_preserves_eq_kseq_left {o} :

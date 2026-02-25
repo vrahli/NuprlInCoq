@@ -423,7 +423,7 @@ Proof.
     apply tequality_mkc_equality in hyp0. repnd.
     dup hyp2 as hh. apply equality_sym in hh. apply equality_refl in hh.
     apply hyp0 in hh.
-    apply equality_in_uni with (i0 := i).
+    eapply equality_in_uni.
     eapply equality_trans; eauto.
     
   - vr_seq_true in hyp1.
@@ -774,11 +774,10 @@ Proof.
     generalize (hyp1 s1 s2 eqh sim); clear hyp1; intro hyp1; exrepnd.
     lsubst_tac.
      apply tequality_in_uni_implies_tequality in hyp0; auto.
-     
+
     allrw @member_eq.
     allrw <- @member_member_iff.
     auto.
-    
 
   - clear dependent s1.
     clear dependent s2.
@@ -796,7 +795,6 @@ Proof.
     clear hyp2; intro hyp2.
 
     autodimp hyp2 hyp.
-
 
     (* -- We start proving the hyps_functionality -- *)
     introv sim'.
@@ -820,44 +818,47 @@ Proof.
       intro hf2.
 
     rw @eq_hyps_app; simpl.
-    eexists; eexists; eexists; eexists; dands; auto; allrw length_snoc; auto.
+    eexists; eexists; eexists; eexists; dands; auto; allrw length_snoc; eauto.
 
     rw @eq_hyps_snoc; simpl.
-    eexists; eexists; eexists; eexists; eexists; eexists; eexists; dands; auto.
+    eexists; eexists; eexists; eexists; eexists; eexists; eexists; dands; eauto.
 
     rw @eq_hyps_snoc; simpl.
-    eexists; eexists; eexists; eexists; eexists; eexists; eexists; dands; auto;
-    try (complete (lsubst_tac; apply @tequality_base)).
+    eexists; eexists; eexists; eexists; eexists; eexists; eexists; dands; eauto;
+      try (complete (lsubst_tac; apply @tequality_base)).
 
     rw @eq_hyps_snoc; simpl.
-    eexists; eexists; eexists; eexists; eexists; eexists; eexists; dands; auto;
-    try (complete (lsubst_tac; apply @tequality_base)).
+    eexists; eexists; eexists; eexists; eexists; eexists; eexists; dands; eauto;
+      try (complete (lsubst_tac; apply @tequality_base)).
 
-    lsubst_tac.
-    apply @tequality_equality_if_cequivc; auto.
-    generalize (hf1 (snoc s2a1 (x,t0))); intro k.
-    autodimp k hyp.
-    rw @similarity_snoc; simpl.
-    eexists; eexists; eexists; eexists; eexists; eexists; eexists; dands; auto.
-    exact sim2.
-    rw @eq_hyps_snoc in k; simpl in k; exrepnd; cpx; proof_irr; auto.
+    {
+      lsubst_tac.
+      apply @tequality_equality_if_cequivc; auto.
+      generalize (hf1 (snoc s2a1 (x,t0))); intro k.
+      autodimp k hyp.
+      rw @similarity_snoc; simpl.
+      eexists; eexists; eexists; eexists; eexists; eexists; eexists; dands; auto.
+      exact sim2.
+      rw @eq_hyps_snoc in k; simpl in k; exrepnd; cpx; proof_irr; auto.
+    }
 
-    apply sub_eq_hyps_snoc_weak; auto.
-    apply sub_eq_hyps_snoc_weak; auto.
-    generalize (hf (snoc s2a1 (x,t5) ++ s2b0)); intro k.
-    autodimp k hyp.
-    rw @similarity_app; simpl.
-    eexists; eexists; eexists; eexists; dands; auto; allrw length_snoc; auto.
-    rw @similarity_snoc; simpl.
-    eexists; eexists; eexists; eexists; eexists; eexists; eexists; dands; auto.
-    apply @equality_respects_cequivc; auto.
-    apply @equality_refl in sim2; exact sim2.
-    rw @eq_hyps_app in k; simpl in k; exrepnd; cpx.
-    apply app_split in k0; repnd; subst; allrw length_snoc; cpx;
-    try (complete (allrw @similarity_dom; repnd; allrw; sp)).
-    apply app_split in k2; repnd; subst; allrw length_snoc; cpx;
-    try (complete (allrw @similarity_dom; repnd; allrw; sp)).
-
+    {
+      apply sub_eq_hyps_snoc_weak; auto.
+      apply sub_eq_hyps_snoc_weak; auto.
+      generalize (hf (snoc s2a1 (x,t5) ++ s2b0)); intro k.
+      autodimp k hyp.
+      rw @similarity_app; simpl.
+      eexists; eexists; eexists; eexists; dands; auto; allrw length_snoc; auto.
+      rw @similarity_snoc; simpl.
+      eexists; eexists; eexists; eexists; eexists; eexists; eexists; dands; auto.
+      apply @equality_respects_cequivc; auto.
+      apply @equality_refl in sim2; exact sim2.
+      rw @eq_hyps_app in k; simpl in k; exrepnd; cpx.
+      apply app_split in k0; repnd; subst; allrw length_snoc; cpx;
+        try (complete (allrw @similarity_dom; repnd; allrw; sp)).
+      apply app_split in k2; repnd; subst; allrw length_snoc; cpx;
+        try (complete (allrw @similarity_dom; repnd; allrw; sp)).
+    }
 
     (* -- We now prove the similarity hyp -- *)
     autodimp hyp2 hyp.
@@ -914,38 +915,27 @@ Proof.
     introv tequ equ; proof_irr.
     eapply @equality_commutes4 in tequ; eauto.
 
-    Grab Existential Variables.
-    auto.
-    auto.
-    auto.
-    auto.
-    apply cover_vars_equality; dands;
-    try (apply cover_vars_var); repeat (rw @dom_csub_snoc); simpl;
-    repeat (rw in_snoc); sp;
-    repeat (apply cover_vars_snoc_weak); auto.
-    apply wf_equality; auto.
-    auto.
-    auto.
-    auto.
-    auto.
-    auto.
-    auto.
-    apply cover_vars_equality; dands;
-    try (apply cover_vars_var); repeat (rw @dom_csub_snoc); simpl;
-    repeat (rw in_snoc); sp;
-    repeat (apply cover_vars_snoc_weak); auto;
-    apply cover_vars_change_sub with (sub1 := s1a); auto;
-    allapply @similarity_dom; sp; allrw; sp.
-    apply cover_vars_equality; dands;
-    try (apply cover_vars_var); repeat (rw @dom_csub_snoc); simpl;
-    repeat (rw in_snoc); sp;
-    repeat (apply cover_vars_snoc_weak); auto.
-    apply wf_equality; auto.
+    Unshelve.
+    { auto. }
+    { auto. }
+    { apply cover_vars_equality; dands; auto;
+        try (apply cover_vars_var); repeat (rw @dom_csub_snoc); simpl;
+        repeat (rw in_snoc); sp;
+        repeat (apply cover_vars_snoc_weak); auto; eauto 3 with slow.
+      eapply similarity_cover_vars; eauto. }
+    { auto. }
+    { auto. }
+    { auto. }
+    { auto. }
+    { auto. }
+    { auto. }
+    { apply wf_equality; auto. }
+    { apply cover_vars_equality; dands; auto;
+        try (apply cover_vars_var); repeat (rw @dom_csub_snoc); simpl;
+        repeat (rw in_snoc); sp;
+        repeat (apply cover_vars_snoc_weak); auto; eauto 3 with slow. }
+    { auto. }
+    { auto. }
+    { auto. }
+    { auto. }
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

@@ -75,7 +75,7 @@ Proof.
   eapply reduces_to_if_split2;[csunf;simpl;auto|].
   apply reduces_to_if_step; csunf; simpl.
   unfold compute_step_eapply; simpl.
-  boolvar; try omega.
+  boolvar; try lia.
   rw Znat.Nat2Z.id; auto.
   unfold ntseqc2seq, get_cnterm, cnterm2cterm, get_cterm; simpl.
   remember (s n) as t; destruct t; simpl; auto.
@@ -111,7 +111,7 @@ Proof.
     apply reduces_to_if_step.
     csunf; simpl.
     unfold compute_step_eapply; simpl.
-    boolvar; try omega.
+    boolvar; try lia.
     allrw @Znat.Nat2Z.id; auto.
     unfold ntseqc2seq, get_cnterm, cnterm2cterm, get_cterm; simpl.
     remember (s k) as t; destruct t; simpl; auto.
@@ -238,7 +238,7 @@ Proof.
   apply computes_to_valc_isvalue_eq in e3; eauto 3 with slow.
   rw @mkc_nat_eq in e3; ginv.
 
-  assert (m < n) as ltm by omega.
+  assert (m < n) as ltm by lia.
   clear e1.
 
   pose proof (imp m ltm) as h; exrepnd.
@@ -313,7 +313,7 @@ Proof.
   apply computes_to_valc_isvalue_eq in e3; eauto 3 with slow.
   rw @mkc_nat_eq in e3; ginv.
 
-  assert (m < n) as ltm by omega.
+  assert (m < n) as ltm by lia.
   clear e1.
 
   pose proof (imp m ltm) as h; exrepnd.
@@ -354,7 +354,7 @@ Proof.
   autodimp h hyp.
 
   { apply equality_in_natk.
-    exists m (Z.of_nat n); dands; spcast; try omega;
+    exists m (Z.of_nat n); dands; spcast; try lia;
     try (apply computes_to_valc_refl; eauto 2 with slow). }
 
   apply equality_in_nout in h; exrepnd; spcast.
@@ -403,9 +403,9 @@ Proof.
   rewrite mkc_zero_eq.
 
   eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-  boolvar; try omega.
+  boolvar; try lia.
   eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-  boolvar; try omega.
+  boolvar; try lia.
   auto.
 Qed.
 Hint Resolve eq_kseq_nout_of_seq : slow.

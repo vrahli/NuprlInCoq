@@ -1082,7 +1082,7 @@ Proof.
   - apply alpha_eq_oterm_combine; dands; tcsp.
     introv i; apply hbs2; auto.
 
-  - constructor; try omega.
+  - constructor; try lia.
     introv i; apply hbs1; auto.
 Qed.
 
@@ -1226,7 +1226,7 @@ Proof.
     { rw @lsubst_allvars_preserves_osize; eauto 3 with slow. }
     apply q in a; clear q.
     allrw disjoint_app_r; repnd.
-    repeat (rw @lsubst_lsubst_aux in a;[|rw @flat_map_free_var_vars_range;eauto 3 with slow];try omega).
+    repeat (rw @lsubst_lsubst_aux in a;[|rw @flat_map_free_var_vars_range;eauto 3 with slow];try lia).
     repeat (rw @get_ints_lsubst_aux_allvars in a; eauto 3 with slow).
 Qed.
 
@@ -1588,7 +1588,7 @@ Proof.
             exists (f n) (f n); dands; eauto 3 with slow.
             apply reduces_to_if_step.
             csunf; simpl.
-            dcwf h; simpl; boolvar; try omega.
+            dcwf h; simpl; boolvar; try lia.
             rw @Znat.Nat2Z.id; auto.
 
           - apply isexc_implies2 in comp0; exrepnd; subst.
@@ -1810,14 +1810,14 @@ Proof.
                 dopid op as [can|ncan|exc|abs] SSSSCase; ginv;[].
                 destruct can; ginv;[].
                 destruct bs; allsimpl; ginv; GC.
-                boolvar; ginv; try omega; fold_terms.
+                boolvar; ginv; try lia; fold_terms.
                 inversion d4 as [|?|?|? ? ? len imp]; subst; simphyps; clear d4.
                 allsimpl; cpx; fold_terms; allsimpl.
                 clear imp.
 
                 exists (@mk_nat o (s (Z.to_nat z))) (@mk_nat o (s (Z.to_nat z))); dands; eauto 3 with slow.
                 apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
-                boolvar; try omega; auto.
+                boolvar; try lia; auto.
 
               - apply wf_isexc_implies in comp0; auto; exrepnd; subst; allsimpl.
                 apply differ_exception_implies2 in d4; exrepnd; subst.
@@ -1856,7 +1856,7 @@ Proof.
               exists (@mk_nat o (n n0)) (@mk_nat o (n n0)); dands; eauto 3 with slow.
               apply reduces_to_if_step; csunf; simpl.
               rw @Znat.Nat2Z.id.
-              boolvar; try omega; auto.
+              boolvar; try lia; auto.
             }*)
 
           - SSSCase "NFix".
@@ -2052,7 +2052,7 @@ Proof.
               dands; eauto 3 with slow.
 
             apply reduces_to_if_step; simpl.
-            csunf; simpl; unfold compute_step_tuni; simpl; boolvar; try omega; auto.
+            csunf; simpl; unfold compute_step_tuni; simpl; boolvar; try lia; auto.
             rw Znat.Nat2Z.id; auto.
 
           - SSSCase "NMinus".
@@ -2235,11 +2235,11 @@ Proof.
                dands.
 
                { prove_alpha_eq4.
-                 introv j; destruct n0;[|destruct n0]; try omega; cpx.
+                 introv j; destruct n0;[|destruct n0]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { prove_alpha_eq4.
-                 introv j; destruct n0;[|destruct n0]; try omega; cpx.
+                 introv j; destruct n0;[|destruct n0]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { apply differ_oterm; simpl; auto.
@@ -2313,11 +2313,11 @@ Proof.
                dands.
 
                { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
+                 introv j; destruct n;[|destruct n]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
+                 introv j; destruct n;[|destruct n]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { apply differ_oterm; allsimpl; auto.
@@ -2383,15 +2383,7 @@ Proof.
                     autodimp h hyp.
 
                     pose proof (Zabs.Zabs_nat_le (Z.of_nat b) (- n1)) as k.
-                    autodimp k hyp; try omega.
-                    rw Znat.Zabs2Nat.id in k.
-                    assert (Z.abs_nat n1 < Z.abs_nat (- n1)) as p by omega; clear h k.
-                    destruct n1;
-                      allrw Pos2Z.opp_pos;
-                      allrw Pos2Z.opp_neg;
-                      allrw Znat.Zabs2Nat.inj_pos;
-                      allrw Znat.Zabs2Nat.inj_neg;
-                      try omega.
+                    autodimp k hyp; try lia.
 
                   * apply reduces_to_if_step; simpl.
                     csunf; simpl.
@@ -2404,15 +2396,7 @@ Proof.
                     provefalse.
 
                     pose proof (Zabs.Zabs_nat_le (Z.of_nat b) n1) as k.
-                    autodimp k hyp; try omega.
-                    rw Znat.Zabs2Nat.id in k.
-                    assert (Z.abs_nat n1 < Z.abs_nat n1) as p by omega; clear h k.
-                    destruct n1;
-                      allrw Pos2Z.opp_pos;
-                      allrw Pos2Z.opp_neg;
-                      allrw Znat.Zabs2Nat.inj_pos;
-                      allrw Znat.Zabs2Nat.inj_neg;
-                      try omega.
+                    autodimp k hyp; try lia.
 
               - apply reduces_to_if_step; simpl.
                 allrw <- Zplus_0_r_reverse; auto.
@@ -2501,11 +2485,11 @@ Proof.
                dands.
 
                { prove_alpha_eq4.
-                 introv j; destruct n0;[|destruct n0]; try omega; cpx.
+                 introv j; destruct n0;[|destruct n0]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { prove_alpha_eq4.
-                 introv j; destruct n0;[|destruct n0]; try omega; cpx.
+                 introv j; destruct n0;[|destruct n0]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { apply differ_oterm; simpl; auto.
@@ -2579,11 +2563,11 @@ Proof.
                dands.
 
                { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
+                 introv j; destruct n;[|destruct n]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
+                 introv j; destruct n;[|destruct n]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { apply differ_oterm; allsimpl; auto.
@@ -2927,8 +2911,7 @@ Proof.
             apply alpha_eq_preserves_get_ints in daeq2.
             unflsubst in daeq2.
             rw (get_ints_lsubst_aux_nr_ut t2 [(n, mk_utoken a)] mk_axiom) in daeq2; simpl; eauto 3 with slow.
-            - rw daeq2; auto.
-            - apply nr_ut_sub_cons; eauto 3 with slow; simpl; tcsp. }
+            - rw daeq2; auto. }
           exrepnd.
 
           pose proof (reduces_to_alpha lib u1 (lsubst t1 [(n, mk_utoken a)]) t) as r1.
@@ -3337,7 +3320,7 @@ Proof.
     fold_terms.
 
     pose proof (ind k') as h.
-    autodimp h hyp;[omega|].
+    autodimp h hyp;[lia|].
     pose proof (h u2 h'''1) as r; clear h.
     repeat (autodimp r hyp).
 
@@ -3411,9 +3394,9 @@ Lemma bigger_Z_is_bigger :
   forall z (l : list Z), LIn z l -> Z.abs_nat z < bigger_Z l.
 Proof.
   induction l; introv i; allsimpl; tcsp.
-  dorn i; subst; boolvar; try omega.
-  - autodimp IHl hyp; omega.
-  - autodimp IHl hyp; omega.
+  dorn i; subst; boolvar; try lia.
+  - autodimp IHl hyp; lia.
+  - autodimp IHl hyp; lia.
 Qed.
 
 Lemma exists_bigger_than_list_Z :
@@ -3474,6 +3457,5 @@ Proof.
                 (differ_app_F F f e x b' ni)) as c.
   autodimp c hyp.
   introv j.
-  apply h0 in j; omega.
+  apply h0 in j; lia.
 Qed.
-

@@ -158,16 +158,16 @@ Definition pseqNA2seq {A : pseq -> Prop}
            (s : pseqNA A) : pseq := projT1 s.
 
 Lemma nat_le : forall n, 0 <= n.
-Proof. introv; omega. Qed.
+Proof. introv; lia. Qed.
 
 Lemma nat_lt_S : forall n, n < S n.
-Proof. introv; omega. Qed.
+Proof. introv; lia. Qed.
 
 Lemma le2ltS : forall {n m}, n <= m -> n < S m.
-Proof. introv; omega. Qed.
+Proof. introv; lia. Qed.
 
 Lemma le2leS : forall {n m}, n <= m -> n <= S m.
-Proof. introv; omega. Qed.
+Proof. introv; lia. Qed.
 
 Definition kseq_at {n : nat} (s : kseq n) (m : nat) (p : m < n) : nat :=
   s (mk_nat_k1 m p).
@@ -205,7 +205,7 @@ Lemma kseq_at_extend1 :
 Proof.
   introv.
   unfold kseq_at, extend1; simpl.
-  destruct (lt_dec (S n) (S n)); omega.
+  destruct (lt_dec (S n) (S n)); lia.
 Qed.
 
 Fixpoint alpha
@@ -268,7 +268,7 @@ Lemma alpha_prop1 :
 Proof.
   introv.
   assert {k : nat & n = k + m} as e.
-  { exists (n - m); omega. }
+  { exists (n - m); lia. }
   exrepnd; subst.
   remember (le_n_S m (k + m) lemn) as lem; clear Heqlem lemn.
   induction k; introv;
@@ -284,7 +284,7 @@ Proof.
 
     pose proof (Ltb_proof_irrelevance l l2) as e; subst; auto.
 
-  - assert (S m <= S (k + m)) as e by omega.
+  - assert (S m <= S (k + m)) as e by lia.
     pose proof (IHk e) as q; clear IHk.
     rw <- q; clear q.
     unfold kseq2kseq.
@@ -295,7 +295,7 @@ Proof.
     subst.
     dup l as ltx.
     apply Ltb_lt in ltx.
-    destruct (lt_dec x (S (k + m))) as [d|d]; try omega;[].
+    destruct (lt_dec x (S (k + m))) as [d|d]; try lia;[].
 
     allunfold @mk_nat_k1.
 
@@ -331,7 +331,7 @@ Proof.
   destruct x.
   dup l as q.
   apply Ltb_lt in q.
-  destruct x; try omega.
+  destruct x; try lia.
 Qed.
 
 Axiom FunctionalChoice_on :
@@ -430,7 +430,7 @@ Proof.
     unfold kseqS2kseq; simpl.
     dup l as ltx.
     apply Ltb_lt in ltx.
-    destruct (lt_dec x (S n)); try omega.
+    destruct (lt_dec x (S n)); try lia.
     unfold mk_nat_k1, mk_nat_k.
 
     match goal with

@@ -1032,8 +1032,8 @@ Lemma sosize_in {p} :
     LIn t ts -> sosize t <= addl (map sosize ts).
 Proof.
   induction ts; introv i; allsimpl; tcsp.
-  dorn i; subst; tcsp; try omega.
-  apply IHts in i; try omega.
+  dorn i; subst; tcsp; try lia.
+  apply IHts in i; try lia.
 Qed.
 
 Lemma sosize_bterm_in {p} :
@@ -1041,8 +1041,8 @@ Lemma sosize_bterm_in {p} :
     LIn b bs -> sosize_bterm b <= addl (map sosize_bterm bs).
 Proof.
   induction bs; introv i; allsimpl; tcsp.
-  dorn i; subst; tcsp; try omega.
-  apply IHbs in i; try omega.
+  dorn i; subst; tcsp; try lia.
+  apply IHbs in i; try lia.
 Qed.
 
 Lemma SOTerm_better_ind2 {p} :
@@ -1073,13 +1073,13 @@ Proof.
     introv i.
     destruct n; cpx.
     pose proof (Hind (sosize t)) as k; autodimp k hyp.
-    apply sosize_in in i; omega.
+    apply sosize_in in i; lia.
   - apply Hseq.
   - apply Hbt.
     introv Hin Hs.
     apply Hind with (m := sosize t'); auto.
     subst.
-    apply sosize_bterm_in in Hin; allsimpl; omega.
+    apply sosize_bterm_in in Hin; allsimpl; lia.
 Qed.
 
 Lemma SOTerm_better_ind {p} :
@@ -1241,7 +1241,7 @@ Proof.
     apply isprog_eq; split.
     + unfold closed.
       rw @isprogram_lsubst_aux2.
-      * rw @dom_sub_combine; auto; try omega.
+      * rw @dom_sub_combine; auto; try lia.
         eapply in_sosub_prog in Heqo1; eauto.
         rw @isprog_vars_eq in Heqo1; repnd.
         apply null_iff_nil.
@@ -1926,7 +1926,7 @@ Lemma rename_sovar_foren2soren_so :
 Proof.
   induction ren; introv k; simpl; auto.
   destruct a; simpl.
-  unfold var2sovar; rw rename_sovar_cons; boolvar; cpx; omega.
+  unfold var2sovar; rw rename_sovar_cons; boolvar; cpx; lia.
 Qed.
 
 Lemma sovar2var_rename_sovar :
@@ -2182,7 +2182,7 @@ Proof.
     + rw rename_sovar_foren2soren_fo; auto.
     + rw map_length.
       rw map_flat_map; rw flat_map_map; unfold compose.
-      rw rename_sovar_foren2soren_so;[|destruct ts; allsimpl; cpx; omega].
+      rw rename_sovar_foren2soren_so;[|destruct ts; allsimpl; cpx; lia].
       apply eq_cons; auto.
       apply eq_flat_maps; sp.
 

@@ -993,7 +993,7 @@ Proof.
     + disjoint_reasoningv.
 
     + eapply Hind with (lvi:=lvi)  (lnt1:=lnt1) (lnt2:=lnt2) in XX; eauto;
-      [|rewrite lsubst_aux_allvars_preserves_size;[omega|];apply allvars_combine; fail].
+      [|rewrite lsubst_aux_allvars_preserves_size;[lia|];apply allvars_combine; fail].
 
       unfold var_ren.
       (** swapping below requires the domains to be disjoint *)
@@ -2174,7 +2174,7 @@ Proof.
      apply @computes_atmost_ksteps_prinarg with (lbt:= tl)
       (op:=no) in H1c
     end.
-    exrepnd. exists j. dands; spc. omega.
+    exrepnd. exists j. dands; spc. lia.
 
   - duplicate H1v.
     rename H2c into Hck. rename k2 into k.
@@ -2185,7 +2185,7 @@ Proof.
       eapply Hind in H1c; auto;
       [|rw @compute_at_most_k_steps_isvalue_like;try reflexivity;eauto 3 with slow].
       exrepnd.
-      exists j; dands; auto; try omega. }
+      exists j; dands; auto; try lia. }
 
     allsimpl.
     remember (compute_at_most_k_steps lib k (oterm ntp2o ntp2lbt)) as ck.
@@ -2196,23 +2196,23 @@ Proof.
     { csunf Hck; allsimpl; ginv.
       eapply Hind in H1c; eauto.
       exrepnd.
-      exists j; dands; auto; try omega. }
+      exists j; dands; auto; try lia. }
 
     dopid csko as [cskoc| cskon | cskexc | cskabs] Case.
     + Case "Can".
-      simpl in Hck. inverts Hck. exists j; sp. omega.
+      simpl in Hck. inverts Hck. exists j; sp. lia.
     + Case "NCan".
       exists (S j).
       unfold isinteger in H1v; exrepnd; subst.
-      dands;[|omega]. simpl. rw XX1. simpl. simpl in Hck. simpl.
+      dands;[|lia]. simpl. rw XX1. simpl. simpl in Hck. simpl.
       csunf; simpl.
       dcwf h; allsimpl; tcsp; try (rw Hck); clear Hck; simpl; auto.
     + Case "Exc".
       rw @compute_step_exception in Hck; sp; inversion Hck; subst; GC.
-      exists j; sp; omega.
+      exists j; sp; lia.
     + Case "Abs".
       unfold isinteger in H1v; exrepnd; subst.
-      exists (S j). dands;[|omega]. simpl. rw XX1. simpl. simpl in Hck. simpl.
+      exists (S j). dands;[|lia]. simpl. rw XX1. simpl. simpl in Hck. simpl.
       csunf; simpl; dcwf h.
       rw Hck; clear Hck; simpl; auto.
 Qed.
@@ -2259,7 +2259,7 @@ Proof.
      apply @computes_atmost_ksteps_prinarg with (lbt:= tl)
       (op:=no) in H1c
     end.
-    exrepnd. exists j. dands; spc. omega.
+    exrepnd. exists j. dands; spc. lia.
 
   - duplicate H1v.
     rename H2c into Hck. rename k2 into k.
@@ -2270,7 +2270,7 @@ Proof.
       eapply Hind in H1c; auto;
       [|rw @compute_at_most_k_steps_isvalue_like;try reflexivity;eauto 3 with slow].
       exrepnd.
-      exists j; dands; auto; try omega. }
+      exists j; dands; auto; try lia. }
 
     allsimpl.
     remember (compute_at_most_k_steps lib k (oterm ntp2o ntp2lbt)) as ck.
@@ -2281,34 +2281,34 @@ Proof.
     { csunf Hck; allsimpl; ginv.
       eapply Hind in H1c; eauto.
       exrepnd.
-      exists j; dands; auto; try omega. }
+      exists j; dands; auto; try lia. }
 
     dopid csko as [cskoc| cskon | cskexc | cskabs] Case.
     + Case "Can".
-      simpl in Hck. inverts Hck. exists j; sp. omega.
+      simpl in Hck. inverts Hck. exists j; sp. lia.
     + Case "NCan".
       exists (S j).
       unfold iswfpk in H1v; destruct a; allsimpl.
       * unfold isinteger in H1v; exrepnd; subst.
-        dands;[|omega]. simpl. rw XX1. simpl. simpl in Hck. simpl.
+        dands;[|lia]. simpl. rw XX1. simpl. simpl in Hck. simpl.
         csunf; simpl; dcwf h.
         rw Hck; clear Hck; auto.
       * unfold ispk in H1v; exrepnd; subst.
-        dands;[|omega]. simpl. rw XX1. simpl. simpl in Hck. simpl.
+        dands;[|lia]. simpl. rw XX1. simpl. simpl in Hck. simpl.
         csunf; simpl; allrw @pk2term_eq; dcwf h; allrw @co_wf_pk2can; ginv.
         rw Hck; clear Hck; auto.
     + Case "Exc".
       rw @compute_step_exception in Hck; sp; inversion Hck; subst; GC.
-      exists j; sp; omega.
+      exists j; sp; lia.
     + Case "Abs".
       exists (S j).
       unfold iswfpk in H1v; destruct a; allsimpl.
       * unfold isinteger in H1v; exrepnd; subst.
-        dands;[|omega]. simpl. rw XX1. simpl. simpl in Hck. simpl.
+        dands;[|lia]. simpl. rw XX1. simpl. simpl in Hck. simpl.
         csunf; simpl; dcwf h.
         rw Hck; clear Hck; auto.
       * unfold ispk in H1v; exrepnd; subst.
-        dands;[|omega]. simpl. rw XX1. simpl. simpl in Hck. simpl.
+        dands;[|lia]. simpl. rw XX1. simpl. simpl in Hck. simpl.
         csunf; simpl; allrw @pk2term_eq; dcwf h; allrw @co_wf_pk2can; ginv.
         rw Hck; clear Hck; auto.
 Qed.
@@ -3020,7 +3020,7 @@ Proof.
               exists (@mk_nat o (n n0)).
               simpl; fold_terms; dands; auto.
               apply reduces_to_if_step; csunf; simpl.
-              boolvar; try omega.
+              boolvar; try lia.
               rw @Znat.Nat2Z.id; auto.
 
             - SSSCase "NFix".
@@ -3497,7 +3497,7 @@ Proof.
               [|rw @reduces_in_atmost_k_steps_0; auto].
 
               csunf; simpl.
-              unfold compute_step_tuni; simpl; boolvar; try omega.
+              unfold compute_step_tuni; simpl; boolvar; try lia.
               rw Znat.Nat2Z.id; auto.
 
             - SSSCase "NMinus".
@@ -4777,7 +4777,7 @@ Proof.
   revert dependent extra.
   induction ms; introv s; allsimpl; tcsp.
   rw string_append_assoc.
-  rw not_over_or; dands; auto;[|apply IHms;rw string_length_append; omega].
+  rw not_over_or; dands; auto;[|apply IHms;rw string_length_append; lia].
 
   intro k.
   assert (String.length a
@@ -4786,7 +4786,7 @@ Proof.
                  (String.append extra a)
                  (append_string_list ms))) as e by (rw <- k; auto).
   allrw string_length_append.
-  omega.
+  lia.
 Qed.
 *)
 

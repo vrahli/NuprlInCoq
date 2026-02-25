@@ -220,7 +220,7 @@ Proof.
   dands; auto;
     try (apply tequality_mkc_uni);
     try (complete (right; spcast; auto));
-    try (apply base_in_uni).
+    try (apply base_in_uni); tcsp.
 Qed.
 
 Lemma rule_base_equality_true_ext_lib {o} :

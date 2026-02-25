@@ -4620,7 +4620,6 @@ Proof.
   unfold csubst; simpl.
   change_to_lsubst_aux4; simpl.
   boolvar; sp.
-  apply disjoint_nil_l.
 Qed.
 
 Lemma lsubstc_cons_var {o} :
@@ -4652,7 +4651,6 @@ Proof.
   unfold csubst; simpl.
   change_to_lsubst_aux4; simpl.
   boolvar; sp.
-  apply disjoint_nil_l.
 Qed.
 
 Lemma cover_vars_cons {o} :

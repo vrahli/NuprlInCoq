@@ -1021,7 +1021,7 @@ Proof.
   - inversion ltlt as [ltl|]; allsimpl; clear ltlt.
 
     + destruct y as [l1 t1]; allsimpl.
-      destruct l1; allsimpl; ginv; try omega.
+      destruct l1; allsimpl; ginv; try lia.
 
     + destruct y as [l1 t1]; allsimpl.
       destruct l1; allsimpl; ginv.
@@ -1239,7 +1239,7 @@ Proof.
     apply h; auto.
   - apply h.
     apply (in_nth_combine_iff _ _ default_bt default_bt).
-    eexists; dands; eauto; auto; try omega.
+    eexists; dands; eauto; auto; try lia.
 Qed.
 
 Lemma implies_alpha_eq_abs2bot {o} :
@@ -1307,7 +1307,7 @@ Proof.
   allunfold @diff_abs_bot_bs_alpha.
   allunfold @br_bterms.
   allunfold @br_list; repnd.
-  dands; auto; try omega.
+  dands; auto; try lia.
   introv i.
   apply (in_combine_trans _ _ _ bs2) in i; auto.
   exrepnd.
@@ -1328,7 +1328,7 @@ Proof.
   allunfold @diff_abs_bot_bs_alpha.
   allunfold @br_bterms.
   allunfold @br_list; repnd.
-  dands; auto; try omega.
+  dands; auto; try lia.
   introv i.
   apply (in_combine_trans _ _ _ bs2) in i; auto.
   exrepnd.

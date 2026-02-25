@@ -43,12 +43,12 @@ Proof.
   [apply isprogram_fresh_implies in Hprt; exrepnd; complete ginv|].
   fold_terms.
 
-  assert (m <= S k) as XX by omega.
+  assert (m <= S k) as XX by lia.
   repnud Hcv.
   eapply reduces_atmost_split in XX; eauto.
   remember (S k - m) as skm.
-  destruct skm; [omega|].
-  assert (skm <= k) as lek by (subst; omega).
+  destruct skm; [lia|].
+  assert (skm <= k) as lek by (subst; lia).
   apply reduces_atmost_S in XX; exrepnd.
   apply isprogram_fresh in Hprt.
   applydup @reduces_atmost_preserves_program in Hcv4; auto;
@@ -125,7 +125,7 @@ Proof.
   { unfold approx_star_bterm, blift_sub in Has0bt; exrepnd; repndors; exrepnd; tcsp; GC.
     applydup @alpha_eq_bterm_implies_eq_length in Has0bt2.
     allsimpl; destruct lv as [|v']; allsimpl; tcsp.
-    destruct lv; allsimpl; tcsp; GC; try omega.
+    destruct lv; allsimpl; tcsp; GC; try lia.
     pose proof (lsubst_alpha_congr4 [v] [v'] t nt1 [(v,mk_utoken ua')] [(v',mk_utoken ua')]) as aeq1.
     repeat (autodimp aeq1 hyp); simpl; eauto 2 with slow.
     pose proof (lsubst_alpha_congr4 [vr] [v'] tr nt2 [(vr,mk_utoken ua')] [(v',mk_utoken ua')]) as aeq2.

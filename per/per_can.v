@@ -552,7 +552,7 @@ Proof.
     assert (length l1 = length l2) as el.
     { spcast.
       unfold blift in ltn0; exrepnd.
-      allapply @alpha_eq_bterm_implies_eq_length; omega. }
+      allapply @alpha_eq_bterm_implies_eq_length; lia. }
 
     pose proof (fresh_vars (length l1) (l1 ++ l2 ++ all_vars u1 ++ all_vars u2)) as fvs; exrepnd.
     exists lvn (lsubst u1 (var_ren l1 lvn)) (lsubst u2 (var_ren l2 lvn)).
@@ -560,7 +560,7 @@ Proof.
       [|apply btchange_alpha_aux; auto;
         allrw disjoint_app_r; allrw disjoint_app_l;
         repnd; dands; eauto 3 with slow
-       |apply btchange_alpha_aux; auto; try omega;
+       |apply btchange_alpha_aux; auto; try lia;
         allrw disjoint_app_r; allrw disjoint_app_l;
         repnd; dands; eauto 3 with slow];[].
 
@@ -571,11 +571,11 @@ Proof.
       pose proof (respects_blift_alphabt (olift (approx_aux lib bot2 \2/ bot2))) as resp.
       unfold respects2 in resp; repnd.
       apply (resp _ (bterm l2 u2)).
-      { apply btchange_alpha_aux; auto; try omega;
+      { apply btchange_alpha_aux; auto; try lia;
         allrw disjoint_app_r; allrw disjoint_app_l;
         repnd; dands; eauto 3 with slow. }
       apply (resp0 (bterm l1 u1)).
-      { apply btchange_alpha_aux; auto; try omega;
+      { apply btchange_alpha_aux; auto; try lia;
         allrw disjoint_app_r; allrw disjoint_app_l;
         repnd; dands; eauto 3 with slow. }
       auto. }
@@ -589,7 +589,7 @@ Proof.
     { rw Hequ1; apply selectbt_in; auto. }
     pose proof (ca1 (bterm l2 u2)) as h2.
     autodimp h2 hyp.
-    { rw Hequ2; apply selectbt_in; auto; try omega. }
+    { rw Hequ2; apply selectbt_in; auto; try lia. }
     allrw <- @isprog_vars_iff_isprogram_bt.
     dup h1 as q1; rw @isprog_vars_eq in q1; repnd.
     dup h2 as q2; rw @isprog_vars_eq in q2; repnd.

@@ -634,18 +634,18 @@ Proof.
   prove_alpha_eq4.
   introv ln.
 
-  repeat (destruct n; tcsp; try omega); eauto 3 with slow;
+  repeat (destruct n; tcsp; try lia); eauto 3 with slow;
   clear ln;
   apply alphaeqbt_nilv2;
   prove_alpha_eq4;
   introv ln;
-  repeat (destruct n; tcsp; try omega); eauto 3 with slow;[].
+  repeat (destruct n; tcsp; try lia); eauto 3 with slow;[].
   clear ln.
 
   apply alphaeqbt_nilv2.
   prove_alpha_eq4.
   introv ln.
-  repeat (destruct n; tcsp; try omega); eauto 3 with slow;[].
+  repeat (destruct n; tcsp; try lia); eauto 3 with slow;[].
   clear ln.
 
   pose proof (ex_fresh_var (x1 :: x2
@@ -705,17 +705,17 @@ Proof.
 
   prove_alpha_eq4.
   introv ln.
-  repeat (destruct n; tcsp; try omega); eauto 3 with slow;
+  repeat (destruct n; tcsp; try lia); eauto 3 with slow;
   clear ln;
   apply alphaeqbt_nilv2;
   prove_alpha_eq4;
   introv ln;
-  repeat (destruct n; tcsp; try omega); eauto 3 with slow;
+  repeat (destruct n; tcsp; try lia); eauto 3 with slow;
   clear ln;
   apply alphaeqbt_nilv2;
   prove_alpha_eq4;
   introv ln;
-  repeat (destruct n; tcsp; try omega); eauto 3 with slow;[].
+  repeat (destruct n; tcsp; try lia); eauto 3 with slow;[].
   clear ln.
 
   pose proof (ex_fresh_var (x1 :: x2
@@ -787,11 +787,11 @@ Proof.
   unfold mk_less, mk_apply, mk_vbot, mk_zero, mk_nat, mk_integer, mk_fix, mk_lam, mk_var, nobnd.
   repeat (prove_alpha_eq4; eauto 2 with slow).
 
-  { pose proof (ex_fresh_var (v' :: z :: [])) as fv.
+  { pose proof (ex_fresh_var (v :: z :: [])) as fv.
     exrepnd; allsimpl; allrw not_over_or; repnd; GC.
-    apply (al_bterm_aux [v0]); simpl; auto;
-    repeat (boolvar; simpl); tcsp;
-    allrw disjoint_singleton_l; allsimpl; tcsp. }
+    rewrite lsubst_aux_trivial_cl_term; simpl; eauto 2 with slow.
+    erewrite (alphaeq_preserves_free_vars c');[|apply alpha_eq_sym;eauto].
+    simpl; autorewrite with slow; eauto 2 with slow. }
 Qed.
 
 Lemma wf_bound2_cbv {o} :
@@ -867,11 +867,3 @@ Proof.
   - allrw @reduces_in_atmost_k_steps_S; exrepnd.
     csunf comp2; allsimpl; ginv.
 Qed.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "./close/")
-*** End:
-*)

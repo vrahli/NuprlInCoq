@@ -73,8 +73,8 @@ Proof.
 
   - apply similarity_snoc in sim; simpl in sim; exrepnd; cpx.
     apply similarity_app in sim3; simpl in sim3; exrepnd; subst; cpx.
-    apply app_split in sim0; try omega; repnd; subst.
-    apply app_split in sim3; try omega; repnd; subst.
+    apply app_split in sim0; try lia; repnd; subst.
+    apply app_split in sim3; try lia; repnd; subst.
 
     apply similarity_app; simpl.
     exists (snoc s1a0 (x,t0)) s1b0 (snoc s2a0 (x,t3)) s2b0.
@@ -323,7 +323,7 @@ Proof.
   dup sim as sim'.
   apply similarity_snoc in sim; simpl in sim; exrepnd; cpx.
   apply similarity_app in sim3; simpl in sim3; exrepnd; subst; cpx.
-  apply app_split in sim0; try omega; repnd; subst.
+  apply app_split in sim0; try lia; repnd; subst.
 
   pose proof (hf (snoc s2a0 (x,t2) ++ s2b)) as h; clear hf.
 
@@ -591,10 +591,10 @@ Proof.
   - dup sim as sim'.
 
     apply similarity_app in sim; simpl in sim; exrepnd; subst; cpx.
-    apply app_split in sim0; allrw length_snoc; allrw length_app; try omega; repnd; subst.
+    apply app_split in sim0; allrw length_snoc; allrw length_app; try lia; repnd; subst.
     apply similarity_snoc in sim5; simpl in sim5; exrepnd; cpx.
     apply similarity_app in sim6; simpl in sim6; exrepnd; subst; cpx.
-    apply app_split in sim0; try omega; repnd; subst.
+    apply app_split in sim0; try lia; repnd; subst.
 
     apply eq_hyps_move_down; auto;
     [ allapply @similarity_length; repnd; allrw @length_substitute_hyps; allrw; auto

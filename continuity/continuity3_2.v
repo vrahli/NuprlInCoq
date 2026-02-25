@@ -177,7 +177,7 @@ Proof.
   unfold force_int_bound_app, mk_cbv, mk_less.
   prove_alpha_eq4.
   introv i.
-  destruct n;[|destruct n]; try omega.
+  destruct n;[|destruct n]; try lia.
 
   - apply alphaeqbt_nilv2; auto.
     apply alpha_eq_force_int_bound; auto.
@@ -204,7 +204,7 @@ Proof.
       prove_alpha_eq4.
       introv j.
       destruct n;[|destruct n;[|destruct n;[|destruct n]]];
-      try omega; eauto 3 with slow.
+      try lia; eauto 3 with slow.
 
       apply alphaeqbt_nilv2; auto.
       repeat (rw @lsubst_aux_trivial_cl_term); auto; simpl;
@@ -248,7 +248,7 @@ Proof.
       apply differ3_force_int; auto.
 
       * apply (ind (force_int_bound v b t1 (mk_vbot v)) t1 []);
-        simpl; auto; try omega; eauto 3 with slow.
+        simpl; auto; try lia; eauto 3 with slow.
         eapply ord_le_trans;[|apply ord_le_OS].
         apply ord_le_oadd_l.
 
@@ -360,7 +360,7 @@ Proof.
       allsimpl; allrw in_app_iff; allrw not_over_or; repnd.
       pose proof (ind (force_int_bound v b t1 (mk_vbot v)) t1 []) as h; clear ind.
       repeat (autodimp h hyp).
-      { simpl; try omega.
+      { simpl; try lia.
         eapply ord_le_trans;[|apply ord_le_OS].
         apply ord_le_oadd_l. }
       pose proof (h t0 (*clf clg*) d1) as k; clear h.
@@ -1122,7 +1122,7 @@ Proof.
   - allrw @red_to_can_S; exrepnd.
     destruct t as [v|f|op bs1]; try (complete (csunf r1; allsimpl; dcwf h));[].
     dopid op as [can2|ncan2|exc2|abs2] Case.
-    + exists 0; dands; try omega.
+    + exists 0; dands; try lia.
       rw @red_to_can_0; auto.
     + rw @compute_step_ncompop_ncan2 in r1.
       dcwf h.
@@ -1130,7 +1130,7 @@ Proof.
       symmetry in Heqcomp1.
       destruct comp1; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @red_to_can_S.
       exists n; tcsp.
     + csunf r1; simpl in r1; ginv.
@@ -1145,7 +1145,7 @@ Proof.
       symmetry in Heqcomp1.
       destruct comp1; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @red_to_can_S.
       exists n; tcsp.
 Qed.
@@ -1165,7 +1165,7 @@ Proof.
   - allrw @red_to_can_S; exrepnd.
     destruct t as [v|f|op bs1]; try (complete (csunf r1; allsimpl; dcwf h));[].
     dopid op as [can2|ncan2|exc2|abs2] Case.
-    + exists 0; dands; try omega.
+    + exists 0; dands; try lia.
       rw @red_to_can_0; auto.
     + rw @compute_step_narithop_ncan2 in r1.
       dcwf h.
@@ -1173,7 +1173,7 @@ Proof.
       symmetry in Heqcomp1.
       destruct comp1; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @red_to_can_S.
       exists n; tcsp.
     + csunf r1; simpl in r1; ginv.
@@ -1188,7 +1188,7 @@ Proof.
       symmetry in Heqcomp1.
       destruct comp1; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @red_to_can_S.
       exists n; tcsp.
 Qed.
@@ -1204,7 +1204,7 @@ Proof.
   pose proof (no_change_after_value_like lib t k1 u) as h.
   repeat (autodimp h hyp); tcsp.
   pose proof (h (k2 - k1)) as hh.
-  assert (k2 - k1 + k1 = k2) as e by omega.
+  assert (k2 - k1 + k1 = k2) as e by lia.
   rw e in hh; auto.
 Qed.
 
@@ -1223,13 +1223,13 @@ Proof.
 
     { simpl in r1; ginv. }
 
-    { exists 0; dands; try omega.
+    { exists 0; dands; try lia.
       apply red_to_can_0; simpl; auto. }
 
     dopid op as [can1|ncan1|exc1|abs1] Case.
 
     + Case "Can".
-      exists 0; dands; try omega.
+      exists 0; dands; try lia.
       rw @red_to_can_0; auto.
 
     + Case "NCan".
@@ -1237,7 +1237,7 @@ Proof.
       remember (compute_step lib (oterm (NCan ncan1) l)) as comp.
       symmetry in Heqcomp; destruct comp; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @red_to_can_S; exists n; sp.
 
     + Case "Exc".
@@ -1252,7 +1252,7 @@ Proof.
       remember (compute_step_lib lib abs1 l) as comp.
       symmetry in Heqcomp; destruct comp; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @red_to_can_S; exists n; sp.
 Qed.
 
@@ -1325,9 +1325,8 @@ Proof.
         dcwf h; allsimpl.
         unfold compute_step_comp in r0; allsimpl; boolvar; ginv.
 
-        { exists 0 n1; dands; try omega; eauto 3 with slow.
-          - rw @reduces_in_atmost_k_steps_0; auto.
-          - apply abs_of_neg; auto. }
+        { exists 0 n1; dands; try lia; eauto 3 with slow.
+          - rw @reduces_in_atmost_k_steps_0; auto. }
 
         { unfold red_to_can_k in r1; exrepnd.
           apply reduces_in_atmost_k_steps_if_isvalue_like in r1; subst; tcsp; eauto 2 with slow.
@@ -1336,9 +1335,8 @@ Proof.
       * dcwf h; allsimpl.
         unfold compute_step_comp in r1; allsimpl; boolvar; ginv.
 
-        { exists 0 n1; dands; try omega; eauto 3 with slow.
-          - rw @reduces_in_atmost_k_steps_0; auto.
-          - apply abs_of_pos; auto. }
+        { exists 0 n1; dands; try lia; eauto 3 with slow.
+          - rw @reduces_in_atmost_k_steps_0; auto. }
 
         { unfold red_to_can_k in r0; exrepnd.
           apply reduces_in_atmost_k_steps_if_isvalue_like in r0; subst; tcsp; eauto 2 with slow.
@@ -1352,7 +1350,7 @@ Proof.
 
       apply IHk in r0; auto; exrepnd.
 
-      exists (S j) z; dands; auto; try omega.
+      exists (S j) z; dands; auto; try lia.
       rw @reduces_in_atmost_k_steps_S; eexists; eauto.
 
     + Case "Exc".
@@ -1368,7 +1366,7 @@ Proof.
 
       apply IHk in r0; auto; exrepnd.
 
-      exists (S j) z; dands; auto; try omega.
+      exists (S j) z; dands; auto; try lia.
       rw @reduces_in_atmost_k_steps_S; eexists; eauto.
 Qed.
 
@@ -1422,7 +1420,7 @@ Proof.
   - allrw @has_value_like_except_S; exrepnd.
     destruct t as [v|op bs1]; try (complete (allsimpl; ginv)).
     dopid op as [can2|ncan2|exc2|mrk2|abs2] Case.
-    + exists 0; dands; try omega.
+    + exists 0; dands; try lia.
       rw @has_value_like_except_0; dands; eauto 3 with slow.
       unfold isvalue_like_except; simpl; sp.
     + rw @compute_step_ncompop_ncan2 in r1.
@@ -1430,7 +1428,7 @@ Proof.
       symmetry in Heqcomp1.
       destruct comp1; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @has_value_like_except_S.
       exists n; tcsp.
     + simpl in r1; ginv.
@@ -1442,7 +1440,7 @@ Proof.
       symmetry in Heqcomp1.
       destruct comp1; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @has_value_like_except_S.
       exists n; tcsp.
 Qed.
@@ -1464,7 +1462,7 @@ Proof.
   - allrw @has_value_like_except_S; exrepnd.
     destruct t as [v|op bs1]; try (complete (allsimpl; ginv)).
     dopid op as [can2|ncan2|exc2|mrk2|abs2] Case.
-    + exists 0; dands; try omega.
+    + exists 0; dands; try lia.
       rw @has_value_like_except_0; dands; eauto 3 with slow.
       unfold isvalue_like_except; simpl; sp.
     + rw @compute_step_narithop_ncan2 in r1.
@@ -1472,7 +1470,7 @@ Proof.
       symmetry in Heqcomp1.
       destruct comp1; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @has_value_like_except_S.
       exists n; tcsp.
     + simpl in r1; ginv.
@@ -1484,7 +1482,7 @@ Proof.
       symmetry in Heqcomp1.
       destruct comp1; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @has_value_like_except_S.
       exists n; tcsp.
 Qed.
@@ -1501,7 +1499,7 @@ Proof.
   repeat (autodimp h hyp); tcsp.
   { unfold isvalue_like_except in r0; sp. }
   pose proof (h (k2 - k1)) as hh.
-  assert (k2 - k1 + k1 = k2) as e by omega.
+  assert (k2 - k1 + k1 = k2) as e by lia.
   rw e in hh; auto.
 Qed.
 
@@ -1524,7 +1522,7 @@ Proof.
     dopid op as [can1|ncan1|exc1|mrk1|abs1] Case.
 
     + Case "Can".
-      exists 0; dands; try omega.
+      exists 0; dands; try lia.
       rw @has_value_like_except_0; dands; eauto 3 with slow; simpl; sp.
       unfold isvalue_like_except; simpl; dands; eauto 3 with slow; sp.
 
@@ -1533,14 +1531,14 @@ Proof.
       remember (compute_step lib (oterm (NCan ncan1) l)) as comp.
       symmetry in Heqcomp; destruct comp; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @has_value_like_except_S; exists n; sp.
 
     + Case "Exc".
       allsimpl; ginv.
       unfold has_value_like_except_k in r0; exrepnd.
       apply reduces_in_atmost_k_steps_if_isvalue_like in r0; subst; tcsp.
-      exists 0; dands; try omega.
+      exists 0; dands; try lia.
       rw @has_value_like_except_0; dands; eauto 3 with slow.
 
     + Case "Mrk".
@@ -1556,7 +1554,7 @@ Proof.
       remember (compute_step_lib lib abs1 l) as comp.
       symmetry in Heqcomp; destruct comp; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @has_value_like_except_S; exists n; sp.
 Qed.
 *)
@@ -1642,7 +1640,7 @@ Proof.
         allsimpl.
         unfold compute_step_comp in r0; allsimpl; boolvar; ginv.
 
-        { exists 0 (@mk_integer o n1); dands; try omega; eauto 3 with slow.
+        { exists 0 (@mk_integer o n1); dands; try lia; eauto 3 with slow.
           - rw @reduces_in_atmost_k_steps_0; auto.
           - left; exists n1; dands; auto; apply abs_of_neg; auto. }
 
@@ -1653,7 +1651,7 @@ Proof.
 
       * unfold compute_step_comp in r1; allsimpl; boolvar; ginv.
 
-        { exists 0 (@mk_integer o n1); dands; try omega; eauto 3 with slow.
+        { exists 0 (@mk_integer o n1); dands; try lia; eauto 3 with slow.
           - rw @reduces_in_atmost_k_steps_0; auto.
           - left; exists n1; dands; auto; apply abs_of_pos; auto. }
 
@@ -1670,7 +1668,7 @@ Proof.
 
       apply IHk in r0; auto; exrepnd.
 
-      exists (S j) u; dands; auto; try omega.
+      exists (S j) u; dands; auto; try lia.
       rw @reduces_in_atmost_k_steps_S; eexists; eauto.
 
     + Case "Exc".
@@ -1678,7 +1676,7 @@ Proof.
       unfold has_value_like_except_k in r0; exrepnd.
       apply reduces_in_atmost_k_steps_if_isvalue_like in r0; subst; tcsp.
       allsimpl; boolvar; subst; try (complete (destruct r1; sp)); GC.
-      exists 0 (oterm (Exc exc1) bs1); dands; eauto 3 with slow; try omega.
+      exists 0 (oterm (Exc exc1) bs1); dands; eauto 3 with slow; try lia.
       rw @reduces_in_atmost_k_steps_0; auto.
 
     + Case "Mrk".
@@ -1694,7 +1692,7 @@ Proof.
       symmetry in Heqcomp; destruct comp; ginv.
 
       apply IHk in r0; auto; exrepnd.
-      exists (S j) u; dands; auto; try omega.
+      exists (S j) u; dands; auto; try lia.
       rw @reduces_in_atmost_k_steps_S; eexists; eauto.
 Qed.
 *)
@@ -1790,7 +1788,7 @@ Proof.
           dcwf h; allsimpl.
           unfold compute_step_comp in r0; allsimpl; boolvar; ginv.
 
-          { exists 0 (@mk_integer o n1); dands; try omega; eauto 3 with slow.
+          { exists 0 (@mk_integer o n1); dands; try lia; eauto 3 with slow.
             - rw @reduces_in_atmost_k_steps_0; auto.
             - left; exists n1; dands; auto; apply abs_of_neg; auto. }
 
@@ -1799,7 +1797,7 @@ Proof.
         * dcwf h; allsimpl.
           unfold compute_step_comp in r1; allsimpl; boolvar; ginv.
 
-        { exists 0 (@mk_integer o n1); dands; try omega; eauto 3 with slow.
+        { exists 0 (@mk_integer o n1); dands; try lia; eauto 3 with slow.
           - rw @reduces_in_atmost_k_steps_0; auto.
           - left; exists n1; dands; auto; apply abs_of_pos; auto. }
 
@@ -1847,7 +1845,7 @@ Proof.
           dcwf h; allsimpl.
           unfold compute_step_comp in r0; allsimpl; boolvar; ginv.
 
-          { exists 0 (@mk_integer o n1); dands; try omega; eauto 3 with slow.
+          { exists 0 (@mk_integer o n1); dands; try lia; eauto 3 with slow.
             - rw @reduces_in_atmost_k_steps_0; auto.
             - left; exists n1; dands; auto; apply abs_of_neg; auto. }
 
@@ -1856,7 +1854,7 @@ Proof.
         * dcwf h; allsimpl.
           unfold compute_step_comp in r1; allsimpl; boolvar; ginv.
 
-        { exists 0 (@mk_integer o n1); dands; try omega; eauto 3 with slow.
+        { exists 0 (@mk_integer o n1); dands; try lia; eauto 3 with slow.
           - rw @reduces_in_atmost_k_steps_0; auto.
           - left; exists n1; dands; auto; apply abs_of_pos; auto. }
 
@@ -1871,12 +1869,12 @@ Proof.
 
       apply IHk in r0; auto; exrepnd.
 
-      exists (S j) u; dands; auto; try omega.
+      exists (S j) u; dands; auto; try lia.
       rw @reduces_in_atmost_k_steps_S; eexists; eauto.
 
     + Case "Exc".
       csunf r1; allsimpl; ginv.
-      exists 0 (oterm Exc bs1); dands; eauto 3 with slow; try omega.
+      exists 0 (oterm Exc bs1); dands; eauto 3 with slow; try lia.
       rw @reduces_in_atmost_k_steps_0; auto.
 
     + Case "Abs".
@@ -1885,7 +1883,7 @@ Proof.
       symmetry in Heqcomp; destruct comp; ginv.
 
       apply IHk in r0; auto; exrepnd.
-      exists (S j) u; dands; auto; try omega.
+      exists (S j) u; dands; auto; try lia.
       rw @reduces_in_atmost_k_steps_S; eexists; eauto.
 Qed.
 
@@ -1918,7 +1916,7 @@ Proof.
                       (mk_nat b)
                       (mk_integer z)
                       e));
-      try csunf; simpl; boolvar; tcsp; try omega;
+      try csunf; simpl; boolvar; tcsp; try lia;
       try (rw @lsubst_aux_trivial_cl_term2; auto).
       apply (reduces_to_if_split2
                _ _ (mk_less
@@ -1926,23 +1924,21 @@ Proof.
                       (mk_nat b)
                       (mk_integer z)
                       e));
-        try csunf; simpl; boolvar; tcsp; try omega.
+        try csunf; simpl; boolvar; tcsp; try lia.
       apply reduces_to_if_step.
       csunf; simpl.
       dcwf h; allsimpl.
       unfold compute_step_comp; simpl; boolvar; auto.
       provefalse.
       pose proof (Zabs.Zabs_nat_le (Z.of_nat b) (-z)) as kk.
-      autodimp kk hyp; try omega.
-      allrw Znat.Zabs2Nat.id.
-      destruct z; allsimpl; try omega.
+      autodimp kk hyp; try lia.
     + apply (reduces_to_if_split2
                _ _ (mk_less
                       (mk_integer z)
                       (mk_nat b)
                       (mk_integer z)
                       e));
-      try csunf; simpl; boolvar; tcsp; try omega;
+      try csunf; simpl; boolvar; tcsp; try lia;
       try (rw @lsubst_aux_trivial_cl_term2; auto).
       apply reduces_to_if_step.
       csunf; simpl.
@@ -1950,9 +1946,7 @@ Proof.
       unfold compute_step_comp; simpl; boolvar; auto.
       provefalse.
       pose proof (Zabs.Zabs_nat_le (Z.of_nat b) z) as kk.
-      autodimp kk hyp; try omega.
-      allrw Znat.Zabs2Nat.id.
-      destruct z; allsimpl; try omega.
+      autodimp kk hyp; try lia.
 
   - Case "NCan".
     destruct k.
@@ -1978,39 +1972,35 @@ Proof.
                         (mk_nat b)
                         (mk_integer z)
                         e));
-        try csunf; simpl; boolvar; tcsp; try omega.
+        try csunf; simpl; boolvar; tcsp; try lia.
         apply (reduces_to_if_split2
                  _ _ (mk_less
                         (mk_integer (- z))
                         (mk_nat b)
                         (mk_integer z)
                         e));
-          try csunf; simpl; boolvar; tcsp; try omega.
+          try csunf; simpl; boolvar; tcsp; try lia.
         apply reduces_to_if_step.
         csunf; simpl.
         dcwf q; allsimpl.
         unfold compute_step_comp; simpl; boolvar; auto.
         provefalse.
         pose proof (Zabs.Zabs_nat_le (Z.of_nat b) (-z)) as kk.
-        autodimp kk hyp; try omega.
-        allrw Znat.Zabs2Nat.id.
-        destruct z; allsimpl; try omega.
+        autodimp kk hyp; try lia.
       * apply (reduces_to_if_split2
                  _ _ (mk_less
                         (mk_integer z)
                         (mk_nat b)
                         (mk_integer z)
                         e));
-        try csunf; simpl; boolvar; tcsp; try omega.
+        try csunf; simpl; boolvar; tcsp; try lia.
         apply reduces_to_if_step.
         csunf; simpl.
         dcwf q; allsimpl.
         unfold compute_step_comp; simpl; boolvar; auto.
         provefalse.
         pose proof (Zabs.Zabs_nat_le (Z.of_nat b) z) as kk.
-        autodimp kk hyp; try omega.
-        allrw Znat.Zabs2Nat.id.
-        destruct z; allsimpl; try omega.
+        autodimp kk hyp; try lia.
 
   - Case "Exc".
     csunf comp; allsimpl; ginv.
@@ -2041,39 +2031,35 @@ Proof.
                         (mk_nat b)
                         (mk_integer z)
                         e));
-        try csunf; simpl; boolvar; tcsp; try omega.
+        try csunf; simpl; boolvar; tcsp; try lia.
         apply (reduces_to_if_split2
                  _ _ (mk_less
                         (mk_integer (- z))
                         (mk_nat b)
                         (mk_integer z)
                         e));
-          try csunf; simpl; boolvar; tcsp; try omega.
+          try csunf; simpl; boolvar; tcsp; try lia.
         apply reduces_to_if_step.
         csunf; simpl.
         dcwf q; allsimpl.
         unfold compute_step_comp; simpl; boolvar; auto.
         provefalse.
         pose proof (Zabs.Zabs_nat_le (Z.of_nat b) (-z)) as kk.
-        autodimp kk hyp; try omega.
-        allrw Znat.Zabs2Nat.id.
-        destruct z; allsimpl; try omega.
+        autodimp kk hyp; try lia.
       * apply (reduces_to_if_split2
                  _ _ (mk_less
                         (mk_integer z)
                         (mk_nat b)
                         (mk_integer z)
                         e));
-        try csunf; simpl; boolvar; tcsp; try omega.
+        try csunf; simpl; boolvar; tcsp; try lia.
         apply reduces_to_if_step.
         csunf; simpl.
         dcwf q; allsimpl.
         unfold compute_step_comp; simpl; boolvar; auto.
         provefalse.
         pose proof (Zabs.Zabs_nat_le (Z.of_nat b) z) as kk.
-        autodimp kk hyp; try omega.
-        allrw Znat.Zabs2Nat.id.
-        destruct z; allsimpl; try omega.
+        autodimp kk hyp; try lia.
 Qed.
 
 Lemma compute_step_force_int_bound_exc {o} :
@@ -2502,7 +2488,7 @@ Proof.
                                 (mk_nat b)
                                 (mk_integer z)
                                 e)); auto;
-          [csunf; simpl; boolvar; tcsp; try omega|].
+          [csunf; simpl; boolvar; tcsp; try lia|].
 
           apply (reduces_to_if_split2
                    _ _ (mk_less (mk_integer (- z))
@@ -2514,24 +2500,20 @@ Proof.
           dcwf q; allsimpl.
           unfold compute_step_comp; simpl; boolvar; tcsp.
           pose proof (Zabs.Zabs_nat_le (Z.of_nat b) (- z)) as k.
-          autodimp k hyp; try omega.
-          allrw Znat.Zabs2Nat.id.
-          destruct z; allsimpl; try omega. }
+          autodimp k hyp; try lia. }
 
         { apply (reduces_to_if_split2
                    _ _ (mk_less (mk_integer z)
                                 (mk_nat b)
                                 (mk_integer z)
                                 e)); auto;
-          [csunf; simpl; boolvar; tcsp; try omega|].
+          [csunf; simpl; boolvar; tcsp; try lia|].
           apply reduces_to_if_step; simpl.
           csunf; simpl.
           dcwf q; allsimpl.
           unfold compute_step_comp; simpl; boolvar; tcsp.
           pose proof (Zabs.Zabs_nat_le (Z.of_nat b) z) as k.
-          autodimp k hyp; try omega.
-          allrw Znat.Zabs2Nat.id.
-          destruct z; allsimpl; try omega. }
+          autodimp k hyp; try lia. }
 
   - eapply reduces_to_trans; eauto.
     apply reduces_to_if_step; simpl.
@@ -2628,7 +2610,7 @@ Proof.
     dopid op as [can1|ncan1|exc1|mrk1|abs1] Case.
 
     + Case "Can".
-      exists 0; dands; try omega.
+      exists 0; dands; try lia.
       rw @has_value_like_except_0; eauto 3 with slow.
 
     + Case "NCan".
@@ -2636,7 +2618,7 @@ Proof.
       remember (compute_step lib (oterm (NCan ncan1) l)) as comp.
       symmetry in Heqcomp; destruct comp; ginv.
       apply IHk in r0; exrepnd; auto.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @has_value_like_except_S.
       exists n; sp.
 
@@ -2645,10 +2627,10 @@ Proof.
       apply compute_step_catch_success in r1.
       dorn r1; exrepnd; subst; allsimpl.
 
-      * exists 0; dands; try omega.
+      * exists 0; dands; try lia.
         rw @has_value_like_except_0; eauto 3 with slow.
 
-      * exists 0; dands; try omega.
+      * exists 0; dands; try lia.
         unfold has_value_like_except_k in r0; exrepnd.
         apply reduces_in_atmost_k_steps_if_isvalue_like in r0; eauto 3 with slow; subst.
         unfold isvalue_like_except in r1; repnd; allsimpl; boolvar; tcsp;
@@ -2671,7 +2653,7 @@ Proof.
       remember (compute_step_lib lib abs1 l) as comp.
       symmetry in Heqcomp; destruct comp; ginv.
       apply IHk in r0; exrepnd; auto.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @has_value_like_except_S.
       exists n; sp.
 Qed.
@@ -2806,7 +2788,7 @@ Proof.
   - apply alpha_eq_oterm_combine; dands; tcsp.
     introv i; apply hbs2; auto.
 
-  - constructor; try omega.
+  - constructor; try lia.
     introv i; apply hbs1; auto.
 Qed.
 
@@ -3271,7 +3253,7 @@ Proof.
             exists (f0 n) (f0 n); dands; eauto 3 with slow.
             { apply reduces_to_if_step.
               csunf; simpl.
-              dcwf h; simpl; boolvar; try omega.
+              dcwf h; simpl; boolvar; try lia.
               rw @Znat.Nat2Z.id; auto. }
             { apply differ3_implies_differ3_alpha.
               allapply @closed_if_isprog.
@@ -3508,14 +3490,14 @@ Proof.
                 dopid op as [can|ncan|exc|abs] SSSSCase; ginv;[].
                 destruct can; ginv;[].
                 destruct bs; allsimpl; ginv; GC.
-                boolvar; ginv; try omega; fold_terms.
+                boolvar; ginv; try lia; fold_terms.
                 inversion d4 as [|?|?|? ? ? len imp]; subst; simphyps; clear d4.
                 allsimpl; cpx; fold_terms; allsimpl.
                 clear imp.
 
                 exists (@mk_nat o (s (Z.to_nat z))) (@mk_nat o (s (Z.to_nat z))); dands; eauto 3 with slow.
                 apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
-                boolvar; try omega; auto.
+                boolvar; try lia; auto.
 
               - apply wf_isexc_implies in comp0; auto; exrepnd; subst; allsimpl.
                 apply differ3_exception_implies in d4; exrepnd; subst.
@@ -3560,7 +3542,7 @@ Proof.
             exists (@mk_nat o (n n0)) (@mk_nat o (n n0)); dands; eauto 3 with slow.
             apply reduces_to_if_step; csunf; simpl.
             rw @Znat.Nat2Z.id.
-            boolvar; try omega; auto. *)
+            boolvar; try lia; auto. *)
 
           - SSSCase "NFix".
             csunf comp; allsimpl.
@@ -3758,7 +3740,7 @@ Proof.
                    (@mk_uni o n).
             dands; eauto 3 with slow.
             { apply reduces_to_if_step; simpl.
-              csunf; simpl; unfold compute_step_tuni; simpl; boolvar; try omega.
+              csunf; simpl; unfold compute_step_tuni; simpl; boolvar; try lia.
               rw Znat.Nat2Z.id; auto. }
 
           - SSSCase "NMinus".
@@ -3948,11 +3930,11 @@ Proof.
                 dands.
 
                 { prove_alpha_eq4.
-                  introv j; destruct n0;[|destruct n0]; try omega; cpx.
+                  introv j; destruct n0;[|destruct n0]; try lia; cpx.
                   apply alphaeqbt_nilv2; auto. }
 
                 { prove_alpha_eq4.
-                  introv j; destruct n0;[|destruct n0]; try omega; cpx.
+                  introv j; destruct n0;[|destruct n0]; try lia; cpx.
                   apply alphaeqbt_nilv2; auto. }
 
                 { apply differ3_oterm; simpl; tcsp.
@@ -4024,11 +4006,11 @@ Proof.
                dands.
 
                { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
+                 introv j; destruct n;[|destruct n]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
+                 introv j; destruct n;[|destruct n]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { apply differ3_oterm; allsimpl; tcsp.
@@ -4127,11 +4109,11 @@ Proof.
                 dands.
 
                 { prove_alpha_eq4.
-                  introv j; destruct n0;[|destruct n0]; try omega; cpx.
+                  introv j; destruct n0;[|destruct n0]; try lia; cpx.
                   apply alphaeqbt_nilv2; auto. }
 
                 { prove_alpha_eq4.
-                  introv j; destruct n0;[|destruct n0]; try omega; cpx.
+                  introv j; destruct n0;[|destruct n0]; try lia; cpx.
                   apply alphaeqbt_nilv2; auto. }
 
                 { apply differ3_oterm; simpl; tcsp.
@@ -4202,11 +4184,11 @@ Proof.
                dands.
 
                { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
+                 introv j; destruct n;[|destruct n]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
+                 introv j; destruct n;[|destruct n]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { apply differ3_oterm; allsimpl; tcsp.
@@ -4257,7 +4239,7 @@ Proof.
             apply if_has_value_like_k_force_int_bound in hvf; exrepnd.
 
             pose proof (compind t1 t0 u j0) as r.
-            repeat (autodimp r hyp); try omega; exrepnd.
+            repeat (autodimp r hyp); try lia; exrepnd.
 
             { allrw <- @wf_cbv_iff; repnd; auto. }
 
@@ -4533,11 +4515,11 @@ Proof.
             dands.
 
             { prove_alpha_eq4.
-              introv j; destruct n;[|destruct n]; try omega; cpx.
+              introv j; destruct n;[|destruct n]; try lia; cpx.
               apply alphaeqbt_nilv2; auto. }
 
             { prove_alpha_eq4.
-              introv j; destruct n;[|destruct n]; try omega; cpx.
+              introv j; destruct n;[|destruct n]; try lia; cpx.
               apply alphaeqbt_nilv2; auto. }
 
             { apply differ3_oterm; allsimpl; tcsp.
@@ -4866,7 +4848,7 @@ Proof.
     autodimp h''' hyp; exrepnd.
 
     pose proof (ind k') as h.
-    autodimp h hyp;[omega|].
+    autodimp h hyp;[lia|].
     pose proof (h u1 u2 t2') as r'; clear h.
     repeat (autodimp r' hyp); eauto 3 with slow.
 

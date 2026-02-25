@@ -29,10 +29,11 @@
  *)
 
 
-Require Export Omega.
+Require Export Lia.
 Require Export Bool.
 Require Export Eqdep_dec.
 Require Export Arith.
+Require Export UsefulTypes.
 
 
 (*
@@ -174,7 +175,7 @@ Lemma eq_upto_dec :
 Proof.
   induction n; introv.
 
-  - left; introv xx; omega.
+  - left; introv xx; lia.
 
   - pose proof (IHn f g) as q; clear IHn.
     destruct q as [q|q].
@@ -184,7 +185,7 @@ Proof.
       * left.
         introv w.
         destruct (eq_nat_dec m n); subst; auto.
-        apply q; auto; omega.
+        apply q; auto; lia.
 
       * right.
         intro w.
@@ -199,7 +200,7 @@ Lemma eq_upto_zero_until :
 Proof.
   introv h q.
   unfold zero_until, zeros.
-  destruct (lt_dec m0 n); try omega.
+  destruct (lt_dec m0 n); try lia.
 Qed.
 
 Lemma zero_until_prop2 :
@@ -207,7 +208,7 @@ Lemma zero_until_prop2 :
 Proof.
   introv.
   unfold zero_until.
-  destruct (lt_dec n n); try omega.
+  destruct (lt_dec n n); try lia.
 Qed.
 
 Definition nat_n (n : nat) := {m : nat | m <? n = true}.
@@ -290,7 +291,7 @@ Proof.
   { symmetry; apply h2.
     subst b.
     apply eq_upto_sym.
-    apply eq_upto_zero_until; omega. }
+    apply eq_upto_zero_until; lia. }
 
   pose proof (h3 b) as h4.
   rewrite e in h4.
@@ -298,13 +299,13 @@ Proof.
   pose proof (h4 (zero_until m (M f + 1))) as h5.
   autodimp h5 hyp.
   { apply eq_upto_sym.
-    apply eq_upto_zero_until; omega. }
+    apply eq_upto_zero_until; lia. }
 
   rewrite zero_until_prop2 in h5.
   rewrite Heqb in h5.
   rewrite zero_until_prop2 in h5.
   unfold zero_until in h5.
-  destruct (lt_dec 0 (M f + 1)) in *; try omega.
+  destruct (lt_dec 0 (M f + 1)) in *; try lia.
 Qed.
 
 Lemma continuity_false : !nsq_continuity.
@@ -552,7 +553,7 @@ Lemma updf_if_lt :
     updf n s f m = s (exist (fun m => m <? n = true) m (lt2ltb p)).
 Proof.
   introv; unfold updf.
-  destruct (le_lt_dec n m) as [d|d]; try omega; auto.
+  destruct (le_lt_dec n m) as [d|d]; try lia; auto.
   f_equal; f_equal.
   apply UIP_dec; apply bool_dec.
 Qed.
@@ -592,7 +593,7 @@ Proof.
   destruct (le_lt_dec (S n) x) as [d|d];
     destruct (le_lt_dec n x) as [p|p];
     try (destruct (le_lt_eq_dec x n (lt_n_Sm_le x n (ltb2lt (lt2ltb d)))) as [z|z]);
-    try omega; subst; auto.
+    try lia; subst; auto.
   f_equal; f_equal.
   apply UIP_dec; apply bool_dec.
 Qed.
@@ -657,9 +658,9 @@ Proof.
       rewrite <- e; clear e.
       unfold updf.
       applydup @ltb2lt in p.
-      destruct (le_lt_dec (S n) x) as [d|d]; destruct (le_lt_dec n x) as [z|z]; try omega; auto.
+      destruct (le_lt_dec (S n) x) as [d|d]; destruct (le_lt_dec n x) as [z|z]; try lia; auto.
       unfold ext.
-      destruct (le_lt_eq_dec x n (lt_n_Sm_le x n (ltb2lt (lt2ltb d)))) as [w|w]; try omega; auto.
+      destruct (le_lt_eq_dec x n (lt_n_Sm_le x n (ltb2lt (lt2ltb d)))) as [w|w]; try lia; auto.
       f_equal; f_equal.
       apply UIP_dec; apply bool_dec. }
 
@@ -673,9 +674,9 @@ Proof.
       unfold baire2baire_n in *; simpl in *.
       unfold updf.
       applydup @ltb2lt in p.
-      destruct (le_lt_dec (S n) x) as [d|d]; destruct (le_lt_dec n x) as [z|z]; try omega; auto.
+      destruct (le_lt_dec (S n) x) as [d|d]; destruct (le_lt_dec n x) as [z|z]; try lia; auto.
       unfold ext.
-      destruct (le_lt_eq_dec x n (lt_n_Sm_le x n (ltb2lt (lt2ltb d)))) as [w|w]; try omega; auto.
+      destruct (le_lt_eq_dec x n (lt_n_Sm_le x n (ltb2lt (lt2ltb d)))) as [w|w]; try lia; auto.
       f_equal; f_equal.
       apply UIP_dec; apply bool_dec. }
   }
@@ -689,7 +690,7 @@ Proof.
     destruct x as [x ltxm].
     unfold baire2baire_n; simpl.
     unfold updf.
-    destruct (le_lt_dec 0 x); try omega; auto.
+    destruct (le_lt_dec 0 x); try lia; auto.
     applydup @ltb2lt in ltxm.
     apply e; auto. }
 Qed.
@@ -737,7 +738,7 @@ Proof.
   apply functional_extensionality; introv.
   unfold replace_from, cons_seq.
   destruct (zerop x0); subst; simpl; auto.
-  destruct x0; simpl; try omega.
+  destruct x0; simpl; try lia.
   destruct (le_lt_dec n x0); subst; auto.
 Qed.
 
@@ -781,7 +782,7 @@ Proof.
   {
     introv ltmn.
     unfold cons_seq, replace_from.
-    destruct (le_lt_dec (S n) m) as [d|d]; auto; try omega.
+    destruct (le_lt_dec (S n) m) as [d|d]; auto; try lia.
   }
 
   pose proof (h1 (replace_from ones n 0)) as z.
@@ -796,7 +797,7 @@ Proof.
   rewrite HeqP in z.
   pose proof (z n) as r.
   unfold replace_from in r.
-  destruct (le_lt_dec n n); try omega.
+  destruct (le_lt_dec n n); try lia.
 Qed.
 
 
@@ -827,8 +828,7 @@ Proof.
   pose proof (cont (fun a b => F a = b 0)) as q; clear cont.
   autodimp q hyp.
   {
-    introv.
-    exists (fun _ => F a); auto.
+    introv; eauto.
   }
 
   exrepnd.
@@ -844,6 +844,6 @@ Proof.
   introv ltmn.
   unfold cons_seq.
   destruct (zerop m); auto.
-  destruct m; simpl; try omega.
-  apply w; omega.
+  destruct m; simpl; try lia.
+  apply w; lia.
 Qed.

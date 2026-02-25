@@ -66,8 +66,8 @@ Proof.
   apply CL_eq.
   unfold per_eq.
   exists T T t1 t2 t1 t2 eq; sp; spcast; try computes_to_value_refl.
-  unfold eqindomain; auto.
-  unfold eqindomain; auto.
+  unfold eqindomain; sp.
+  unfold eqindomain; sp.
 Qed.
 
 (* end hide *)
@@ -343,15 +343,12 @@ Proof. unfold member.
                        # eq a1 a2).
     apply CL_eq; unfold per_eq; fold @nuprl.
 
-    exists A B a1 a2 b1 b2 eq; dands; auto.
-    spcast; apply computes_to_valc_refl; apply iscvalue_mkc_equality; auto.
-    spcast; apply computes_to_valc_refl; apply iscvalue_mkc_equality; auto.
-     apply eqd; split; auto.
-     apply eqd; split; auto.
-   
+    exists A B a1 a2 b1 b2 eq; dands; tcsp.
+    spcast; apply computes_to_valc_refl; apply iscvalue_mkc_equality; tcsp.
+    spcast; apply computes_to_valc_refl; apply iscvalue_mkc_equality; tcsp.
+     apply eqd; split; tcsp.
+     apply eqd; split; tcsp.
 Qed.
-
-
 
 Lemma tequality_mkc_equality2 {p} :
   forall lib (a1 a2 b1 b2 A B : @CTerm p),
@@ -366,10 +363,7 @@ Proof. intros. apply tequality_mkc_equality; sp; split; intro.
      - apply equality_refl in H1; auto.
      - apply equality_sym in H. apply equality_refl in H; auto.
      - apply equality_refl in H; auto.
-
 Qed.
-
-
 
 Lemma tequality_mkc_equality_if_equal {p} :
   forall lib (a1 a2 b1 b2 A B : @CTerm p),
@@ -754,13 +748,11 @@ Proof.
     exists (fun t1 t2 : @CTerm p => (t1 ===>(lib) mkc_axiom # t2 ===>(lib) mkc_axiom # eqa a1 a2)).
     apply CL_eq; fold (@nuprli p lib j0).
     unfold per_eq.
-    exists A B a1 a2 b1 b2 eqa; dands; auto;
-    try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_equality))).
+    exists A B a1 a2 b1 b2 eqa; dands; tcsp;
+      try (complete (spcast; apply computes_to_valc_refl; try (apply iscvalue_mkc_equality))).
     apply eqd; auto.
     apply eqd; auto.
 Qed.
-
-
 
 Lemma equality_in_member {p} :
   forall lib (a b t T : @CTerm p),

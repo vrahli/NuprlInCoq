@@ -359,7 +359,7 @@ Proof.
   constructor; simpl; sp; unfold selectbt; destruct n; sp; simpl.
   generalize (fresh_vars 5 (all_vars A ++ all_vars B ++ [p, p0, p1, p2, p3] ++ [p4, p5, p6, p7, p8]));
     intro nvs; exrepnd.
-  repeat (destruct lvn; allsimpl; sp; try (complete omega)).
+  repeat (destruct lvn; allsimpl; sp; try (complete lia)).
   apply al_bterm with (lv := [n]);
     try (complete (simpl; sp));
     try (complete (apply no_rep_cons; sp)).

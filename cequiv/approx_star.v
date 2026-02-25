@@ -273,7 +273,7 @@ Proof.
     applydup @isprogram_ot_iff in hcv0.
     exrepnd. clear hcv8 hcv7.
     Hint Resolve selectbt_in alphaeq_preserves_wf_r_eauto isprogam_bt_nt_wf_eauto : slow.
-    assert (n < length lbt') as X99 by omega.
+    assert (n < length lbt') as X99 by lia.
     dands; spcf; try (apply isprogam_bt_nt_wf_eauto with (lv:=x); eauto with slow);[].
     introv Hw Hpa Hpb.
     right.
@@ -457,7 +457,7 @@ Ltac prove_approx_lblift :=
   intros n Hlt;
     ( let rnum := (get_lt_rhs  Hlt) in
       fail_if_not_number rnum; (*fail if not a normal form*)
-      repeat (destruct n; try omega); unfold selectbt; simpl; unfold nobnd
+      repeat (destruct n; try lia); unfold selectbt; simpl; unfold nobnd
     ).
 
 Ltac prove_approx_lblift_sub :=
@@ -467,7 +467,7 @@ Ltac prove_approx_lblift_sub :=
   intros n Hlt;
     ( let rnum := (get_lt_rhs  Hlt) in
       fail_if_not_number rnum; (*fail if not a normal form*)
-      repeat (destruct n; try omega); unfold selectbt; simpl; unfold nobnd
+      repeat (destruct n; try lia); unfold selectbt; simpl; unfold nobnd
     ).
 
 Ltac prove_approx :=
@@ -833,5 +833,4 @@ Proof.
 
         apply implies_approx_fix.
         apply reduces_to_implies_approx1; auto.
-        Grab Existential Variables.
 Qed.

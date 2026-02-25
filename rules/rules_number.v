@@ -50,8 +50,8 @@ Proof.
 
   { exists (equality_of_int lib).
     apply CL_int.
-    unfold per_int; dands; spcast; auto;
-      apply computes_to_valc_refl; eauto 3 with slow. }
+    unfold per_int; dands; spcast; auto; tcsp;
+      try apply computes_to_valc_refl; eauto 3 with slow. }
 Qed.
 
 

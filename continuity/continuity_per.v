@@ -56,28 +56,26 @@ Proof.
 
     * csunf; simpl.
       dcwf h; simpl.
-      unfold compute_step_comp; simpl; boolvar; tcsp; try omega.
+      unfold compute_step_comp; simpl; boolvar; tcsp; try lia.
 
     * eapply reduces_to_trans;
       [eapply reduces_to_prinarg;exact comp0|].
       apply reduces_to_if_step; csunf; simpl.
       unfold compute_step_minus; simpl.
       f_equal; f_equal.
-      destruct k; allsimpl; try omega.
-      pose proof (Pos2Z.is_pos p); omega.
+      destruct k; allsimpl; try lia.
 
   - apply (reduces_to_if_split2
              _ _ t); simpl.
 
     * csunf; simpl.
       dcwf h; simpl.
-      unfold compute_step_comp; simpl; boolvar; tcsp; try omega.
+      unfold compute_step_comp; simpl; boolvar; tcsp; try lia.
 
     * eapply reduces_to_trans; [exact comp0|].
       apply reduces_to_if_step; csunf; simpl.
       f_equal; f_equal; fold_terms; f_equal.
-      destruct k; allsimpl; try omega.
-      pose proof (Pos2Z.neg_is_neg p); try omega.
+      destruct k; allsimpl; try lia.
 Qed.
 
 Definition absolute_value_c {o} (t : @CTerm o) : CTerm :=

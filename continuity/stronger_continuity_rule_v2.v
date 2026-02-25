@@ -227,14 +227,14 @@ Proof.
   prove_alpha_eq4.
 
   introv j.
-  repeat (destruct n; tcsp; try omega); clear j;[|].
+  repeat (destruct n; tcsp; try lia); clear j;[|].
 
   { apply alphaeqbt_nilv2.
 
     unfold mk_natk, mk_natk_aux, mk_set, nobnd.
     prove_alpha_eq4;[].
     introv j.
-    repeat (destruct n; tcsp; try omega); clear j;[].
+    repeat (destruct n; tcsp; try lia); clear j;[].
 
     pose proof (ex_fresh_var (newvar (mk_less_than (mk_var (newvar (@mk_var o v))) (@mk_var o v))
                                      :: (newvar (mk_less_than (mk_var (newvar x)) x))
@@ -279,35 +279,35 @@ Proof.
     unfold mk_product, nobnd.
     prove_alpha_eq4.
     introv j.
-    repeat (destruct n; tcsp; try omega); clear j;[|].
+    repeat (destruct n; tcsp; try lia); clear j;[|].
 
     { apply alphaeqbt_nilv2.
 
       unfold mk_function, nobnd.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[|].
+      repeat (destruct n; tcsp; try lia); clear j;[|].
 
       { apply alphaeqbt_nilv2.
         unfold mk_less, nobnd.
         prove_alpha_eq4.
         introv j.
-        repeat (destruct n; tcsp; try omega); clear j;[].
+        repeat (destruct n; tcsp; try lia); clear j;[].
 
         apply alphaeqbt_nilv2.
         prove_alpha_eq4.
         introv j.
-        repeat (destruct n; tcsp; try omega); clear j;[].
+        repeat (destruct n; tcsp; try lia); clear j;[].
 
         apply alphaeqbt_nilv2.
         prove_alpha_eq4.
         introv j.
-        repeat (destruct n; tcsp; try omega); clear j;[].
+        repeat (destruct n; tcsp; try lia); clear j;[].
 
         apply alphaeqbt_nilv2.
         prove_alpha_eq4.
         introv j.
-        repeat (destruct n; tcsp; try omega); clear j;[].
+        repeat (destruct n; tcsp; try lia); clear j;[].
 
         apply alpha_eq_bterm_congr.
         repeat (boolvar; simpl); tcsp.
@@ -316,17 +316,17 @@ Proof.
       { apply alpha_eq_bterm_congr.
         prove_alpha_eq4.
         introv j.
-        repeat (destruct n; tcsp; try omega); clear j;[].
+        repeat (destruct n; tcsp; try lia); clear j;[].
 
         apply alpha_eq_bterm_congr.
         prove_alpha_eq4.
         introv j.
-        repeat (destruct n; tcsp; try omega); clear j;[].
+        repeat (destruct n; tcsp; try lia); clear j;[].
 
         apply alpha_eq_bterm_congr.
         prove_alpha_eq4.
         introv j.
-        repeat (destruct n; tcsp; try omega); clear j;[].
+        repeat (destruct n; tcsp; try lia); clear j;[].
 
         apply alpha_eq_bterm_congr.
         repeat (boolvar; simpl); tcsp.
@@ -385,22 +385,22 @@ Proof.
       unfold mk_less, nobnd.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alpha_eq_bterm_congr.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alpha_eq_bterm_congr.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alpha_eq_bterm_congr.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alpha_eq_bterm_congr.
       repeat (boolvar; subst; simpl; tcsp);
@@ -742,7 +742,7 @@ Proof.
 
   boolvar.
 
-  - assert (k0 < k) as ltk by omega.
+  - assert (k0 < k) as ltk by lia.
     unfold natk2T in equ.
     apply equality_in_fun in equ; repnd.
     clear equ0 equ1.
@@ -885,7 +885,7 @@ Proof.
                     (mkc_exception n e)
                     (mkc_exception (mkc_utoken a) mkc_axiom)) as q.
       repeat (autodimp q hyp); exrepnd.
-      apply (reduces_in_atmost_k_steps_excc_le_exc _ i0); tcsp; try omega.
+      apply (reduces_in_atmost_k_steps_excc_le_exc _ i0); tcsp; try lia.
   }
 
   apply (constructive_indefinite_ground_description nat (fun x => x) (fun x => x))

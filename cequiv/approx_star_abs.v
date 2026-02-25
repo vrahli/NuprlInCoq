@@ -54,13 +54,13 @@ Proof.
     unfold approx_star_sk in aeq; simpl in aeq.
     inversion aeq as [nvs h]; exrepnd.
     inversion h1; inversion h2; subst.
-    destruct n1; f_equal; omega.
+    destruct n1; f_equal; lia.
 
   - provefalse.
     unfold approx_star_sk in aeq; simpl in aeq.
     inversion aeq as [nvs h]; exrepnd.
     inversion h1; inversion h2; subst.
-    destruct n1; f_equal; omega.
+    destruct n1; f_equal; lia.
 
   - apply (IHvs sks1 sks2 sk1 sk2 sv); auto.
 Qed.
@@ -92,7 +92,7 @@ Proof.
   - unfold approx_star_sk in aeq; simpl in aeq;
     inversion aeq as [nvs h]; exrepnd;
     inversion h1; inversion h2; subst;
-    destruct n1; f_equal; try omega.
+    destruct n1; f_equal; try lia.
 
   - eapply IHvs in f1; eauto.
 Qed.
@@ -114,7 +114,7 @@ Proof.
   - unfold approx_star_sk in aeq; simpl in aeq;
     inversion aeq as [nvs h]; exrepnd;
     inversion h1; inversion h2; subst;
-    destruct n1; f_equal; try omega.
+    destruct n1; f_equal; try lia.
 
   - eapply IHvs in f1; eauto.
 Qed.
@@ -136,7 +136,7 @@ Proof.
     destruct n0.
     + unfold selectbt; simpl; auto.
       apply blift_sub_nobnd_congr; auto.
-    + destruct n0; try omega.
+    + destruct n0; try lia.
       unfold selectbt; simpl; auto.
       apply blift_sub_nobnd_congr; auto.
 Qed.
@@ -177,7 +177,7 @@ Proof.
       inversion ap as [nvs h]; exrepnd; allsimpl.
       inversion h1; subst.
       inversion h2; subst.
-      assert (length l1 = length l0) as x by omega.
+      assert (length l1 = length l0) as x by lia.
       rw x in n1; sp.
 
     + provefalse.
@@ -185,7 +185,7 @@ Proof.
       inversion ap as [nvs h]; exrepnd; allsimpl.
       inversion h1; subst.
       inversion h2; subst.
-      assert (length l1 = length l0) as x by omega.
+      assert (length l1 = length l0) as x by lia.
       rw x in l2; sp.
 
     + apply binrel_list_cons in ap; repnd.
@@ -603,7 +603,7 @@ Lemma so_alphaeq_vs_implies_eq_num_sobvars {o} :
     so_alphaeqbt_vs vs a b
     -> num_sobvars a = num_sobvars b.
 Proof.
-  introv aeq; inversion aeq; subst; simpl; omega.
+  introv aeq; inversion aeq; subst; simpl; lia.
 Qed.
 
 Lemma approx_starbts_map {o} :
@@ -963,12 +963,12 @@ Proof.
                 (l1 ++ l2 ++ allvars t ++ allvars (cswap (mk_swapping l1 l2) t)))
     as fv; exrepnd.
 
-  apply (aeqbt [] lvn); auto; try omega.
+  apply (aeqbt [] lvn); auto; try lia.
 
   rw @cswap_cswap.
   rw mk_swapping_app; auto.
   allrw disjoint_app_r; repnd.
-  rw @cswap_disj_chain; auto; try omega;
+  rw @cswap_disj_chain; auto; try lia;
   allrw disjoint_app_r; dands; eauto with slow.
   apply alphaeq_refl.
 Qed.
@@ -1014,19 +1014,19 @@ Proof.
   allrw disjoint_app_r; repnd.
 
   apply (alpha3bt_change_var _ _ _ _ lvn) in ap5; auto;
-  try (complete (allrw disjoint_app_r; auto)); try omega.
+  try (complete (allrw disjoint_app_r; auto)); try lia.
   apply alpha_eq_if3 in ap5.
 
   apply (alpha3bt_change_var _ _ _ _ lvn) in ap4; auto;
-  try (complete (allrw disjoint_app_r; auto)); try omega.
+  try (complete (allrw disjoint_app_r; auto)); try lia.
   apply alpha_eq_if3 in ap4.
 
   apply (alpha3bt_change_var _ _ _ _ lvn) in ap3; auto;
-  try (complete (allrw disjoint_app_r; auto)); try omega.
+  try (complete (allrw disjoint_app_r; auto)); try lia.
   apply alpha_eq_if3 in ap3.
 
   apply (alpha3bt_change_var _ _ _ _ lvn) in ap0; auto;
-  try (complete (allrw disjoint_app_r; auto)); try omega.
+  try (complete (allrw disjoint_app_r; auto)); try lia.
   apply alpha_eq_if3 in ap0.
 
 Abort.
@@ -1041,9 +1041,9 @@ Proof.
   unfold approx_star_sosub, bin_rel_sk, binrel_list; simpl.
   allrw @length_so_range.
   split; intro k; repnd; dands; auto; cpx.
-  - pose proof (k 0) as h; autodimp h hyp; omega.
+  - pose proof (k 0) as h; autodimp h hyp; lia.
   - introv i.
-    pose proof (k (S n)) as h; autodimp h hyp; omega.
+    pose proof (k (S n)) as h; autodimp h hyp; lia.
   - introv i.
     destruct n; cpx.
 Qed.
@@ -1148,12 +1148,12 @@ Proof.
       inversion x2; subst.
       inversion x1; subst.
       provefalse.
-      destruct n3; omega.
+      destruct n3; lia.
     + inversion ap0 as [vs x]; exrepnd.
       inversion x2; subst.
       inversion x1; subst.
       provefalse.
-      destruct n3; omega.
+      destruct n3; lia.
     + unfold approx_star_sosub, bin_rel_sk, binrel_list; simpl; sp.
 Qed.
 

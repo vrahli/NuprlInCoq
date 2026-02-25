@@ -36,12 +36,12 @@ Lemma well_founded_lt :
 Proof.
   introv.
   induction a.
-  - constructor; introv h; omega.
+  - constructor; introv h; lia.
   - inversion IHa as [imp].
     constructor; introv h.
     rewrite Nat.lt_succ_r in h.
     destruct h; auto.
-    apply imp; omega.
+    apply imp; lia.
 Qed.
 
 Definition brel (A : Type) := A -> A -> Prop.
@@ -141,8 +141,8 @@ Proof.
   - exists 1 0; dands; auto.
   - pose proof (ind (f 0) (fun x => f (S x))) as h.
     exrepnd; repndors; eauto.
-    + exists (S n) (S m); dands; auto; try omega.
-    + exists (S m) 0; dands; auto; try omega.
+    + exists (S n) (S m); dands; auto; try lia.
+    + exists (S m) 0; dands; auto; try lia.
 Qed.
 
 Definition update_seq_from {o} (s : @CTerm o) (n m : nat) (v : NVar) :=
@@ -290,18 +290,18 @@ Lemma decidable_forall_lt :
     -> decidable (forall m : nat, m < n -> P m).
 Proof.
   induction n; introv dec.
-  - left; introv q; try omega.
+  - left; introv q; try lia.
   - autodimp IHn hyp.
     destruct IHn as [d|d].
-    + destruct (dec n) as [e|e]; try omega.
+    + destruct (dec n) as [e|e]; try lia.
       * left; introv q.
         destruct (deq_nat m n); subst; auto.
-        apply d; omega.
+        apply d; lia.
       * right; intro q.
         pose proof (q n) as z; autodimp z hyp.
     + right.
       intro q; destruct d.
-      introv h; apply q; omega.
+      introv h; apply q; lia.
 Qed.
 
 Lemma decidable_ccequivc_mkc_apply_is_kseq {o} :
@@ -314,9 +314,9 @@ Lemma decidable_ccequivc_mkc_apply_is_kseq {o} :
 Proof.
   introv l1 l2 i1 i2.
   pose proof (is_kseq_implies lib m s1 n1) as h1.
-  repeat (autodimp h1 hyp); try omega.
+  repeat (autodimp h1 hyp); try lia.
   pose proof (is_kseq_implies lib m s2 n2) as h2.
-  repeat (autodimp h2 hyp); try omega.
+  repeat (autodimp h2 hyp); try lia.
   exrepnd.
   destruct (deq_nat k0 k) as [d|d]; subst.
 
@@ -331,7 +331,7 @@ Proof.
     apply cequivc_sym in h; apply cequivc_nat_implies_computes_to_valc in h.
     eapply computes_to_valc_eq in h;[|exact h0].
     inversion h as [q].
-    apply Znat.Nat2Z.inj in q; subst; omega.
+    apply Znat.Nat2Z.inj in q; subst; lia.
 Qed.
 
 Lemma extends_dec {o} {lib} :
@@ -359,7 +359,7 @@ Proof.
 
   apply decidable_forall_lt.
   introv ltm.
-  eapply decidable_ccequivc_mkc_apply_is_kseq; try (exact i1); try (exact i2); try omega.
+  eapply decidable_ccequivc_mkc_apply_is_kseq; try (exact i1); try (exact i2); try lia.
 Qed.
 
 (* Howard & Kreisel

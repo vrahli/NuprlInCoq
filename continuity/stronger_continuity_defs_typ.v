@@ -223,7 +223,7 @@ Proof.
   introv.
   unfold mkc_ntexc.
   rw @tequality_mkc_texc.
-  rw @tequality_mkc_singleton_uatom; auto.
+  rw @tequality_mkc_singleton_uatom; tcsp.
 Qed.
 
 Lemma type_mkc_ntexc {o} :
@@ -343,11 +343,10 @@ Proof.
     allapply @computes_to_valc_implies_cequivc.
     right; dands; spcast.
     + eapply cequivc_trans;[exact k5|].
-      unfold spexc.
-      apply cequivc_mkc_exception; auto.
+      apply continuity_defs_ceq.cequivc_mkc_exception; auto.
     + eapply cequivc_trans;[exact k6|].
       unfold spexc.
-      apply cequivc_mkc_exception; auto.
+      apply continuity_defs_ceq.cequivc_mkc_exception; auto.
 
   - left; allrw @equality_in_tnat; auto.
 
@@ -471,7 +470,7 @@ Proof.
                       (mkc_exception n0 e0)
                       (mkc_exception (mkc_utoken a) mkc_axiom)) as q.
         repeat (autodimp q hyp); exrepnd.
-        apply (reduces_in_atmost_k_steps_excc_le_exc _ i0); tcsp; try omega.
+        apply (reduces_in_atmost_k_steps_excc_le_exc _ i0); tcsp; try lia.
 
       + apply (reduces_in_atmost_k_steps_excc_le_exc _ (k4 + k1 + k2));
         eauto 3 with slow; tcsp;
@@ -485,7 +484,7 @@ Proof.
                       (mkc_exception n e)
                       (mkc_exception (mkc_utoken a) mkc_axiom)) as q.
         repeat (autodimp q hyp); exrepnd.
-        apply (reduces_in_atmost_k_steps_excc_le_exc _ i0); tcsp; try omega.
+        apply (reduces_in_atmost_k_steps_excc_le_exc _ i0); tcsp; try lia.
   }
 
   apply (constructive_indefinite_ground_description nat (fun x => x) (fun x => x))

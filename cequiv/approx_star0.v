@@ -674,7 +674,7 @@ Proof.
         simpl.  rewrite  Hl1 in s1s0.
         allfold (@dom_sub p). 
         allunfold (@var_ren p). spcls. 
-        assert (n0<n \/ n0=n \/ n<n0) as Htri by omega.
+        assert (n0<n \/ n0=n \/ n<n0) as Htri by lia.
         (dorn Htri);[|(dorn Htri)];
           try (apply s1s1 in Htri); cpx;
           try (apply s3s1 in Htri); cpx.
@@ -832,12 +832,12 @@ Proof.
   exists (combine lvn (range sub)).
   exists (lsubst nt1n (var_ren x lvn)).
   exists (lsubst nt2n (var_ren x lvn)).
-  rw @dom_sub_combine; allrw @length_range; auto; try omega.
+  rw @dom_sub_combine; allrw @length_range; auto; try lia.
   subst; dands; tcsp.
 
   - pose proof (lsubst_nest_same_alpha2 nt1n (dom_sub sub) lvn (range sub)) as nest1.
     allrw @length_dom; allrw @length_range.
-    repeat (autodimp nest1 hyp); try omega.
+    repeat (autodimp nest1 hyp); try lia.
     { apply alpha_eq_bterm_preserves_free_vars in Hab2; allsimpl.
       rw disjoint_app_r in Hdis; repnd.
       rw Hab2 in Hdis0.
@@ -846,7 +846,7 @@ Proof.
 
     pose proof (lsubst_nest_same_alpha2 nt2n (dom_sub sub) lvn (range sub)) as nest2.
     allrw @length_dom; allrw @length_range.
-    repeat (autodimp nest2 hyp); try omega.
+    repeat (autodimp nest2 hyp); try lia.
     { apply alpha_eq_bterm_preserves_free_vars in Hab1; allsimpl.
       rw disjoint_app_r in Hdis; repnd.
       rw Hab1 in Hdis.
@@ -865,7 +865,7 @@ Proof.
     repeat (rw @get_utokens_lsubst_allvars; eauto with slow).
     rw <- hyp0; rw <- hyp2.
     eapply nrut_sub_change_sub_same_range;[|exact Hab5].
-    rw @range_combine; auto; allrw @length_range; allrw @length_dom; auto; try omega.
+    rw @range_combine; auto; allrw @length_range; allrw @length_dom; auto; try lia.
 Qed.
 
 Lemma approx_star_open_bt_trans {pp} :
@@ -999,7 +999,7 @@ Proof.
   - unfold approx_starbts; allunfold @lblift_sub; simpl_list; exrepnd.
     dands; spcf. introv Hlt.
     applydup Hapb0 in Hlt.
-    rw @selectbt_map; [| omega].
+    rw @selectbt_map; [| lia].
     subst fc.
     apply approx_star_bterm_lsubst_congr with (sub:=subc) in Hlt0; auto;[].
     apply isprogram_ot_iff in Hispo. repnd.
@@ -1059,7 +1059,7 @@ Proof.
   repeat (simpl_list). repnd. split; spcf;[].
   introv Hlt.
   applydup_clear Hap0 in Hlt.
-  dimp (hyp0 n); try omega;[].
+  dimp (hyp0 n); try lia;[].
   clear hyp0.
   eapply approx_star_open_bt_trans; eauto.
 Qed.
@@ -1534,7 +1534,7 @@ match goal with
    intros n Hlt;
    ( let rnum := (get_lt_rhs  Hlt) in
      fail_if_not_number rnum; (*fail if not a normal form*)
-     repeat (destruct n; try omega); unfold selectbt; simpl; unfold nobnd
+     repeat (destruct n; try lia); unfold selectbt; simpl; unfold nobnd
   ))
 | [  |- approx_star_bterm _ _ (bterm [] ?t1) (bterm [] ?t2)] =>
   apply blift_sub_nobnd_congr
@@ -1563,16 +1563,16 @@ Ltac approxrelbtd :=
   | [H: (forall _:nat, (_< ?m) -> blift_sub _ _ _ _)  |- _ ] => 
     fail_if_not_number m;
     (let XXX:= fresh H "0bt" in
-      assert (0<m) as XXX by omega; apply H in XXX; 
+      assert (0<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simpl in XXX);
     try (let XXX:= fresh H "1bt" in
-      assert (1<m) as XXX by omega; apply H in XXX; 
+      assert (1<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simpl in XXX);
     try (let XXX:= fresh H "2bt" in
-      assert (2<m) as XXX by omega; apply H in XXX; 
+      assert (2<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simpl in XXX);
     try (let XXX:= fresh H "3bt" in
-      assert (3<m) as XXX by omega; apply H in XXX; 
+      assert (3<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simpl in XXX); clear H
   | [H: approx_star_bterm _ _ (bterm [] _) (bterm [] _) |- _] => hide_hyp H
   | [H: blift_sub _ (approx_star _) (bterm [] _) (bterm [] _) |- _] => hide_hyp H
@@ -1915,7 +1915,7 @@ Lemma bin_rel_nterm_singleton {o} :
 Proof.
   introv h.
   unfold bin_rel_nterm, binrel_list; dands; simpl; auto.
-  introv i; destruct n; try omega; auto.
+  introv i; destruct n; try lia; auto.
 Qed.
 Hint Resolve bin_rel_nterm_singleton : slow.
 
@@ -1980,7 +1980,7 @@ Proof.
   unfold approx_starbts, lblift_sub; simpl; dands; auto.
   introv i.
   unfold selectbt.
-  repeat (destruct n; simpl; try omega;
+  repeat (destruct n; simpl; try lia;
           try (complete (apply blift_sub_nobnd_congr; auto))).
 Qed.
 
@@ -2013,7 +2013,7 @@ Proof.
   unfold approx_star_bterm, blift_sub in ap; exrepnd.
   inversion ap2; subst.
   inversion ap0; subst.
-  unfold num_bvars; simpl; omega.
+  unfold num_bvars; simpl; lia.
 Qed.
 
 Lemma approx_starbts_numvars {o} :
@@ -2023,12 +2023,12 @@ Lemma approx_starbts_numvars {o} :
 Proof.
   induction bs1; destruct bs2; intro ap; allsimpl; auto;
   unfold approx_starbts, lblift_sub in ap; repnd; allsimpl; cpx.
-  pose proof (ap 0) as h; autodimp h hyp; [omega|].
+  pose proof (ap 0) as h; autodimp h hyp; [lia|].
   unfold selectbt in h; allsimpl.
   apply eq_cons; [ complete (eapply approx_star_bterm_numvars; eauto)|].
   apply IHbs1.
   unfold approx_starbts, lblift_sub; dands; auto; introv k.
-  pose proof (ap (S n)) as x; autodimp x hyp; omega.
+  pose proof (ap (S n)) as x; autodimp x hyp; lia.
 Qed.
 
 
@@ -2040,12 +2040,12 @@ Proof.
 
   repndors; exrepnd; [|allsimpl; subst; repnd; complete ginv].
 
-  assert (m <= S k) as XX by omega.
+  assert (m <= S k) as XX by lia.
   repnud Hcv.
   eapply reduces_atmost_split in XX; eauto.
   remember (S k - m) as skm.
-  destruct skm; [omega|].
-  assert (skm <= k) by (subst; omega).
+  destruct skm; [lia|].
+  assert (skm <= k) by (subst; lia).
   apply reduces_atmost_S in XX; exrepnd.
   applydup @reduces_atmost_preserves_program in Hcv4; auto.
   allapply @isprogram_cbv_implies; exrepnd; subst; cpx.
@@ -2081,7 +2081,7 @@ Proof.
     eapply reduces_to_trans;[apply reduces_to_prinarg;exact q1|].
     apply reduces_to_if_step; csunf; simpl.
     rw @Znat.Nat2Z.id.
-    boolvar; try omega; auto.
+    boolvar; try lia; auto.
 
   - allapply @isprogram_apseq_implies; exrepnd; ginv.
     apply isexc_implies in Hcv0; auto; exrepnd; subst.
@@ -2144,7 +2144,7 @@ Proof.
   - destruct vars; simpl; auto.
     destruct a as [l1 t1]; destruct b as [l2 t2].
     unfold lblift in ap; simpl in ap; repnd; cpx.
-    pose proof (ap 0) as h; autodimp h hyp; [omega|].
+    pose proof (ap 0) as h; autodimp h hyp; [lia|].
     unfold selectbt in h; simpl in h.
     unfold blift in h; exrepnd.
     inversion h2; inversion h0; subst; allsimpl; cpx; GC.
@@ -2154,7 +2154,7 @@ Proof.
     dands; eauto with slow.
     apply IHbs1.
     unfold lblift; dands; auto; introv k.
-    pose proof (ap (S n0)) as x; autodimp x hyp; omega.
+    pose proof (ap (S n0)) as x; autodimp x hyp; lia.
 Qed.
 *)
 

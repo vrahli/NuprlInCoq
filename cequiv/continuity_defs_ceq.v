@@ -127,7 +127,7 @@ Proof.
     apply clearbot_relbt2.
     unfold lblift; simpl; dands; auto.
     introv i.
-    repeat (destruct n; tcsp; try omega); clear i; unfold selectbt; simpl.
+    repeat (destruct n; tcsp; try lia); clear i; unfold selectbt; simpl.
 
     + apply blift_approx_open_nobnd2; eauto 3 with slow.
 
@@ -196,7 +196,7 @@ Proof.
     apply clearbot_relbt2.
     unfold lblift; simpl; dands; auto.
     introv i.
-    repeat (destruct n; tcsp; try omega); clear i; unfold selectbt; simpl.
+    repeat (destruct n; tcsp; try lia); clear i; unfold selectbt; simpl.
 
     + apply blift_approx_open_nobnd2; eauto 3 with slow.
 
@@ -279,7 +279,7 @@ Proof.
     apply clearbot_relbt2.
     unfold lblift; simpl; dands; auto.
     introv i.
-    repeat (destruct n; tcsp; try omega); clear i; unfold selectbt; simpl.
+    repeat (destruct n; tcsp; try lia); clear i; unfold selectbt; simpl.
 
     + apply blift_approx_open_nobnd2; eauto 3 with slow.
       repeat (rw <- @cl_lsubst_lsubst_aux; eauto 3 with slow).
@@ -367,7 +367,7 @@ Proof.
     apply clearbot_relbt2.
     unfold lblift; simpl; dands; auto.
     introv i.
-    repeat (destruct n; tcsp; try omega); clear i; unfold selectbt; simpl.
+    repeat (destruct n; tcsp; try lia); clear i; unfold selectbt; simpl.
 
     + apply blift_approx_open_nobnd2; eauto 3 with slow.
       repeat (rw <- @cl_lsubst_lsubst_aux; eauto 3 with slow).
@@ -588,7 +588,7 @@ Proof.
         [apply reduce_to_prinargs_comp2;[exact h1|idtac|]; eauto 3 with slow|];[].
       eapply reduces_to_if_split2;
         [csunf; simpl; dcwf h; allsimpl; unfold compute_step_comp; simpl; auto|];[].
-      boolvar;tcsp;try omega.
+      boolvar;tcsp;try lia.
 
     + eapply approx_canonical_form in h4;[|exact comp1].
       destruct h4 as [tr_subterms apr]; repnd.
@@ -598,7 +598,7 @@ Proof.
         [apply reduce_to_prinargs_comp2;[exact h1|idtac|]; eauto 3 with slow|];[].
       eapply reduces_to_if_split2;
         [csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl; auto|];[].
-      boolvar;tcsp;try omega.
+      boolvar;tcsp;try lia.
 
   - introv comp.
     apply computes_to_exception_mk_less in comp; repndors; exrepnd;
@@ -619,7 +619,7 @@ Proof.
           [apply reduce_to_prinargs_comp2;[exact h1|idtac|]; eauto 3 with slow|];[].
         eapply reduces_to_if_split2;
           [csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl; auto|];[].
-        boolvar;tcsp;try omega.
+        boolvar;tcsp;try lia.
 
       * apply computes_to_exception_implies_approx in comp1; eauto 3 with slow;[]; repnd.
         eapply approx_trans in h4;[|exact comp4].
@@ -630,7 +630,7 @@ Proof.
           [apply reduce_to_prinargs_comp2;[exact h1|idtac|]; eauto 3 with slow|];[].
         eapply reduces_to_if_split2;
           [csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl; auto|];[].
-        boolvar;tcsp;try omega.
+        boolvar;tcsp;try lia.
 
     + apply computes_to_exception_implies_approx in comp; eauto 3 with slow;[]; repnd.
       eapply approx_trans in h1;[|exact comp0].
@@ -683,7 +683,7 @@ Proof.
         [apply reduce_to_prinargs_comp2;[exact h1|idtac|]; eauto 3 with slow|];[].
         eapply reduces_to_if_split2;
           [csunf; simpl; dcwf h; allsimpl; unfold compute_step_comp; simpl; auto|];[].
-        boolvar;tcsp;try omega.
+        boolvar;tcsp;try lia.
       }
       { introv; apply remove_bot_approx; auto. }
 
@@ -695,7 +695,7 @@ Proof.
         [apply reduce_to_prinargs_comp2;[exact h1|idtac|]; eauto 3 with slow|];[].
         eapply reduces_to_if_split2;
           [csunf; simpl; dcwf h; allsimpl; unfold compute_step_comp; simpl; auto|];[].
-        boolvar;tcsp;try omega.
+        boolvar;tcsp;try lia.
       }
       { introv; apply remove_bot_approx; auto. }
 Qed.
@@ -759,7 +759,7 @@ Proof.
     apply clearbot_relbt2.
     unfold lblift; simpl; dands; auto.
     introv i.
-    repeat (destruct n; tcsp; try omega); clear i; unfold selectbt; simpl.
+    repeat (destruct n; tcsp; try lia); clear i; unfold selectbt; simpl.
 
     + apply blift_approx_open_nobnd2; eauto 3 with slow.
 
@@ -857,7 +857,7 @@ Proof.
   allrw @isprogram_eq; try (apply isprog_less_implies); eauto 3 with slow;
   apply reduces_to_if_step; csunf; simpl; dcwf h; simpl;
   unfold compute_step_comp; simpl;
-  boolvar; tcsp; try omega.
+  boolvar; tcsp; try lia.
 Qed.
 
 Lemma computes_to_valc_and_excc_false {o} :
@@ -941,7 +941,7 @@ Proof.
   introv.
   allrw @mkc_nat_eq.
   eapply cequivc_trans;[apply cequivc_mkc_less_int|].
-  boolvar; tcsp; try omega.
+  boolvar; tcsp; try lia.
 Qed.
 
 Lemma computes_to_exception_implies_cequiv {o} :
@@ -1410,7 +1410,7 @@ Proof.
     inversion q as [e]; clear q.
     apply Znat.Nat2Z.inj in e; tcsp.
   - right; introv e.
-    inversion e; subst; try omega.
+    inversion e; subst; try lia.
 Qed.
 Hint Resolve decidable_mk_nat : slow.
 
@@ -1426,7 +1426,7 @@ Proof.
   - pose proof (Wf_Z.Z_of_nat_complete_inf z h) as q; exrepnd; subst; fold_terms.
     left; exists n; auto.
   - right; introv e; exrepnd.
-    inversion e0; subst; try omega.
+    inversion e0; subst; try lia.
 Qed.
 Hint Resolve decidable_ex_mk_nat : slow.
 
@@ -2079,18 +2079,18 @@ Proof.
     + apply IHk in r1; auto; exrepnd; subst.
       apply reduces_in_atmost_k_steps_if_isvalue_like in r2; eauto 3 with slow; ginv.
       apply reduces_in_atmost_k_steps_if_isvalue_like in r5; eauto 3 with slow; subst; GC.
-      exists 0 0 (S k3) a' e0; simpl; dands; auto; try omega;
+      exists 0 0 (S k3) a' e0; simpl; dands; auto; try lia;
       try (complete (apply reduces_in_atmost_k_steps_refl; eauto 3 with slow)).
       rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
 
     + apply IHk in r1; auto; exrepnd; subst.
       apply reduces_in_atmost_k_steps_if_isvalue_like in r2; eauto 3 with slow; ginv.
-      exists 0 (S k2) k3 a0 e'; simpl; dands; auto; try omega;
+      exists 0 (S k2) k3 a0 e'; simpl; dands; auto; try lia;
       try (complete (apply reduces_in_atmost_k_steps_refl; eauto 3 with slow)).
       rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
 
     + apply IHk in r1; auto; exrepnd; subst.
-      exists (S k1) k2 k3 a' e'; dands; auto; simpl; try omega.
+      exists (S k1) k2 k3 a' e'; dands; auto; simpl; try lia.
       rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
 Qed.
 
@@ -2131,11 +2131,11 @@ Proof.
 
     + rw @compute_step_value_like in r1; auto; ginv.
       apply reduces_in_atmost_k_steps_if_isvalue_like in r0; auto; subst; GC.
-      exists j; dands; try omega.
+      exists j; dands; try lia.
       apply reduces_in_atmost_k_steps_exc_exception_right; auto.
 
     + apply (IHk j u e v w) in r0; auto; exrepnd.
-      exists (S i); dands; try omega.
+      exists (S i); dands; try lia.
       allrw @reduces_in_atmost_k_steps_exc_S; allsimpl; left.
       exists n e u e; dands; tcsp.
 Qed.
@@ -2182,7 +2182,7 @@ Lemma reduces_in_atmost_k_steps_exc_trans2 {o} :
 Proof.
   induction k; introv r1 r2; allsimpl.
 
-  - exists j; dands; try omega.
+  - exists j; dands; try lia.
     allrw @reduces_in_atmost_k_steps_0; subst; auto.
 
   - allrw @reduces_in_atmost_k_steps_S; exrepnd.
@@ -2193,11 +2193,11 @@ Proof.
       eapply reduces_in_atmost_k_steps_if_isvalue_like in r0; eauto 2 with slow.
       subst.
       apply isexc_implies2 in d; exrepnd; subst; allsimpl.
-      exists j; dands; auto; try omega.
+      exists j; dands; auto; try lia.
 
     + eapply IHk in r0;[|exact r2].
       exrepnd.
-      exists (S i); dands; try omega.
+      exists (S i); dands; try lia.
       rw @reduces_in_atmost_k_steps_exc_S.
       right; dands; auto.
       eexists; dands; eauto.
@@ -2477,7 +2477,7 @@ Proof.
   induction k; introv lek isva isve r.
   - allrw @reduces_in_atmost_k_steps_exc_0; subst.
     apply reduces_in_atmost_k_steps_exc_done; auto.
-  - destruct j; try omega.
+  - destruct j; try lia.
     allapply le_S_n.
     allrw @reduces_in_atmost_k_steps_exc_S.
     repndors; exrepnd; subst; repndors; repnd; subst; allsimpl; tcsp.

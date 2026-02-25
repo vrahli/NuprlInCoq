@@ -13,7 +13,7 @@ Theorem ALDomCombine :
     length lv = length lnt
     -> ALDom (combine lv lnt) = lv.
 Proof.
-  induction lv; sp; simpl; destruct lnt; allsimpl; sp; try omega.
+  induction lv; sp; simpl; destruct lnt; allsimpl; sp; try lia.
   f_equal; auto.
 Qed.
 
@@ -22,7 +22,7 @@ Theorem ALRangeCombine :
     length lv = length lnt
     -> ALRange (combine lv lnt) = lnt.
 Proof.
-  induction lv; sp; simpl; destruct lnt; allsimpl; sp; try omega.
+  induction lv; sp; simpl; destruct lnt; allsimpl; sp; try lia.
   f_equal; auto.
 Qed.
 

@@ -62,11 +62,11 @@ Proof.
     destruct comp as [u|].
 
     + pose proof (IHk u) as h; clear IHk; exrepnd.
-      exists (S n); dands; auto; try omega.
+      exists (S n); dands; auto; try lia.
       rw @reduces_in_atmost_k_steps_S; allrw.
       eexists; dands; eauto.
 
-    + exists 0; dands; try omega.
+    + exists 0; dands; try lia.
       rw @reduces_in_atmost_k_steps_0; auto.
 Qed.
 

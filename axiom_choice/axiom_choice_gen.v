@@ -89,7 +89,7 @@ Proof.
   unfold reduces_toc; simpl.
   apply reduces_to_if_step.
   csunf; simpl.
-  dcwf h; simpl; boolvar; try omega.
+  dcwf h; simpl; boolvar; try lia.
   rewrite Znat.Nat2Z.id.
   rewrite get_cterm_cnterm2cterm_is_ntseqc2seq; auto.
 Qed.

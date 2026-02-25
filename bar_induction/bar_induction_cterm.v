@@ -157,7 +157,7 @@ Proof.
   introv e.
   apply equality_in_natk in e; exrepnd; spcast.
   apply computes_to_valc_isvalue_eq in e3; eauto 3 with slow.
-  allrw @mkc_nat_eq; ginv; omega.
+  allrw @mkc_nat_eq; ginv; lia.
 Qed.
 
 Lemma is_kseq_nout_0 {o} : forall lib (t : @CTerm o), is_kseq_nout lib t 0.
@@ -239,7 +239,7 @@ Proof.
       boolvar; tcsp.
 
   - pose proof (equality_natk2nout_implies lib m s1 s2 n) as h.
-    repeat (autodimp h hyp); try omega;[].
+    repeat (autodimp h hyp); try lia;[].
     exrepnd; spcast.
     exists u0.
     dands; spcast; auto.
@@ -334,7 +334,7 @@ Proof.
   allrw @mkcv_zero_substc.
 
   eapply cequivc_trans;
-    [allrw @mkc_zero_eq; apply cequivc_inteq_less_swap1; try omega|].
+    [allrw @mkc_zero_eq; apply cequivc_inteq_less_swap1; try lia|].
   allrw <- @mkc_zero_eq.
 
   apply implies_cequivc_mkc_less1.
@@ -377,7 +377,7 @@ Proof.
     ].
 
   eapply cequivc_trans;
-    [apply cequivc_inteq_less_swap1; try omega|].
+    [apply cequivc_inteq_less_swap1; try lia|].
 
   eapply cequivc_trans;
     [apply cequivc_mkc_less;
@@ -401,7 +401,7 @@ Proof.
   eapply cequivc_trans;
     [|apply cequivc_sym;apply cequivc_mkc_less_nat].
 
-  boolvar; subst; tcsp; try omega.
+  boolvar; subst; tcsp; try lia.
 Qed.
 
 Lemma nout_kseq_at_is_update {o} :
@@ -514,7 +514,7 @@ Lemma nout_alpha_prop1 {o} :
 Proof.
   introv lemn.
   assert {k : nat & n = k + m} as e.
-  { exists (n - m); omega. }
+  { exists (n - m); lia. }
   exrepnd; subst.
   clear lemn.
   induction k; introv; allsimpl; apply implies_equality_natk2nout2; introv ltm0.
@@ -523,7 +523,7 @@ Proof.
     unfold nout_kseq_NA in am; exrepnd; allsimpl.
 
     dup am0 as i.
-    apply (is_kseq_nout_implies lib m0) in i; try omega; exrepnd.
+    apply (is_kseq_nout_implies lib m0) in i; try lia; exrepnd.
     exists u0; dands; auto.
 
   - remember (nout_alpha lib P X c v q h f ind (k + m)) as am.
@@ -541,7 +541,7 @@ Proof.
     allrw @mkc_var_substc.
     allrw @csubst_mk_cv.
     eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-    boolvar; tcsp; GC; try omega.
+    boolvar; tcsp; GC; try lia.
 Qed.
 
 Lemma eq_kseq_nout_seq2kseq_0 {o} :
@@ -550,7 +550,7 @@ Lemma eq_kseq_nout_seq2kseq_0 {o} :
 Proof.
   introv.
   apply implies_equality_natk2nout.
-  introv ltm; omega.
+  introv ltm; lia.
 Qed.
 
 Lemma seq2kseq_prop1_nout {o} :
@@ -576,9 +576,9 @@ Proof.
     allrw @mkcv_zero_substc.
     allrw @mkc_zero_eq.
     eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-    boolvar; try omega.
+    boolvar; try lia.
     eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-    boolvar; try omega; auto.
+    boolvar; try lia; auto.
 
   - unfold seq2kseq.
     eapply cequivc_trans;[apply cequivc_beta|].
@@ -591,9 +591,9 @@ Proof.
     allrw @mkcv_zero_substc.
     allrw @mkc_zero_eq.
     eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-    boolvar; try omega.
+    boolvar; try lia.
     eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-    boolvar; try omega; auto.
+    boolvar; try lia; auto.
 Qed.
 
 Lemma implies_is_kseq_nout_seq2kseq {o} :
@@ -802,8 +802,8 @@ Proof.
       simpl; auto.
 
     - pose proof (nout_alpha_prop1 lib P X (seq2kseq c 0 v) v nc ni f ind n (S m)) as q.
-      autodimp q hyp; try omega.
-      apply (equality_natk2nout_implies lib m) in q; try omega.
+      autodimp q hyp; try lia.
+      apply (equality_natk2nout_implies lib m) in q; try lia.
       apply cequiv_stable; exrepnd; spcast.
 
       apply cequivc_sym in q1.
@@ -823,7 +823,7 @@ Proof.
       allrw @mkc_var_substc.
       allrw @csubst_mk_cv.
       eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-      boolvar; auto; try omega.
+      boolvar; auto; try lia.
   }
 
   pose proof (bar (ntseqc2ntseq s)) as b.
@@ -870,7 +870,7 @@ Proof.
     allrw @mkc_var_substc.
     allrw @csubst_mk_cv.
     eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-    boolvar; tcsp; GC; try omega.
+    boolvar; tcsp; GC; try lia.
   }
 
   apply (seq2kseq_prop2_nout _ v) in ee1.
@@ -932,7 +932,7 @@ Proof.
 
         eapply reduces_to_if_split2;
           [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
-            boolvar; try omega; reflexivity
+            boolvar; try lia; reflexivity
            |].
         auto.
 
@@ -950,7 +950,7 @@ Proof.
       eapply reduces_to_eq_val_like in comp2; try (exact comp5); eauto 3 with slow.
       ginv.
 
-      repndors; repnd; try omega; GC.
+      repndors; repnd; try lia; GC.
 
       exists tl_subterms.
       dands.
@@ -966,7 +966,7 @@ Proof.
 
         eapply reduces_to_if_split2;
           [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
-            boolvar; try omega; reflexivity
+            boolvar; try lia; reflexivity
            |].
         auto.
 
@@ -992,7 +992,7 @@ Proof.
 
         eapply reduces_to_if_split2;
           [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
-            boolvar; try omega; reflexivity
+            boolvar; try lia; reflexivity
            |].
         auto.
 
@@ -1025,7 +1025,7 @@ Proof.
 
           eapply reduces_to_if_split2;
             [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
-              boolvar; try omega; reflexivity
+              boolvar; try lia; reflexivity
              |].
           auto.
         }
@@ -1044,7 +1044,7 @@ Proof.
 
           eapply reduces_to_if_split2;
             [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
-              boolvar; try omega; reflexivity
+              boolvar; try lia; reflexivity
              |].
           auto.
         }
@@ -1130,13 +1130,13 @@ Proof.
 
     + eapply reduces_to_if_split2;
       [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
-        boolvar; try omega; reflexivity
+        boolvar; try lia; reflexivity
        |].
       allunfold @computes_to_value; tcsp.
 
     + eapply reduces_to_if_split2;
       [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
-        boolvar; try omega; reflexivity
+        boolvar; try lia; reflexivity
        |].
 
       applydup @computes_to_value_mk_less in comp0; exrepnd; eauto 2 with slow;
@@ -1146,7 +1146,7 @@ Proof.
       eapply reduces_to_eq_val_like in comp2; try (exact comp6); eauto 3 with slow.
       ginv.
 
-      repndors; repnd; try omega; GC.
+      repndors; repnd; try lia; GC.
       allunfold @computes_to_value; tcsp.
 Qed.
 
@@ -1190,7 +1190,7 @@ Proof.
 
       eapply reduces_to_if_split2;
         [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
-          boolvar; try omega; reflexivity
+          boolvar; try lia; reflexivity
          |].
       auto.
 
@@ -1205,7 +1205,7 @@ Proof.
 
       eapply reduces_to_if_split2;
         [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
-          boolvar; try omega; reflexivity
+          boolvar; try lia; reflexivity
          |].
 
       eapply reduces_to_trans;
@@ -1217,7 +1217,7 @@ Proof.
 
       eapply reduces_to_if_split2;
         [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
-          boolvar; try omega; reflexivity
+          boolvar; try lia; reflexivity
          |].
       auto.
 
@@ -1242,7 +1242,7 @@ Proof.
 
         eapply reduces_to_if_split2;
           [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
-            boolvar; try omega; reflexivity
+            boolvar; try lia; reflexivity
            |].
         auto.
 
@@ -1267,7 +1267,7 @@ Proof.
 
         eapply reduces_to_if_split2;
           [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
-            boolvar; try omega; reflexivity
+            boolvar; try lia; reflexivity
            |].
 
         eapply reduces_to_trans;
@@ -1279,7 +1279,7 @@ Proof.
 
         eapply reduces_to_if_split2;
           [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
-            boolvar; try omega; reflexivity
+            boolvar; try lia; reflexivity
            |].
         auto.
 
@@ -1352,13 +1352,13 @@ Proof.
 
     + eapply reduces_to_if_split2;
       [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
-        boolvar; try omega; reflexivity
+        boolvar; try lia; reflexivity
        |].
       allunfold @computes_to_value; tcsp.
 
     + eapply reduces_to_if_split2;
       [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
-        boolvar; try omega; reflexivity
+        boolvar; try lia; reflexivity
        |].
 
       eapply reduces_to_trans;
@@ -1370,7 +1370,7 @@ Proof.
 
       eapply reduces_to_if_split2;
         [ csunf; simpl; dcwf h; simpl; unfold compute_step_comp; simpl;
-          boolvar; try omega; reflexivity
+          boolvar; try lia; reflexivity
          |].
       allunfold @computes_to_value; tcsp.
 Qed.
@@ -1701,8 +1701,8 @@ Proof.
       simpl; auto.
 
     - pose proof (nout_alpha_prop1 lib P X (cbv_emseqc v) v nc ni f ind n (S m)) as q.
-      autodimp q hyp; try omega.
-      apply (equality_natk2nout_implies lib m) in q; try omega.
+      autodimp q hyp; try lia.
+      apply (equality_natk2nout_implies lib m) in q; try lia.
       apply cequiv_stable; exrepnd; spcast.
 
       apply cequivc_sym in q1.
@@ -1722,7 +1722,7 @@ Proof.
       allrw @mkc_var_substc.
       allrw @csubst_mk_cv.
       eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-      boolvar; auto; try omega.
+      boolvar; auto; try lia.
   }
 
   pose proof (bar (ntseqc2ntseq s)) as b.
@@ -1772,7 +1772,7 @@ Proof.
     allrw @mkc_var_substc.
     allrw @csubst_mk_cv.
     eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-    boolvar; tcsp; GC; try omega.
+    boolvar; tcsp; GC; try lia.
   }
 
   apply (seq2kseq_prop2_nout _ v) in ee1.
@@ -1838,7 +1838,7 @@ Proof.
       boolvar; tcsp.
 
   - pose proof (equality_natk2nout_implies lib m s1 s2 n) as h.
-    repeat (autodimp h hyp); try omega;[].
+    repeat (autodimp h hyp); try lia;[].
     exrepnd; spcast.
     exists u0.
     dands; spcast; auto.

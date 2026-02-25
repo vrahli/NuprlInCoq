@@ -399,7 +399,7 @@ Proof.
     { csunf; simpl; auto. }
     apply reduces_to_if_step.
     csunf; simpl; dcwf h; simpl.
-    boolvar; try omega.
+    boolvar; try lia.
     allrw @Znat.Nat2Z.id; auto.
   }
   apply nat_in_nat.

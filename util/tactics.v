@@ -29,7 +29,7 @@ Export List.ListNotations.
 Require Export Coq.Program.Tactics.
 (*Require Import SfLib.*)
 Require Import String. Open Scope string_scope.
-Require Import Omega.
+Require Import Lia.
 Require Export eq_rel.
 
 
@@ -184,7 +184,7 @@ Ltac sp_step :=
     | [ H : _ :: _ :: _ :: _ = [_;_] |- _ ] => inversion H (* 3+/2 *)
     | [ H : 0 = S _ |- _ ] => inversion H
     | [ H : S _ = 0 |- _ ] => inversion H
-    | [ H : ?n < 0 |- _ ] => inversion H || omega
+    | [ H : ?n < 0 |- _ ] => inversion H || lia
     | [ H : ?x <> ?x |- _ ] => provefalse; apply H; symmetry
     | [ H : not (?x = ?x) |- _ ] => provefalse; apply H; symmetry
     | [ H : notT (?x = ?x) |- _ ] => provefalse; apply H; symmetry
@@ -779,6 +779,11 @@ Ltac hide_hyp H :=
 Ltac show_hyps :=
   repeat match goal with
     H: @ltac_something _ _ |- _ => show_hyp H end.
+
+Lemma lt_S_n : forall n m, S n < S m -> n < m.
+Proof.
+  lia.
+Qed.
 
 Ltac dlt Hyp :=
 match type of Hyp with

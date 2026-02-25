@@ -538,17 +538,17 @@ Lemma lblift_cons {p} :
     <=> (blift R bt1 bt2 # lblift R bts1 bts2).
 Proof.
   unfold lblift; simpl; sp; split; sp.
-  assert (0 < S (length bts1)) by omega.
+  assert (0 < S (length bts1)) by lia.
   apply X in H.
   allrewrite @selectbt_cons; allsimpl; auto.
-  assert (S n < S (length bts1)) by omega.
+  assert (S n < S (length bts1)) by lia.
   apply X in H0.
   allrewrite @selectbt_cons; allsimpl; auto.
   allrewrite minus0; auto.
   repeat (rewrite selectbt_cons).
   destruct n; allsimpl; auto.
   allrewrite minus0.
-  assert (n < length bts1) by omega.
+  assert (n < length bts1) by lia.
   apply X in H0; auto.
 Qed.
 
@@ -560,9 +560,9 @@ Lemma lblift_approx_cequiv {p} :
 Proof.
   unfoldlifts.
   induction bterms1; simpl; sp.
-  destruct bterms2; allunfold @lblift; allsimpl; sp; omega.
+  destruct bterms2; allunfold @lblift; allsimpl; sp; lia.
   destruct bterms2.
-  allunfold @lblift; allsimpl; sp; omega.
+  allunfold @lblift; allsimpl; sp; lia.
   generalize (lblift_cons (olift (approx lib)) a b bterms1 bterms2).
   generalize (lblift_cons (olift (approx lib)) b a bterms2 bterms1).
   generalize (lblift_cons (olift (cequiv lib)) a b bterms1 bterms2).
@@ -2282,11 +2282,11 @@ Lemma lblift_cequiv_approx {p} :
 Proof.
   unfoldlifts;
   induction bterms1; simpl; introv Hrc;
-  destruct bterms2; allunfold @lblift; allsimpl; sp; try omega;
-  dimp(Hrc n); auto; try omega; apply blift_cequiv_approx in hyp;
+  destruct bterms2; allunfold @lblift; allsimpl; sp; try lia;
+  dimp(Hrc n); auto; try lia; apply blift_cequiv_approx in hyp;
   repnd;
   destruct n; allsimpl; allunfold @selectbt; simpl;
-   eauto; try omega.
+   eauto; try lia.
 Qed.
 
 (* end hide *)
@@ -2948,7 +2948,7 @@ Ltac prove_cequiv :=
        intros n Hlt;
        ( let rnum := (get_lt_rhs  Hlt)  in
          fail_if_not_number rnum; (*fail if not a normal form*)
-         repeat (destruct n; try omega); unfold selectbt; simpl; unfold nobnd
+         repeat (destruct n; try lia); unfold selectbt; simpl; unfold nobnd
       ))
     | [ |- cequiv_bts _ _ _ ] =>
       (unfold cequiv_bts, lblift; simpl; dands;[spc|];
@@ -2957,7 +2957,7 @@ Ltac prove_cequiv :=
        intros n Hlt;
        ( let rnum := (get_lt_rhs  Hlt)  in
          fail_if_not_number rnum; (*fail if not a normal form*)
-         repeat (destruct n; try omega); unfold selectbt; simpl; unfold nobnd
+         repeat (destruct n; try lia); unfold selectbt; simpl; unfold nobnd
       ))
     | [ |- blift (olift (cequiv _)) (bterm [] ?t1) (bterm [] ?t2)] => apply blift_nobnd_congr
     | [ |- blift (cequiv_open _) (bterm [] ?t1) (bterm [] ?t2)] => apply blift_nobnd_congr

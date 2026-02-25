@@ -1389,7 +1389,7 @@ Proof.
               subst; simpl in *.
               repndors; exrepnd; ginv.
               csunf; simpl.
-              unfold compute_step_eapply; simpl; boolvar; try omega.
+              unfold compute_step_eapply; simpl; boolvar; try lia.
               allrw @Znat.Nat2Z.id; auto.
 
             * csunf; simpl.
@@ -1459,7 +1459,7 @@ Proof.
                 + unfold mk_nseq in *; ginv; simpl.
                   fold_terms; unfold mk_eapply.
                   csunf; simpl.
-                  unfold compute_step_eapply; simpl; boolvar; try omega.
+                  unfold compute_step_eapply; simpl; boolvar; try lia.
                   allrw @Znat.Nat2Z.id; auto.
 
               - fold_terms; unfold mk_eapply.
@@ -1532,7 +1532,7 @@ Proof.
               csunf comp; simpl in comp.
               apply compute_step_tuni_success in comp; exrepnd; subst; simpl; tcsp.
               csunf; simpl; tcsp.
-              unfold compute_step_tuni; simpl; boolvar; try omega.
+              unfold compute_step_tuni; simpl; boolvar; try lia.
               allrw @Znat.Nat2Z.id; auto.
             }
 
@@ -2178,7 +2178,7 @@ Proof.
     introv h.
     applydup comp0 in h; clear comp0.
 
-    rewrite selectbt_map; try omega.
+    rewrite selectbt_map; try lia.
     rewrite selectbt_map in h0; auto.
 
     remember (tl_subterms {[n]}) as u.

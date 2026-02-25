@@ -347,7 +347,7 @@ Proof.
     eapply in_sodom_if in f0; eauto;[].
     rewrite f2 in f0.
     repeat (autodimp h hyp);
-      [ rw @length_sodom; auto; omega
+      [ rw @length_sodom; auto; lia
       | rw @sovars2vars_sodom_is_so_dom; auto
       |].
     rw <- e in h; sp.
@@ -384,8 +384,8 @@ Proof.
   repeat (rewrite (map_nth2 _ _ d); auto).
   apply imp.
   apply in_combine_sel_iff.
-  exists n; dands; auto; try omega;
-  rw <- @nth_select1; auto; try omega.
+  exists n; dands; auto; try lia;
+  rw <- @nth_select1; auto; try lia.
 Qed.
 
 (* !! MOVE to sovar *)
@@ -961,7 +961,7 @@ Proof.
     + pose proof (sosub_find_some_eq_sovar2var
                     sub1 sub2 (v1,length ts1) (n,length l)
                     (sosk l0 n0) (sosk l1 n1) vs) as h; allsimpl.
-      repeat (autodimp h hyp); try omega.
+      repeat (autodimp h hyp); try lia.
 
       apply alphaeq_sk_iff_alphaeq_bterm2 in h; simpl in h.
 
@@ -1109,7 +1109,7 @@ Proof.
     apply (so_alphaeq_vs_implies_less _ _ _ []) in soaeq; auto.
 
     apply alphaeqbt_eq.
-    apply (aeqbt _ vs0); auto; try omega.
+    apply (aeqbt _ vs0); auto; try lia.
 
     { allrw disjoint_app_r; sp. }
 
@@ -1140,7 +1140,7 @@ Proof.
 
     repeat (rw <- @sosub_filter_cswap_range_sosub; auto).
     repeat (rw @sosub_aux_sosub_filter; auto);
-      try (complete (apply disjoint_fovars_so_swap; eauto with slow; try omega)).
+      try (complete (apply disjoint_fovars_so_swap; eauto with slow; try lia)).
 
     pose proof (ind1
                   t1
@@ -1160,7 +1160,7 @@ Proof.
     repeat (rw @cswap_range_sosub_trivial in h; eauto with slow).
     repeat (rw @cswap_range_sosub_trivial; eauto with slow).
 
-    repeat (autodimp h hyp); try omega.
+    repeat (autodimp h hyp); try lia.
 
     { allrw disjoint_app_r; dands; eauto 3 with slow.
       - apply disjoint_all_fo_vars_so_swap; eauto 3 with slow.
@@ -1239,7 +1239,7 @@ Proof.
         repeat (autodimp h hyp).
         rw e in h; sp.
       * rw soswapvar_not_in2 in e; sp.
-    + eapply IHvs1; eauto; try omega.
+    + eapply IHvs1; eauto; try lia.
 Qed.
 
 Lemma so_alphaeq_soswap_more {o} :
@@ -1284,7 +1284,7 @@ Proof.
       rw in_map_iff in i; exrepnd; allsimpl; cpx.
       applydup in_combine in i1; repnd.
       disj_flat_map.
-      apply ind1 with (vs := vs); auto; try omega.
+      apply ind1 with (vs := vs); auto; try lia.
       apply imp.
       rw <- @map_combine.
       apply in_map_iff.
@@ -1476,7 +1476,7 @@ Proof.
     allrw disjoint_app_r; repnd.
     apply (so_alphaeq_vs_implies_less _ _ _ []) in aeq; auto.
 
-    apply (soaeqbt _ vs); allrw length_soswapbvars; allsimpl; auto; try omega.
+    apply (soaeqbt _ vs); allrw length_soswapbvars; allsimpl; auto; try lia.
 
     { allrw disjoint_app_r; dands; eauto with slow. }
 
@@ -1564,7 +1564,7 @@ Proof.
 
   apply (alpha_eq_sosub_aux_if_soswap _ _ _ _ lvn);
     eauto;
-    allrw @length_sodom; auto; try omega;
+    allrw @length_sodom; auto; try lia;
     allrw @sovars2vars_sodom_is_so_dom.
 
   { allrw disjoint_app_r.
@@ -1717,7 +1717,7 @@ Proof.
           repndors; exrepnd; ginv.
           csunf; simpl.
           dcwf h; simpl.
-          boolvar; try omega.
+          boolvar; try lia.
           rw Znat.Nat2Z.id; eexists; dands; eauto.
 
         + fold_terms; unfold mk_eapply.
@@ -1767,7 +1767,7 @@ Proof.
             rw @compute_step_eapply_lam_iscan; auto.
             eexists; dands; eauto. }
           { allunfold @mk_nseq; ginv; fold_terms.
-            csunf; simpl; dcwf h; simpl; boolvar; try omega.
+            csunf; simpl; dcwf h; simpl; boolvar; try lia.
             rw Znat.Nat2Z.id.
             eexists; dands; eauto. }
         }
@@ -2679,7 +2679,7 @@ Proof.
                )) as fv; exrepnd.
     allrw disjoint_app_r; repnd.
 
-    apply (soaeqbt _ lvn); allsimpl; allrw length_soswapbvars; auto; try omega.
+    apply (soaeqbt _ lvn); allsimpl; allrw length_soswapbvars; auto; try lia.
 
     + allrw disjoint_app_r; dands; auto.
 
@@ -2698,7 +2698,7 @@ Proof.
       apply (so_alphaeq_add_so_swap2
                (soswapbvars (mk_soswapping vs1 vs2) l1)
                lvn) in h;
-        auto; allsimpl; allrw length_soswapbvars; auto; try omega;
+        auto; allsimpl; allrw length_soswapbvars; auto; try lia;
         try (complete (allrw disjoint_app_r; dands; auto)).
 
       eapply so_alphaeq_trans;[|exact h]; clear h.

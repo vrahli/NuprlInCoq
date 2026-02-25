@@ -82,7 +82,7 @@ Proof.
   { apply howetheorem1; try (apply isprogram_fresh); eauto 3 with slow.
     apply (apso _ _ _ _ [bterm [v] y]); simpl; auto.
     - unfold lblift_sub; simpl; dands; auto.
-      introv k; destruct n; try omega; clear k.
+      introv k; destruct n; try lia; clear k.
       unfold selectbt; simpl.
       unfold blift_sub.
       exists [v] t y; dands; eauto 3 with slow.
@@ -125,7 +125,7 @@ Proof.
   { apply howetheorem1; try (apply isprogram_fresh); eauto 3 with slow.
     apply (apso _ _ _ _ [bterm [v] t]); simpl; auto.
     - unfold lblift_sub; simpl; dands; auto.
-      introv k; destruct n; try omega; clear k.
+      introv k; destruct n; try lia; clear k.
       unfold selectbt; simpl.
       unfold blift_sub.
       exists [v] y t; dands; eauto 3 with slow.

@@ -155,7 +155,7 @@ Proof.
   sp.
   assert (nuprli lib (i2 + i1) T T' eq) as c1 by (apply typable_in_higher_univ; auto).
   assert (nuprli lib (i1 + i2) T T' eq') as c2 by (apply typable_in_higher_univ; auto).
-  assert (i1 + i2 = i2 + i1) as e by omega.
+  assert (i1 + i2 = i2 + i1) as e by lia.
   rww e.
   generalize (@nuprli_type_system o lib (i2 + i1)); intro nts.
   destruct nts; sp.
@@ -172,7 +172,7 @@ Proof.
   sp.
   assert (nuprli lib (i1 + i2) T1 T2 eq) as c1 by (apply typable_in_higher_univ_r; auto).
   assert (nuprli lib (i1 + i2) T2 T3 eq) as c2 by (apply typable_in_higher_univ; auto).
-  exists (i1 + i2); sp; try omega.
+  exists (i1 + i2); sp; try lia.
   generalize (@nuprli_type_system o lib (i1 + i2)); intro nts.
   destruct nts; sp.
   apply p2 with (T2 := T2); sp.
@@ -187,7 +187,7 @@ Proof.
   sp.
   assert (univi lib (i2 + i1) T T' eq) as c1 by (apply uni_in_higher_univ; auto).
   assert (univi lib (i1 + i2) T T' eq') as c2 by (apply uni_in_higher_univ; auto).
-  assert (i1 + i2 = i2 + i1) as e by omega.
+  assert (i1 + i2 = i2 + i1) as e by lia.
   rww e.
   generalize (@univi_type_system o lib (i2 + i1)); intro uts.
   destruct uts; sp.

@@ -326,15 +326,15 @@ Program Fixpoint compute_step_pf {o}
   end.
 
 Obligation 1.
-{ simpl; rw @simple_size_subst; auto; omega. }
+{ simpl; rw @simple_size_subst; auto; lia. }
 Qed.
 
 Obligation 2.
-{ simpl; omega. }
+{ simpl; lia. }
 Qed.
 
 Obligation 4.
-{ simpl; omega. }
+{ simpl; lia. }
 Qed.
 
 Obligation 6.
@@ -453,28 +453,28 @@ Lemma compute_step'_size1 {o} :
     size (subst u v (mk_utoken a)) < size (oterm (NCan ncan) (bterm (v::vs) u :: bs)).
 Proof.
   introv.
-  rw @simple_size_subst; simpl; try omega.
+  rw @simple_size_subst; simpl; try lia.
 Qed.
 
 Lemma compute_step'_size2 {o} :
   forall ncr arg1c (arg1bts : list (@BTerm o)) l x bs,
     size x < size (oterm (NCan ncr) (bterm [] (oterm (Can arg1c) arg1bts) :: bterm l x :: bs)).
 Proof.
-  introv; simpl; omega.
+  introv; simpl; lia.
 Qed.
 
 Lemma compute_step'_size3 {o} :
   forall ncr x (bs : list (@BTerm o)),
     size x < size (oterm (NCan ncr) (bterm [] x :: bs)).
 Proof.
-  introv; simpl; omega.
+  introv; simpl; lia.
 Qed.
 
 Lemma compute_step'_size4 {o} :
   forall ncr f l x (bs : list (@BTerm o)),
     size x < size (oterm (NCan ncr) (bterm [] (sterm f) :: bterm l x :: bs)).
 Proof.
-  introv; simpl; omega.
+  introv; simpl; lia.
 Qed.
 
 Definition compute_step {o}
@@ -768,7 +768,7 @@ Proof.
             end
             = S (addl (map size_bterm l))) as e.
     { remember (size_bs bs) as m; clear Heqm.
-      destruct m; simpl; try omega. }
+      destruct m; simpl; try lia. }
     destruct o0; try reflexivity.
     + simpl.
       unfold compute_step; simpl; auto.
@@ -878,11 +878,11 @@ Program Fixpoint div2 (n : nat) {measure n} :
    end.
 Next Obligation.
   destruct (div2 p (div2_obligation_1 (S (S p)) div2 p eq_refl)).
-  repndors; subst; allsimpl; try omega.
+  repndors; subst; allsimpl; try lia.
 Qed.
 Next Obligation.
   clear div2.
-  induction n; try omega.
+  induction n; try lia.
   autodimp IHn hyp; tcsp.
   introv k; subst.
   pose proof (H (S p)); sp.

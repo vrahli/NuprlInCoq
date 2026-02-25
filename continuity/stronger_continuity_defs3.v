@@ -1054,7 +1054,7 @@ Proof.
   try (apply isprogram_lam); auto.
   unfold cequiv_bts, lblift; simpl; dands; auto.
   introv len.
-  destruct n; tcsp; try omega; clear len.
+  destruct n; tcsp; try lia; clear len.
   unfold selectbt; simpl.
   unfold blift.
   exists [x] x1 x0; dands; eauto 3 with slow.
@@ -1087,7 +1087,7 @@ Proof.
   try (complete (clear ceq2; allrw @isprog_vars_eq; sp)).
   unfold cequiv_bts, lblift; simpl; dands; auto.
   introv len.
-  repeat (destruct n; tcsp; try omega); clear len; unfold selectbt; simpl.
+  repeat (destruct n; tcsp; try lia); clear len; unfold selectbt; simpl.
   { unfold blift; exists ([] : list NVar) x1 x0; dands; auto.
     apply cequiv_implies_cequiv_open; auto. }
   unfold blift.
@@ -1166,13 +1166,13 @@ Proof.
   - rw @computes_to_val_like_in_max_k_steps_S in comp; exrepnd.
     destruct t as [vv|f|op bs]; ginv.
 
-    { exists (sterm f) 0; dands; try omega.
+    { exists (sterm f) 0; dands; try lia.
       rw @computes_to_val_like_in_max_k_steps_0; dands; eauto 3 with slow. }
 
     dopid op as [can|ncan|exc|abs] Case; try (complete (inversion comp1)).
 
     + Case "Can".
-      exists (oterm (Can can) bs) 0; dands; try omega.
+      exists (oterm (Can can) bs) 0; dands; try lia.
       rw @computes_to_val_like_in_max_k_steps_0; dands; eauto 3 with slow.
 
     + Case "NCan".
@@ -1180,12 +1180,12 @@ Proof.
       remember (compute_step lib (oterm (NCan ncan) bs)) as xx; destruct xx; ginv.
       symmetry in Heqxx.
       apply IHk in comp0; clear IHk; exrepnd; subst.
-      exists x (S m); dands; auto; try omega.
+      exists x (S m); dands; auto; try lia.
       rw @computes_to_val_like_in_max_k_steps_S.
       exists n; auto.
 
     + Case "Exc".
-      exists (oterm Exc bs) 0; dands; try omega.
+      exists (oterm Exc bs) 0; dands; try lia.
       rw @computes_to_val_like_in_max_k_steps_0; dands; eauto 3 with slow.
 
     + Case "Abs".
@@ -1193,7 +1193,7 @@ Proof.
       remember (compute_step_lib lib abs bs) as xx; destruct xx; ginv.
       symmetry in Heqxx.
       apply IHk in comp0; clear IHk; exrepnd; subst.
-      exists x (S m); dands; auto; try omega.
+      exists x (S m); dands; auto; try lia.
       rw @computes_to_val_like_in_max_k_steps_S.
       exists n; auto.
 Qed.
@@ -1270,13 +1270,13 @@ Proof.
   - rw @computes_to_val_like_in_max_k_steps_S in comp; exrepnd.
     destruct t as [vv|f|op bs]; ginv.
 
-    { exists (sterm f) 0; dands; try omega.
+    { exists (sterm f) 0; dands; try lia.
       rw @computes_to_val_like_in_max_k_steps_0; dands; eauto 3 with slow. }
 
     dopid op as [can|ncan|exc|abs] Case; try (complete (inversion comp1)).
 
     + Case "Can".
-      exists (oterm (Can can) bs) 0; dands; try omega.
+      exists (oterm (Can can) bs) 0; dands; try lia.
       rw @computes_to_val_like_in_max_k_steps_0; dands; eauto 3 with slow.
 
     + Case "NCan".
@@ -1284,12 +1284,12 @@ Proof.
       remember (compute_step lib (oterm (NCan ncan) bs)) as xx; destruct xx; ginv.
       symmetry in Heqxx.
       apply IHk in comp0; clear IHk; exrepnd; subst.
-      exists x (S m); dands; auto; try omega.
+      exists x (S m); dands; auto; try lia.
       rw @computes_to_val_like_in_max_k_steps_S.
       exists n; auto.
 
     + Case "Exc".
-      exists (oterm Exc bs) 0; dands; try omega.
+      exists (oterm Exc bs) 0; dands; try lia.
       rw @computes_to_val_like_in_max_k_steps_0; dands; eauto 3 with slow.
 
     + Case "Abs".
@@ -1297,7 +1297,7 @@ Proof.
       remember (compute_step_lib lib abs bs) as xx; destruct xx; ginv.
       symmetry in Heqxx.
       apply IHk in comp0; clear IHk; exrepnd; subst.
-      exists x (S m); dands; auto; try omega.
+      exists x (S m); dands; auto; try lia.
       rw @computes_to_val_like_in_max_k_steps_S.
       exists n; auto.
 Qed.

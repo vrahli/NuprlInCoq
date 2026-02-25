@@ -693,7 +693,7 @@ Proof.
 
   boolvar.
 
-  - assert (k0 < k) as ltk by omega.
+  - assert (k0 < k) as ltk by lia.
     unfold natk2nat in equ.
     apply equality_in_fun in equ; repnd.
     clear equ0 equ1.

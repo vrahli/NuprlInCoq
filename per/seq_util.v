@@ -217,7 +217,7 @@ Proof.
   apply computes_to_valc_isvalue_eq in e3; eauto 3 with slow.
   rw @mkc_nat_eq in e3; ginv.
 
-  assert (m < n) as ltm by omega.
+  assert (m < n) as ltm by lia.
   clear e1.
 
   apply equality_in_tnat.
@@ -254,7 +254,7 @@ Proof.
   autodimp h hyp.
 
   { apply equality_in_natk.
-    exists m (Z.of_nat n); dands; spcast; try omega;
+    exists m (Z.of_nat n); dands; spcast; try lia;
     try (apply computes_to_valc_refl; eauto 2 with slow). }
 
   apply equality_in_tnat in h.

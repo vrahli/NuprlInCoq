@@ -163,7 +163,7 @@ Proof.
     rewrite mkc_zero_eq.
     eapply tequality_respects_cequivc_left;[apply cequivc_sym;apply cequivc_mkc_inteq_nat|].
     eapply tequality_respects_cequivc_right;[apply cequivc_sym;apply cequivc_mkc_inteq_nat|].
-    boolvar; try omega; GC;[]; eauto 3 with slow.
+    boolvar; try lia; GC;[]; eauto 3 with slow.
 
   - eapply cequivc_preserving_equality;[|apply cequivc_sym;apply cequivc_beta2].
     repeat lsubstc_vars_as_mkcv.
@@ -176,7 +176,7 @@ Proof.
 
     rewrite mkc_zero_eq.
     eapply cequivc_preserving_equality;[|apply cequivc_sym;apply cequivc_mkc_inteq_nat].
-    boolvar; try omega; GC;[].
+    boolvar; try lia; GC;[].
 
     apply equality_in_true;
     dands; spcast; auto;
@@ -1752,7 +1752,7 @@ Proof.
   introv.
   rw @mkc_one_eq.
   eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-  boolvar; auto; try omega.
+  boolvar; auto; try lia.
 Qed.
 
 Lemma cequivc_mkc_inteq_zero_zero {o} :
@@ -1762,7 +1762,7 @@ Proof.
   introv.
   rw @mkc_zero_eq.
   eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-  boolvar; auto; try omega.
+  boolvar; auto; try lia.
 Qed.
 
 Lemma cequivc_mkc_inteq_one_zero {o} :
@@ -1773,7 +1773,7 @@ Proof.
   rw @mkc_one_eq.
   rw @mkc_zero_eq.
   eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-  boolvar; auto; try omega.
+  boolvar; auto; try lia.
 Qed.
 
 Lemma cequivc_mkc_inteq_zero_one {o} :
@@ -1784,7 +1784,7 @@ Proof.
   rw @mkc_one_eq.
   rw @mkc_zero_eq.
   eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-  boolvar; auto; try omega.
+  boolvar; auto; try lia.
 Qed.
 
 Lemma cequivc_mkc_inteq_two_zero {o} :
@@ -1795,7 +1795,7 @@ Proof.
   rw @mkc_two_eq.
   rw @mkc_zero_eq.
   eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-  boolvar; auto; try omega.
+  boolvar; auto; try lia.
 Qed.
 
 Lemma cequivc_mkc_inteq_zero_two {o} :
@@ -1806,7 +1806,7 @@ Proof.
   rw @mkc_two_eq.
   rw @mkc_zero_eq.
   eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-  boolvar; auto; try omega.
+  boolvar; auto; try lia.
 Qed.
 
 Lemma cequivc_mkc_inteq_two_one {o} :
@@ -1817,7 +1817,7 @@ Proof.
   rw @mkc_two_eq.
   rw @mkc_one_eq.
   eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-  boolvar; auto; try omega.
+  boolvar; auto; try lia.
 Qed.
 
 Lemma cequivc_mkc_inteq_one_two {o} :
@@ -1828,7 +1828,7 @@ Proof.
   rw @mkc_two_eq.
   rw @mkc_one_eq.
   eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-  boolvar; auto; try omega.
+  boolvar; auto; try lia.
 Qed.
 
 Lemma reduces_toc_mkc_inteq_one_one {o} :
@@ -2629,7 +2629,7 @@ Proof.
       assert (k1 > 1) as k1gt1.
       { destruct k1; allsimpl; tcsp.
         destruct k1; allsimpl; tcsp.
-        omega. }
+        lia. }
 
       apply tequality_in_mkc_apply2_mkc_nwf_pred_iff; auto.
 
@@ -2645,25 +2645,25 @@ Proof.
         apply eq_PKi_implies in xx.
         assert (1%Z = Z.of_nat 1) as yy by auto; rewrite yy in xx; clear yy.
         apply Znat.Nat2Z.inj in xx.
-        destruct k1; try omega.
+        destruct k1; try lia.
 
       + introv xx.
         apply eq_PKi_implies in xx.
         assert (1%Z = Z.of_nat 1) as yy by auto; rewrite yy in xx; clear yy.
         apply Znat.Nat2Z.inj in xx.
-        destruct k1; try omega.
+        destruct k1; try lia.
 
       + eapply computes_to_valc_reduces_toc_trans;[apply reduce_toc_beta|].
         autorewrite with slow.
         rewrite mkc_zero_eq.
-        eapply computes_to_valc_reduces_toc_trans;[apply reduces_toc_mkc_inteq_nat_diff|]; try omega.
+        eapply computes_to_valc_reduces_toc_trans;[apply reduces_toc_mkc_inteq_nat_diff|]; try lia.
         rewrite <- mkc_zero_eq.
         auto.
 
       + eapply computes_to_valc_reduces_toc_trans;[apply reduce_toc_beta|].
         autorewrite with slow.
         rewrite mkc_zero_eq.
-        eapply computes_to_valc_reduces_toc_trans;[apply reduces_toc_mkc_inteq_nat_diff|]; try omega.
+        eapply computes_to_valc_reduces_toc_trans;[apply reduces_toc_mkc_inteq_nat_diff|]; try lia.
         rewrite <- mkc_zero_eq.
         auto.
 
@@ -2675,9 +2675,9 @@ Proof.
         autorewrite with slow.
 
         rewrite mkc_zero_eq.
-        eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|]; boolvar; try omega.
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|]; boolvar; try lia.
         rewrite mkc_one_eq.
-        eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|]; boolvar; try omega.
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|]; boolvar; try lia.
 
         eapply cequivc_trans;
           [apply cequivc_mkc_inteq;
@@ -2692,7 +2692,7 @@ Proof.
             |apply cequivc_refl
             |apply cequivc_refl
             |apply cequivc_refl] |].
-        boolvar; try omega.
+        boolvar; try lia.
         rewrite <- mkc_zero_eq.
         eapply cequivc_trans;
           [apply cequivc_mkc_inteq;
@@ -2711,9 +2711,9 @@ Proof.
         autorewrite with slow.
 
         rewrite mkc_zero_eq.
-        eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|]; boolvar; try omega.
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|]; boolvar; try lia.
         rewrite mkc_one_eq.
-        eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|]; boolvar; try omega.
+        eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|]; boolvar; try lia.
 
         eapply cequivc_trans;
           [apply cequivc_mkc_inteq;
@@ -2728,7 +2728,7 @@ Proof.
             |apply cequivc_refl
             |apply cequivc_refl
             |apply cequivc_refl] |].
-        boolvar; try omega.
+        boolvar; try lia.
         rewrite <- mkc_zero_eq.
         eapply cequivc_trans;
           [apply cequivc_mkc_inteq;
@@ -2947,7 +2947,7 @@ Proof.
       assert (k0 > 1) as k0gt1.
       { destruct k0; allsimpl; tcsp.
         destruct k0; allsimpl; tcsp.
-        omega. }
+        lia. }
 
       pose proof (cequivc_lsubstc_mk_update_seq_sp2 lib f n m v w7 s1a mkc_zero k0 0 t0 t4 c38) as h1.
       rewrite <- mkc_zero_eq in h1.
@@ -2994,11 +2994,11 @@ Proof.
       rewrite mkc_zero_eq.
       eapply inhabited_type_cequivc;
         [apply cequivc_sym;apply cequivc_mkc_inteq_nat|].
-      boolvar; try omega;[].
+      boolvar; try lia;[].
       rewrite mkc_one_eq.
       eapply inhabited_type_cequivc;
         [apply cequivc_sym;apply cequivc_mkc_inteq_nat|].
-      boolvar; try omega;[].
+      boolvar; try lia;[].
       rewrite <- mkc_zero_eq.
 
       eapply inhabited_type_cequivc;
@@ -3012,7 +3012,7 @@ Proof.
          [apply cequivc_mkc_inteq_nat
          |apply cequivc_refl|apply cequivc_refl|apply cequivc_refl]
         |].
-      boolvar;try omega;[].
+      boolvar;try lia;[].
       rewrite <- mkc_zero_eq.
       eapply inhabited_type_cequivc;
         [apply cequivc_sym;apply cequivc_mkc_inteq;

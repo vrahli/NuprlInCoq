@@ -92,7 +92,7 @@ Lemma eq_upto_baire_diff_at :
 Proof.
   introv h.
   unfold baire_diff_at.
-  destruct (Nat.eq_dec p m); auto; omega.
+  destruct (Nat.eq_dec p m); auto; lia.
 Qed.
 Hint Resolve eq_upto_baire_diff_at : cont.
 
@@ -103,7 +103,7 @@ Proof.
   assert (a p = baire_diff_at a p p) as q.
   { rewrite <- h; auto. }
   unfold baire_diff_at in q.
-  destruct (Nat.eq_dec p p); auto; omega.
+  destruct (Nat.eq_dec p p); auto; lia.
 Qed.
 
 Lemma no_afcs :
@@ -168,7 +168,7 @@ Lemma initF_baire2cantor :
 Proof.
   intros a; simpl.
   unfold initF, baire2cantor; simpl.
-  destruct (Nat.eq_dec (a 0) (a 0)); auto; omega.
+  destruct (Nat.eq_dec (a 0) (a 0)); auto; lia.
 Qed.
 Hint Resolve initF_baire2cantor : cont.
 
@@ -184,9 +184,9 @@ Proof.
   remember (cantor2baire a x) as m.
   destruct (a (S x)).
 
-  - destruct (Nat.eq_dec m (S m)); auto; try omega.
+  - destruct (Nat.eq_dec m (S m)); auto; try lia.
 
-  - destruct (Nat.eq_dec m m); auto; try omega.
+  - destruct (Nat.eq_dec m m); auto; try lia.
 Qed.
 
 Lemma baire2cantor2baire :
@@ -202,8 +202,8 @@ Proof.
   rewrite IHx; clear IHx.
   unfold baire2cantor; simpl.
 
-  destruct (Nat.eq_dec (a x) (a (S x))); try omega.
-  pose proof (inc x) as h; destruct h; auto; try omega.
+  destruct (Nat.eq_dec (a x) (a (S x))); try lia.
+  pose proof (inc x) as h; destruct h; auto; try lia.
 Qed.
 
 (* A non increasing sequence: *)
@@ -220,7 +220,7 @@ Proof.
   introv h.
   apply equal_f with (x := 2) in h.
   simpl in h.
-  unfold non_inc_seq in h; simpl in h; omega.
+  unfold non_inc_seq in h; simpl in h; lia.
 Qed.
 
 Fixpoint least_greater_aux (b : baire) (n : nat) (x : nat) : option nat :=
@@ -261,14 +261,14 @@ Definition increasing_le :
 Proof.
   induction m; introv lenm inc.
 
-  - assert (n = 0) by omega; subst; auto.
+  - assert (n = 0) by lia; subst; auto.
 
   - destruct (le_lt_dec n m) as [d|d].
 
     + repeat (autodimp IHm hyp).
-      pose proof (inc m) as q; destruct q; omega.
+      pose proof (inc m) as q; destruct q; lia.
 
-    + assert (n = S m) by omega; subst; auto.
+    + assert (n = S m) by lia; subst; auto.
 Qed.
 
 Definition least_greater_aux_prop2 :
@@ -282,7 +282,7 @@ Proof.
   apply least_greater_aux_prop1 in e.
   destruct (le_lt_dec x k); auto.
   rewrite (equ k l) in e.
-  pose proof (increasing_le a k x) as q; repeat (autodimp q hyp); try omega.
+  pose proof (increasing_le a k x) as q; repeat (autodimp q hyp); try lia.
 Qed.
 
 Lemma implies_eq_upto_baire2cantor :
@@ -295,19 +295,19 @@ Proof.
 
   destruct m; simpl.
 
-  { destruct (Nat.eq_dec (a 0) (a 0)); try omega.
-    destruct (Nat.eq_dec (b 0) (b 0)); try omega.
+  { destruct (Nat.eq_dec (a 0) (a 0)); try lia.
+    destruct (Nat.eq_dec (b 0) (b 0)); try lia.
     auto. }
 
   destruct (Nat.eq_dec (a m) (a (S m))) as [d1|d1];
     destruct (Nat.eq_dec (b m) (b (S m))) as [d2|d2];
     auto.
 
-  - pose proof (h m) as h1; autodimp h1 hyp; try omega.
-    pose proof (h (S m)) as h2; autodimp h2 hyp; try omega.
+  - pose proof (h m) as h1; autodimp h1 hyp; try lia.
+    pose proof (h (S m)) as h2; autodimp h2 hyp; try lia.
 
-  - pose proof (h m) as h1; autodimp h1 hyp; try omega.
-    pose proof (h (S m)) as h2; autodimp h2 hyp; try omega.
+  - pose proof (h m) as h1; autodimp h1 hyp; try lia.
+    pose proof (h (S m)) as h2; autodimp h2 hyp; try lia.
 Qed.
 Hint Resolve implies_eq_upto_baire2cantor : cont.
 
@@ -321,8 +321,8 @@ Lemma increasing_baire_eq_from :
 Proof.
   introv inc; introv.
   unfold baire_eq_from.
-  destruct (lt_dec (S n0) n); destruct (lt_dec n0 n); auto; try omega.
-  assert (n = S n0) as xx by omega; subst; simpl in *; auto.
+  destruct (lt_dec (S n0) n); destruct (lt_dec n0 n); auto; try lia.
+  assert (n = S n0) as xx by lia; subst; simpl in *; auto.
 Qed.
 Hint Resolve increasing_baire_eq_from : cont.
 
@@ -340,14 +340,14 @@ Lemma eq_upto_baire_diff_from :
 Proof.
   introv h.
   unfold baire_diff_from.
-  destruct (le_lt_dec n m); auto; try omega.
+  destruct (le_lt_dec n m); auto; try lia.
 Qed.
 Hint Resolve eq_upto_baire_diff_from : cont.
 
 Lemma eq_upto0 :
   forall {T} (a b : Seq T), eq_upto 0 a b.
 Proof.
-  introv h; omega.
+  introv h; lia.
 Qed.
 Hint Resolve eq_upto0 : cont.
 
@@ -355,7 +355,7 @@ Lemma init0_implies_eq_upto1_zeros :
   forall (a : baire), init0 a -> eq_upto 1 a zeros.
 Proof.
   introv init h.
-  destruct m; try omega; auto.
+  destruct m; try lia; auto.
 Qed.
 Hint Resolve init0_implies_eq_upto1_zeros : cont.
 
@@ -381,7 +381,7 @@ Lemma init0_baire_diff_from :
 Proof.
   introv lt0 init.
   unfold init0, baire_diff_from.
-  destruct (le_lt_dec n 0); try omega; auto.
+  destruct (le_lt_dec n 0); try lia; auto.
 Qed.
 Hint Resolve init0_baire_diff_from : cont.
 
@@ -392,8 +392,8 @@ Proof.
   unfold baire_diff_from.
   destruct (le_lt_dec n (S n0)) as [d1|d1];
     destruct (Nat.eq_dec (a n) (a (Init.Nat.pred n))) as [d2|d2];
-    destruct (le_lt_dec n n0) as [d3|d3]; auto; try omega;
-      assert (n = S n0) by omega; subst; simpl in *; auto.
+    destruct (le_lt_dec n n0) as [d3|d3]; auto; try lia;
+      assert (n = S n0) by lia; subst; simpl in *; auto.
 Qed.
 Hint Resolve increasing_baire_diff_from : cont.
 
@@ -402,10 +402,10 @@ Lemma baire_diff_from_diff :
 Proof.
   introv h.
   unfold baire_diff_from in h.
-  destruct (le_lt_dec n n) as [d|d]; try omega.
+  destruct (le_lt_dec n n) as [d|d]; try lia.
   clear d.
   destruct (Nat.eq_dec (a n) (a (Init.Nat.pred n))) as [d|d]; auto.
-  omega.
+  lia.
 Qed.
 
 Lemma eq_upto_baire_eq_from :
@@ -415,7 +415,7 @@ Lemma eq_upto_baire_eq_from :
 Proof.
   introv lepn h.
   unfold baire_eq_from.
-  destruct (lt_dec m n); auto; try omega.
+  destruct (lt_dec m n); auto; try lia.
 Qed.
 Hint Resolve eq_upto_baire_eq_from : cont.
 
@@ -425,7 +425,7 @@ Proof.
   introv inti.
   unfold init0, baire_eq_from; simpl.
   destruct (lt_dec 0 n); auto.
-  assert (n = 0) by omega; subst; auto.
+  assert (n = 0) by lia; subst; auto.
 Qed.
 Hint Resolve init0_baire_eq_from : cont.
 
@@ -438,7 +438,7 @@ Lemma eq_upto_baire_inc_from :
 Proof.
   introv h.
   unfold baire_inc_from.
-  destruct (lt_dec m p); auto; omega.
+  destruct (lt_dec m p); auto; lia.
 Qed.
 Hint Resolve eq_upto_baire_inc_from : cont.
 
@@ -449,8 +449,8 @@ Lemma increasing_baire_inc_from :
 Proof.
   introv inc; introv.
   unfold increasing, baire_inc_from.
-  destruct (lt_dec (S n) p) as [d1|d1]; destruct (lt_dec n p) as [d2|d2]; auto; try omega.
-  assert (p = S n) by omega; subst.
+  destruct (lt_dec (S n) p) as [d1|d1]; destruct (lt_dec n p) as [d2|d2]; auto; try lia.
+  assert (p = S n) by lia; subst.
   rewrite Nat.add_sub; auto.
 Qed.
 Hint Resolve increasing_baire_inc_from : cont.
@@ -471,13 +471,13 @@ Proof.
   assert (a(p) < m) as lem.
   {
     destruct (lt_dec (a p) m); auto.
-    destruct h; exists p; omega.
+    destruct h; exists p; lia.
   }
 
   assert (forall (y : nat), y < p -> a y < m) as ltym.
   {
     introv z.
-    pose proof (increasing_le a y p) as w; repeat (autodimp w hyp); try omega.
+    pose proof (increasing_le a y p) as w; repeat (autodimp w hyp); try lia.
   }
 
   pose proof (q0 (baire_inc_from a p))  as z.
@@ -485,8 +485,8 @@ Proof.
   destruct z.
   exists (p + m - a p).
   unfold baire_inc_from.
-  assert (a p + (p + m - a p) - p = m) as xx by omega; rewrite xx; clear xx.
-  destruct (lt_dec (p + m - a p) p); auto; omega.
+  assert (a p + (p + m - a p) - p = m) as xx by lia; rewrite xx; clear xx.
+  destruct (lt_dec (p + m - a p) p); auto; lia.
 Qed.
 
 (* This is meant to be only true for absolutely free choice sequences *)
@@ -499,7 +499,7 @@ Proof.
   pose proof (h zeros 1) as z; clear h.
   autodimp z hyp; eauto 2 with cont.
   unfold zeros in z.
-  destruct z; intro z; exrepnd; omega.
+  destruct z; intro z; exrepnd; lia.
 Qed.
 
 (* This shows that the sequence of zeros used in
@@ -517,12 +517,12 @@ Proof.
   {
     introv ltn.
     unfold zeros.
-    destruct (lt_dec m p); omega.
+    destruct (lt_dec m p); lia.
   }
 
   {
     pose proof (h p) as q; clear h.
-    destruct (lt_dec p p); omega.
+    destruct (lt_dec p p); lia.
   }
 Qed.
 
@@ -604,7 +604,7 @@ Proof.
         pose proof (z zeros) as w.
         repeat (autodimp w hyp); eauto 3 with cont.
         exrepnd.
-        compute in w0; omega.
+        compute in w0; lia.
 
       - pose proof (q (baire2cantor a) (change_from1 a)) as w.
         autodimp w hyp; eauto 2 with cont.
@@ -614,10 +614,10 @@ Proof.
           [|destruct d1; rewrite baire2cantor2baire; eauto 2 with cont];[].
         destruct (eq_upto_dec p a (cantor2baire (change_from1 a))) as [d2|d2].
 
-        { pose proof (d2 1) as xx; autodimp xx hyp; try omega.
+        { pose proof (d2 1) as xx; autodimp xx hyp; try lia.
           unfold change_from1, cantor2baire in xx; simpl in xx.
           destruct (Nat.eq_dec (a 1) (a 0)) as [d|d]; auto;
-            rewrite xx in d; rewrite init in d; omega. }
+            rewrite xx in d; rewrite init in d; lia. }
 
         match type of w with
         | context[proj1_sig ?a] => remember a as xx; exrepnd; simpl in *
@@ -627,13 +627,13 @@ Proof.
         rewrite baire2cantor2baire in *; auto;[].
         unfold least_greater in w.
         remember (least_greater_aux a n (S (a p))) as lg; destruct lg; symmetry in Heqlg; subst;
-          [|rewrite init in xx0; omega].
+          [|rewrite init in xx0; lia].
 
         pose proof (least_greater_aux_prop2 a a n p 0) as zz.
-        repeat (autodimp zz hyp); omega.
+        repeat (autodimp zz hyp); lia.
     }
 
-    assert (0 < n) as gz by omega; clear ez.
+    assert (0 < n) as gz by lia; clear ez.
 
     pose proof (q (baire2cantor a)
                   (baire2cantor (baire_diff_from a n))) as w.
@@ -662,10 +662,10 @@ Proof.
 
     - unfold least_greater in w.
       remember (least_greater_aux a n0 (S (a p))) as lg; destruct lg; symmetry in Heqlg; subst;
-        [|rewrite init in q0; omega].
+        [|rewrite init in q0; lia].
 
       pose proof (least_greater_aux_prop2 a a n0 p 0) as zz.
-      repeat (autodimp zz hyp); omega.
+      repeat (autodimp zz hyp); lia.
   }
 
   pose proof (z (baire_eq_from a p)) as xx.
@@ -673,10 +673,10 @@ Proof.
   exrepnd.
 
   unfold baire_eq_from in xx0.
-  destruct (lt_dec n0 p) as [d|d]; try omega.
+  destruct (lt_dec n0 p) as [d|d]; try lia.
 
   pose proof (increasing_le a n0 p) as zz.
-  repeat (autodimp zz hyp); try omega.
+  repeat (autodimp zz hyp); try lia.
 Qed.
 
 Lemma kripke2b_prop :

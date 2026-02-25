@@ -154,7 +154,7 @@ Proof.
             exists (f0 n) (f0 n); dands; eauto 3 with slow.
             { apply reduces_to_if_step.
               csunf; simpl.
-              dcwf h; simpl; boolvar; try omega.
+              dcwf h; simpl; boolvar; try lia.
               rw @Znat.Nat2Z.id; auto. }
             { apply differ3_implies_differ3_alpha.
               allapply @closed_if_isprog.
@@ -391,14 +391,14 @@ Proof.
                 dopid op as [can|ncan|exc|abs] SSSSCase; ginv;[].
                 destruct can; ginv;[].
                 destruct bs; allsimpl; ginv; GC.
-                boolvar; ginv; try omega; fold_terms.
+                boolvar; ginv; try lia; fold_terms.
                 inversion d4 as [|?|?|? ? ? len imp]; subst; simphyps; clear d4.
                 allsimpl; cpx; fold_terms; allsimpl.
                 clear imp.
 
                 exists (@mk_nat o (s (Z.to_nat z))) (@mk_nat o (s (Z.to_nat z))); dands; eauto 3 with slow.
                 apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
-                boolvar; try omega; auto.
+                boolvar; try lia; auto.
 
               - apply wf_isexc_implies in comp0; auto; exrepnd; subst; allsimpl.
                 apply differ3_exception_implies in d4; exrepnd; subst.
@@ -618,7 +618,7 @@ Proof.
                    (@mk_uni o n).
             dands; eauto 3 with slow.
             { apply reduces_to_if_step; simpl.
-              csunf; simpl; unfold compute_step_tuni; simpl; boolvar; try omega.
+              csunf; simpl; unfold compute_step_tuni; simpl; boolvar; try lia.
               rw Znat.Nat2Z.id; auto. }
 
           - SSSCase "NMinus".
@@ -808,11 +808,11 @@ Proof.
                 dands.
 
                 { prove_alpha_eq4.
-                  introv j; destruct n0;[|destruct n0]; try omega; cpx.
+                  introv j; destruct n0;[|destruct n0]; try lia; cpx.
                   apply alphaeqbt_nilv2; auto. }
 
                 { prove_alpha_eq4.
-                  introv j; destruct n0;[|destruct n0]; try omega; cpx.
+                  introv j; destruct n0;[|destruct n0]; try lia; cpx.
                   apply alphaeqbt_nilv2; auto. }
 
                 { apply differ3_oterm; simpl; tcsp.
@@ -884,11 +884,11 @@ Proof.
                dands.
 
                { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
+                 introv j; destruct n;[|destruct n]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
+                 introv j; destruct n;[|destruct n]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { apply differ3_oterm; allsimpl; tcsp.
@@ -987,11 +987,11 @@ Proof.
                 dands.
 
                 { prove_alpha_eq4.
-                  introv j; destruct n0;[|destruct n0]; try omega; cpx.
+                  introv j; destruct n0;[|destruct n0]; try lia; cpx.
                   apply alphaeqbt_nilv2; auto. }
 
                 { prove_alpha_eq4.
-                  introv j; destruct n0;[|destruct n0]; try omega; cpx.
+                  introv j; destruct n0;[|destruct n0]; try lia; cpx.
                   apply alphaeqbt_nilv2; auto. }
 
                 { apply differ3_oterm; simpl; tcsp.
@@ -1062,11 +1062,11 @@ Proof.
                dands.
 
                { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
+                 introv j; destruct n;[|destruct n]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
+                 introv j; destruct n;[|destruct n]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { apply differ3_oterm; allsimpl; tcsp.
@@ -1117,7 +1117,7 @@ Proof.
             apply if_has_value_like_k_force_int_bound in hvf; exrepnd.
 
             pose proof (compind t1 t0 u j0) as r.
-            repeat (autodimp r hyp); try omega; exrepnd.
+            repeat (autodimp r hyp); try lia; exrepnd.
 
             { allrw <- @wf_cbv_iff; repnd; auto. }
 
@@ -1392,11 +1392,11 @@ Proof.
             dands.
 
             { prove_alpha_eq4.
-              introv j; destruct n;[|destruct n]; try omega; cpx.
+              introv j; destruct n;[|destruct n]; try lia; cpx.
               apply alphaeqbt_nilv2; auto. }
 
             { prove_alpha_eq4.
-              introv j; destruct n;[|destruct n]; try omega; cpx.
+              introv j; destruct n;[|destruct n]; try lia; cpx.
               apply alphaeqbt_nilv2; auto. }
 
             { apply differ3_oterm; allsimpl; tcsp.
@@ -1758,7 +1758,7 @@ Proof.
     autodimp h''' hyp; exrepnd.
 
     pose proof (ind k') as h.
-    autodimp h hyp;[omega|].
+    autodimp h hyp;[lia|].
     pose proof (h u1 u2 t2') as r'; clear h.
     repeat (autodimp r' hyp).
 

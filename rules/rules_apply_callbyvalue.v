@@ -459,7 +459,7 @@ Proof.
 
       { eapply tequality_respects_cequivc_left;
         [apply implies_cequivc_halts;apply cequivc_sym;eauto|].
-        apply tequality_mkc_halts; auto. }
+        apply tequality_mkc_halts; auto; tcsp. }
 
       introv enh.
       repeat (substc_lsubstc_vars3;[]).
@@ -528,7 +528,7 @@ Proof.
 
         { eapply tequality_respects_cequivc_left;
           [apply implies_cequivc_halts;apply cequivc_sym;eauto|].
-          apply tequality_mkc_halts; auto. }
+          apply tequality_mkc_halts; auto; tcsp. }
 
         introv enh.
         repeat (substc_lsubstc_vars3;[]).
@@ -597,7 +597,7 @@ Proof.
 
         { eapply tequality_respects_cequivc_left;
           [apply implies_cequivc_halts;apply cequivc_sym;eauto|].
-          apply tequality_mkc_halts; auto. }
+          apply tequality_mkc_halts; auto; tcsp. }
 
         introv enh.
         repeat (substc_lsubstc_vars3;[]).
@@ -697,7 +697,7 @@ Proof.
 
           { eapply tequality_respects_cequivc_left;
             [apply implies_cequivc_halts;apply cequivc_sym;eauto|].
-            apply tequality_mkc_halts; auto. }
+            apply tequality_mkc_halts; auto; tcsp. }
 
           introv enh.
           repeat (substc_lsubstc_vars3;[]).
@@ -752,7 +752,7 @@ Proof.
 
         { eapply tequality_respects_cequivc_left;
           [apply implies_cequivc_halts;apply cequivc_sym;eauto|].
-          apply tequality_mkc_halts; auto. }
+          apply tequality_mkc_halts; auto; tcsp. }
 
         introv enh.
         repeat (substc_lsubstc_vars3;[]).
@@ -852,7 +852,7 @@ Proof.
 
           { eapply tequality_respects_cequivc_left;
             [apply implies_cequivc_halts;apply cequivc_sym;eauto|].
-            apply tequality_mkc_halts; auto. }
+            apply tequality_mkc_halts; auto; tcsp. }
 
           introv enh.
           repeat (substc_lsubstc_vars3;[]).
@@ -1067,7 +1067,7 @@ Proof.
 
       { eapply tequality_respects_cequivc_left;
         [apply implies_cequivc_halts;apply cequivc_sym;eauto|].
-        apply tequality_mkc_halts; auto. }
+        apply tequality_mkc_halts; auto; tcsp. }
 
       introv enh.
       repeat (substc_lsubstc_vars3;[]).
@@ -1125,7 +1125,7 @@ Proof.
 
         { eapply tequality_respects_cequivc_left;
           [apply implies_cequivc_halts;apply cequivc_sym;eauto|].
-          apply tequality_mkc_halts; auto. }
+          apply tequality_mkc_halts; auto; tcsp. }
 
         introv enh.
         repeat (substc_lsubstc_vars3;[]).
@@ -1190,7 +1190,7 @@ Proof.
 
         { eapply tequality_respects_cequivc_left;
           [apply implies_cequivc_halts;apply cequivc_sym;eauto|].
-          apply tequality_mkc_halts; auto. }
+          apply tequality_mkc_halts; auto; tcsp. }
 
         introv enh.
         repeat (substc_lsubstc_vars3;[]).
@@ -1297,7 +1297,7 @@ Proof.
 
           { eapply tequality_respects_cequivc_left;
             [apply implies_cequivc_halts;apply cequivc_sym;eauto|].
-            apply tequality_mkc_halts; auto. }
+            apply tequality_mkc_halts; auto; tcsp. }
 
           introv enh.
           repeat (substc_lsubstc_vars3;[]).
@@ -1408,7 +1408,7 @@ Proof.
 
           { eapply tequality_respects_cequivc_left;
             [apply implies_cequivc_halts;apply cequivc_sym;eauto|].
-            apply tequality_mkc_halts; auto. }
+            apply tequality_mkc_halts; auto; tcsp. }
 
           introv enh.
           repeat (substc_lsubstc_vars3;[]).

@@ -70,7 +70,7 @@ Proof.
   csunf; simpl.
   dcwf q; allsimpl.
   unfold compute_step_comp; simpl.
-  boolvar; auto; try omega.
+  boolvar; auto; try lia.
 Qed.
 
 
@@ -105,7 +105,7 @@ Proof.
   csunf; simpl.
   dcwf q; allsimpl.
   unfold compute_step_comp; simpl.
-  boolvar; auto; try omega.
+  boolvar; auto; try lia.
 Qed.
 
 Definition mk_not_less_than {p} (a b : @NTerm p) := mk_less a b mk_false mk_true.
@@ -170,7 +170,7 @@ Proof.
   csunf; simpl.
   dcwf q; allsimpl.
   unfold compute_step_comp; simpl.
-  boolvar; auto; try omega.
+  boolvar; auto; try lia.
 Qed.
 
 
@@ -205,7 +205,7 @@ Proof.
   csunf; simpl.
   dcwf q; allsimpl.
   unfold compute_step_comp; simpl.
-  boolvar; auto; try omega.
+  boolvar; auto; try lia.
 Qed.
 
 
@@ -238,7 +238,7 @@ Proof.
   csunf; simpl.
   dcwf q; allsimpl.
   unfold compute_step_comp; simpl.
-  boolvar; auto; try omega.  destruct n0. reflexivity.
+  boolvar; auto; try lia.  destruct n0. reflexivity.
 Qed.
 
 Lemma mkc_eqint_comp2 {o} :
@@ -269,7 +269,7 @@ Proof.
   csunf; simpl.
   dcwf q; allsimpl.
   unfold compute_step_comp; simpl.
-  boolvar; auto; try omega. inversion e. destruct h. auto.
+  boolvar; auto; try lia. inversion e. destruct h. auto.
 Qed.
 
 Lemma mkc_not_eqint_comp1 {o} :
@@ -301,7 +301,7 @@ Proof.
   csunf; simpl.
   dcwf q; allsimpl.
   unfold compute_step_comp; simpl.
-  boolvar; auto; try omega.  destruct n0. reflexivity.
+  boolvar; auto; try lia.  destruct n0. reflexivity.
 Qed.
 
 Lemma mkc_not_eqint_comp2 {o} :
@@ -332,7 +332,7 @@ Proof.
   csunf; simpl.
   dcwf q; allsimpl.
   unfold compute_step_comp; simpl.
-  boolvar; auto; try omega. inversion e. destruct h. auto.
+  boolvar; auto; try lia. inversion e. destruct h. auto.
 Qed.
 
 
@@ -376,7 +376,7 @@ Proof.
   apply reduces_to_if_step.
   csunf; simpl.
   unfold compute_step_tuni; simpl.
-  destruct (Z_le_gt_dec 0 k); auto; omega.
+  destruct (Z_le_gt_dec 0 k); auto; lia.
 Qed.
 
 Lemma ccomputes_to_valc_tuni {o} :
@@ -395,7 +395,7 @@ Proof.
   apply reduces_to_if_step.
   csunf; simpl.
   unfold compute_step_tuni; simpl.
-  destruct (Z_le_gt_dec 0 k); auto; omega.
+  destruct (Z_le_gt_dec 0 k); auto; lia.
 Qed.
 
 Lemma computes_to_valc_implies_hasvaluec {o} :

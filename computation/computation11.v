@@ -722,9 +722,7 @@ Lemma abs_of_neg :
 Proof.
   introv h1 h2.
   pose proof (Zabs.Zabs_nat_lt (-z) (Z.of_nat b)) as k.
-  autodimp k hyp; try omega.
-  allrw Znat.Zabs2Nat.id.
-  destruct z; allsimpl; try omega.
+  autodimp k hyp; try lia.
 Qed.
 
 Lemma abs_of_pos :
@@ -735,9 +733,7 @@ Lemma abs_of_pos :
 Proof.
   introv h1 h2.
   pose proof (Zabs.Zabs_nat_lt z (Z.of_nat b)) as k.
-  autodimp k hyp; try omega.
-  allrw Znat.Zabs2Nat.id.
-  destruct z; allsimpl; try omega.
+  autodimp k hyp; try lia.
 Qed.
 
 Lemma abs_of_neg2 :
@@ -750,9 +746,7 @@ Proof.
   destruct (Z_lt_le_dec (- z) (Z.of_nat b)) as [h|h]; auto.
   provefalse.
   pose proof (Zabs.Zabs_nat_le (Z.of_nat b) (-z)) as k.
-  autodimp k hyp; try omega.
-  allrw Znat.Zabs2Nat.id.
-  destruct z; allsimpl; try omega.
+  autodimp k hyp; try lia.
 Qed.
 
 Lemma abs_of_pos2 :
@@ -765,9 +759,7 @@ Proof.
   destruct (Z_lt_le_dec z (Z.of_nat b)) as [h|h]; auto.
   provefalse.
   pose proof (Zabs.Zabs_nat_le (Z.of_nat b) z) as k.
-  autodimp k hyp; try omega.
-  allrw Znat.Zabs2Nat.id.
-  destruct z; allsimpl; try omega.
+  autodimp k hyp; try lia.
 Qed.
 
 Lemma compose_reduces_to_step_primarg_ncompop {o} :
@@ -968,11 +960,11 @@ Proof.
   destruct (le_gt_dec k0 k) as [i|i].
   - pose proof (reduces_atmost_split lib k0 k t1 t2 v) as h.
     repeat (autodimp h hyp).
-    exists (k - k0); dands; auto; try omega.
+    exists (k - k0); dands; auto; try lia.
   - pose proof (reduces_atmost_split lib k k0 t1 v t2) as h.
-    repeat (autodimp h hyp); try omega.
+    repeat (autodimp h hyp); try lia.
     apply reduces_in_atmost_k_steps_if_isvalue_like in h; auto; subst.
-    exists 0; dands; auto; try omega.
+    exists 0; dands; auto; try lia.
     rw @reduces_in_atmost_k_steps_0; auto.
 Qed.
 

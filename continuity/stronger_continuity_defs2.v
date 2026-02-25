@@ -345,8 +345,6 @@ Proof.
     exrepnd.
     allsimpl; allrw not_over_or; repnd; GC.
     apply (al_bterm_aux [v]); allsimpl; auto.
-
-    { unfold all_vars; simpl; tcsp. }
   }
 Qed.
 
@@ -719,7 +717,7 @@ Proof.
                       (mkc_exception n0 e0)
                       (mkc_exception (mkc_utoken a) mkc_axiom)) as q.
         repeat (autodimp q hyp); exrepnd.
-        apply (reduces_in_atmost_k_steps_excc_le_exc _ i0); tcsp; try omega.
+        apply (reduces_in_atmost_k_steps_excc_le_exc _ i0); tcsp; try lia.
 
       + apply (reduces_in_atmost_k_steps_excc_le_exc _ (k4 + k1 + k2));
         eauto 3 with slow; tcsp;
@@ -733,7 +731,7 @@ Proof.
                       (mkc_exception n e)
                       (mkc_exception (mkc_utoken a) mkc_axiom)) as q.
         repeat (autodimp q hyp); exrepnd.
-        apply (reduces_in_atmost_k_steps_excc_le_exc _ i0); tcsp; try omega.
+        apply (reduces_in_atmost_k_steps_excc_le_exc _ i0); tcsp; try lia.
   }
 
   apply (constructive_indefinite_ground_description nat (fun x => x) (fun x => x))
@@ -1456,7 +1454,7 @@ Lemma alpha_eq_spfexc {o} :
 Proof.
   introv len1 len2 len3.
   unfold spfexc.
-  apply implies_alphaeq_exception; apply alpha_eq_lfresh; eauto 3 with slow; try omega.
+  apply implies_alphaeq_exception; apply alpha_eq_lfresh; eauto 3 with slow; try lia.
 Qed.
 Hint Resolve alpha_eq_spfexc : slow.
 
@@ -1653,7 +1651,7 @@ Proof.
   exrepnd; subst.
   allapply @alpha_eq_mk_utoken; subst.
   allapply @alpha_eq_mk_axiom; subst.
-  exists vs'0 vs' vs3 vs4; dands; auto; try omega.
+  exists vs'0 vs' vs3 vs4; dands; auto; try lia.
 Qed.
 
 Lemma spfexc_pair_alpha_eq_r {o} :
@@ -1670,7 +1668,7 @@ Proof.
   exrepnd; subst.
   allapply @alpha_eq_mk_utoken; subst.
   allapply @alpha_eq_mk_axiom; subst.
-  exists vs1 vs2 vs'0 vs'; dands; auto; try omega.
+  exists vs1 vs2 vs'0 vs'; dands; auto; try lia.
 Qed.
 
 Lemma differ_try_change_bound_vars {o} :
@@ -1860,7 +1858,7 @@ Proof.
       applydup @alpha_eq_bterms_implies_same_length in h3.
       exists (oterm op bs') (oterm op bs2') (oterm op bs3'); dands; eauto 3 with slow.
 
-      * apply differ_try_oterm; tcsp; try omega.
+      * apply differ_try_oterm; tcsp; try lia.
         apply h4.
 
       * apply alpha_eq_oterm_combine; dands; auto.
@@ -1962,7 +1960,7 @@ Proof.
   allrw in_app_iff; allrw not_over_or; repnd.
 
   applydup @closed_if_isprog in ispu as clu.
-  apply (alpha_eq_bterm_trans (bterm [v'0] u)) in unf1;
+  apply (alpha_eq_bterm_trans (bterm [v'] u)) in unf1;
     [apply alpha_eq_bterm_triv in unf1|];
     [|apply (al_bterm_aux [v0]); simpl; auto;
       [unfold all_vars; rw clu; simpl; apply disjoint_singleton_l; rw in_app_iff; sp
@@ -1982,9 +1980,9 @@ Proof.
 
   { pose proof (ex_fresh_var (v' :: z :: [])) as fv.
     exrepnd; allsimpl; allrw not_over_or; repnd; GC.
-    apply (al_bterm_aux [v1]); simpl; auto;
-    repeat (boolvar; simpl); tcsp;
-    allrw disjoint_singleton_l; allsimpl; tcsp. }
+    rewrite lsubst_aux_trivial_cl_term; simpl; eauto 2 with slow.
+    erewrite (alphaeq_preserves_free_vars c');[|apply alpha_eq_sym;eauto].
+    simpl; autorewrite with slow; eauto 2 with slow. }
 
   apply (al_bterm_aux [v0]); allsimpl; tcsp.
   { unfold all_vars.
@@ -2038,7 +2036,7 @@ Proof.
   match goal with
     | [ |- context[mk_fix ?x] ] => remember (mk_fix x) as b
   end; clear Heqb.
-  boolvar; tcsp; try omega.
+  boolvar; tcsp; try lia.
 
   rw @lsubst_aux_trivial_cl_term2; eauto 3 with slow.
 Qed.
@@ -2062,11 +2060,11 @@ Proof.
   apply computes_to_val_like_in_max_k_steps_comp_implies in hv0; auto;[].
   repndors; exrepnd; subst.
 
-  - exists k1 (pk2term pk1); dands; eauto 3 with slow; try omega.
+  - exists k1 (pk2term pk1); dands; eauto 3 with slow; try lia.
 
-  - exists k1 (mk_exception en e); dands; eauto 3 with slow; try omega.
+  - exists k1 (mk_exception en e); dands; eauto 3 with slow; try lia.
 
-  - exists k2 (mk_exception en e); dands; eauto 3 with slow; try omega.
+  - exists k2 (mk_exception en e); dands; eauto 3 with slow; try lia.
 Qed.
 
 Lemma alpha_eq_pk2term {o} :
@@ -2562,7 +2560,7 @@ Proof.
           unfold mk_zero, mk_nat in comp2; ginv.
           pose proof (Wf_Z.Z_of_nat_complete_inf i1) as hi1; autodimp hi1 hyp; exrepnd; subst.
           fold_terms.
-          exists 0; dands; tcsp; try omega.
+          exists 0; dands; tcsp; try lia.
           left.
           exists n.
           rw @reduces_in_atmost_k_steps_0; auto. }
@@ -2578,13 +2576,13 @@ Proof.
         applydup @compute_step_preserves_wf in Heqcomp'; auto.
         apply IHk in comp0; exrepnd; repndors; exrepnd; auto.
 
-        { exists (S j); dands; try omega.
+        { exists (S j); dands; try lia.
           left.
           exists n0.
           rw @reduces_in_atmost_k_steps_S.
           eexists; dands; eauto. }
 
-        { exists (S j); dands; try omega.
+        { exists (S j); dands; try lia.
           right.
           exists n0 e0.
           rw @computes_to_exception_in_max_k_steps_S.
@@ -2592,7 +2590,7 @@ Proof.
 
       * Case "Exc".
         csunf comp1; allsimpl; ginv.
-        exists 0; dands; try omega.
+        exists 0; dands; try lia.
         right.
         apply wf_exception_implies in wf; exrepnd; subst; fold_terms.
         exists a0 t0.
@@ -2605,13 +2603,13 @@ Proof.
         applydup @wf_compute_step_lib in Heqcomp'; auto.
         apply IHk in comp0; exrepnd; repndors; exrepnd; auto.
 
-        { exists (S j); dands; try omega.
+        { exists (S j); dands; try lia.
           left.
           exists n0.
           rw @reduces_in_atmost_k_steps_S.
           eexists; dands; eauto. }
 
-        { exists (S j); dands; try omega.
+        { exists (S j); dands; try lia.
           right.
           exists n0 e0.
           rw @computes_to_exception_in_max_k_steps_S.
@@ -2639,7 +2637,7 @@ Proof.
   match goal with
     | [ |- context[mk_fix ?x] ] => remember (mk_fix x) as b
   end; clear Heqb.
-  boolvar; tcsp; try omega;
+  boolvar; tcsp; try lia;
   repeat (rw @lsubst_aux_trivial_cl_term2; eauto 3 with slow).
 Qed.
 
@@ -2661,12 +2659,12 @@ Proof.
   apply computes_to_val_like_in_max_k_steps_comp_implies in hv0; auto;[].
   repndors; exrepnd; subst.
 
-  - exists k1 (pk2term pk1); dands; eauto 3 with slow; try omega.
+  - exists k1 (pk2term pk1); dands; eauto 3 with slow; try lia.
     repndors; exrepnd; subst; allsimpl; left; eauto 3 with slow.
 
-  - exists k1 (mk_exception en e); dands; eauto 3 with slow; try omega.
+  - exists k1 (mk_exception en e); dands; eauto 3 with slow; try lia.
 
-  - exists k1 (pk2term pk); dands; eauto 3 with slow; try omega.
+  - exists k1 (pk2term pk); dands; eauto 3 with slow; try lia.
     left; repndors; exrepnd; subst; allsimpl; eauto 3 with slow.
 Qed.
 
@@ -2808,7 +2806,7 @@ Proof.
       allrw not_over_or; repnd; GC.
       rw @subst_utokens_aux_lfresh; simpl.
       unfold subst_utok; simpl; boolvar; tcsp; fold_terms.
-      exists (x :: vs'0); simpl; dands; auto; try omega.
+      exists (x :: vs'0); simpl; dands; auto; try lia.
 Qed.
 
 Lemma compute_step_lfresh_snoc_axiom {o} :
@@ -2845,7 +2843,7 @@ Proof.
 
       rw @subst_utokens_aux_lfresh; simpl.
       unfold subst_utok; simpl; boolvar; tcsp; fold_terms.
-      exists (x :: vs'0); simpl; dands; auto; try omega.
+      exists (x :: vs'0); simpl; dands; auto; try lia.
 Qed.
 
 Lemma reduces_in_atmost_k_steps_lfresh_utoken {o} :
@@ -4486,12 +4484,12 @@ Proof.
 
             { apply reduces_to_if_step.
               csunf; simpl.
-              dcwf h; simpl; boolvar; try omega.
+              dcwf h; simpl; boolvar; try lia.
               rw @Znat.Nat2Z.id; auto. }
 
             { apply reduces_to_if_step.
               csunf; simpl.
-              dcwf h; simpl; boolvar; try omega.
+              dcwf h; simpl; boolvar; try lia.
               rw @Znat.Nat2Z.id; auto. }
 
             { apply differ_try_alpha_refl; auto.
@@ -4904,7 +4902,7 @@ Proof.
                            (@mk_nat o (f0 n)).
                     dands; eauto 3 with slow;
                     try (complete (apply reduces_to_if_step; csunf; simpl; dcwf h;
-                                   simpl; boolvar; try omega;
+                                   simpl; boolvar; try lia;
                                    rw @Znat.Nat2Z.id; auto)).
                     eapply differ_try_alpha_refl; simpl; eauto 3 with slow; tcsp.
                   }
@@ -4976,11 +4974,11 @@ Proof.
 
             { apply reduces_to_if_step; csunf; simpl.
               rw @Znat.Nat2Z.id.
-              boolvar; try omega; auto. }
+              boolvar; try lia; auto. }
 
             { apply reduces_to_if_step; csunf; simpl.
               rw @Znat.Nat2Z.id.
-              boolvar; try omega; auto. }
+              boolvar; try lia; auto. }
 
             { apply differ_try_implies_differ_try_alpha.
               apply differ_try_oterm; simpl; tcsp. } *)
@@ -5240,7 +5238,7 @@ Proof.
                   rw @lsubst_aux_trivial_cl_term2; eauto 3 with slow;[].
                   eapply reduces_to_if_split2;
                     [csunf;simpl;dcwf h; simpl;unfold compute_step_comp;simpl;auto|];[].
-                  boolvar; tcsp; try omega;[].
+                  boolvar; tcsp; try lia;[].
                   unfold nobnd.
                   eapply reduces_to_trans;
                     [apply reduces_to_prinarg;
@@ -5382,7 +5380,7 @@ Proof.
             exists (@mk_uni o n) (@mk_uni o n) (@mk_uni o n).
             dands; eauto 3 with slow;
             try (complete (apply reduces_to_if_step; csunf; simpl; unfold compute_step_tuni;
-                           simpl; boolvar; tcsp; try omega; allrw @Znat.Nat2Z.id; auto)).
+                           simpl; boolvar; tcsp; try lia; allrw @Znat.Nat2Z.id; auto)).
             apply differ_try_alpha_refl; simpl; tcsp.
 
           - SSSCase "NMinus".
@@ -5728,7 +5726,7 @@ Proof.
               repeat (autodimp ih hyp); eauto 2 with slow;[|].
 
               { introv l w1 w2 w3 isv r d'.
-                apply (indhyp t1 t2 t3 v m); eauto 3 with slow; try omega. }
+                apply (indhyp t1 t2 t3 v m); eauto 3 with slow; try lia. }
 
               exrepnd.
               exists (mk_compop c0 (oterm (Can can1) bs4) t2' c2 d0)
@@ -5867,7 +5865,7 @@ Proof.
               repeat (autodimp ih hyp); eauto 2 with slow;[|].
 
               { introv l w1 w2 w3 isv r d'.
-                apply (indhyp t1 t2 t3 v m); eauto 3 with slow; try omega. }
+                apply (indhyp t1 t2 t3 v m); eauto 3 with slow; try lia. }
 
               exrepnd.
               exists (mk_arithop a0 (oterm (Can can1) bs2) t2')
@@ -5987,7 +5985,7 @@ Proof.
           repeat (autodimp ih hyp).
 
           { introv l w1 w2 w3 isv r d'.
-            apply (indhyp t2 t3 t4 v m); eauto 3 with slow; try omega. }
+            apply (indhyp t2 t3 t4 v m); eauto 3 with slow; try lia. }
 
           exrepnd.
 
@@ -6005,7 +6003,7 @@ Proof.
               applydup @reduces_to_preserves_wf in ih1; auto;[].
               applydup @reduces_to_preserves_wf in ih2; auto;[].
               applydup @reduces_to_preserves_wf in ih3; auto;[].
-              repeat (autodimp q hyp); eauto 3 with slow; try omega;[].
+              repeat (autodimp q hyp); eauto 3 with slow; try lia;[].
               exrepnd.
               apply differ_try_alpha_nat in q1; repndors; repnd; subst;[|].
 
@@ -6151,7 +6149,7 @@ Proof.
               applydup @reduces_to_preserves_wf in ih1; auto;[].
               applydup @reduces_to_preserves_wf in ih2; auto;[].
               applydup @reduces_to_preserves_wf in ih3; auto;[].
-              repeat (autodimp q hyp); eauto 3 with slow; try omega;[].
+              repeat (autodimp q hyp); eauto 3 with slow; try lia;[].
               exrepnd.
               apply differ_try_alpha_exception in q1; repndors;[|]; exrepnd; subst.
 
@@ -6225,7 +6223,7 @@ Proof.
                 try (apply alphaeqbt_nilv2; auto).
                 allrw @in_combine_same; repnd; subst; eauto 3 with slow.
 
-              - apply differ_try_oterm; simpl; try omega; tcsp;[].
+              - apply differ_try_oterm; simpl; try lia; tcsp;[].
                 introv i; repndors; ginv; tcsp.
                 constructor; auto.
             }
@@ -6270,7 +6268,7 @@ Proof.
               repndors.
 
               * pose proof (indhyp a0 t0 t4 v0 j) as q.
-                repeat (autodimp q hyp); try omega; eauto 3 with slow;[].
+                repeat (autodimp q hyp); try lia; eauto 3 with slow;[].
                 exrepnd.
                 eapply differ_try_alpha_iswfpk in q1;[|exact hv0].
                 repndors; repnd; subst.
@@ -6325,7 +6323,7 @@ Proof.
                 }
 
               * pose proof (indhyp a0 t0 t4 v0 j) as q.
-                repeat (autodimp q hyp); try omega; eauto 3 with slow;[].
+                repeat (autodimp q hyp); try lia; eauto 3 with slow;[].
                 exrepnd.
                 applydup @reduces_in_atmost_k_steps_preserves_wf in hv2; auto;[].
                 apply wf_isexc_implies in hv0; auto;[].
@@ -6418,7 +6416,7 @@ Proof.
           repeat (autodimp ih hyp).
 
           { introv l w1 w2 w3 isv r d'.
-            apply (indhyp t2 t3 t4 v m); eauto 3 with slow; try omega. }
+            apply (indhyp t2 t3 t4 v m); eauto 3 with slow; try lia. }
 
           exrepnd.
 
@@ -6435,7 +6433,7 @@ Proof.
               applydup @reduces_to_preserves_wf in ih1; auto;[].
               applydup @reduces_to_preserves_wf in ih2; auto;[].
               applydup @reduces_to_preserves_wf in ih3; auto;[].
-              repeat (autodimp q hyp); eauto 3 with slow; try omega;[].
+              repeat (autodimp q hyp); eauto 3 with slow; try lia;[].
               exrepnd.
               apply differ_try_alpha_nat in q1; repndors; repnd; subst;[|].
 
@@ -6600,7 +6598,7 @@ Proof.
               applydup @reduces_to_preserves_wf in ih1; auto;[].
               applydup @reduces_to_preserves_wf in ih2; auto;[].
               applydup @reduces_to_preserves_wf in ih3; auto;[].
-              repeat (autodimp q hyp); eauto 3 with slow; try omega;[].
+              repeat (autodimp q hyp); eauto 3 with slow; try lia;[].
               exrepnd.
               apply differ_try_alpha_exception in q1; repndors;[|]; exrepnd; subst.
 
@@ -6674,7 +6672,7 @@ Proof.
                 try (apply alphaeqbt_nilv2; auto).
                 allrw @in_combine_same; repnd; subst; eauto 3 with slow.
 
-              - apply differ_try_oterm; simpl; try omega; tcsp;[].
+              - apply differ_try_oterm; simpl; try lia; tcsp;[].
                 introv i; repndors; ginv; tcsp.
                 constructor; auto.
             }
@@ -6714,7 +6712,7 @@ Proof.
             dands; eauto 3 with slow;[].
             apply differ_try_implies_differ_try_alpha.
             apply differ_try_exc.
-            apply spfexc_pair_spfexc; simpl; try omega.
+            apply spfexc_pair_spfexc; simpl; try lia.
 
         - (* one reduction step under fresh *)
           pose proof (fresh_atom o (a :: get_utokens t1
@@ -6798,7 +6796,7 @@ Proof.
             apply get_utokens_subst in i; allsimpl; boolvar; allrw app_nil_r;
             allrw in_app_iff; allsimpl; repndors; tcsp. }
           { introv ltm w1 w2 w3 isv r d.
-            apply (indhyp t0 t4 t5 v m); eauto 3 with slow; try omega. }
+            apply (indhyp t0 t4 t5 v m); eauto 3 with slow; try lia. }
           exrepnd.
 
           applydup @reduces_to_fresh2 in ih1; auto.
@@ -6914,7 +6912,7 @@ Proof.
     dup r0 as r.
     eapply reduces_in_atmost_k_steps_if_reduces_to in r;[|exact h3|exact isv].
     exrepnd.
-    assert (k' < S k) as ltk by omega.
+    assert (k' < S k) as ltk by lia.
 
     applydup @compute_step_preserves_wf in r1;auto;[].
     applydup @reduces_to_preserves_wf in h1;auto;[].

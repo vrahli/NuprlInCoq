@@ -439,7 +439,7 @@ Proof.
     introv sim'.
     apply @similarity_app in sim'; exrepnd; subst; rewrite length_snoc in *; cpx.
     apply @similarity_snoc in sim'5; exrepnd; subst; cpx.
-    apply app_split in sim'0; repeat (rewrite length_snoc in * ); auto; try omega;[].
+    apply app_split in sim'0; repeat (rewrite length_snoc in * ); auto; try lia;[].
     repnd; cpx; subst; simpl in *; GC.
 
     assert (! LIn u (dom_csub s1a1)) as niu1.
@@ -497,8 +497,8 @@ Proof.
         autorewrite with slow; auto. }
 
       apply eq_hyps_app in eqh; exrepnd.
-      apply app_split in eqh0; try omega;[].
-      apply app_split in eqh2; try omega;[].
+      apply app_split in eqh0; try lia;[].
+      apply app_split in eqh2; try lia;[].
       repnd; subst.
 
       pose proof (sub_eq_hyps_snoc_subst lib J s1a s2a0 s1b s2b1 [(u,t)]) as q.

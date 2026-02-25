@@ -104,6 +104,12 @@ Proof.
  apply (@size_subterm2 p) with (o:=o) in X; auto.
 Defined.
 
+(* MOVE *)
+Lemma le_trans : forall n m p, n <= m -> m <= p -> n <= p.
+Proof.
+  lia.
+Qed.
+
 Lemma Term_better_ind2 {p} :
   forall P : (@Term p) -> Type,
     (forall n : NVar, P (vTerm n))
@@ -131,7 +137,7 @@ Proof.
  apply (Hind (size nt')); auto; clear Hind.
  subst.
  eapply le_trans;[|apply (size_subterm3 op bs nt lv Hin)].
- omega.
+ lia.
 Defined.
 
 Lemma Term_better_ind {p} :

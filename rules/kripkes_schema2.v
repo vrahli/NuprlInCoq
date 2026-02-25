@@ -59,7 +59,7 @@ Proof.
   inversion e as [xx]; clear e.
   assert (0%Z = Z.of_nat 0%nat) as zz by auto.
   rewrite zz in xx; clear zz.
-  apply Nat2Z.inj in xx; tcsp.
+  lia.
 Qed.
 
 (**

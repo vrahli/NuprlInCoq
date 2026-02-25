@@ -439,7 +439,7 @@ Proof.
 
     + apply CL_effatom.
       exists T T t t a a eq; dands; auto; spcast; auto;
-      try (apply computes_to_valc_refl; try (apply iscvalue_mkc_efree_from_atom)).
+      try (apply computes_to_valc_refl; try (apply iscvalue_mkc_efree_from_atom)); tcsp.
 
     + unfold per_effatom_eq; dands; spcast; auto.
       exists u y.

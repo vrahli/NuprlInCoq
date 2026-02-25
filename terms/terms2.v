@@ -291,7 +291,7 @@ Definition mk_sub {p} (a b : @NTerm p) := oterm (NCan (NArithOp ArithOpSub)) [no
 Definition mk_div {p} (a b : @NTerm p) := oterm (NCan (NArithOp ArithOpDiv)) [nobnd a, nobnd b].
 Definition mk_rem {p} (a b : @NTerm p) := oterm (NCan (NArithOp ArithOpRem)) [nobnd a, nobnd b].
 
-Definition mk_omega {p} : @NTerm p := oterm (Can NOmega) [].
+Definition mk_lia {p} : @NTerm p := oterm (Can NOmega) [].
 Definition mk_constant_p {p} (x : get_pconstP p) := oterm (Can (NConstP x)) [].
 Definition mk_constant_t {p} (x : get_pconstT p) := oterm (Can (NConstT x)) [].
 
@@ -8598,9 +8598,9 @@ Theorem in_selectbt {p} :
 Proof.
   intros ? ? Hin. induction bts. inverts Hin.
   invertsn Hin.
-  - exists 0. split; simpl; auto. omega.
+  - exists 0. split; simpl; auto. lia.
   - destruct IHbts; auto. exists (S x). repnd.
-    split; simpl; try omega. auto.
+    split; simpl; try lia. auto.
 Qed.
 
 (**useful for rewriting in complicated formulae*)
@@ -8666,7 +8666,7 @@ Proof.
   induction lbt; introv Hlt. inverts Hlt.
   simpl. destruct n; subst. reflexivity.
   allunfold @selectbt. allsimpl.
-  assert (n < (length lbt)) by omega.
+  assert (n < (length lbt)) by lia.
   auto.
 Qed.
 
@@ -9522,7 +9522,7 @@ Proof.
   rw <- combine_nth; auto.
   apply nth_in; auto.
   rw combine_length; rw <- e.
-  rw Min.min_idempotent; auto.
+  rw @min_idempotent; auto.
 Qed.
 
 Theorem isprogram_ot_implies_eauto2 {p} :

@@ -135,7 +135,7 @@ Lemma no_change_after_marker2 {p} :
          -> computes_to_marker_in_max_k_steps lib t v1 k2.
 Proof.
   intros.
-  assert(k2 = (k2 - k1) + k1) as rwa by omega.
+  assert(k2 = (k2 - k1) + k1) as rwa by lia.
   rewrite rwa.
   apply no_change_after_marker; auto.
 Qed.
@@ -431,7 +431,7 @@ Proof.
         inversion comp1; subst; GC; cpx.
         apply computes_to_val_or_exc_in_max_k_steps_can in comp0; subst.
         left.
-        exists z z0 0 0; simpl; dands; auto; try omega.
+        exists z z0 0 0; simpl; dands; auto; try lia.
         unfold computes_to_value_in_max_k_steps, reduces_in_atmost_k_steps; sp.
         constructor; apply isprogram_integer.
         unfold computes_to_value_in_max_k_steps, reduces_in_atmost_k_steps; sp.
@@ -450,7 +450,7 @@ Proof.
 
         {
           left.
-          exists nv1 nv2 k1 (S k2); dands; auto; try omega.
+          exists nv1 nv2 k1 (S k2); dands; auto; try lia.
           rw @computes_to_value_in_max_k_steps_S.
           exists n; sp.
           rw <- plus_n_Sm.
@@ -469,7 +469,7 @@ Proof.
 
         {
           right; right.
-          exists x e k1 (S k2); dands; auto; try omega.
+          exists x e k1 (S k2); dands; auto; try lia.
           rw @computes_to_exception_in_max_k_steps_S.
           exists n; sp.
           rw <- plus_n_Sm.
@@ -485,7 +485,7 @@ Proof.
         right; right.
         apply isprogram_exception_implies in isp2; exrepnd; sp; subst.
         apply computes_to_val_or_exc_in_max_k_steps_exc_iff in comp0; subst.
-        exists (oterm (Can can1) l) t 0 0; simpl; dands; auto; try omega.
+        exists (oterm (Can can1) l) t 0 0; simpl; dands; auto; try lia.
         unfold computes_to_value_in_max_k_steps, reduces_in_atmost_k_steps;
           simpl; dands; auto.
         apply computes_to_exception_in_max_k_steps_exc; sp.
@@ -497,7 +497,7 @@ Proof.
         right; right.
         apply isprogram_exception_implies in isp2; exrepnd; sp; subst.
         apply computes_to_val_or_exc_in_max_k_steps_exc_iff in comp0; subst.
-        exists (oterm (Can can1) l) t 0 0; simpl; dands; auto; try omega.
+        exists (oterm (Can can1) l) t 0 0; simpl; dands; auto; try lia.
         unfold computes_to_value_in_max_k_steps, reduces_in_atmost_k_steps;
           simpl; dands; auto.
         apply computes_to_exception_in_max_k_steps_exc; sp.
@@ -517,7 +517,7 @@ Proof.
         destruct comp0 as [comp0|comp0]; exrepnd; subst.
 
         left.
-        exists nv1 nv2 k1 (S k2); dands; auto; try omega.
+        exists nv1 nv2 k1 (S k2); dands; auto; try lia.
         rw @computes_to_value_in_max_k_steps_S.
         exists n; sp.
         rw <- plus_n_Sm.
@@ -532,7 +532,7 @@ Proof.
         apply computes_to_exception_in_max_k_steps_can in comp3; sp.
 
         right; right.
-        exists x e k1 (S k2); dands; auto; try omega.
+        exists x e k1 (S k2); dands; auto; try lia.
         rw @computes_to_exception_in_max_k_steps_S.
         exists n; sp.
         rw <- plus_n_Sm.
@@ -554,7 +554,7 @@ Proof.
       exrepnd; subst.
 
       * left.
-        exists nv1 nv2 (S k1) k2; dands; simpl; auto; try omega.
+        exists nv1 nv2 (S k1) k2; dands; simpl; auto; try lia.
         rw @computes_to_value_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -562,7 +562,7 @@ Proof.
         rw @compute_step_narithop_ncan1; rw Heqc; auto.
 
       * right; left.
-        exists e (S k1); simpl; dands; auto; try omega.
+        exists e (S k1); simpl; dands; auto; try lia.
         rw @computes_to_exception_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -570,7 +570,7 @@ Proof.
         rw @compute_step_narithop_ncan1; rw Heqc; auto.
 
       * right; right.
-        exists x e (S k1) k2; dands; simpl; auto; try omega.
+        exists x e (S k1) k2; dands; simpl; auto; try lia.
         rw @computes_to_value_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -583,7 +583,7 @@ Proof.
       apply computes_to_val_or_exc_in_max_k_steps_exc in comp0; subst.
       right; left.
       apply isprogram_exception_implies in isp1; exrepnd; subst.
-      exists t 0; dands; auto; try omega.
+      exists t 0; dands; auto; try lia.
       apply computes_to_exception_in_max_k_steps_exc; sp.
       unfold reduces_in_atmost_k_steps; simpl; sp.
 
@@ -610,7 +610,7 @@ Proof.
       exrepnd; subst.
 
       * left.
-        exists nv1 nv2 (S k1) k2; dands; simpl; auto; try omega.
+        exists nv1 nv2 (S k1) k2; dands; simpl; auto; try lia.
         rw @computes_to_value_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -618,7 +618,7 @@ Proof.
         rw @compute_step_narithop_abs1; rw Heqc; auto.
 
       * right; left.
-        exists e (S k1); simpl; dands; auto; try omega.
+        exists e (S k1); simpl; dands; auto; try lia.
         rw @computes_to_exception_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -626,7 +626,7 @@ Proof.
         rw @compute_step_narithop_abs1; rw Heqc; auto.
 
       * right; right.
-        exists x e (S k1) k2; dands; simpl; auto; try omega.
+        exists x e (S k1) k2; dands; simpl; auto; try lia.
         rw @computes_to_value_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -746,7 +746,7 @@ Proof.
           destruct o; destruct o0; try (complete (inversion comp1)).
           inversion comp1; subst; GC; cpx.
           left.
-          exists can1 can2 0 0 ((z <? z0)%Z); simpl; dands; auto; try omega;
+          exists can1 can2 0 0 ((z <? z0)%Z); simpl; dands; auto; try lia;
           try (complete (unfold computes_to_value_in_max_k_steps, reduces_in_atmost_k_steps; sp;
                          constructor; sp)).
           rw minus0; auto.
@@ -762,7 +762,7 @@ Proof.
           destruct o; destruct o0; try (complete (inversion comp1)).
           inversion comp1; subst; GC; cpx.
           left.
-          exists can1 can2 0 0 ((z =? z0)%Z); simpl; dands; auto; try omega;
+          exists can1 can2 0 0 ((z =? z0)%Z); simpl; dands; auto; try lia;
           try (complete (unfold computes_to_value_in_max_k_steps, reduces_in_atmost_k_steps; sp;
                          constructor; sp)).
           rw minus0; auto.
@@ -778,7 +778,7 @@ Proof.
           destruct o; destruct o0; try (complete (inversion comp1)).
           inversion comp1; subst; GC; cpx.
           left.
-          exists can1 can2 0 0 (if String.string_dec s s0 then true else false); simpl; dands; auto; try omega;
+          exists can1 can2 0 0 (if String.string_dec s s0 then true else false); simpl; dands; auto; try lia;
           try (complete (unfold computes_to_value_in_max_k_steps, reduces_in_atmost_k_steps; sp;
                          constructor; sp)).
           rw minus0; auto.
@@ -801,7 +801,7 @@ Proof.
         destruct comp0 as [comp0|comp0]; exrepnd; subst.
 
         left.
-        exists c1 c2  k1 (S k2) d; dands; auto; try omega.
+        exists c1 c2  k1 (S k2) d; dands; auto; try lia.
         rw @computes_to_value_in_max_k_steps_S.
         exists n; sp.
         rw <- plus_n_Sm.
@@ -811,7 +811,7 @@ Proof.
         unfold nobnd.
         rw @compute_step_ncompop_ncan2.
         rw Heqc; auto.
-        assert ((S k - (k1 + S k2 + 1)) = (k - (k1 + k2 + 1))) as e by omega.
+        assert ((S k - (k1 + S k2 + 1)) = (k - (k1 + k2 + 1))) as e by lia.
         rw e; auto.
 
         destruct comp0 as [comp0|comp0]; exrepnd; subst.
@@ -819,7 +819,7 @@ Proof.
         apply computes_to_exception_in_max_k_steps_can in comp3; sp.
 
         right; right.
-        exists x e k1 (S k2); dands; auto; try omega.
+        exists x e k1 (S k2); dands; auto; try lia.
         rw @computes_to_exception_in_max_k_steps_S.
         exists n; sp.
         rw <- plus_n_Sm.
@@ -835,7 +835,7 @@ Proof.
         right; right.
         apply isprogram_exception_implies in isp2; exrepnd; sp; subst.
         apply computes_to_val_or_exc_in_max_k_steps_exc_iff in comp0; subst.
-        exists (oterm (Can can1) l) t 0 0; simpl; dands; auto; try omega.
+        exists (oterm (Can can1) l) t 0 0; simpl; dands; auto; try lia.
         unfold computes_to_value_in_max_k_steps, reduces_in_atmost_k_steps;
           simpl; dands; auto.
         apply computes_to_exception_in_max_k_steps_exc; sp.
@@ -861,7 +861,7 @@ Proof.
         destruct comp0 as [comp0|comp0]; exrepnd; subst.
 
         left.
-        exists c1 c2  k1 (S k2) d; dands; auto; try omega.
+        exists c1 c2  k1 (S k2) d; dands; auto; try lia.
         rw @computes_to_value_in_max_k_steps_S.
         exists n; sp.
         rw <- plus_n_Sm.
@@ -871,7 +871,7 @@ Proof.
         unfold nobnd.
         rw @compute_step_ncompop_abs2.
         rw Heqc; auto.
-        assert ((S k - (k1 + S k2 + 1)) = (k - (k1 + k2 + 1))) as e by omega.
+        assert ((S k - (k1 + S k2 + 1)) = (k - (k1 + k2 + 1))) as e by lia.
         rw e; auto.
 
         destruct comp0 as [comp0|comp0]; exrepnd; subst.
@@ -879,7 +879,7 @@ Proof.
         apply computes_to_exception_in_max_k_steps_can in comp3; sp.
 
         right; right.
-        exists x e k1 (S k2); dands; auto; try omega.
+        exists x e k1 (S k2); dands; auto; try lia.
         rw @computes_to_exception_in_max_k_steps_S.
         exists n; sp.
         rw <- plus_n_Sm.
@@ -903,7 +903,7 @@ Proof.
       exrepnd; subst.
 
       * left.
-        exists c1 c2 (S k1) k2 d; dands; simpl; auto; try omega.
+        exists c1 c2 (S k1) k2 d; dands; simpl; auto; try lia.
         rw @computes_to_value_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -913,7 +913,7 @@ Proof.
         rw @compute_step_ncompop_ncan1; rw Heqc; auto.
 
       * right; left.
-        exists e (S k1); simpl; dands; auto; try omega.
+        exists e (S k1); simpl; dands; auto; try lia.
         rw @computes_to_exception_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -922,7 +922,7 @@ Proof.
         rw @compute_step_ncompop_ncan1; rw Heqc; auto.
 
       * right; right.
-        exists x e (S k1) k2; dands; simpl; auto; try omega.
+        exists x e (S k1) k2; dands; simpl; auto; try lia.
         rw @computes_to_value_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -936,7 +936,7 @@ Proof.
       apply computes_to_val_or_exc_in_max_k_steps_exc in comp0; subst.
       right; left.
       apply isprogram_exception_implies in isp1; exrepnd; subst.
-      exists t 0; dands; auto; try omega.
+      exists t 0; dands; auto; try lia.
       apply computes_to_exception_in_max_k_steps_exc; sp.
       unfold reduces_in_atmost_k_steps; simpl; sp.
 
@@ -964,7 +964,7 @@ Proof.
       exrepnd; subst.
 
       * left.
-        exists c1 c2 (S k1) k2 d; dands; simpl; auto; try omega.
+        exists c1 c2 (S k1) k2 d; dands; simpl; auto; try lia.
         rw @computes_to_value_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -974,7 +974,7 @@ Proof.
         rw @compute_step_ncompop_abs1; rw Heqc; auto.
 
       * right; left.
-        exists e (S k1); simpl; dands; auto; try omega.
+        exists e (S k1); simpl; dands; auto; try lia.
         rw @computes_to_exception_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -983,7 +983,7 @@ Proof.
         rw @compute_step_ncompop_abs1; rw Heqc; auto.
 
       * right; right.
-        exists x e (S k1) k2; dands; simpl; auto; try omega.
+        exists x e (S k1) k2; dands; simpl; auto; try lia.
         rw @computes_to_value_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -1450,7 +1450,7 @@ Lemma no_change_after_value_like2 {p} :
 Proof.
   introv comp isv x.
   pose proof (no_change_after_value_like lib t k1 v1 comp isv (k - k1)) as h.
-  assert(k=(k-k1) + k1) as e by omega.
+  assert(k=(k-k1) + k1) as e by lia.
   rw <- e in h; auto.
 Qed.
 
@@ -1466,9 +1466,9 @@ Proof.
   allunfold @reduces_to; exrepnd.
   allunfold @reduces_in_atmost_k_steps.
   pose proof (no_change_after_value_like2 lib t k0 v1 r2 isv1 (k0 + k)) as h1.
-  autodimp h1 hyp; try omega.
+  autodimp h1 hyp; try lia.
   pose proof (no_change_after_value_like2 lib t k v2 r0 isv2 (k0 + k)) as h2.
-  autodimp h2 hyp; try omega.
+  autodimp h2 hyp; try lia.
   eapply compute_at_most_k_steps_eqp in h2; eauto.
 Qed.
 
@@ -1596,7 +1596,7 @@ Proof.
 
     + exists k1; sp.
 
-    + exists (S k1); dands; try omega.
+    + exists (S k1); dands; try lia.
       apply ckcons with (t2 := u); sp.
 Qed.
 
@@ -2034,7 +2034,7 @@ Proof.
         allapply @get_param_from_cop_pki; subst.
         apply computes_to_val_like_in_max_k_steps_can in comp0; subst.
         left.
-        exists n1 n2 0 0; simpl; dands; auto; try omega;
+        exists n1 n2 0 0; simpl; dands; auto; try lia;
         try (rw @computes_to_value_in_max_k_steps_0; dands; eauto with slow).
         rw @reduces_in_atmost_k_steps_0; auto.
 
@@ -2050,7 +2050,7 @@ Proof.
         repndors; exrepnd; subst.
 
         { left.
-          exists nv1 nv2 k1 (S k2); dands; auto; try omega.
+          exists nv1 nv2 k1 (S k2); dands; auto; try lia.
           rw @computes_to_value_in_max_k_steps_S.
           exists n; sp.
           rw <- plus_n_Sm.
@@ -2064,7 +2064,7 @@ Proof.
         { apply computes_to_exception_in_max_k_steps_can in comp3; sp. }
 
         { right; right.
-          exists en e z k1 (S k2); dands; auto; try omega.
+          exists en e z k1 (S k2); dands; auto; try lia.
           rw @computes_to_exception_in_max_k_steps_S.
           exists n; sp.
           rw <- plus_n_Sm.
@@ -2082,7 +2082,7 @@ Proof.
         apply wf_exception_implies in isp2; exrepnd; sp; subst.
         apply computes_to_val_like_in_max_k_steps_exc_iff in comp0; subst;[].
         unfold ca_wf_def in Heqh; exrepnd; subst.
-        exists a0 t i 0 0; simpl; dands; auto; try omega.
+        exists a0 t i 0 0; simpl; dands; auto; try lia.
         { unfold computes_to_value_in_max_k_steps, reduces_in_atmost_k_steps;
           simpl; dands; eauto 3 with slow. }
         { apply computes_to_exception_in_max_k_steps_exc; sp. }
@@ -2100,7 +2100,7 @@ Proof.
         repndors; exrepnd; subst.
 
         { left.
-          exists nv1 nv2 k1 (S k2); dands; auto; try omega.
+          exists nv1 nv2 k1 (S k2); dands; auto; try lia.
           rw @computes_to_value_in_max_k_steps_S.
           exists n; sp.
           rw <- plus_n_Sm.
@@ -2114,7 +2114,7 @@ Proof.
         { apply computes_to_exception_in_max_k_steps_can in comp3; sp. }
 
         { right; right.
-          exists en e z k1 (S k2); dands; auto; try omega.
+          exists en e z k1 (S k2); dands; auto; try lia.
           rw @computes_to_exception_in_max_k_steps_S.
           exists n; sp.
           rw <- plus_n_Sm.
@@ -2136,7 +2136,7 @@ Proof.
       repndors; exrepnd; subst.
 
       * left.
-        exists nv1 nv2 (S k1) k2; dands; simpl; auto; try omega.
+        exists nv1 nv2 (S k1) k2; dands; simpl; auto; try lia.
         rw @computes_to_value_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -2144,7 +2144,7 @@ Proof.
         rw @compute_step_narithop_ncan1; rw Heqc; auto.
 
       * right; left.
-        exists en e (S k1); simpl; dands; auto; try omega.
+        exists en e (S k1); simpl; dands; auto; try lia.
         rw @computes_to_exception_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -2152,7 +2152,7 @@ Proof.
         rw @compute_step_narithop_ncan1; rw Heqc; auto.
 
       * right; right.
-        exists en e z (S k1) k2; dands; simpl; auto; try omega.
+        exists en e z (S k1) k2; dands; simpl; auto; try lia.
         rw @computes_to_value_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -2165,7 +2165,7 @@ Proof.
       apply computes_to_val_like_in_max_k_steps_exc in comp0; subst.
       right; left.
       apply wf_exception_implies in isp1; exrepnd; subst.
-      exists a0 t 0; dands; auto; try omega.
+      exists a0 t 0; dands; auto; try lia.
       apply computes_to_exception_in_max_k_steps_exc; sp.
       unfold reduces_in_atmost_k_steps; simpl; sp.
 
@@ -2180,7 +2180,7 @@ Proof.
       repndors; exrepnd; subst.
 
       * left.
-        exists nv1 nv2 (S k1) k2; dands; simpl; auto; try omega.
+        exists nv1 nv2 (S k1) k2; dands; simpl; auto; try lia.
         rw @computes_to_value_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -2188,7 +2188,7 @@ Proof.
         rw @compute_step_narithop_abs1; rw Heqc; auto.
 
       * right; left.
-        exists en e (S k1); simpl; dands; auto; try omega.
+        exists en e (S k1); simpl; dands; auto; try lia.
         rw @computes_to_exception_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -2196,7 +2196,7 @@ Proof.
         rw @compute_step_narithop_abs1; rw Heqc; auto.
 
       * right; right.
-        exists en e z (S k1) k2; dands; simpl; auto; try omega.
+        exists en e z (S k1) k2; dands; simpl; auto; try lia.
         rw @computes_to_value_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -2300,7 +2300,7 @@ Proof.
         {
           left.
           exists (@PKi p n1) (@PKi p n2) 0 0 (if Z_lt_le_dec n1 n2 then true else false);
-            simpl; dands; auto; try omega;
+            simpl; dands; auto; try lia;
             allrw @computes_to_can_in_max_k_steps_0;
             allrw @reduces_in_atmost_k_steps_0;
             dands; eauto 3 with slow.
@@ -2312,7 +2312,7 @@ Proof.
           left.
           allrw <- @pk2term_eq.
           exists pk1 pk2 0 0 (if param_kind_deq pk1 pk2 then true else false);
-            simpl; dands; auto; try omega;
+            simpl; dands; auto; try lia;
             allrw @computes_to_can_in_max_k_steps_0;
             allrw @reduces_in_atmost_k_steps_0;
             dands; eauto 3 with slow.
@@ -2332,7 +2332,7 @@ Proof.
         repndors; exrepnd; subst.
 
         { left.
-          exists pk1 pk2 k1 (S k2) d; dands; auto; try omega.
+          exists pk1 pk2 k1 (S k2) d; dands; auto; try lia.
           - rw @computes_to_can_in_max_k_steps_S.
             exists n; sp.
           - rw <- plus_n_Sm.
@@ -2343,13 +2343,13 @@ Proof.
             rw @compute_step_ncompop_ncan2.
             dcwf h;[].
             rw Heqc; auto.
-          - assert (k1 + S k2 + 1 = S (k1 + k2 + 1)) as e by omega.
+          - assert (k1 + S k2 + 1 = S (k1 + k2 + 1)) as e by lia.
             rw e; auto. }
 
         { apply computes_to_exception_in_max_k_steps_can in comp3; sp. }
 
         { right; right.
-          exists en e pk k1 (S k2); dands; auto; try omega.
+          exists en e pk k1 (S k2); dands; auto; try lia.
           rw @computes_to_exception_in_max_k_steps_S.
           exists n; sp.
           rw <- plus_n_Sm.
@@ -2369,7 +2369,7 @@ Proof.
         apply computes_to_val_like_in_max_k_steps_exc_iff in comp0; subst.
         unfold co_wf_def in Heqh; exrepnd; subst.
         allrw @get_param_from_cop_some; subst.
-        exists a0 t pk 0 0; simpl; dands; auto; try omega.
+        exists a0 t pk 0 0; simpl; dands; auto; try lia.
         { unfold computes_to_can_in_max_k_steps, reduces_in_atmost_k_steps;
           simpl; dands; auto; allrw @pk2term_eq; auto. }
         { repndors; exrepnd; subst; tcsp; left; eexists; dands; eauto. }
@@ -2389,7 +2389,7 @@ Proof.
         repndors; exrepnd; subst.
 
         { left.
-          exists pk1 pk2  k1 (S k2) d; dands; auto; try omega.
+          exists pk1 pk2  k1 (S k2) d; dands; auto; try lia.
           rw @computes_to_can_in_max_k_steps_S.
           exists n; sp.
           rw <- plus_n_Sm.
@@ -2400,13 +2400,13 @@ Proof.
           rw @compute_step_ncompop_abs2.
           dcwf h;[].
           rw Heqc; auto.
-          assert (k1 + S k2 + 1 = S (k1 + k2 + 1)) as e by omega.
+          assert (k1 + S k2 + 1 = S (k1 + k2 + 1)) as e by lia.
           rw e; auto. }
 
         { apply computes_to_exception_in_max_k_steps_can in comp3; sp. }
 
         { right; right.
-          exists en e pk k1 (S k2); dands; auto; try omega.
+          exists en e pk k1 (S k2); dands; auto; try lia.
           rw @computes_to_exception_in_max_k_steps_S.
           exists n; sp.
           rw <- plus_n_Sm.
@@ -2430,7 +2430,7 @@ Proof.
       repndors; exrepnd; subst.
 
       * left.
-        exists pk1 pk2 (S k1) k2 d; dands; simpl; auto; try omega.
+        exists pk1 pk2 (S k1) k2 d; dands; simpl; auto; try lia.
         rw @computes_to_can_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -2440,7 +2440,7 @@ Proof.
         rw @compute_step_ncompop_ncan1; rw Heqc; auto.
 
       * right; left.
-        exists en e (S k1); simpl; dands; auto; try omega.
+        exists en e (S k1); simpl; dands; auto; try lia.
         rw @computes_to_exception_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -2449,7 +2449,7 @@ Proof.
         rw @compute_step_ncompop_ncan1; rw Heqc; auto.
 
       * right; right.
-        exists en e pk (S k1) k2; dands; simpl; auto; try omega.
+        exists en e pk (S k1) k2; dands; simpl; auto; try lia.
         rw @computes_to_can_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -2463,7 +2463,7 @@ Proof.
       apply computes_to_val_like_in_max_k_steps_exc in comp0; subst.
       right; left.
       apply wf_exception_implies in wf1; exrepnd; subst.
-      exists a0 t 0; dands; auto; try omega.
+      exists a0 t 0; dands; auto; try lia.
       apply computes_to_exception_in_max_k_steps_exc; sp.
       unfold reduces_in_atmost_k_steps; simpl; sp.
 
@@ -2479,7 +2479,7 @@ Proof.
       repndors; exrepnd; subst.
 
       * left.
-        exists pk1 pk2 (S k1) k2 d; dands; simpl; auto; try omega.
+        exists pk1 pk2 (S k1) k2 d; dands; simpl; auto; try lia.
         rw @computes_to_can_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -2489,7 +2489,7 @@ Proof.
         rw @compute_step_ncompop_abs1; rw Heqc; auto.
 
       * right; left.
-        exists en e (S k1); simpl; dands; auto; try omega.
+        exists en e (S k1); simpl; dands; auto; try lia.
         rw @computes_to_exception_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.
@@ -2498,7 +2498,7 @@ Proof.
         rw @compute_step_ncompop_abs1; rw Heqc; auto.
 
       * right; right.
-        exists en e pk (S k1) k2; dands; simpl; auto; try omega.
+        exists en e pk (S k1) k2; dands; simpl; auto; try lia.
         rw @computes_to_can_in_max_k_steps_S.
         exists n; sp.
         rw @reduces_in_atmost_k_steps_S.

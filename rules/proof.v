@@ -155,7 +155,7 @@ Proof.
     eapply lsubst_alpha_congr4; try (exact q1);
     try (rewrite dom_sub_combine);autorewrite with slow; auto.
 
-    apply implies_alphaeq_sub_range_combine; autorewrite with slow; auto; try omega.
+    apply implies_alphaeq_sub_range_combine; autorewrite with slow; auto; try lia.
     introv i.
     rewrite <- map_combine in i.
     apply in_map_iff in i; exrepnd; ginv.
@@ -450,7 +450,7 @@ Proof.
       subst; apply implies_isprogram_bt0; eauto with slow.
     + unfold lblift. allsimpl. split; auto.
       introv Hin. unfold selectbt.
-      repeat(destruct n; try (omega;fail); allsimpl);
+      repeat(destruct n; try (lia;fail); allsimpl);
       apply blift_approx_open_nobnd2; sp.
 Qed.
 

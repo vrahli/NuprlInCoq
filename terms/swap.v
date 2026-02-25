@@ -538,7 +538,7 @@ Proof.
                    sv) as a2;
       clear a1.
 
-    apply @aeqbt with (vs := vs); auto; try omega.
+    apply @aeqbt with (vs := vs); auto; try lia.
     allrw disjoint_app_r; repnd; dands; auto.
 
     unfold disjoint; introv i1 i2.
@@ -1131,11 +1131,11 @@ Proof.
     apply aeqo; allrw map_length; auto.
     introv lt.
     applydup aeqbts in lt; clear aeqbts.
-    repeat (rw @selectbt_map; try omega).
+    repeat (rw @selectbt_map; try lia).
     remember (selectbt lbt1 n) as bt1.
     remember (selectbt bts2 n) as bt2.
     assert (LIn bt1 lbt1) as ibt1 by (subst; apply selectbt_in; auto).
-    assert (LIn bt2 bts2) as ibt2 by (subst; apply selectbt_in; omega).
+    assert (LIn bt2 bts2) as ibt2 by (subst; apply selectbt_in; lia).
     clear dependent n.
     destruct bt1 as [bvs1 t1].
     destruct bt2 as [bvs2 t2].
@@ -1156,21 +1156,21 @@ Proof.
     repeat (rw mk_swapping_app in a; auto).
 
     apply @aeqbt with (vs := vs0); auto;
-    try (complete (rw length_swapbvars; omega)).
+    try (complete (rw length_swapbvars; lia)).
 
     { allrw disjoint_app_r; repnd.
       pose proof (disjoint_swapbvars bvs1 vs0 vs1 vs2) as h1;
-        repeat (autodimp h1 hyp); try omega.
+        repeat (autodimp h1 hyp); try lia.
       pose proof (disjoint_swapbvars bvs2 vs0 vs1 vs2) as h2;
-        repeat (autodimp h2 hyp); try omega.
+        repeat (autodimp h2 hyp); try lia.
       pose proof (disjoint_allvars_cswap t1 vs0 vs1 vs2) as h3;
-        repeat (autodimp h3 hyp); try omega.
+        repeat (autodimp h3 hyp); try lia.
       pose proof (disjoint_allvars_cswap t2 vs0 vs1 vs2) as h4;
-        repeat (autodimp h4 hyp); try omega. }
+        repeat (autodimp h4 hyp); try lia. }
 
     rw @cswap_cswap.
     allrw @cswap_cswap.
-    repeat (rw mk_swapping_app;[|complete omega]).
+    repeat (rw mk_swapping_app;[|complete lia]).
 
     rw <- @cswap_app_cswap; auto; try (complete (apply disjoint_sym; auto)).
     rw <- @cswap_app_cswap; auto; try (complete (apply disjoint_sym; auto)).
@@ -1314,7 +1314,7 @@ Proof.
       as Hfresh.
     destruct Hfresh as [l' d]; repnd.
 
-    apply @aeqbt with (vs := l'); auto; try omega.
+    apply @aeqbt with (vs := l'); auto; try lia.
     allrw disjoint_app_r; sp.
 
     pose proof (Hind
@@ -1345,7 +1345,7 @@ Proof.
     try (complete (allrw disjoint_app_r; auto)).
 
     allrw @cswap_cswap.
-    repeat (rw mk_swapping_app in a0; try omega).
+    repeat (rw mk_swapping_app in a0; try lia).
 
     rw @cswap_disj_chain in a0; auto;
     try (complete (allrw disjoint_app_r; sp; try (complete (apply disjoint_sym; auto)))).
@@ -1964,7 +1964,7 @@ Lemma alpha_eq_cswap_and_rename {p} :
                 (rename_aux t vs1 vs2).
 Proof.
   nterm_ind1s t as [v|f ind|o lbt Hind] Case;
-  introv len norep disj1 disj2; allsimpl; auto.
+  introv len norep disj1 disj2; auto.
 
   - Case "vterm".
     rw @rename_aux_eq.
@@ -1972,13 +1972,13 @@ Proof.
     allrw @sub_find_swapping2sub.
     allrw option_with_default_option_map.
     allrw disjoint_singleton_r.
-    rw swapvar_eq; auto; try (apply disjoint_sym; complete auto).
+    allsimpl; rw swapvar_eq; auto; try (apply disjoint_sym; complete auto).
 
   - Case "oterm".
     allrw disjoint_flat_map_r.
     rw @rename_aux_eq; simpl.
     apply al_oterm; allrw map_length; auto; introv i.
-    repeat (rw @selectbt_map; try omega).
+    repeat (rw @selectbt_map; try lia).
 
     remember (selectbt lbt n) as bt.
     assert (LIn bt lbt) as j by (subst; apply selectbt_in; auto).
@@ -1995,7 +1995,7 @@ Proof.
       as vs; destruct vs as [vs vsc]; repnd.
 
     allrw disjoint_app_r; repnd.
-    apply al_bterm with (lv := vs); auto; allrw length_swapbvars; try omega.
+    apply al_bterm with (lv := vs); auto; allrw length_swapbvars; try lia.
 
     { apply disjoint_app_r; dands; apply disjoint_to_all_vars_r.
       { apply disjoint_allvars_cswap; auto. }
@@ -2082,7 +2082,7 @@ Proof.
       remember (selectbt lbt n) as bt1.
       remember (selectbt bts2 n) as bt2.
       assert (LIn bt1 lbt)  as i1 by (subst; apply selectbt_in; auto).
-      assert (LIn bt2 bts2) as i2 by (subst; apply selectbt_in; omega).
+      assert (LIn bt2 bts2) as i2 by (subst; apply selectbt_in; lia).
       clear dependent n.
       destruct bt1 as [l1 t].
       destruct bt2 as [l2 u].
@@ -2090,7 +2090,7 @@ Proof.
       allsimpl; allrw disjoint_app_r; repnd.
 
       apply al_bterm with (lv := vs); auto;
-      try omega;
+      try lia;
       try (complete (rw disjoint_app_r; dands; eapply eqvars_disjoint_r; eauto)).
 
       generalize (Hind t1 (cswap (mk_swapping vs1 vs) t1) vs1 i1);
@@ -2124,7 +2124,7 @@ Proof.
       remember (selectbt lbt n) as bt1.
       remember (selectbt lbt2 n) as bt2.
       assert (LIn bt1 lbt)  as i1 by (subst; apply selectbt_in; auto).
-      assert (LIn bt2 lbt2) as i2 by (subst; apply selectbt_in; omega).
+      assert (LIn bt2 lbt2) as i2 by (subst; apply selectbt_in; lia).
       clear dependent n.
       destruct bt1 as [l1 t].
       destruct bt2 as [l2 u].
@@ -2134,7 +2134,7 @@ Proof.
       apply alpha_eq_if3 in aeqswap.
 
       apply aeqbt with (vs := lv); auto; simpl;
-      try omega;
+      try lia;
       try (complete (allrw disjoint_app_r; dands; auto;
                      apply disjoint_to_allvars_r; rw disjoint_app_r; sp)).
 
@@ -2160,7 +2160,7 @@ Proof.
 
       pose proof (alpha_eq_cswap_and_rename u l2 lv) as h2.
       repeat (autodimp h2 hyp);
-        try (apply disjoint_sym; complete auto); try omega;
+        try (apply disjoint_sym; complete auto); try lia;
         try (apply disjoint_to_allvars_r; rw disjoint_app_r; sp).
 
       apply alpha_eq_trans with (nt2 := rename_aux t l1 lv); auto.
@@ -2210,12 +2210,12 @@ Proof.
   destruct h as [h1 h2].
   split; intro k.
   - autodimp h1 hyp.
-    + constructor; allsimpl; auto; introv i; destruct n; sp; omega.
+    + constructor; allsimpl; auto; introv i; destruct n; sp; lia.
     + inversion h1; subst; allsimpl.
       assert (0 < 1) as x by auto.
       discover; allunfold @selectbt; allsimpl; auto.
   - autodimp h2 hyp.
-    + constructor; allsimpl; auto; introv i; destruct n; sp; omega.
+    + constructor; allsimpl; auto; introv i; destruct n; sp; lia.
     + inversion h2; subst; allsimpl.
       assert (0 < 1) as x by auto.
       discover; allunfold @selectbt; allsimpl; auto.
@@ -2253,7 +2253,7 @@ Proof.
                    -> alphaeqbt_vs vs (selectbt lbt n) (selectbt l n))).
 
       * revert dependent l.
-        induction lbt; introv len; allsimpl; try (complete (left; introv k; omega)).
+        induction lbt; introv len; allsimpl; try (complete (left; introv k; lia)).
         destruct l; allsimpl; cpx.
         rw assert_of_andb in nc; repnd.
         autodimp IHlbt hyp; try (complete (introv i n; eapply ind; eauto)).

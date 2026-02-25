@@ -597,8 +597,7 @@ Proof.
           repnd.
           apply hyp0 in hyp1.
           rw @tequality_mkc_halts_like in hyp1.
-          rw hyp1; auto.
-        
+          rw hyp1; auto; tcsp.
         }
 
         allrw @similarity_snoc; simpl.

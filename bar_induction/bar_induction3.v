@@ -68,9 +68,9 @@ Proof.
   rewrite mkc_zero_eq.
 
   eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-  boolvar; try omega.
+  boolvar; try lia.
   eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-  boolvar; try omega.
+  boolvar; try lia.
   auto.
 Qed.
 Hint Resolve eq_kseq_of_seq : slow.
@@ -139,7 +139,7 @@ Proof.
         [repeat (apply isprogram_mk_less; dands; eauto 2 with slow);
           apply isprogram_apply; eauto 3 with slow
         |apply reduces_to_if_step; csunf; simpl; dcwf h; simpl;
-         unfold compute_step_comp; simpl; boolvar; try omega; reflexivity]
+         unfold compute_step_comp; simpl; boolvar; try lia; reflexivity]
       |].
 
     apply hasvalue_mk_less in hv1; eauto 2 with slow;
@@ -167,7 +167,7 @@ Proof.
         [repeat (apply isprogram_mk_less; dands; eauto 2 with slow);
           apply isprogram_apply; eauto 3 with slow
         |apply reduces_to_if_step; csunf; simpl; dcwf h; simpl;
-         unfold compute_step_comp; simpl; boolvar;[|reflexivity]; try omega]
+         unfold compute_step_comp; simpl; boolvar;[|reflexivity]; try lia]
       |].
 
     eauto 3 with slow.
@@ -199,7 +199,7 @@ Proof.
           [repeat (apply isprogram_mk_less; dands; eauto 2 with slow);
             apply isprogram_apply; eauto 3 with slow
           |apply reduces_to_if_step; csunf; simpl; dcwf h; simpl;
-           unfold compute_step_comp; simpl; boolvar; try omega; reflexivity]
+           unfold compute_step_comp; simpl; boolvar; try lia; reflexivity]
         |].
 
       apply computes_to_exception_mk_less in hv1; eauto 2 with slow;
@@ -209,7 +209,7 @@ Proof.
       * eapply reduces_to_eq_val_like in hv0;try (exact hv2); eauto 2 with slow; ginv.
         apply reduces_to_if_isvalue_like in hv4; eauto 3 with slow.
         unfold mk_nat in hv4; ginv.
-        try omega.
+        try lia.
 
       * apply bottom_doesnt_raise_an_exception in hv1; tcsp.
 

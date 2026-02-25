@@ -1452,7 +1452,7 @@ Proof.
 
               { apply reduces_to_if_step.
                 csunf; simpl.
-                dcwf h; simpl; boolvar; try omega.
+                dcwf h; simpl; boolvar; try lia.
                 rw @Znat.Nat2Z.id; auto. }
 
               { apply differ_force_alpha_refl; auto.
@@ -1716,7 +1716,7 @@ Proof.
                              (@mk_nat o (f0 n)).
                       dands; eauto 3 with slow.
                       { eapply reduces_to_if_step; csunf; simpl; dcwf xx; simpl.
-                        boolvar; try omega; auto.
+                        boolvar; try lia; auto.
                         rw @Znat.Nat2Z.id; auto. }
                       apply differ_force_alpha_refl; simpl; tcsp.
                     }
@@ -1771,7 +1771,7 @@ Proof.
 
               { apply reduces_to_if_step; csunf; simpl.
                 rw @Znat.Nat2Z.id.
-                boolvar; try omega; auto. }
+                boolvar; try lia; auto. }
 
               { apply differ_force_implies_differ_force_alpha.
                 apply differ_force_oterm; simpl; tcsp. }*)
@@ -1942,7 +1942,7 @@ Proof.
                     apply reduces_to_if_step; csunf; simpl.
                     dcwf h; simpl;[].
                     unfold compute_step_comp; simpl.
-                    boolvar; tcsp; try omega.
+                    boolvar; tcsp; try lia.
 
                   + unfold bound2_cbv.
                     eapply reduces_to_if_split2;[csunf;simpl;auto|].
@@ -1958,14 +1958,14 @@ Proof.
                       | [ |- context[mk_lam ?v ?t ] ] => remember (mk_lam v t) as xx; clear Heqxx
                     end.
 
-                    boolvar; tcsp; try omega; GC.
+                    boolvar; tcsp; try lia; GC.
                     pose proof (i (Z.of_nat n)) as h; autodimp h hyp.
                     rw Znat.Zabs2Nat.id in h.
 
                     apply reduces_to_if_step; csunf; simpl.
                     dcwf hh; simpl;[].
                     unfold compute_step_comp; simpl.
-                    boolvar; tcsp; try omega.
+                    boolvar; tcsp; try lia.
 
                   + apply differ_force_implies_differ_force_alpha.
                     apply differ_force_refl; simpl; rw app_nil_r.
@@ -2035,7 +2035,7 @@ Proof.
 
               exists (@mk_uni o n) (@mk_uni o n); dands; eauto 3 with slow.
               apply reduces_to_if_step; csunf; simpl.
-              unfold compute_step_tuni; simpl; boolvar; tcsp; try omega.
+              unfold compute_step_tuni; simpl; boolvar; tcsp; try lia.
               rw Znat.Nat2Z.id; auto.
 
             * SSSCase "NMinus".
@@ -2850,7 +2850,7 @@ Proof.
     fold_terms.
 
     pose proof (ind k') as h.
-    autodimp h hyp;[omega|].
+    autodimp h hyp;[lia|].
 
     pose proof (h u2) as q; autodimp q hyp.
     pose proof (q u1 h'''1) as r; clear q.

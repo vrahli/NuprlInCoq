@@ -123,9 +123,9 @@ Proof.
   autorewrite with slow.
   allrw @mkc_zero_eq.
   eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-  boolvar; try omega.
+  boolvar; try lia.
   eapply cequivc_trans;[apply cequivc_mkc_less_nat|].
-  boolvar; try omega; auto.
+  boolvar; try lia; auto.
 Qed.
 
 Definition barind_meta2_fun_bar_con {o} lib Q S (B R : @CTerm o) v :=
@@ -267,7 +267,7 @@ Proof.
   eapply cequivc_trans in eqs1;[|apply cequivc_sym;apply cequivc_beta].
   autorewrite with slow in *.
   eapply cequivc_trans in eqs1;[|apply cequivc_sym;apply cequivc_mkc_inteq_nat].
-  boolvar; subst; try omega; auto.
+  boolvar; subst; try lia; auto.
 Qed.
 
 Lemma implies_meta2_fun_on_seq_update_seq {o} :
@@ -362,7 +362,7 @@ Lemma meta2_fun_con_alpha_prop1 {o} :
 Proof.
   introv lemn.
   assert {k : nat & n = k + m} as e.
-  { exists (n - m); omega. }
+  { exists (n - m); lia. }
   exrepnd; subst.
   clear lemn.
   induction k; introv; allsimpl; apply implies_equality_natk2nat; introv ltm0.
@@ -371,7 +371,7 @@ Proof.
     unfold meta2_fun_con_kseq_NA in am; exrepnd; allsimpl.
 
     dup am0 as i.
-    apply (is_kseq_implies lib m0) in i; try omega; exrepnd.
+    apply (is_kseq_implies lib m0) in i; try lia; exrepnd.
     exists k; dands; auto.
 
   - remember (meta2_fun_con_alpha lib C P R X c v q h f ind (k + m)) as am.
@@ -387,7 +387,7 @@ Proof.
     eapply cequivc_trans;[apply cequivc_beta|].
     autorewrite with slow.
     eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-    boolvar; tcsp; GC; try omega.
+    boolvar; tcsp; GC; try lia.
     apply computes_to_valc_implies_cequivc; auto.
 Qed.
 
@@ -435,8 +435,8 @@ Proof.
       simpl; auto.
 
     - pose proof (meta2_fun_con_alpha_prop1 lib C P R X (seq2kseq c 0 v) v nc ni f ind n (S m)) as q.
-      autodimp q hyp; try omega.
-      apply (equality_natk2nat_implies lib m) in q; try omega.
+      autodimp q hyp; try lia.
+      apply (equality_natk2nat_implies lib m) in q; try lia.
       exrepnd.
 
       apply cequivc_nat_implies_computes_to_valc.
@@ -458,7 +458,7 @@ Proof.
       eapply cequivc_trans;[apply cequivc_beta|].
       autorewrite with slow.
       eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-      boolvar; auto; try omega.
+      boolvar; auto; try lia.
   }
 
   pose proof (bar (mkc_nseq s)) as b.
@@ -744,7 +744,7 @@ Lemma meta5_fun_con_alpha_prop1 {o} :
 Proof.
   introv lemn.
   assert {k : nat & n = k + m} as e.
-  { exists (n - m); omega. }
+  { exists (n - m); lia. }
   exrepnd; subst.
   clear lemn.
   induction k; introv; allsimpl; apply implies_equality_natk2nat; introv ltm0.
@@ -753,7 +753,7 @@ Proof.
     unfold meta5_fun_con_kseq_NA in am; exrepnd; allsimpl.
 
     dup am0 as i.
-    apply (is_kseq_implies lib m0) in i; try omega; exrepnd.
+    apply (is_kseq_implies lib m0) in i; try lia; exrepnd.
     exists k; dands; auto.
 
   - remember (meta5_fun_con_alpha lib C P R X c v q r h f ind (k + m)) as am.
@@ -769,7 +769,7 @@ Proof.
     eapply cequivc_trans;[apply cequivc_beta|].
     autorewrite with slow.
     eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-    boolvar; tcsp; GC; try omega.
+    boolvar; tcsp; GC; try lia.
     apply computes_to_valc_implies_cequivc; auto.
 Qed.
 
@@ -812,8 +812,8 @@ Proof.
       simpl; auto.
 
     - pose proof (meta5_fun_con_alpha_prop1 lib C P R X (seq2kseq c 0 v) v nc R0 ni f ind n (S m)) as q.
-      autodimp q hyp; try omega.
-      apply (equality_natk2nat_implies lib m) in q; try omega.
+      autodimp q hyp; try lia.
+      apply (equality_natk2nat_implies lib m) in q; try lia.
       exrepnd.
 
       apply cequivc_nat_implies_computes_to_valc.
@@ -835,7 +835,7 @@ Proof.
       eapply cequivc_trans;[apply cequivc_beta|].
       autorewrite with slow.
       eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-      boolvar; auto; try omega.
+      boolvar; auto; try lia.
   }
 
   assert (forall m : nat, meta2_fun_on_seq lib C R m (mkc_nseq s)) as hr.

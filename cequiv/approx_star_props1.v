@@ -323,7 +323,7 @@ Proof.
       unfold blift_sub in h; exrepnd.
       unfold blift_sub.
 
-      repeat (rw @selectbt_map; auto; try omega).
+      repeat (rw @selectbt_map; auto; try lia).
       pose proof (select2bts bs lbt1' n) as k; repeat (autodimp k hyp); exrepnd.
       allrw k0; allrw k2; clear k0 k2.
 
@@ -562,10 +562,10 @@ Proof.
                      (append_string_list ms))) as e.
       { rw <- k; auto. }
       allrw string_length_append.
-      omega.
+      lia.
 
     - apply IHms.
-      rw string_length_append; omega.
+      rw string_length_append; lia.
   }
 
   remember (String.append "x" (append_string_list ms)) as m; clear Heqm.
@@ -1406,9 +1406,9 @@ Lemma approx_starbts_cons {o} :
 Proof.
   introv.
   unfold approx_starbts, lblift_sub; simpl; split; intro k; repnd; cpx; dands; auto.
-  - pose proof (k 0) as h; autodimp h hyp; omega.
+  - pose proof (k 0) as h; autodimp h hyp; lia.
   - introv i.
-    pose proof (k (S n)) as h; autodimp h hyp; omega.
+    pose proof (k (S n)) as h; autodimp h hyp; lia.
   - introv i.
     destruct n; cpx.
     unfold selectbt; simpl.
@@ -1500,7 +1500,7 @@ Proof.
   - unfold selectbt.
     apply k.
     apply (in_nth_combine_iff _ _ default_bt default_bt).
-    exists n; dands; auto; try omega.
+    exists n; dands; auto; try lia.
 Qed.
 
 Lemma ex_change_bvars_bterm_alpha {o} :
@@ -1736,7 +1736,7 @@ Proof.
     rename t' into b.
 
     assert (length bs' = length lbtcv) as eql.
-    { unfold alpha_eq_bterms in h3; repnd; omega. }
+    { unfold alpha_eq_bterms in h3; repnd; lia. }
 
     eapply approx_star_berms_alpha_fun_l in Hap2;
       [|apply alpha_eq_bterms_sym;exact h3].

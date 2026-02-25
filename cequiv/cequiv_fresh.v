@@ -329,16 +329,16 @@ Proof.
     exists lvn (lsubst_aux t1 (var_ren l1 lvn)) (lsubst_aux t2 (var_ren l2 lvn)).
     dands;
       [|rw <- @lsubst_lsubst_aux;
-         [apply btchange_alpha_aux;try omega;auto;
+         [apply btchange_alpha_aux;try lia;auto;
           allrw disjoint_app_l;dands;eauto 3 with slow|];
-         rw @flat_map_free_var_vars_range; eauto 3 with slow; try omega;
-         rw @range_var_ren; auto; try omega;
+         rw @flat_map_free_var_vars_range; eauto 3 with slow; try lia;
+         rw @range_var_ren; auto; try lia;
          rw flat_map_map; unfold compose; simpl
        |rw <- @lsubst_lsubst_aux;
-         [apply btchange_alpha_aux;try omega;auto;
+         [apply btchange_alpha_aux;try lia;auto;
           allrw disjoint_app_l;dands;eauto 3 with slow|];
-         rw @flat_map_free_var_vars_range; eauto 3 with slow; try omega;
-         rw @range_var_ren; auto; try omega;
+         rw @flat_map_free_var_vars_range; eauto 3 with slow; try lia;
+         rw @range_var_ren; auto; try lia;
          rw flat_map_map; unfold compose; simpl];
       [].
 
@@ -593,7 +593,7 @@ Proof.
     apply lblift_as_combine.
     unfold mk_fresh_bterms.
     allrw map_length.
-    dands; auto; try omega.
+    dands; auto; try lia.
 
     introv i.
     rw <- map_combine_right in i.
@@ -617,7 +617,7 @@ Proof.
     applydup @alphaeqbt_numbvars in i0; allunfold @num_bvars; allsimpl.
 
     pose proof (alphabt_change_var_aux t1 t2 l1 l2 lvn) as aeq2.
-    repeat (autodimp aeq2 hyp); try omega.
+    repeat (autodimp aeq2 hyp); try lia.
     { unfold all_vars; simpl; allrw app_nil_r.
       allrw disjoint_app_r; allrw disjoint_cons_r; dands; auto. }
     repnd; GC.
@@ -628,17 +628,17 @@ Proof.
       (lsubst_aux (mk_fresh (maybe_new_var v l2 t2) t2) (var_ren l2 lvn)).
     dands;
       [|rw <- @lsubst_lsubst_aux;
-         [apply btchange_alpha_aux;try omega;auto;
+         [apply btchange_alpha_aux;try lia;auto;
           allrw disjoint_app_l;dands;eauto 3 with slow|];
-         rw @flat_map_free_var_vars_range; eauto 3 with slow; try omega;
-         rw @range_var_ren; auto; try omega;
+         rw @flat_map_free_var_vars_range; eauto 3 with slow; try lia;
+         rw @range_var_ren; auto; try lia;
          rw flat_map_map; unfold compose; simpl
        |rw <- @lsubst_lsubst_aux;
-         [apply btchange_alpha_aux;try omega;auto;
+         [apply btchange_alpha_aux;try lia;auto;
           allrw disjoint_app_l;simpl;dands;eauto 3 with slow;
           simpl;apply disjoint_singleton_l;auto
          |];[];
-         rw @flat_map_free_var_vars_range; eauto 3 with slow; try omega;
+         rw @flat_map_free_var_vars_range; eauto 3 with slow; try lia;
          simpl;allrw app_nil_r; allrw disjoint_cons_l; dands; eauto 3 with slow];
       [].
 

@@ -194,13 +194,13 @@ Proof.
     pose proof (computes_to_valc_tuni lib a (Z.of_nat k0)) as c1.
     pose proof (computes_to_valc_tuni lib b (Z.of_nat k0)) as c2.
     allrw @Znat.Nat2Z.id; fold_terms.
-    repeat (autodimp c1 hyp); try omega.
-    repeat (autodimp c2 hyp); try omega.
+    repeat (autodimp c1 hyp); try lia.
+    repeat (autodimp c2 hyp); try lia.
     exists (fun A A' => (exists eqa, close lib (univi lib k0) A A' eqa)).
     apply CL_init.
     exists (S k0).
     left.
-    dands; spcast; auto.
+    dands; spcast; auto; sp.
 Qed.
 
 Lemma mkc_uni_in_nuprl {p} :
@@ -254,7 +254,7 @@ Proof.
     exists eqa0.
     fold (nuprli lib j).
     pose proof (typable_in_higher_univ lib i A B eqa0 equ1 (j - i)) as q.
-    rewrite minus_plus_n in q; auto; try omega.
+    rewrite minus_plus_n in q; auto; try lia.
   }
 Qed.
 

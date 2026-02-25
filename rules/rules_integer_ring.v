@@ -326,7 +326,7 @@ Proof.
      clear dependent k2. clear dependent n2. clear dependent m2.
     allrw @member_int_iff. spcast. exrepnd.
    unfold equality_of_int.
-   assert ((z + z0 + z1)%Z = (z + (z0 + z1))%Z) as eq by omega.
+   assert ((z + z0 + z1)%Z = (z + (z0 + z1))%Z) as eq by lia.
    exists (z + z0 + z1)%Z. sp; auto; spcast;
      [ | rw eq]; repeat (apply computes_to_valc_arithop;auto).
 Qed.
@@ -377,7 +377,7 @@ Proof.
      clear dependent n2. clear dependent m2.
     allrw @member_int_iff. spcast. exrepnd.
    unfold equality_of_int.
-   assert ((z + z0)%Z = (z0 + z)%Z) as eq by omega.
+   assert ((z + z0)%Z = (z0 + z)%Z) as eq by lia.
    exists (z + z0)%Z. sp; auto; spcast;
      [ | rw eq]; repeat (apply computes_to_valc_arithop;auto).
 Qed.
@@ -604,7 +604,7 @@ Proof.
    exists z0.
    sp; auto; spcast; auto.
    assert ( (mkc_integer z0) = @mkc_integer o (z + (z0 - z))) as eq by 
-     (apply mkc_integer_eq_iff; omega).
+     (apply mkc_integer_eq_iff; lia).
      rw eq; repeat (apply computes_to_valc_arithop;auto).
 Qed.
 
@@ -654,7 +654,7 @@ Proof.
     allrw @member_int_iff. spcast. exrepnd.
    unfold equality_of_int.
    assert (mkc_integer (1 * z) = @mkc_integer o z) as eq by
-     (apply mkc_integer_eq_iff; omega).
+     (apply mkc_integer_eq_iff; lia).
     exists z; sp; spcast; auto.
     rw<- eq. apply @computes_to_valc_arithop; auto.
     apply computes_to_valc_refl.
@@ -708,7 +708,7 @@ Proof.
     allrw @member_int_iff. spcast. exrepnd.
    unfold equality_of_int.
    assert (mkc_integer (0 + z) = @mkc_integer o z) as eq by
-     (apply mkc_integer_eq_iff; omega).
+     (apply mkc_integer_eq_iff; lia).
     exists z; sp; spcast; auto.
     rw<- eq. apply @computes_to_valc_arithop; auto.
     apply computes_to_valc_refl. 

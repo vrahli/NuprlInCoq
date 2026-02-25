@@ -176,7 +176,7 @@ Proof.
   unfold force_int, mk_add.
   prove_alpha_eq4.
   introv i.
-  destruct n;[|destruct n]; try omega.
+  destruct n;[|destruct n]; try lia.
   - apply alphaeqbt_nilv2; auto.
   - apply alphaeqbt_nilv2; auto.
 Qed.
@@ -195,7 +195,7 @@ Proof.
   unfold force_int_bound, mk_cbv, mk_less.
   prove_alpha_eq4.
   introv i.
-  destruct n;[|destruct n]; try omega.
+  destruct n;[|destruct n]; try lia.
 
   - apply alphaeqbt_nilv2; auto.
 
@@ -221,7 +221,7 @@ Proof.
       prove_alpha_eq4.
       introv j.
       destruct n;[|destruct n;[|destruct n;[|destruct n]]];
-      try omega; eauto 3 with slow.
+      try lia; eauto 3 with slow.
 
       apply alphaeqbt_nilv2; auto.
       repeat (rw @lsubst_aux_trivial_cl_term); auto; simpl;
@@ -324,11 +324,11 @@ Proof.
 
         exists n1; dands; eauto 3 with slow.
         apply computes_to_val_like_in_max_k_steps_if_isvalue_like in h2; eauto 3 with slow; ginv.
-        symmetry; apply Z.abs_neq; try omega.
+        symmetry; apply Z.abs_neq; try lia.
 
       * apply computation3.reduces_in_atmost_k_steps_if_isvalue_like in comp0; eauto 3 with slow; ginv.
         exists n1; dands; eauto 3 with slow.
-        symmetry; apply Z.abs_eq; try omega.
+        symmetry; apply Z.abs_eq; try lia.
 
     + Case "NCan".
       remember (compute_step lib (oterm (NCan ncan) bs)) as cs; symmetry in Heqcs; destruct cs; ginv.
@@ -811,9 +811,7 @@ Proof.
         { exists n1; dands; eauto with slow.
           right; dands; eauto with slow.
           pose proof (Zabs.Zabs_nat_le (Z.of_nat b) (-n1)) as p.
-          autodimp p hyp; try omega.
-          allrw Znat.Zabs2Nat.id.
-          destruct n1; allsimpl; try omega. }
+          autodimp p hyp; try lia. }
 
       * dcwf h; allsimpl.
         unfold compute_step_comp in r1; allsimpl; boolvar; ginv.
@@ -826,9 +824,7 @@ Proof.
         { exists n1; dands; eauto with slow.
           right; dands; eauto with slow.
           pose proof (Zabs.Zabs_nat_le (Z.of_nat b) n1) as p.
-          autodimp p hyp; try omega.
-          allrw Znat.Zabs2Nat.id.
-          destruct n1; allsimpl; try omega. }
+          autodimp p hyp; try lia. }
 
     + Case "NCan".
       unfold force_int_bound in r1.
@@ -1632,9 +1628,7 @@ Proof.
       exists z; dands; auto.
       right; dands; auto.
       pose proof (Zabs.Zabs_nat_le (Z.of_nat b) (-z)) as k.
-      autodimp k hyp; try omega.
-      allrw Znat.Zabs2Nat.id.
-      destruct z; allsimpl; try omega.
+      autodimp k hyp; try lia.
 
   - dcwf h; allsimpl.
     unfold compute_step_comp in r0; allsimpl; ginv.
@@ -1651,7 +1645,5 @@ Proof.
       exists z; dands; auto.
       right; dands; auto.
       pose proof (Zabs.Zabs_nat_le (Z.of_nat b) z) as k.
-      autodimp k hyp; try omega.
-      allrw Znat.Zabs2Nat.id.
-      destruct z; allsimpl; try omega.
+      autodimp k hyp; try lia.
 Qed.

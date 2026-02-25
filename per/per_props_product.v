@@ -334,7 +334,7 @@ Lemma inhabited_exists {p} :
 Proof.
   introv.
   unfold mkc_exists.
-  rw @inhabited_product; auto.
+  rw @inhabited_product; auto; tcsp.
 Qed.
 
 Lemma alphaeqc_mkc_product1 {o} :

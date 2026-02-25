@@ -133,7 +133,7 @@ Proof.
   revert dependent extra.
   induction l; introv s; allsimpl; tcsp.
   rw string_append_assoc.
-  rw not_over_or; dands; auto;[|apply IHl;rw string_length_append; omega].
+  rw not_over_or; dands; auto;[|apply IHl;rw string_length_append; lia].
 
   intro k.
   assert (String.length a
@@ -142,7 +142,7 @@ Proof.
                  (String.append extra a)
                  (append_string_list l))) as e by (rw <- k; auto).
   allrw string_length_append.
-  omega.
+  lia.
 Defined.
 
 Definition dset_string : DSet :=
@@ -629,13 +629,13 @@ Proof.
   try (complete (right; intro k; inversion k; sp));
   try (complete (pose proof (Z_noteq_dec z z0) as h;
                  dorn h; subst; tcsp;
-                 right; intro k; inversion k; subst; omega));
+                 right; intro k; inversion k; subst; lia));
   try (complete (assert (Deq (get_patom_set p)) as d by (destruct p; destruct patom0; auto);
                  pose proof (d g g0) as h; dorn h; subst; sp;
                  right; intro k; inversion k; sp));
   try (complete (pose proof (deq_nat n n0) as h;
                  dorn h; subst; tcsp;
-                 right; intro k; inversion k; subst; omega)).
+                 right; intro k; inversion k; subst; lia)).
 Defined.
 
 Lemma parameters_dec : Deq (list parameter).

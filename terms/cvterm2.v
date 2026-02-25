@@ -531,11 +531,3 @@ Proof.
   introv; destruct_cterms; auto.
 Qed.
 Hint Resolve isprog_get_cterm : slow.
-
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/")
-*** End:
-*)

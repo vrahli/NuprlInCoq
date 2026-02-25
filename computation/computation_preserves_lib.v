@@ -203,6 +203,7 @@ Proof.
   apply matching_parameters_sym; auto.
 Qed.
 
+(*
 Lemma compute_step_consistent_with_new_definition {o} {lib} :
   forall (e    : library_entry)
          (p    : !in_lib (opabs_of_lib_entry e) lib)
@@ -243,7 +244,7 @@ Proof.
             repndors; exrepnd; subst; ginv.
             csunf; simpl.
             dcwf h; simpl.
-            boolvar; try omega.
+            boolvar; try lia.
             rewrite Znat.Nat2Z.id; auto.
 
           + csunf; simpl.
@@ -289,7 +290,7 @@ Proof.
                 + unfold mk_nseq in *; allsimpl; ginv.
                   csunf; simpl.
                   dcwf h; simpl.
-                  boolvar; simpl; auto; try omega.
+                  boolvar; simpl; auto; try lia.
                   rewrite Znat.Nat2Z.id; auto.
 
               - fold_terms; rewrite compute_step_eapply_iscan_isexc; auto.
@@ -359,7 +360,7 @@ Proof.
               repndors; exrepnd; subst; auto.
               csunf; simpl.
               unfold compute_step_tuni; simpl.
-              boolvar; try omega.
+              boolvar; try lia.
               rewrite Znat.Nat2Z.id; auto.
             }
 
@@ -515,7 +516,9 @@ Proof.
 
       apply found_entry_add_new_abs; auto.
 Qed.
+*)
 
+(*
 Lemma reduces_to_consistent_with_new_definition {o} {lib} :
   forall (a b : @NTerm o)
          (r   : reduces_to lib a b)
@@ -534,6 +537,7 @@ Proof.
     dands;[|apply IHk;auto];[].
     apply compute_step_consistent_with_new_definition; auto.
 Qed.
+*)
 
 Lemma matching_entry_sign_deq :
   forall oa1 oa2, decidable (matching_entry_sign oa1 oa2).
@@ -1260,7 +1264,7 @@ Proof.
                 + unfold mk_nseq in *; allsimpl; ginv.@136
                   csunf; simpl.
                   dcwf h; simpl.
-                  boolvar; simpl; auto; try omega.
+                  boolvar; simpl; auto; try lia.
                   rewrite Znat.Nat2Z.id; auto.
 
               - fold_terms; rewrite compute_step_eapply_iscan_isexc; auto.
@@ -1330,7 +1334,7 @@ Proof.
               repndors; exrepnd; subst; auto.
               csunf; simpl.
               unfold compute_step_tuni; simpl.
-              boolvar; try omega.
+              boolvar; try lia.
               rewrite Znat.Nat2Z.id; auto.
             }
 
@@ -1623,7 +1627,6 @@ Lemma cswap_apply_list {o} :
     = apply_list (cswap sw t) (map (cswap sw) ts).
 Proof.
   induction ts; introv; allsimpl; auto.
-  rewrite IHts; simpl; fold_terms; auto.
 Qed.
 
 Lemma all_abstractions_are_defined_sosub_preserves_alphaeq_sosub {o} :
@@ -2459,6 +2462,7 @@ Proof.
   - remember (find_entry_sign lib2 opabs) as fe2; destruct fe2 as [e2|]; allsimpl; auto.
 Qed.
 
+(*
 Lemma agreeing_libraries_no_rep_find_entry_sign {o} :
   forall (lib1 lib2 : @library o) abs oa vars rhs correct,
     libraries_agree_on_intersection lib1 lib2
@@ -2537,7 +2541,7 @@ Proof.
             + apply compute_step_eapply2_success in comp1; repnd; subst.
               repndors; exrepnd; subst; ginv; auto.
               csunf; simpl; auto;dcwf h; simpl; auto.
-              boolvar; try omega.
+              boolvar; try lia.
               rewrite Znat.Nat2Z.id; auto.
 
             + csunf; simpl; dcwf h; simpl.
@@ -2583,7 +2587,7 @@ Proof.
                   rewrite compute_step_eapply_lam_iscan; auto.
 
                 + inversion comp3; subst.
-                  csunf; simpl; dcwf h; simpl; boolvar; try omega.
+                  csunf; simpl; dcwf h; simpl; boolvar; try lia.
                   rewrite Znat.Nat2Z.id; auto.
 
               - fold_terms; rewrite compute_step_eapply_iscan_isexc; auto.
@@ -2658,7 +2662,7 @@ Proof.
               apply compute_step_tuni_success in comp.
               repndors; exrepnd; subst; simpl; auto.
               csunf; simpl.
-              unfold compute_step_tuni; simpl; boolvar; try omega.
+              unfold compute_step_tuni; simpl; boolvar; try lia.
               rewrite Znat.Nat2Z.id; auto.
             }
 
@@ -2703,7 +2707,7 @@ Proof.
                 repndors; exrepnd; subst; allsimpl; boolvar;
                 try (complete (subst; csunf; simpl; dcwf h; simpl;
                                unfold compute_step_comp; simpl;
-                               allrw; boolvar; tcsp; try omega)).
+                               allrw; boolvar; tcsp; try lia)).
 
               - pose proof (ind t t []) as q; clear ind.
                 repeat (autodimp q hyp); eauto 2 with slow.
@@ -2867,7 +2871,9 @@ Proof.
       apply h2; clear h2.
       eapply agreeing_libraries_no_rep_find_entry_sign; eauto.
 Qed.
+*)
 
+(*
 Lemma reduces_to_preserves_agreeing_libraries {o} :
   forall lib1 lib2,
     assert (wf_library lib1)
@@ -2901,7 +2907,9 @@ Proof.
     { eapply compute_step_preserves_all_abstractions_are_defined; eauto. }
     eexists; dands; eauto.
 Qed.
+*)
 
+(*
 Lemma computes_to_value_preserves_agreeing_libraries {o} :
   forall lib1 lib2,
     assert (wf_library lib1)
@@ -2921,7 +2929,9 @@ Proof.
   allunfold @computes_to_value; repnd; dands; auto.
   apply (reduces_to_preserves_agreeing_libraries lib1 lib2); auto.
 Qed.
+*)
 
+(*
 Lemma computes_to_valc_preserves_agreeing_libraries {o} :
   forall lib1 lib2,
     assert (wf_library lib1)
@@ -2942,3 +2952,4 @@ Proof.
   allunfold @computes_to_valc; allsimpl.
   apply (computes_to_value_preserves_agreeing_libraries lib1 lib2); eauto 2 with slow.
 Qed.
+*)

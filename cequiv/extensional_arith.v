@@ -52,8 +52,8 @@ Proof.
   - unfold extensional_op_ind in Hi.
     unfold computes_to_value_in_max_k_steps in Hcv3; repnd.
     unfold computes_to_value_in_max_k_steps in Hcv4; repnd.
-    apply @no_change_after_value_ra with (k2:=k) in Hcv0; auto; try omega; [].
-    apply @no_change_after_value_ra with (k2:=k) in Hcv5; auto; try omega; [].
+    apply @no_change_after_value_ra with (k2:=k) in Hcv0; auto; try lia; [].
+    apply @no_change_after_value_ra with (k2:=k) in Hcv5; auto; try lia; [].
     make_red_val_like Hcv0 h1.
     apply Hi with (v := a2) in h1; auto.
     make_red_val_like Hcv5 h2.
@@ -77,7 +77,7 @@ Proof.
   - unfold extensional_op_ind in Hi.
     unfold computes_to_exception_in_max_k_steps in Hcv3; repnd.
     apply @no_change_after_val_like with (k2:=k) in Hcv3; auto;
-    try omega; try (complete (unfold isvalue_like; simpl; sp)).
+    try lia; try (complete (unfold isvalue_like; simpl; sp)).
     make_red_val_like Hcv3 h1.
     apply Hi with (v := a2) in h1; auto.
     apply howe_lemma2_exc in h1; auto; prove_isprogram.
@@ -106,8 +106,8 @@ Proof.
     unfold computes_to_exception_in_max_k_steps in Hcv4; repnd.
     applydup @reduces_atmost_preserves_program in Hcv2; auto.
     assert (@isvalue p (mk_integer z)) as isvx by (apply isvalue_iff; sp).
-    apply @no_change_after_value_ra with (k2:=k) in Hcv2; auto; try omega; [].
-    apply @no_change_after_val_like with (k2:=k) in Hcv4; auto; try omega;
+    apply @no_change_after_value_ra with (k2:=k) in Hcv2; auto; try lia; [].
+    apply @no_change_after_val_like with (k2:=k) in Hcv4; auto; try lia;
     try (complete (unfold isvalue_like; simpl; sp)); [].
     make_red_val_like Hcv2 h1.
     apply Hi with (v := a2) in h1; auto.

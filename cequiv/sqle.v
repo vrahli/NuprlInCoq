@@ -77,7 +77,7 @@ Proof.
   destruct a as [lva nta].
   destruct b as [lvb ntb].
   destruct c as [lvc ntc].
-  allunfold @blift; exrepnd; try omega.
+  allunfold @blift; exrepnd; try lia.
   pose proof (fresh_vars (length lv) (all_vars nt1 
       ++ all_vars nt2 ++ all_vars nt0 ++ all_vars nt3)) as Hfr.
   exrepnd.
@@ -280,14 +280,14 @@ Proof.
  unfold lblift, blift.
  applydup computes_to_value_wf2 in Hcv.
  applydup computes_to_value_wf2 in Hcvb.
- assert (length tl_subterms = length tr_subterms) by omega.
+ assert (length tl_subterms = length tr_subterms) by lia.
  split; trivial.
  clear Hcv0 Hcvb0.
   unfold sqle.
   intros.
   split.
   apply computes_to_value_wf3 with (n:=n) in Hcv; auto.
-  apply computes_to_value_wf3 with (n:=n) in Hcvb; omega.
+  apply computes_to_value_wf3 with (n:=n) in Hcvb; lia.
   intros lnt ? Hin m.
   assert (sqle_n (S m) a b) as HsqleSm by auto.
   inverts HsqleSm as Hclose.

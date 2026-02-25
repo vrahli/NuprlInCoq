@@ -1049,7 +1049,7 @@ Proof.
   - apply alpha_eq_oterm_combine; dands; tcsp.
     introv i; apply hbs2; auto.
 
-  - constructor; try omega.
+  - constructor; try lia.
     introv i; apply hbs1; auto.
 Qed.
 
@@ -1281,7 +1281,7 @@ Proof.
               invdiff.
               csunf; simpl.
               dcwf h; simpl.
-              boolvar; try omega.
+              boolvar; try lia.
               rewrite Znat.Nat2Z.id; auto.
               eexists; dands; eauto 2 with slow.
 
@@ -1381,7 +1381,7 @@ Proof.
                   invdiff.
                   csunf; simpl.
                   dcwf h; simpl.
-                  boolvar; simpl; auto; try omega.
+                  boolvar; simpl; auto; try lia.
                   rewrite Znat.Nat2Z.id; auto.
                   eexists; dands; eauto 3 with slow.
 
@@ -1491,7 +1491,7 @@ Proof.
               invdiff.
               csunf; simpl.
               unfold compute_step_tuni; simpl.
-              boolvar; try omega.
+              boolvar; try lia.
               rewrite Znat.Nat2Z.id; auto.
               eexists; dands; eauto 3 with slow.
             }

@@ -47,7 +47,7 @@ Proof.
   allrw @isprogram_eq; try (apply isprog_inteq_implies); eauto 3 with slow;
   apply reduces_to_if_step; csunf; simpl; dcwf h; simpl;
   unfold compute_step_comp; simpl;
-  boolvar; tcsp; try omega.
+  boolvar; tcsp; try lia.
   ginv; tcsp.
 Qed.
 
@@ -60,7 +60,7 @@ Proof.
   introv.
   allrw @mkc_nat_eq.
   eapply cequivc_trans;[apply cequivc_mkc_inteq_int|].
-  boolvar; tcsp; try omega.
+  boolvar; tcsp; try lia.
 Qed.
 
 

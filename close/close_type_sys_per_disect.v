@@ -178,7 +178,7 @@ Proof.
     generalize (recb t1 t1 e11); sp.
     onedtsp uv1 tys1 tyt1 tyst1 tyvr1 tes1 tet1 tevr1 tygs1 tygt1 dum1.
     unfold term_equality_transitive in tet1.
-    apply tet1 with (t3 := t2); sp.
+    apply (tet1 _ t2); sp.
 
   + SCase "term_value_respecting".
     unfold term_equality_respecting; introv eqtt X3.
@@ -358,4 +358,3 @@ Proof.
     generalize (j1 t3 t' e e'); intro l.
     rw <- l; sp.
 Qed.
-

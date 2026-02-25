@@ -92,7 +92,7 @@ Proof.
     try (complete (right; spcast; auto));
     try (complete (spcast; apply computes_to_valc_refl; eauto 2 with slow));
     try (complete (apply equality_in_int; exists n; dands;
-                   spcast; apply computes_to_valc_refl; eauto 2 with slow)).
+                   spcast; apply computes_to_valc_refl; eauto 2 with slow)); tcsp.
 Qed.
 
 Lemma rule_integer_equality_true_ext_lib {o} :

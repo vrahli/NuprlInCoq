@@ -66,8 +66,8 @@ Proof.
       simpl; auto.
 
     - pose proof (meta2_fun_alpha_prop1 lib P X (seq2kseq c 0 v) v nc ni f ind n (S m)) as q.
-      autodimp q hyp; try omega.
-      apply (equality_natk2nat_implies lib m) in q; try omega.
+      autodimp q hyp; try lia.
+      apply (equality_natk2nat_implies lib m) in q; try lia.
       exrepnd.
 
       apply cequivc_nat_implies_computes_to_valc.
@@ -91,7 +91,7 @@ Proof.
       allrw @mkc_var_substc.
       allrw @csubst_mk_cv.
       eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-      boolvar; auto; try omega.
+      boolvar; auto; try lia.
   }
 
   pose proof (bar (mkc_nseq s)) as b.
@@ -138,7 +138,7 @@ Proof.
     allrw @mkc_var_substc.
     allrw @csubst_mk_cv.
     eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-    boolvar; tcsp; GC; try omega.
+    boolvar; tcsp; GC; try lia.
     apply computes_to_valc_implies_cequivc; auto.
   }
 
@@ -392,7 +392,7 @@ Lemma alpha_sp_prop1 {o} :
 Proof.
   introv lemn.
   assert {k : nat & n = k + m} as e.
-  { exists (n - m); omega. }
+  { exists (n - m); lia. }
   exrepnd; subst.
   clear lemn.
   induction k; introv; allsimpl; apply implies_equality_natk2nat; introv ltm0.
@@ -401,7 +401,7 @@ Proof.
     unfold fun_kseq_sp_NA in am; exrepnd; allsimpl.
 
     dup am1 as i.
-    apply (eq_kseq_implies lib m0) in i; try omega; exrepnd.
+    apply (eq_kseq_implies lib m0) in i; try lia; exrepnd.
     exists k; dands; auto.
 
   - remember (alpha_sp lib A1 A2 c1 c2 v q1 q2 h f ind (k + m)) as am.
@@ -420,7 +420,7 @@ Proof.
     allrw @mkc_var_substc.
     allrw @csubst_mk_cv.
     eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-    boolvar; tcsp; GC; try omega.
+    boolvar; tcsp; GC; try lia.
     apply computes_to_valc_implies_cequivc; auto.
 Qed.
 
@@ -448,7 +448,7 @@ Lemma alpha_sp_prop2 {o} :
 Proof.
   introv lemn.
   assert {k : nat & n = k + m} as e.
-  { exists (n - m); omega. }
+  { exists (n - m); lia. }
   exrepnd; subst.
   clear lemn.
   induction k; introv; allsimpl; apply implies_equality_natk2nat; introv ltm0.
@@ -457,7 +457,7 @@ Proof.
     unfold fun_kseq_sp_NA in am; exrepnd; allsimpl.
 
     dup am1 as i.
-    apply (eq_kseq_implies lib m0) in i; try omega; exrepnd.
+    apply (eq_kseq_implies lib m0) in i; try lia; exrepnd.
     exists k; dands; auto.
 
   - remember (alpha_sp lib A1 A2 c1 c2 v q1 q2 h f ind (k + m)) as am.
@@ -476,7 +476,7 @@ Proof.
     allrw @mkc_var_substc.
     allrw @csubst_mk_cv.
     eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-    boolvar; tcsp; GC; try omega.
+    boolvar; tcsp; GC; try lia.
     apply computes_to_valc_implies_cequivc; auto.
 Qed.
 
@@ -579,8 +579,8 @@ Proof.
       simpl; auto.
 
     - pose proof (alpha_sp_prop1 lib A1 A2 (seq2kseq c1 0 v) (seq2kseq c2 0 v) v nc1 nc2 ni f ind n (S m)) as q.
-      autodimp q hyp; try omega.
-      apply (equality_natk2nat_implies lib m) in q; try omega.
+      autodimp q hyp; try lia.
+      apply (equality_natk2nat_implies lib m) in q; try lia.
       exrepnd.
 
       apply cequivc_nat_implies_computes_to_valc.
@@ -604,7 +604,7 @@ Proof.
       allrw @mkc_var_substc.
       allrw @csubst_mk_cv.
       eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-      boolvar; auto; try omega.
+      boolvar; auto; try lia.
   }
 
   assert (forall n, eq_kseq lib (mkc_nseq s) (fun_kseq_sp_NA_seq2 (g n)) n) as e2.
@@ -619,8 +619,8 @@ Proof.
       simpl; auto.
 
     - pose proof (alpha_sp_prop2 lib A1 A2 (seq2kseq c1 0 v) (seq2kseq c2 0 v) v nc1 nc2 ni f ind n (S m)) as q.
-      autodimp q hyp; try omega.
-      apply (equality_natk2nat_implies lib m) in q; try omega.
+      autodimp q hyp; try lia.
+      apply (equality_natk2nat_implies lib m) in q; try lia.
       exrepnd.
 
       apply cequivc_nat_implies_computes_to_valc.
@@ -644,7 +644,7 @@ Proof.
       allrw @mkc_var_substc.
       allrw @csubst_mk_cv.
       eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-      boolvar; auto; try omega.
+      boolvar; auto; try lia.
   }
 
   pose proof (bar (mkc_nseq s) (mkc_nseq s)) as b.
@@ -703,7 +703,7 @@ Proof.
     allrw @mkc_var_substc.
     allrw @csubst_mk_cv.
     eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-    boolvar; tcsp; GC; try omega.
+    boolvar; tcsp; GC; try lia.
     apply computes_to_valc_implies_cequivc; auto.
   }
 
@@ -722,7 +722,7 @@ Proof.
     allrw @mkc_var_substc.
     allrw @csubst_mk_cv.
     eapply cequivc_trans;[apply cequivc_mkc_inteq_nat|].
-    boolvar; tcsp; GC; try omega.
+    boolvar; tcsp; GC; try lia.
     apply computes_to_valc_implies_cequivc; auto.
   }
 

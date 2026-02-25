@@ -2261,8 +2261,8 @@ Lemma le_addl :
     LIn t ts -> f t <= addl (map f ts).
 Proof.
   induction ts; introv i; allsimpl; tcsp.
-  repndors; subst; tcsp; try omega.
-  apply IHts in i; try omega.
+  repndors; subst; tcsp; try lia.
+  apply IHts in i; try lia.
 Qed.
 
 Lemma proof_better_ind {o} :
@@ -2281,7 +2281,7 @@ Proof.
 
   pose proof (imp (proof_size p)) as q; clear imp; apply q; auto.
   simpl.
-  apply (le_addl proof_size) in i; try omega.
+  apply (le_addl proof_size) in i; try lia.
 Defined.
 
 Lemma isprogram_implies_covered {o} :
@@ -4888,7 +4888,7 @@ Proof.
 
   pose proof (imp (pre_proof_size p)) as q; clear imp; apply q; auto.
   simpl.
-  apply (le_addl pre_proof_size) in i; try omega.
+  apply (le_addl pre_proof_size) in i; try lia.
 Defined.
 
 Lemma in_list_option2option_list_implies :
@@ -12292,12 +12292,12 @@ Proof.
     destruct comp as [u|].
 
     + pose proof (IHk u) as h; clear IHk; exrepnd.
-      exists (S n); dands; auto; try omega.
+      exists (S n); dands; auto; try lia.
       simpl.
       rw @reduces_in_atmost_k_steps_S; allrw.
       exists u; dands; auto.
 
-    + exists 0; dands; try omega.
+    + exists 0; dands; try lia.
       rw @reduces_in_atmost_k_steps_0; auto.
 Qed.
 
@@ -12345,9 +12345,9 @@ Proof.
     pose proof (reduces_atmost_k_steps_of_compute_atmost_k_steps ctxt 1 (mk_abs o0 l0)) as h; exrepnd.
     simpl in *; unfold mk_abs in *.
     rw <- Heqx in h0; fold_terms.
-    destruct n; simpl in *; try omega;
+    destruct n; simpl in *; try lia;
       [allrw @reduces_in_atmost_k_steps_0; ginv|].
-    destruct n; simpl in *; try omega;[].
+    destruct n; simpl in *; try lia;[].
     repeat eexists; eauto.
 
   - unfold apply_proof_step_int_equality in appstep.

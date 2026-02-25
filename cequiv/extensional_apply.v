@@ -38,12 +38,12 @@ Proof.
 
   repndors; exrepnd; [|allsimpl; subst; repnd; complete ginv].
 
-  assert (m <= S k) as XX by omega.
+  assert (m <= S k) as XX by lia.
   repnud Hcv.
   eapply reduces_atmost_split in XX; eauto.
   remember (S k - m) as skm.
-  destruct skm; [omega|].
-  assert (skm <= k) by (subst; omega).
+  destruct skm; [lia|].
+  assert (skm <= k) by (subst; lia).
   apply reduces_atmost_S in XX; exrepnd.
   applydup @reduces_atmost_preserves_program in Hcv4; auto.
   apply isprogram_apply_implies in Hcv6; exrepnd; subst; cpx.
@@ -88,7 +88,7 @@ Proof.
             end
         end. (* this will be used later in this proof *)
         pose proof (reduces_to_preserves_program _ _ _ h1 Hprt') as Hispr.
-        apply reduces_atmost_preserves_program in Hcv4; auto; try omega.
+        apply reduces_atmost_preserves_program in Hcv4; auto; try lia.
 
         make_red_val_like XX0 hh.
 
@@ -128,7 +128,7 @@ Proof.
             end
         end. (* this will be used later in this proof *)
         pose proof (reduces_to_preserves_program _ _ _ h1 Hprt') as Hispr.
-        apply reduces_atmost_preserves_program in Hcv4; auto; try omega.
+        apply reduces_atmost_preserves_program in Hcv4; auto; try lia.
 
         make_red_val_like XX0 hh.
 
@@ -169,7 +169,7 @@ Proof.
       apply reduces_in_atmost_k_steps_eapply_sterm_to_isvalue_like in XX0; auto.
       repndors; exrepnd.
 
-      - apply no_change_after_value_ra with (k2:=k) in XX2; eauto 2 with slow; try omega;[].
+      - apply no_change_after_value_ra with (k2:=k) in XX2; eauto 2 with slow; try lia;[].
         pose proof (Hi a0 (mk_nat n) a0r) as z.
         make_red_val_like XX2 ca0.
         repeat (autodimp z hyp); eauto 2 with slow;[].
@@ -177,7 +177,7 @@ Proof.
 
         pose proof (q1 n) as qn; clear q1.
 
-        apply no_change_after_val_like with (k2:=k) in XX1; eauto 2 with slow; try omega.
+        apply no_change_after_val_like with (k2:=k) in XX1; eauto 2 with slow; try lia.
         make_red_val_like XX1 ca1.
         applydup @reduces_to_preserves_program in q0; auto.
         pose proof (Hi (f0 n) a (f' n)) as q.
@@ -191,7 +191,7 @@ Proof.
           eauto 3 with slow.
 
       - apply isexc_implies in XX1; auto; exrepnd; subst.
-        apply no_change_after_val_like with (k2:=k) in XX2; try splr; try omega.
+        apply no_change_after_val_like with (k2:=k) in XX2; try splr; try lia.
         make_red_val_like XX2 ca0.
         pose proof (Hi a0 (mk_exception a1 e) a0r) as z.
         repeat (autodimp z hyp); eauto 2 with slow;[].

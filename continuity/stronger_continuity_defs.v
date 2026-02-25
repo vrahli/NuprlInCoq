@@ -101,7 +101,7 @@ Proof.
     apply equality_in_natk in e; exrepnd; spcast.
     apply computes_to_valc_isvalue_eq in e3; eauto with slow.
     rw @mkc_nat_eq in e3; ginv.
-    assert (m < b) as l by omega; clear e1.
+    assert (m < b) as l by lia; clear e1.
     apply equality_in_tnat.
     unfold equality_of_nat.
 

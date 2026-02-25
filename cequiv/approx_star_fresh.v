@@ -214,10 +214,10 @@ Proof.
     unfold approx_starbts, lblift_sub; simpl; sp.
   - inversion aeq as [|?|? ? ? len imp]; subst; simpl.
     allunfold @approx_starbts.
-    allunfold @lblift_sub; repnd; dands; auto; try omega.
+    allunfold @lblift_sub; repnd; dands; auto; try lia.
     introv i.
     pose proof (ap n) as h1; autodimp h1 hyp.
-    pose proof (imp n) as h2; autodimp h2 hyp; try omega.
+    pose proof (imp n) as h2; autodimp h2 hyp; try lia.
     eapply approx_star_bterm_alpha_fun_r; eauto.
 Qed.
 
@@ -438,7 +438,7 @@ Proof.
 
     + pose proof (lsubst_nest_same_alpha2 nt1n lv lvn (range sub)) as nest1.
       allrw @length_dom; allrw @length_range.
-      repeat (autodimp nest1 hyp); try omega; eauto 3 with slow.
+      repeat (autodimp nest1 hyp); try lia; eauto 3 with slow.
       { subst; allrw @length_dom; auto. }
       { apply alphaeq_preserves_free_vars in h2; rw <- h2.
         apply disjoint_remove_nvars_weak_r; auto. }
@@ -446,7 +446,7 @@ Proof.
 
       pose proof (lsubst_nest_same_alpha2 nt2n lv lvn (range sub)) as nest2.
       allrw @length_dom; allrw @length_range.
-      repeat (autodimp nest2 hyp); try omega; eauto 3 with slow.
+      repeat (autodimp nest2 hyp); try lia; eauto 3 with slow.
       { subst; allrw @length_dom; auto. }
       { apply alphaeq_preserves_free_vars in h3; rw <- h3.
         apply disjoint_remove_nvars_weak_r; auto. }
@@ -503,7 +503,7 @@ Proof.
 
   pose proof (lsubst_nest_vars_same t2 l2 lv l1) as h2.
   allrw disjoint_app_l.
-  repeat (autodimp h2 hyp); dands; try omega; eauto 3 with slow.
+  repeat (autodimp h2 hyp); dands; try lia; eauto 3 with slow.
   rw h2 in a.
 
   pose proof (lsubst_trivial_alpha t1 l1) as h.
@@ -529,7 +529,7 @@ Proof.
 
   pose proof (lsubst_nest_vars_same t2 l2 lv l1) as h2.
   allrw disjoint_app_l.
-  repeat (autodimp h2 hyp); dands; try omega; eauto 3 with slow.
+  repeat (autodimp h2 hyp); dands; try lia; eauto 3 with slow.
   rw h2 in a.
 
   pose proof (lsubst_trivial_alpha t1 l1) as h.
@@ -977,11 +977,11 @@ Proof.
 
       pose proof (simple_lsubst_aux_lsubst_aux_sub_disj
                     t2 sub (var_ren l2 lvn)) as e2.
-      rw @sub_free_vars_var_ren in e2; auto; try omega.
+      rw @sub_free_vars_var_ren in e2; auto; try lia.
       rw @cl_lsubst_aux_sub_trivial in e2; eauto 3 with slow.
       erewrite sub_bound_vars_nrut_sub in e2; eauto 3 with slow.
       erewrite sub_free_vars_nrut_sub in e2; eauto 3 with slow.
-      rw @sub_filter_disjoint1 in e2;[|rw @dom_sub_var_ren; eauto with slow]; auto; try omega.
+      rw @sub_filter_disjoint1 in e2;[|rw @dom_sub_var_ren; eauto with slow]; auto; try lia.
       repeat (autodimp e2 hyp); eauto 3 with slow.
 
       rw <- e1 in a0; rw <- e2 in a0; clear e1 e2.
@@ -991,7 +991,7 @@ Proof.
       { rw @lsubst_aux_allvars_preserves_osize2; eauto 2 with slow. }
       pose proof (q (lsubst_aux t2 (var_ren l2 lvn)) sub l) as ih; clear q.
       repeat (rw @get_utokens_lsubst_aux_allvars in ih; eauto 3 with slow).
-      repeat (rw @boundvars_lsubst_aux_vars in ih; auto; try omega).
+      repeat (rw @boundvars_lsubst_aux_vars in ih; auto; try lia).
       repeat (autodimp ih hyp); eauto 3 with slow.
       { introv z1; apply ss1; rw lin_flat_map; eexists; dands; eauto. }
       { introv z1; apply ss2; rw lin_flat_map; eexists; dands; eauto. }
@@ -999,7 +999,7 @@ Proof.
 
       repeat (rw @lsubst_lsubst_aux); auto;
       rw <- @sub_free_vars_is_flat_map_free_vars_range;
-      rw @computation2.sub_free_vars_var_ren; eauto 3 with slow; try omega.
+      rw @computation2.sub_free_vars_var_ren; eauto 3 with slow; try lia.
 Qed.
 
 Lemma alpha_eq_bterm_mk_fresh_bterm_berm {o} :
@@ -1196,10 +1196,10 @@ Proof.
     unfold approx_starbts, lblift_sub; simpl; sp.
   - inversion aeq as [|?|? ? ? len imp]; subst; simpl.
     allunfold @approx_starbts.
-    allunfold @lblift_sub; repnd; dands; auto; try omega.
+    allunfold @lblift_sub; repnd; dands; auto; try lia.
     introv i.
-    pose proof (ap n) as h1; autodimp h1 hyp; try omega.
-    pose proof (imp n) as h2; autodimp h2 hyp; try omega.
+    pose proof (ap n) as h1; autodimp h1 hyp; try lia.
+    pose proof (imp n) as h2; autodimp h2 hyp; try lia.
     eapply approx_star_bterm_alpha_fun_l;[apply alpha_eq_bterm_sym; exact h2|]; auto.
 Qed.
 
@@ -1355,10 +1355,10 @@ Proof.
 
       unfold lblift_sub, mk_fresh_bterms; dands; allrw map_length; auto.
       introv i.
-      repeat (rw @selectbt_map; auto; try omega).
+      repeat (rw @selectbt_map; auto; try lia).
       unfold approx_starbts, lblift_sub in ap; repnd; allrw map_length; GC.
       pose proof (ap n i) as k; clear ap.
-      repeat (rw @selectbt_map in k; auto; try omega).
+      repeat (rw @selectbt_map in k; auto; try lia).
       allunfold @selectbt.
 
       pose proof (in_nth_combine _ _ bs bs' n default_bt default_bt) as h.

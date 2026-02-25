@@ -907,7 +907,7 @@ Proof.
   - apply alpha_eq_oterm_combine; dands; tcsp.
     introv i; apply hbs2; auto.
 
-  - constructor; try omega.
+  - constructor; try lia.
     introv i; apply hbs1; auto.
 Qed.
 
@@ -1297,7 +1297,7 @@ Proof.
             exists (f n) (f n); dands; eauto 3 with slow.
             apply reduces_to_if_step.
             csunf; simpl.
-            dcwf h; simpl; boolvar; try omega.
+            dcwf h; simpl; boolvar; try lia.
             rw @Znat.Nat2Z.id; auto.
 
           - apply isexc_implies2 in comp0; exrepnd; subst.
@@ -1524,14 +1524,14 @@ Proof.
                 dopid op as [can|ncan|exc|abs] SSSSCase; ginv;[].
                 destruct can; ginv;[].
                 destruct bs; allsimpl; ginv; GC.
-                boolvar; ginv; try omega; fold_terms.
+                boolvar; ginv; try lia; fold_terms.
                 inversion d4 as [|?|?|? ? ? len imp]; subst; simphyps; clear d4.
                 allsimpl; cpx; fold_terms; allsimpl.
                 clear imp.
 
                 exists (@mk_nat o (s (Z.to_nat z))) (@mk_nat o (s (Z.to_nat z))); dands; eauto 3 with slow.
                 apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
-                boolvar; try omega; auto.
+                boolvar; try lia; auto.
 
               - apply wf_isexc_implies in comp0; auto; exrepnd; subst; allsimpl.
                 apply differ2_exception_implies in d4; exrepnd; subst.
@@ -1568,7 +1568,7 @@ Proof.
             exists (@mk_nat o (n n0)) (@mk_nat o (n n0)); dands; eauto 3 with slow.
             apply reduces_to_if_step; csunf; simpl.
             rw @Znat.Nat2Z.id.
-            boolvar; try omega; auto. *)
+            boolvar; try lia; auto. *)
 
           - SSSCase "NFix".
             csunf comp; allsimpl.
@@ -1752,7 +1752,7 @@ Proof.
                 { apply (reduces_to_if_split2
                            _ _
                            (mk_less (mk_minus (mk_integer z)) (mk_nat b) (mk_integer z) (mk_vbot v)));
-                  [ csunf; simpl; boolvar; tcsp; omega|].
+                  [ csunf; simpl; boolvar; tcsp; lia|].
 
                   apply (reduces_to_if_split2
                            _ _
@@ -1761,22 +1761,18 @@ Proof.
                   apply reduces_to_if_step; simpl.
                   csunf; simpl.
                   dcwf q; allsimpl.
-                  unfold compute_step_comp; simpl; boolvar; tcsp; try omega.
-                  provefalse.
-                  pose proof (abs_of_neg2 z b); sp; try omega.
+                  unfold compute_step_comp; simpl; boolvar; tcsp; try lia.
                 }
 
                 { apply (reduces_to_if_split2
                            _ _
                            (mk_less (mk_integer z) (mk_nat b) (mk_integer z) (mk_vbot v)));
-                  [ csunf; simpl; boolvar; tcsp; omega|].
+                  [ csunf; simpl; boolvar; tcsp; lia|].
 
                   apply reduces_to_if_step; simpl.
                   csunf; simpl.
                   dcwf q; allsimpl.
-                  unfold compute_step_comp; simpl; boolvar; tcsp; try omega.
-                  provefalse.
-                  pose proof (abs_of_pos2 z b); sp; try omega.
+                  unfold compute_step_comp; simpl; boolvar; tcsp; try lia.
                 }
 
             + destruct bs2; allsimpl; cpx.
@@ -1834,7 +1830,7 @@ Proof.
             exists (@mk_uni o n) (@mk_uni o n); dands; eauto 3 with slow.
 
             apply reduces_to_if_step; simpl.
-            csunf; simpl; unfold compute_step_tuni; simpl; boolvar; tcsp; try omega.
+            csunf; simpl; unfold compute_step_tuni; simpl; boolvar; tcsp; try lia.
             rw Znat.Nat2Z.id; auto.
 
           - SSSCase "NMinus".
@@ -2009,11 +2005,11 @@ Proof.
                 dands.
 
                 { prove_alpha_eq4.
-                  introv j; destruct n0;[|destruct n0]; try omega; cpx.
+                  introv j; destruct n0;[|destruct n0]; try lia; cpx.
                   apply alphaeqbt_nilv2; auto. }
 
                 { prove_alpha_eq4.
-                  introv j; destruct n0;[|destruct n0]; try omega; cpx.
+                  introv j; destruct n0;[|destruct n0]; try lia; cpx.
                   apply alphaeqbt_nilv2; auto. }
 
                 { apply differ2_oterm; simpl; auto.
@@ -2086,11 +2082,11 @@ Proof.
                dands.
 
                { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
+                 introv j; destruct n;[|destruct n]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
+                 introv j; destruct n;[|destruct n]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { apply differ2_oterm; allsimpl; auto.
@@ -2189,11 +2185,11 @@ Proof.
                 dands.
 
                 { prove_alpha_eq4.
-                  introv j; destruct n0;[|destruct n0]; try omega; cpx.
+                  introv j; destruct n0;[|destruct n0]; try lia; cpx.
                   apply alphaeqbt_nilv2; auto. }
 
                 { prove_alpha_eq4.
-                  introv j; destruct n0;[|destruct n0]; try omega; cpx.
+                  introv j; destruct n0;[|destruct n0]; try lia; cpx.
                   apply alphaeqbt_nilv2; auto. }
 
                 { apply differ2_oterm; simpl; auto.
@@ -2265,11 +2261,11 @@ Proof.
                dands.
 
                { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
+                 introv j; destruct n;[|destruct n]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { prove_alpha_eq4.
-                 introv j; destruct n;[|destruct n]; try omega; cpx.
+                 introv j; destruct n;[|destruct n]; try lia; cpx.
                  apply alphaeqbt_nilv2; auto. }
 
                { apply differ2_oterm; allsimpl; auto.
@@ -2816,7 +2812,7 @@ Proof.
     fold_terms.
 
     pose proof (ind k') as h.
-    autodimp h hyp;[omega|].
+    autodimp h hyp;[lia|].
     pose proof (h u1) as r; clear h.
     repeat (autodimp r hyp); eauto 3 with slow.
 
@@ -2895,4 +2891,3 @@ Proof.
   eapply (comp_force_int2 _ _ _ b);[|idtac|idtac|apply r];
   try (apply differ_app_F2); eauto 4 with slow.
 Qed.
- 

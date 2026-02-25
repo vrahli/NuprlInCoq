@@ -86,7 +86,7 @@ Proof.
   repeat (autodimp z1 hyp); eauto 2 with slow.
 
   pose proof (alpha_bterm_change b3 lv nt2 lvn) as z2.
-  repeat (autodimp z2 hyp); eauto 2 with slow; try omega.
+  repeat (autodimp z2 hyp); eauto 2 with slow; try lia.
 
   exists lvn (lsubst nt0 (var_ren lv0 lvn)) (lsubst nt2 (var_ren lv lvn)).
   dands; auto.
@@ -112,7 +112,7 @@ Lemma lblift_trans {o} :
     -> lblift R l1 l3.
 Proof.
   introv tr ra rr  h1 h2.
-  unfold lblift in *; repnd; dands; auto; try omega.
+  unfold lblift in *; repnd; dands; auto; try lia.
   introv ln.
   applydup h1 in ln.
   rewrite h3 in ln.

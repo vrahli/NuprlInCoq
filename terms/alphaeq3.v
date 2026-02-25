@@ -40,5 +40,5 @@ Proof.
   apply (al_bterm _ _ lv); auto.
   allrw @lsubst_lsubst_aux; auto;
   rw @flat_map_free_var_vars_range;
-  allrw disjoint_app_r; repnd; eauto 3 with slow; try omega.
+  allrw disjoint_app_r; repnd; eauto 3 with slow; try lia.
 Qed.

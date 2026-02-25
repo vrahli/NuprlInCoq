@@ -293,38 +293,29 @@ Proof.
     introv tequ equ; proof_irr.
     eapply @equality_commutes4 in tequ; eauto.
 
-    Grab Existential Variables.
-    auto.
-    auto.
-    auto.
-    auto.
-    apply cover_vars_equality; dands;
-    try (apply cover_vars_var); repeat (rw @dom_csub_snoc); simpl;
-    repeat (rw in_snoc); sp;
-    repeat (apply cover_vars_snoc_weak); auto.
-    apply wf_equality; auto.
-    auto.
-    auto.
-    auto.
-    auto.
-    auto.
-    auto.
-    apply cover_vars_equality; dands;
-    try (apply cover_vars_var); repeat (rw @dom_csub_snoc); simpl;
-    repeat (rw in_snoc); sp;
-    repeat (apply cover_vars_snoc_weak); auto;
-    apply cover_vars_change_sub with (sub1 := s1a); auto;
-    allapply @similarity_dom; sp; allrw; sp.
-    apply cover_vars_equality; dands;
-    try (apply cover_vars_var); repeat (rw @dom_csub_snoc); simpl;
-    repeat (rw in_snoc); sp;
-    repeat (apply cover_vars_snoc_weak); auto.
-    apply wf_equality; auto.
+    Unshelve.
+    { auto. }
+    { auto. }
+    { apply cover_vars_equality; dands;
+        try (apply cover_vars_var); repeat (rw @dom_csub_snoc); simpl;
+        repeat (rw in_snoc); sp;
+        repeat (apply cover_vars_snoc_weak); auto.
+      eapply similarity_cover_vars; eauto. }
+    { auto. }
+    { auto. }
+    { auto. }
+    { auto. }
+    { auto. }
+    { auto. }
+    { apply wf_equality; auto. }
+    { apply cover_vars_equality; dands;
+        try (apply cover_vars_var); repeat (rw @dom_csub_snoc); simpl;
+        repeat (rw in_snoc); sp;
+        repeat (apply cover_vars_snoc_weak); auto;
+        apply cover_vars_change_sub with (sub1 := s1a); auto;
+        allapply @similarity_dom; sp; allrw; sp. }
+    { auto. }
+    { auto. }
+    { auto. }
+    { auto. }
 Qed.
-
-
-(*
-*** Local Variables:
-*** coq-load-path: ("." "../util/" "../terms/" "../computation/" "../cequiv/" "../per/" "../close/")
-*** End:
-*)

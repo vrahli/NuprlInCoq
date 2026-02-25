@@ -116,14 +116,14 @@ Proof.
   allunfold @ex_approx_or_bts.
   allunfold @lblift; repnd.
   allunfold @alpha_eq_bterms; repnd.
-  dands; tcsp; try omega.
+  dands; tcsp; try lia.
   introv i.
   applydup apr in i.
 
   assert (alpha_eq_bterm (selectbt bs2 n) (selectbt bs3 n)) as a.
   { apply aeq.
     unfold selectbt.
-    apply in_nth_combine; auto; try omega. }
+    apply in_nth_combine; auto; try lia. }
 
   eapply blift_alpha_fun_r; eauto with slow.
 Qed.
@@ -174,13 +174,13 @@ Proof.
     eapply compute_to_value_alpha in comp1; eauto 3 with slow; exrepnd.
     applydup @alpha_eq_oterm_implies_combine in comp2; exrepnd; subst.
     exists bs'; dands; auto.
-    allunfold @lblift; repnd; dands; auto; try omega.
+    allunfold @lblift; repnd; dands; auto; try lia.
     introv i.
     applydup comp0 in i.
     allunfold @blift; exrepnd.
     pose proof (comp4 (selectbt tr_subterms n) (selectbt bs' n)) as h.
     autodimp h hyp.
-    { unfold selectbt; apply in_nth_combine; auto; try omega. }
+    { unfold selectbt; apply in_nth_combine; auto; try lia. }
 
     exists lv nt1 nt2; dands; eauto 3 with slow.
 
@@ -268,14 +268,14 @@ Proof.
     apply cl2 in comp1; clear cl2.
     exrepnd.
     exists tr_subterms; dands; auto.
-    allunfold @lblift; repnd; dands; auto; try omega.
+    allunfold @lblift; repnd; dands; auto; try lia.
     introv i.
     rw comp3 in i.
     applydup comp0 in i; clear comp0.
     allunfold @blift; exrepnd.
     pose proof (comp2 (selectbt tl_subterms n) (selectbt bs' n)) as h.
     autodimp h hyp.
-    { unfold selectbt; apply in_nth_combine; auto; try omega. }
+    { unfold selectbt; apply in_nth_combine; auto; try lia. }
 
     exists lv nt1 nt2; dands; eauto 3 with slow.
 
@@ -445,7 +445,7 @@ Proof.
     applydup comp0 in i.
     unfold blift; unfold blift in i0.
     exrepnd.
-    repeat (onerw @selectbt_map; auto; try omega).
+    repeat (onerw @selectbt_map; auto; try lia).
     remember (selectbt tl_subterms n) as b1.
     remember (selectbt tr_subterms n) as b2.
 
@@ -466,7 +466,7 @@ Proof.
     eapply (subset_trans _ (get_utokens_b b2)) in ss2;
       [|simpl; apply subset_app_l;
         introv k; rw lin_flat_map; exists b2;
-        dands; auto; subst; apply selectbt_in; complete omega].
+        dands; auto; subst; apply selectbt_in; complete lia].
     applydup @alpha_eq_bterm_preserves_utokens in i1 as put2; allsimpl.
     rw put2 in ss2; clear put2.
 

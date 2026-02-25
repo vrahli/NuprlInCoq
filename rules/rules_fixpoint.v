@@ -132,7 +132,7 @@ Proof.
   introv Hpr. introv Hv.
   apply (is_approx_chain_fix_aprox lib) in Hpr.
   induction m; auto.
-  assert (S m + n = S(m + n)) as Xr by omega.
+  assert (S m + n = S(m + n)) as Xr by lia.
   rw Xr.
   specialize (Hpr (m+n)). allsimpl.
   eapply hasvalue_approx;
@@ -469,7 +469,7 @@ Proof.
   introv HH Hgt.
   apply' @fapproxc_hasvalue_higher_cc HH.
   specialize (HH (m-n)).
-  assert (m - n + n = m) as Xr by omega.
+  assert (m - n + n = m) as Xr by lia.
   rw Xr in HH.
   auto.
 Qed.

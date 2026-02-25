@@ -451,7 +451,7 @@ Proof.
   - allrw @has_value_like_S; exrepnd.
     destruct t as [v|f|op bs1]; try (complete (csunf r1; allsimpl; dcwf h)).
     dopid op as [can2|ncan2|exc2|abs2] Case.
-    + exists 0; dands; try omega.
+    + exists 0; dands; try lia.
       rw @has_value_like_0; dands; eauto 3 with slow.
     + rw @compute_step_ncompop_ncan2 in r1.
       dcwf h.
@@ -459,7 +459,7 @@ Proof.
       symmetry in Heqcomp1.
       destruct comp1; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @has_value_like_S.
       exists n; tcsp.
     + csunf r1; simpl in r1; ginv.
@@ -472,7 +472,7 @@ Proof.
       symmetry in Heqcomp1.
       destruct comp1; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @has_value_like_S.
       exists n; tcsp.
 Qed.
@@ -493,7 +493,7 @@ Proof.
   - allrw @has_value_like_S; exrepnd.
     destruct t as [v|f|op bs1]; try (complete (csunf r1; allsimpl; dcwf h)).
     dopid op as [can2|ncan2|exc2|abs2] Case.
-    + exists 0; dands; try omega.
+    + exists 0; dands; try lia.
       rw @has_value_like_0; dands; eauto 3 with slow.
     + rw @compute_step_narithop_ncan2 in r1.
       dcwf h.
@@ -501,7 +501,7 @@ Proof.
       symmetry in Heqcomp1.
       destruct comp1; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @has_value_like_S.
       exists n; tcsp.
     + csunf r1; simpl in r1; ginv.
@@ -514,7 +514,7 @@ Proof.
       symmetry in Heqcomp1.
       destruct comp1; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @has_value_like_S.
       exists n; tcsp.
 Qed.
@@ -531,7 +531,7 @@ Proof.
   allunfold @computes_to_val_like_in_max_k_steps; repnd; dands; auto.
   repeat (autodimp h hyp); tcsp.
   pose proof (h (k2 - k1)) as hh.
-  assert (k2 - k1 + k1 = k2) as e by omega.
+  assert (k2 - k1 + k1 = k2) as e by lia.
   rw e in hh; auto.
 Qed.
 
@@ -561,13 +561,13 @@ Proof.
 
     { simpl in r1; ginv. }
 
-    { exists 0; dands; try omega.
+    { exists 0; dands; try lia.
       rw @has_value_like_0; dands; eauto 3 with slow; simpl; sp. }
 
     dopid op as [can1|ncan1|exc1|abs1] Case.
 
     + Case "Can".
-      exists 0; dands; try omega.
+      exists 0; dands; try lia.
       rw @has_value_like_0; dands; eauto 3 with slow; simpl; sp.
 
     + Case "NCan".
@@ -575,14 +575,14 @@ Proof.
       remember (compute_step lib (oterm (NCan ncan1) l)) as comp.
       symmetry in Heqcomp; destruct comp; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @has_value_like_S; exists n; sp.
 
     + Case "Exc".
       csunf r1; allsimpl; ginv.
       unfold has_value_like_k in r0; exrepnd.
       apply computes_to_val_like_in_max_k_steps_if_isvalue_like in r1; subst; tcsp.
-      exists 0; dands; try omega.
+      exists 0; dands; try lia.
       rw @has_value_like_0; dands; eauto 3 with slow.
 
     + Case "Abs".
@@ -591,7 +591,7 @@ Proof.
       remember (compute_step_lib lib abs1 l) as comp.
       symmetry in Heqcomp; destruct comp; ginv.
       apply IHk in r0; exrepnd.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @has_value_like_S; exists n; sp.
 Qed.
 
@@ -624,13 +624,13 @@ Proof.
 
     { simpl in r1; ginv. }
 
-    { exists 0; dands; try omega.
+    { exists 0; dands; try lia.
       rw @has_value_like_0; eauto 3 with slow. }
 
     dopid op as [can1|ncan1|exc1|abs1] Case.
 
     + Case "Can".
-      exists 0; dands; try omega.
+      exists 0; dands; try lia.
       rw @has_value_like_0; eauto 3 with slow.
 
     + Case "NCan".
@@ -638,7 +638,7 @@ Proof.
       remember (compute_step lib (oterm (NCan ncan1) l)) as comp.
       symmetry in Heqcomp; destruct comp; ginv.
       apply IHk in r0; exrepnd; auto.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @has_value_like_S.
       exists n; sp.
 
@@ -647,10 +647,10 @@ Proof.
       apply compute_step_catch_success in r1.
       dorn r1; exrepnd; subst; allsimpl.
 
-      * exists 0; dands; try omega.
+      * exists 0; dands; try lia.
         rw @has_value_like_0; eauto 3 with slow.
 
-      * exists 0; dands; try omega.
+      * exists 0; dands; try lia.
         unfold has_value_like_k in r0; exrepnd.
         apply computes_to_val_like_in_max_k_steps_if_isvalue_like in r1; eauto 3 with slow; subst.
         rw @has_value_like_0; eauto 3 with slow.
@@ -661,7 +661,7 @@ Proof.
       remember (compute_step_lib lib abs1 l) as comp.
       symmetry in Heqcomp; destruct comp; ginv.
       apply IHk in r0; exrepnd; auto.
-      exists (S j); dands; try omega.
+      exists (S j); dands; try lia.
       rw @has_value_like_S.
       exists n; sp.
 Qed.

@@ -292,11 +292,11 @@ Proof.
   apply computes_to_val_like_in_max_k_steps_comp_implies in hv0; auto;[].
   repndors; exrepnd; subst.
 
-  - exists k1 (pk2term pk1); dands; eauto 3 with slow; try omega.
+  - exists k1 (pk2term pk1); dands; eauto 3 with slow; try lia.
 
-  - exists k1 (mk_exception en e); dands; eauto 3 with slow; try omega.
+  - exists k1 (mk_exception en e); dands; eauto 3 with slow; try lia.
 
-  - exists k1 (pk2term pk); dands; eauto 3 with slow; try omega.
+  - exists k1 (pk2term pk); dands; eauto 3 with slow; try lia.
 Qed.
 
 Definition ex_spfexc {o} a (t : @NTerm o) :=
@@ -559,7 +559,7 @@ Proof.
 
               { apply reduces_to_if_step.
                 csunf; simpl.
-                dcwf h; simpl; boolvar; try omega.
+                dcwf h; simpl; boolvar; try lia.
                 rw @Znat.Nat2Z.id; auto. }
 
               { left; apply differ_force_alpha_refl; auto.
@@ -851,7 +851,7 @@ Proof.
                              (@mk_nat o (f0 n)).
                       dands; eauto 3 with slow.
                       { apply reduces_to_if_step; csunf; simpl; dcwf h; simpl.
-                        boolvar; try omega; rw @Znat.Nat2Z.id; auto. }
+                        boolvar; try lia; rw @Znat.Nat2Z.id; auto. }
                       left; apply differ_force_alpha_refl; simpl; tcsp.
                     }
 
@@ -919,7 +919,7 @@ Proof.
 
               { apply reduces_to_if_step; csunf; simpl.
                 rw @Znat.Nat2Z.id.
-                boolvar; try omega; auto. }
+                boolvar; try lia; auto. }
 
               { left.
                 apply differ_force_implies_differ_force_alpha.
@@ -1105,7 +1105,7 @@ Proof.
                       apply reduces_to_if_step; csunf; simpl.
                       dcwf h; simpl;[].
                       unfold compute_step_comp; simpl.
-                      boolvar; tcsp; try omega.
+                      boolvar; tcsp; try lia.
 
                     * unfold bound2_cbv.
                       eapply reduces_to_if_split2;[csunf;simpl;auto|].
@@ -1121,12 +1121,12 @@ Proof.
                         | [ |- context[mk_lam ?v ?t ] ] => remember (mk_lam v t) as xx; clear Heqxx
                       end.
 
-                      boolvar; tcsp; try omega; GC.
+                      boolvar; tcsp; try lia; GC.
 
                       apply reduces_to_if_step; csunf; simpl.
                       dcwf hh; simpl;[].
                       unfold compute_step_comp; simpl.
-                      boolvar; tcsp; try omega.
+                      boolvar; tcsp; try lia.
 
                     * left.
                       apply differ_force_implies_differ_force_alpha.
@@ -1153,12 +1153,12 @@ Proof.
                       | [ |- context[mk_lam ?v ?t ] ] => remember (mk_lam v t) as xx; clear Heqxx
                     end.
 
-                    boolvar; tcsp; try omega; GC.
+                    boolvar; tcsp; try lia; GC.
 
                     apply reduces_to_if_step; csunf; simpl.
                     dcwf hh; simpl;[].
                     unfold compute_step_comp; simpl.
-                    boolvar; tcsp; try omega.
+                    boolvar; tcsp; try lia.
               }
 
               (* non force case *)
@@ -1221,7 +1221,7 @@ Proof.
 
               exists (@mk_uni o n) (@mk_uni o n); dands; eauto 3 with slow.
               { apply reduces_to_if_step; csunf; simpl.
-                unfold compute_step_tuni; simpl; boolvar; tcsp; try omega.
+                unfold compute_step_tuni; simpl; boolvar; tcsp; try lia.
                 rw Znat.Nat2Z.id; auto. }
 
             * SSSCase "NMinus".
@@ -1411,7 +1411,7 @@ Proof.
 
                 repeat (autodimp q hyp).
                 { introv l w1 w2 isv r hv' d'.
-                  apply (indhyp t1 t2 v m); eauto 3 with slow; try omega. }
+                  apply (indhyp t1 t2 v m); eauto 3 with slow; try lia. }
                 exrepnd.
 
                 assert (co_wf_def c can1 bs0) as co2.
@@ -1555,7 +1555,7 @@ Proof.
 
                 repeat (autodimp q hyp).
                 { introv l w1 w2 isv r hv' d'.
-                  apply (indhyp t1 t2 v m); eauto 3 with slow; try omega. }
+                  apply (indhyp t1 t2 v m); eauto 3 with slow; try lia. }
                 exrepnd.
 
                 assert (ca_wf_def can1 bs2) as co2.
@@ -1678,7 +1678,7 @@ Proof.
 
               repeat (autodimp q hyp).
               { introv l w1 w2 isv r hvv' dd'.
-                apply (indhyp t1 t2 v m); eauto 3 with slow; try omega. }
+                apply (indhyp t1 t2 v m); eauto 3 with slow; try lia. }
               exrepnd.
 
               repndors;[|].
@@ -1726,7 +1726,7 @@ Proof.
             pose proof (h t2 b a n f j) as q; clear h.
             repeat (autodimp q hyp).
             { introv ll w11 w22 isv r hvv' dd'.
-              apply (indhyp t1 t0 v m); eauto 3 with slow; try omega. }
+              apply (indhyp t1 t0 v m); eauto 3 with slow; try lia. }
             exrepnd.
 
             repndors;[|].
@@ -1818,7 +1818,7 @@ Proof.
                     exrepnd.
 
                     pose proof (indhyp v u u1 j4) as h.
-                    repeat (autodimp h hyp); try omega; eauto 2 with slow.
+                    repeat (autodimp h hyp); try lia; eauto 2 with slow.
                     { repndors; eauto 3 with slow. }
                     exrepnd.
 
@@ -1907,7 +1907,7 @@ Proof.
                     exrepnd.
 
                     pose proof (indhyp v u t' j4) as h.
-                    repeat (autodimp h hyp); try omega; eauto 2 with slow.
+                    repeat (autodimp h hyp); try lia; eauto 2 with slow.
                     { repndors; eauto 3 with slow. }
                     exrepnd.
 
@@ -2095,7 +2095,7 @@ Proof.
               pose proof (h arg2 b a n f j) as q; clear h.
               repeat (autodimp q hyp).
               { introv l w1 w2 isv r hvv' dd'.
-                apply (indhyp t1 t2 v m); eauto 3 with slow; try omega. }
+                apply (indhyp t1 t2 v m); eauto 3 with slow; try lia. }
               exrepnd.
 
               repndors;[|].
@@ -2143,7 +2143,7 @@ Proof.
             pose proof (h t2 b a n f j) as q; clear h.
             repeat (autodimp q hyp).
             { introv ll w11 w22 isv r hvv' dd'.
-              apply (indhyp t1 t0 v m); eauto 3 with slow; try omega. }
+              apply (indhyp t1 t0 v m); eauto 3 with slow; try lia. }
             exrepnd.
 
             repndors;[|].
@@ -2235,7 +2235,7 @@ Proof.
                     exrepnd.
 
                     pose proof (indhyp v u u1 j4) as h.
-                    repeat (autodimp h hyp); try omega; eauto 2 with slow.
+                    repeat (autodimp h hyp); try lia; eauto 2 with slow.
                     { repndors; eauto 3 with slow. }
                     exrepnd.
 
@@ -2324,7 +2324,7 @@ Proof.
                     exrepnd.
 
                     pose proof (indhyp v u t' j4) as h.
-                    repeat (autodimp h hyp); try omega; eauto 2 with slow.
+                    repeat (autodimp h hyp); try lia; eauto 2 with slow.
                     { repndors; eauto 3 with slow. }
                     exrepnd.
 
@@ -2516,7 +2516,7 @@ Proof.
           { pose proof (hasvalue_like_fresh_implies lib a' n t2) as hvts.
             repeat (autodimp hvts hyp). }
           { introv ll w11 w22 isv r hvv' dd'.
-            apply (indhyp t0 t3 v m); eauto 3 with slow; try omega. }
+            apply (indhyp t0 t3 v m); eauto 3 with slow; try lia. }
           exrepnd.
 
           applydup @preserve_nt_wf_compute_step in comp''1 as wfs; eauto 3 with slow;[].
@@ -2700,7 +2700,7 @@ Proof.
     repndors;[|].
 
     + pose proof (ind t1' t2' u k') as ih; clear ind.
-      repeat (autodimp ih hyp); try omega.
+      repeat (autodimp ih hyp); try lia.
       { eapply reduces_to_preserves_hasvalue_like; eauto. }
       exrepnd.
       exists v2.

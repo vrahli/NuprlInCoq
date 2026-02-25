@@ -177,14 +177,14 @@ Proof.
         left.
         exists (sterm f) lbt (sterm f) 0.
         allrw @reduces_in_atmost_k_steps_0.
-        dands; eauto 3 with slow; try omega. }
+        dands; eauto 3 with slow; try lia. }
 
       dopid arg1o as [arg1c | arg1nc | arg1exc | arg1abs] SSSSCase.
 
       + SSSSCase "Can".
         left.
         exists (oterm (Can arg1c) arg1bts) lbt (oterm (Can arg1c) arg1bts) 0.
-        dands;spc; try omega; left; sp.
+        dands;spc; try lia; left; sp.
 
       + SSSSCase "NCan".
         rw @compute_step_ncan_ncan in Hcomp.
@@ -197,7 +197,7 @@ Proof.
         clear Hind; repndors; exrepnd; cpx.
 
         left.
-        exists (oterm (NCan arg1nc) arg1bts) lbtt t (S m); dands; auto; try omega.
+        exists (oterm (NCan arg1nc) arg1bts) lbtt t (S m); dands; auto; try lia.
         { rw @reduces_in_atmost_k_steps_S.
           rw <- HeqHc; eexists; dands; eauto. }
         { rw @reduces_in_atmost_k_steps_S.
@@ -208,7 +208,7 @@ Proof.
         csunf Hcomp; allsimpl.
         left.
         exists (oterm Exc arg1bts) lbt (oterm Exc arg1bts) 0.
-        dands; auto; try omega; allrw @reduces_in_atmost_k_steps_0; auto.
+        dands; auto; try lia; allrw @reduces_in_atmost_k_steps_0; auto.
         right; sp.
 
       + SSSSCase "Abs".
@@ -223,7 +223,7 @@ Proof.
         clear Hind; repndors; exrepnd; cpx.
 
         left.
-        exists (oterm (Abs arg1abs) arg1bts) lbtt t (S m); dands; auto; try omega.
+        exists (oterm (Abs arg1abs) arg1bts) lbtt t (S m); dands; auto; try lia.
         { rw @reduces_in_atmost_k_steps_S.
           csunf; simpl; rw HeqHc; eexists; dands; eauto. }
         { rw @reduces_in_atmost_k_steps_S.
@@ -249,7 +249,7 @@ Proof.
                (subst arg1nt arg1v1 (mk_utoken (get_fresh_atom arg1nt)))
                arg1nt
                0;
-          dands; eauto with slow; try omega;
+          dands; eauto with slow; try lia;
           rw @reduces_in_atmost_k_steps_0; auto.
 
       - fold_terms.
@@ -343,7 +343,7 @@ Proof.
             { intro j; destruct q2; apply alphaeq_preserves_utokens in k0; rw k0; auto. }
           }
 
-          exists w1 t2' w (S m); dands; eauto 3 with slow; try omega.
+          exists w1 t2' w (S m); dands; eauto 3 with slow; try lia.
 
           { rw @reduces_in_atmost_k_steps_S.
             exists x; dands; auto. }

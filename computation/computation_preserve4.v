@@ -178,7 +178,7 @@ Proof.
               repndors; exrepnd; subst; ginv; allsimpl; GC.
               csunf; simpl.
               dcwf h; simpl.
-              boolvar; try omega.
+              boolvar; try lia.
               rw Znat.Nat2Z.id.
               eexists; dands; eauto.
               allrw @nt_wf_eapply_iff; exrepnd; allunfold @nobnd; ginv.
@@ -292,7 +292,7 @@ Proof.
                 rw @covered_sub_cons; dands; eauto 3 with slow. }
 
               { allunfold @mk_nseq; allsimpl; ginv; GC; allsimpl; fold_terms.
-                csunf; simpl; dcwf h; simpl; boolvar; try omega.
+                csunf; simpl; dcwf h; simpl; boolvar; try lia.
                 rw @Znat.Nat2Z.id.
                 eexists; dands; eauto. }
 
@@ -327,7 +327,7 @@ Proof.
 
             clear ind; csunf comp; csunf; allsimpl.
             apply compute_step_apseq_success in comp; exrepnd; subst; allsimpl.
-            boolvar; try omega.
+            boolvar; try lia.
             rw @Znat.Nat2Z.id.
             eexists; dands; eauto.
           }*)
@@ -424,7 +424,7 @@ Proof.
             apply compute_step_tuni_success in comp; exrepnd; subst; allsimpl; fold_terms.
 
             unfold compute_step_tuni; simpl.
-            boolvar; try omega.
+            boolvar; try lia.
             eexists;dands;[complete eauto|]; auto.
             rw Znat.Nat2Z.id; auto. }
 
@@ -1101,7 +1101,7 @@ Proof.
       inversion h as [? ? ? ? ? disj len1 len2 norep al]; subst; clear h.
       allrw disjoint_app_r; allrw disjoint_cons_r; allrw disjoint_app_r; repnd.
 
-      apply (al_bterm _ _ lv); allrw disjoint_app_r; dands; try omega; eauto 3 with slow.
+      apply (al_bterm _ _ lv); allrw disjoint_app_r; dands; try lia; eauto 3 with slow.
       apply alpha_eq_if3 in al.
 
       pose proof (lsubst_aux_nest_swap2 t1 [(v,mk_utoken a)] (var_ren l1 lv)) as h1.
@@ -1116,8 +1116,8 @@ Proof.
       simpl in h2; allrw disjoint_singleton_l.
       allrw <- @sub_free_vars_is_flat_map_free_vars_range.
       allrw <- @sub_bound_vars_is_flat_map_bound_vars_range.
-      repeat (rw @sub_free_vars_var_ren in h2; auto; try omega).
-      repeat (rw @dom_sub_var_ren in h2; auto; try omega).
+      repeat (rw @sub_free_vars_var_ren in h2; auto; try lia).
+      repeat (rw @dom_sub_var_ren in h2; auto; try lia).
       repeat (autodimp h2 hyp); eauto with slow.
 
       rw h1 in al; rw h2 in al; clear h1 h2.
@@ -1156,8 +1156,8 @@ Proof.
 
       { repeat unfsubst. }
 
-      { rw @lsubst_lsubst_aux2; eauto 3 with slow; try omega.
-        rw @lsubst_lsubst_aux2; eauto 3 with slow; try omega. }
+      { rw @lsubst_lsubst_aux2; eauto 3 with slow; try lia.
+        rw @lsubst_lsubst_aux2; eauto 3 with slow; try lia. }
 Qed.
 
 (* !!MOVE *)
@@ -1199,7 +1199,7 @@ match goal with
       (let Hlt := fresh "XXHlt" in
        let n := fresh "XXn" in
        simpl; intros n Hlt;
-       repeat (destruct n; try omega); unfold selectbt; simpl; unfold nobnd
+       repeat (destruct n; try lia); unfold selectbt; simpl; unfold nobnd
       )
 | [ |- isprogram_bt (bterm [] ?lbt)] => apply implies_isprogram_bt0
  end .
@@ -1212,7 +1212,7 @@ match goal with
       (let Hlt := fresh "XXHlt" in
        let n := fresh "XXn" in
        simpl; intros n Hlt;
-       repeat (destruct n; try omega); unfold selectbt; simpl; unfold nobnd
+       repeat (destruct n; try lia); unfold selectbt; simpl; unfold nobnd
       )]
 | [ |- isprogram_bt (bterm [] ?lbt)] => apply implies_isprogram_bt0
  end .
@@ -1354,7 +1354,7 @@ Proof.
     [rw @compute_at_most_steps_var in Hck; spc; fail| |].
 
   { rw @compute_at_most_k_steps_isvalue_like in Hck; eauto 3 with slow; ginv.
-    exists 0; dands; auto; try omega. }
+    exists 0; dands; auto; try lia. }
 
   allsimpl.
   remember (compute_at_most_k_steps lib k (oterm ntpo ntplbt)) as ck.
@@ -1369,7 +1369,7 @@ Proof.
   - Case "Can".
     simpl in Hck. inverts Hck. exists j; sp.
   - Case "NCan".
-    exists (S j). dands;[|omega]. simpl. rw hyp1. simpl in Hck. simpl.
+    exists (S j). dands;[|lia]. simpl. rw hyp1. simpl in Hck. simpl.
     rw @compute_step_ncan_ncan.
     rw Hck;sp.
   - Case "Exc".
@@ -1377,7 +1377,7 @@ Proof.
     exists j; sp.
   - Case "Abs".
     exists (S j).
-    dands;[|omega]. simpl. rw hyp1. simpl in Hck. simpl.
+    dands;[|lia]. simpl. rw hyp1. simpl in Hck. simpl.
     rw @compute_step_ncan_abs.
     csunf Hck; allsimpl.
     rw Hck;sp.
@@ -1400,11 +1400,11 @@ Lemma compute_at_most_k_steps_step {p} :
     -> m >0
     -> {tc : @NTerm p $ compute_step lib t = csuccess tc}.
 Proof.
-  induction m as [| m Hind];introv Hc Hlt;[omega|].
+  induction m as [| m Hind];introv Hc Hlt;[lia|].
   allsimpl. remember (compute_at_most_k_steps lib m t) as ck.
   destruct ck; spc.
   destruct m; allsimpl; [ inverts Heqck ; exists a; spc |].
-  dimp (Hind n); spc; omega.
+  dimp (Hind n); spc; lia.
 Qed.
 
 Lemma if_computes_to_value_steps_arith {p} :
@@ -1462,7 +1462,7 @@ Proof.
       rw <- @compute_at_most_k_steps_eq_f in Hcomp.
       rw @compute_on_value in Hcomp; eauto 3 with slow; ginv.
       exists n1 n2; dands; auto.
-      exists 0 0; dands; auto; try omega;
+      exists 0 0; dands; auto; try lia;
       apply computes_in_max_k_steps_refl; eauto with slow.
 
     + SSSSSCase "NCan".
@@ -1476,7 +1476,7 @@ Proof.
       eexists; eexists; dands; eauto.
       applydup @computes_to_value_in_max_k_steps_isvalue_like in HcompHcv4; eauto with slow.
       inversion HcompHcv0; subst; fold_terms; GC.
-      exists k1 (S k2); dands; try omega; auto.
+      exists k1 (S k2); dands; try lia; auto.
       * rw @computes_to_value_in_max_k_steps_S.
         eexists; dands; eauto.
       * rw Nat.add_succ_r.
@@ -1502,7 +1502,7 @@ Proof.
       eexists; eexists; dands; eauto.
       applydup @computes_to_value_in_max_k_steps_isvalue_like in HcompHcv4; eauto with slow.
       inversion HcompHcv0; subst; fold_terms; GC.
-      exists k1 (S k2); dands; try omega; auto.
+      exists k1 (S k2); dands; try lia; auto.
       * rw @computes_to_value_in_max_k_steps_S.
         eexists; dands; eauto.
       * rw Nat.add_succ_r.
@@ -1520,7 +1520,7 @@ Proof.
     apply Hind in HcompHcv; exrepnd; subst; ginv; clear Hind.
     eexists; eexists; dands; eauto.
     eexists; eexists; dands; eauto.
-    exists (S k1) k2; dands; try omega; auto.
+    exists (S k1) k2; dands; try lia; auto.
     * rw @computes_to_value_in_max_k_steps_S.
       eexists; dands; eauto.
     * rw plus_Sn_m.
@@ -1544,7 +1544,7 @@ Proof.
     apply Hind in HcompHcv; exrepnd; subst; ginv; clear Hind.
     eexists; eexists; dands; eauto.
     eexists; eexists; dands; eauto.
-    exists (S k1) k2; dands; try omega; auto.
+    exists (S k1) k2; dands; try lia; auto.
     * rw @computes_to_value_in_max_k_steps_S.
       eexists; dands; eauto.
     * rw plus_Sn_m.
@@ -1611,10 +1611,10 @@ Proof.
       allrw @get_param_from_cop_some; subst; allsimpl;
       unfold nobnd; allsimpl; GC;
       eexists; eexists; eexists; eexists; dands; eauto.
-      * exists (@Nint p n1) (@Nint p n2) 0 0; dands; try omega; auto; fold_terms.
+      * exists (@Nint p n1) (@Nint p n2) 0 0; dands; try lia; auto; fold_terms.
         { rw @computes_to_value_in_max_k_steps_0; dands; eauto 3 with slow. }
         { rw @computes_to_value_in_max_k_steps_0; dands; eauto 3 with slow. }
-      * exists (pk2can pk1) (pk2can pk2) 0 0; dands; try omega; auto; fold_terms;
+      * exists (pk2can pk1) (pk2can pk2) 0 0; dands; try lia; auto; fold_terms;
         allrw <- @pk2term_eq.
         { rw @computes_to_value_in_max_k_steps_0; dands; eauto 3 with slow. }
         { rw @computes_to_value_in_max_k_steps_0; dands; eauto 3 with slow. }
@@ -1630,7 +1630,7 @@ Proof.
       eexists; eexists; eexists; eexists; dands; eauto.
       applydup @computes_to_value_in_max_k_steps_isvalue_like in HcompHcv3; eauto with slow.
       inversion HcompHcv0; subst; fold_terms; GC.
-      exists c1 c2 k1 (S k2); dands; try omega; auto.
+      exists c1 c2 k1 (S k2); dands; try lia; auto.
       * rw @computes_to_value_in_max_k_steps_S.
         eexists; dands; eauto.
       * rw Nat.add_succ_r.
@@ -1657,7 +1657,7 @@ Proof.
       eexists; eexists; eexists; eexists; dands; eauto.
       applydup @computes_to_value_in_max_k_steps_isvalue_like in HcompHcv3; eauto with slow.
       inversion HcompHcv0; subst; fold_terms; GC.
-      exists c1 c2 k1 (S k2); dands; try omega; auto.
+      exists c1 c2 k1 (S k2); dands; try lia; auto.
       * rw @computes_to_value_in_max_k_steps_S.
         eexists; dands; eauto.
       * rw Nat.add_succ_r.
@@ -1675,7 +1675,7 @@ Proof.
     apply Hind in HcompHcv; clear Hind.
     exrepnd; ginv.
     eexists; eexists; eexists; eexists; dands; eauto.
-    exists c1 c2 (S k1) k2; dands; try omega; auto.
+    exists c1 c2 (S k1) k2; dands; try lia; auto.
     * rw @computes_to_value_in_max_k_steps_S.
       eexists; dands; eauto.
     * rw Nat.add_succ_l.
@@ -1699,7 +1699,7 @@ Proof.
     apply Hind in HcompHcv; clear Hind.
     exrepnd; ginv.
     eexists; eexists; eexists; eexists; dands; eauto.
-    exists c1 c2 (S k1) k2; dands; try omega; auto.
+    exists c1 c2 (S k1) k2; dands; try lia; auto.
     * rw @computes_to_value_in_max_k_steps_S.
       eexists; dands; eauto.
     * rw Nat.add_succ_l.
@@ -1728,7 +1728,7 @@ Proof.
      apply @computes_atmost_ksteps_prinarg with (lbt:= tl)
       (op:=no) in H1c
     end.
-    exrepnd. exists j. dands; spc. omega.
+    exrepnd. exists j. dands; spc. lia.
   - duplicate H1v. inverts H1v as Hisp1.
     rename H2c into Hck. rename k2 into k.
     destruct ntp2 as [|?| ntp2o  ntp2lbt];
@@ -1740,7 +1740,7 @@ Proof.
       repeat (autodimp h hyp).
       { rw @compute_at_most_k_steps_isvalue_like; eauto 3 with slow. }
       exrepnd.
-      eexists; dands; eauto; try omega. }
+      eexists; dands; eauto; try lia. }
 
     allsimpl.
     remember (compute_at_most_k_steps lib k (oterm ntp2o ntp2lbt)) as ck.
@@ -1749,21 +1749,21 @@ Proof.
     destruct csk as [sckv|?| csko csklbt]; [inverts Hck; fail| |].
 
     { csunf Hck; allsimpl; ginv.
-      eexists; dands; eauto; try omega. }
+      eexists; dands; eauto; try lia. }
 
     dopid csko as [cskoc| cskon | cskexc | cskabs] Case.
     + Case "Can".
-      simpl in Hck. inverts Hck. exists j; sp. omega.
+      simpl in Hck. inverts Hck. exists j; sp. lia.
     + Case "NCan".
-      exists (S j). dands;[|omega]. simpl. rw XX1.
+      exists (S j). dands;[|lia]. simpl. rw XX1.
       allunfold @mk_integer.
       rw @compute_step_narithop_ncan2; rw Hck.
       dcwf h.
     + Case "Exc".
       rw @compute_step_exception in Hck; sp; inversion Hck; subst; GC.
-      exists j; sp; omega.
+      exists j; sp; lia.
     + Case "Abs".
-      exists (S j). dands;[|omega]. simpl. rw XX1. simpl. simpl in Hck. simpl.
+      exists (S j). dands;[|lia]. simpl. rw XX1. simpl. simpl in Hck. simpl.
       allunfold @mk_integer.
       rw @compute_step_narithop_abs2; boolvar; allsimpl; tcsp.
       csunf Hck; allsimpl.
@@ -1790,7 +1790,7 @@ Proof.
      apply @computes_atmost_ksteps_prinarg with (lbt:= tl)
       (op:=no) in H1c
     end. 
-    exrepnd. exists j. dands; spc. omega.
+    exrepnd. exists j. dands; spc. lia.
   - rename H2c into Hck. rename k2 into k.
     destruct ntp2 as [|?| ntp2o  ntp2lbt];
       [rw @compute_at_most_steps_var in Hck; spc; fail| |].
@@ -1801,7 +1801,7 @@ Proof.
       repeat (autodimp h hyp).
       { rw @compute_at_most_k_steps_isvalue_like; eauto 3 with slow. }
       exrepnd.
-      eexists; dands; eauto; try omega. }
+      eexists; dands; eauto; try lia. }
 
     allsimpl.
     remember (compute_at_most_k_steps lib k (oterm ntp2o ntp2lbt)) as ck.
@@ -1810,13 +1810,13 @@ Proof.
     destruct csk as [sckv|?| csko csklbt]; [inverts Hck; fail| |].
 
     { csunf Hck; allsimpl; ginv.
-      eexists; dands; eauto; try omega. }
+      eexists; dands; eauto; try lia. }
 
     dopid csko as [cskoc| cskon | cskexc | cskabs] Case.
     + Case "Can".
-      simpl in Hck. inverts Hck. exists j; sp. omega.
+      simpl in Hck. inverts Hck. exists j; sp. lia.
     + Case "NCan".
-      exists (S j). dands;[|omega]. simpl. rw XX1.
+      exists (S j). dands;[|lia]. simpl. rw XX1.
       destruct a; allsimpl.
       * unfold isinteger in H1v; exrepnd; subst; allunfold @mk_integer.
         rw @compute_step_ncompop_ncan2;rw Hck.
@@ -1826,9 +1826,9 @@ Proof.
         autorewrite with slow; tcsp.
     + Case "Exc".
       rw @compute_step_exception in Hck; sp; inversion Hck; subst; GC.
-      exists j; sp; omega.
+      exists j; sp; lia.
     + Case "Abs".
-      exists (S j). dands;[|omega]. simpl. rw XX1.
+      exists (S j). dands;[|lia]. simpl. rw XX1.
       csunf Hck; allsimpl.
       destruct a; allsimpl.
       * unfold isinteger in H1v; exrepnd; subst; allunfold @mk_integer.
@@ -1891,16 +1891,16 @@ match goal with
 | [ H: (forall _:nat, (_< ?m) -> isprogram_bt _)  |- _ ] => 
     fail_if_not_number m;
     (let XXX:= fresh H "0bt" in
-      assert (0<m) as XXX by omega; apply H in XXX; 
+      assert (0<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simphyps);
     try (let XXX:= fresh H "1bt" in
-      assert (1<m) as XXX by omega; apply H in XXX; 
+      assert (1<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simphyps);
     try (let XXX:= fresh H "2bt" in
-      assert (2<m) as XXX by omega; apply H in XXX; 
+      assert (2<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simphyps);
     try (let XXX:= fresh H "3bt" in
-      assert (3<m) as XXX by omega; apply H in XXX; 
+      assert (3<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simphyps); clear H
 
 | [ H : isprogram_bt (bterm [] ?lbt) |- _ ] => apply isprogram_bt_nobnd in H
@@ -1948,16 +1948,16 @@ match goal with
      hide_hyp H
 | [ H: (forall _:nat, (_< ?m) -> isprogram_bt _)  |- _ ] => 
     (let XXX:= fresh H "0bt" in
-      assert (0<m) as XXX by omega; apply H in XXX; 
+      assert (0<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simphyps);
     try (let XXX:= fresh H "1bt" in
-      assert (1<m) as XXX by omega; apply H in XXX; 
+      assert (1<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simphyps);
     try (let XXX:= fresh H "2bt" in
-      assert (2<m) as XXX by omega; apply H in XXX; 
+      assert (2<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simphyps);
     try (let XXX:= fresh H "3bt" in
-      assert (3<m) as XXX by omega; apply H in XXX; 
+      assert (3<m) as XXX by lia; apply H in XXX; 
       unfold selectbt in XXX; simphyps); clear H
 
 | [ H : isprogram_bt (bterm [] ?lbt) |- _ ] => apply isprogram_bt_nobnd in H

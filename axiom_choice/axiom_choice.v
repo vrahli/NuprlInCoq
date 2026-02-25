@@ -188,7 +188,7 @@ Proof.
       + unfold reduces_toc; simpl.
         apply reduces_to_if_step.
         csunf; allsimpl; dcwf h; simpl.
-        boolvar; try omega.
+        boolvar; try lia.
         rw @Znat.Nat2Z.id.
         rewrite <- Heqmt; auto.
 
@@ -233,7 +233,7 @@ Proof.
         unfold reduces_toc; simpl.
         apply reduces_to_if_step.
         csunf; simpl; dcwf h; simpl.
-        boolvar; try omega.
+        boolvar; try lia.
         allrw @Znat.Nat2Z.id.
         allsimpl.
         rw <- Heqfck; simpl.

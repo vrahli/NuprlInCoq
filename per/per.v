@@ -1846,7 +1846,7 @@ Definition per_rec (ts : cts) (T1 T2 : @CTerm p) (eq : per(p)) : [U] :=
 
 (* begin hide *)
 
-(* --- now we define the Nuprl type system: nuprl_omega *)
+(* --- now we define the Nuprl type system: nuprl_lia *)
 
 (** close the different constructors with that and remove ccomputes_to_valc
  * from the per definitions *)

@@ -1136,7 +1136,7 @@ Proof.
   exists (fun A A' => {eqa : per(o) , close lib (univi lib i) A A' eqa}).
   dands; eauto 3 with slow.
   exists (fun t t' => (t) ~=~(lib) (t')).
-  apply CL_base; unfold per_base; dands; spcast; eauto 3 with slow.
+  apply CL_base; unfold per_base; dands; spcast; eauto 3 with slow; tcsp.
 Qed.
 Hint Resolve equality_base_in_uni : slow.
 
@@ -1348,7 +1348,7 @@ Proof.
       repeat rewrite <- fold_mkc_ufun.
       apply equality_isect; dands; eauto 3 with slow.
 
-      { apply equality_in_uni_mkc_halts; eauto 3 with slow. }
+      { apply equality_in_uni_mkc_halts; eauto 3 with slow; tcsp. }
 
       introv eh.
       autorewrite with slow.
@@ -1383,7 +1383,7 @@ Proof.
         
         repeat rewrite <- fold_mkc_member.
         apply equality_mkc_equality2_sp_in_uni;
-         dands; auto.
+         dands; auto; tcsp.
       }
 
       { eapply equality_respects_cequivc_left;
@@ -1392,7 +1392,7 @@ Proof.
           [apply cequivc_sym;apply mkc_isaxiom_not_axiom;auto|].
         repeat rewrite <- fold_mkc_member.
        
-        apply equality_mkc_equality2_sp_in_uni; dands; auto.
+        apply equality_mkc_equality2_sp_in_uni; dands; auto; tcsp.
       }
     }
 
@@ -1425,7 +1425,7 @@ Proof.
       repeat rewrite <- fold_mkc_ufun.
       apply equality_isect; dands; eauto 3 with slow.
 
-      { apply equality_in_uni_mkc_halts; eauto 3 with slow. }
+      { apply equality_in_uni_mkc_halts; eauto 3 with slow; tcsp. }
 
       introv eh.
       autorewrite with slow.
@@ -1458,7 +1458,7 @@ Proof.
         eapply equality_respects_cequivc_right;
           [apply cequivc_sym;apply mkc_isaxiom_axiom|].
         repeat rewrite <- fold_mkc_member.
-        apply equality_mkc_equality2_sp_in_uni; dands; auto.
+        apply equality_mkc_equality2_sp_in_uni; dands; auto; tcsp.
       }
 
       { eapply equality_respects_cequivc_left;
@@ -1466,7 +1466,7 @@ Proof.
         eapply equality_respects_cequivc_right;
           [apply cequivc_sym;apply mkc_isaxiom_not_axiom;auto|].
         repeat rewrite <- fold_mkc_member.
-        apply equality_mkc_equality2_sp_in_uni; dands; auto.
+        apply equality_mkc_equality2_sp_in_uni; dands; auto; tcsp.
       }
     }
 

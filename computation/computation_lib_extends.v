@@ -370,7 +370,7 @@ Proof.
             repndors; exrepnd; subst; ginv.
             csunf; simpl.
             dcwf h; simpl.
-            boolvar; try omega.
+            boolvar; try lia.
             rewrite Znat.Nat2Z.id; auto.
 
           + csunf; simpl.
@@ -416,7 +416,7 @@ Proof.
                 + unfold mk_nseq in *; allsimpl; ginv.
                   csunf; simpl.
                   dcwf h; simpl.
-                  boolvar; simpl; auto; try omega.
+                  boolvar; simpl; auto; try lia.
                   rewrite Znat.Nat2Z.id; auto.
 
               - fold_terms; rewrite compute_step_eapply_iscan_isexc; auto.
@@ -486,7 +486,7 @@ Proof.
               repndors; exrepnd; subst; auto.
               csunf; simpl.
               unfold compute_step_tuni; simpl.
-              boolvar; try omega.
+              boolvar; try lia.
               rewrite Znat.Nat2Z.id; auto.
             }
 

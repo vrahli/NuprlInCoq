@@ -1285,8 +1285,8 @@ Proof.
     dands; try (spc;fail); allsimpl;[|].
     + unfold lsubst.
       cases_ifd Hd;[|provefalse; apply Hdf;allsimpl; disjoint_reasoningv;cpx;fail].
-      simpl. autorewrite with slow in *. repeat(prove_alpha_eq4). repeat(fold_selectbt). rw @selectbt_map;[|omega].
-       rw Xss;[ | right;apply selectbt_in;omega];[].
+      simpl. autorewrite with slow in *. repeat(prove_alpha_eq4). repeat(fold_selectbt). rw @selectbt_map;[|lia].
+       rw Xss;[ | right;apply selectbt_in;lia];[].
        simpl. unfold memvar. simpl. rw <-beq_deq. autorewrite with slow. rw @lsubst_bterm_aux_trivial. apply alphaeqbt_refl.
        (* the same proof works for equality ... not merely alpha*)
     + simpl. introv Hpr'' Hprtd. simpl.
@@ -1319,7 +1319,7 @@ Proof.
         f_equal. f_equal. f_equal.
         apply eq_maps_bt; auto. introv Hlt.
         let tac2 :=  apply prog_sub_disjoint_bv_sub; prove_sub_range_sat in
-        let tac3 := right;apply selectbt_in;omega in
+        let tac3 := right;apply selectbt_in;lia in
         rw Xss;[| tac3];[]; symmetry;
         rw Xss;[| tac3]; simpl.
         autorewrite with slow. unfold memvar. simpl. cases_if; cpx. }
@@ -1329,7 +1329,7 @@ Proof.
         f_equal. f_equal. f_equal.
         apply eq_maps_bt; auto. introv Hlt.
         let tac2 :=  apply prog_sub_disjoint_bv_sub; prove_sub_range_sat in
-        let tac3 := right;apply selectbt_in;omega in
+        let tac3 := right;apply selectbt_in;lia in
         rw Xss;[| tac3];[]; symmetry; rw Xss;[| tac3];simpl.
         autorewrite with slow. unfold memvar. simpl. cases_if; cpx. }
 
@@ -1368,7 +1368,7 @@ Proof.
         exists (f0 n); introv isp'.
         apply computes_in_1step_to_alpha.
         constructor; csunf; simpl; auto.
-        dcwf h; simpl; boolvar; try omega;[].
+        dcwf h; simpl; boolvar; try lia;[].
         allrw Znat.Nat2Z.id.
         allrw <- @isprogram_eapply_iff; repnd.
         apply (isprogram_sterm_implies_isprogram_apply _ n) in He1p0.
@@ -1762,7 +1762,7 @@ Proof.
             exists (@mk_nat p (s (Z.to_nat z))).
             introv isp; simpl; fold_terms.
             apply computes_in_1step_to_alpha.
-            constructor; csunf; simpl; dcwf h; simpl; boolvar; auto; try omega.
+            constructor; csunf; simpl; dcwf h; simpl; boolvar; auto; try lia.
 
           - apply subst_exc in Hcs0; exrepnd; subst; allsimpl.
             allapply @isprogram_exception_implies; exrepnd.
@@ -1888,7 +1888,7 @@ Proof.
         apply computes_in_1step_to_alpha.
         constructor; csunf; simpl.
         rw @Znat.Nat2Z.id.
-        boolvar; try omega; auto.*)
+        boolvar; try lia; auto.*)
 
       * SCase "NFix". left. clear Hind.
         csunf Hcs; allsimpl; apply compute_step_fix_success in Hcs; repnd; subst.
@@ -2098,7 +2098,7 @@ Proof.
         apply computes_in_1step_to_alpha.
         rw <- @compute_1_step_is_computes_in_1step.
         simpl; csunf; simpl; unfold compute_step_tuni; simpl.
-        destruct (Z_le_gt_dec 0 (Z.of_nat n)); try (complete omega).
+        destruct (Z_le_gt_dec 0 (Z.of_nat n)); try (complete lia).
         rw Znat.Nat2Z.id; auto.
 
       * SCase "NMinus".
@@ -2352,7 +2352,7 @@ Proof.
               repeat(prove_alpha_eq4).
 
               { rw (map_nth2 BTerm (@BTerm p) (@default_bt p)); auto.
-                pose proof (nth_in _ n e1bt1lbt default_bt) as i; autodimp i hyp; try omega.
+                pose proof (nth_in _ n e1bt1lbt default_bt) as i; autodimp i hyp; try lia.
                 remember (nth n e1bt1lbt default_bt) as b; clear Heqb.
                 rw @lsubst_bterm_aux_trivial_cl_term; simpl; auto.
                 apply disjoint_singleton_r; introv j.
@@ -2360,7 +2360,7 @@ Proof.
               }
 
               { rw (map_nth2 BTerm (@BTerm p) (@default_bt p)); auto.
-                pose proof (nth_in _ n e1lbt default_bt) as i; autodimp i hyp; try omega.
+                pose proof (nth_in _ n e1lbt default_bt) as i; autodimp i hyp; try lia.
                 remember (nth n e1lbt default_bt) as b; clear Heqb.
                 rw @lsubst_bterm_aux_trivial_cl_term; simpl; auto.
                 apply disjoint_singleton_r; introv j.
@@ -2700,7 +2700,7 @@ Proof.
               repeat(prove_alpha_eq4).
 
               { rw (map_nth2 BTerm (@BTerm p) (@default_bt p)); auto.
-                pose proof (nth_in _ n e1bt1lbt default_bt) as i; autodimp i hyp; try omega.
+                pose proof (nth_in _ n e1bt1lbt default_bt) as i; autodimp i hyp; try lia.
                 remember (nth n e1bt1lbt default_bt) as b; clear Heqb.
                 rw @lsubst_bterm_aux_trivial_cl_term; simpl; auto.
                 apply disjoint_singleton_r; introv j.
@@ -2708,7 +2708,7 @@ Proof.
               }
 
               { rw (map_nth2 BTerm (@BTerm p) (@default_bt p)); auto.
-                pose proof (nth_in _ n e1lbt default_bt) as i; autodimp i hyp; try omega.
+                pose proof (nth_in _ n e1lbt default_bt) as i; autodimp i hyp; try lia.
                 remember (nth n e1lbt default_bt) as b; clear Heqb.
                 rw @lsubst_bterm_aux_trivial_cl_term; simpl; auto.
                 apply disjoint_singleton_r; introv j.
@@ -2909,8 +2909,8 @@ Proof.
                                                             :: (map (fun t : BTerm => lsubst_bterm_aux t sub) lbt) ))); auto;
                [|apply lsubst_over_alpha_bt1; simpl;allrw disjoint_singleton_r; sp; fail]
           end.
-          repeat(prove_alpha_eq4). repeat(fold_selectbt). rw @selectbt_map;[|omega].
-          rw  Xss; [ | right;apply selectbt_in;omega];[].
+          repeat(prove_alpha_eq4). repeat(fold_selectbt). rw @selectbt_map;[|lia].
+          rw  Xss; [ | right;apply selectbt_in;lia];[].
           simpl. autorewrite with slow; rw @lsubst_bterm_aux_trivial. apply alphaeqbt_refl;fail.
         }
 
@@ -2942,7 +2942,7 @@ Proof.
               f_equal. f_equal.
               apply eq_maps_bt; auto. introv Hlt.
               let tac2 :=  apply prog_sub_disjoint_bv_sub; prove_sub_range_sat in
-              let tac3 := right;apply selectbt_in;omega in
+              let tac3 := right;apply selectbt_in;lia in
               rw Xss; [simpl | tac3];[];
               symmetry; rw Xss; simpl;
               autorewrite with slow;[| tac3];sp.
@@ -2955,7 +2955,7 @@ Proof.
               f_equal. f_equal.
               apply eq_maps_bt; auto. introv Hlt.
               let tac2 := apply prog_sub_disjoint_bv_sub; prove_sub_range_sat in
-              let tac3 := right;apply selectbt_in;omega in
+              let tac3 := right;apply selectbt_in;lia in
               rw Xss; [simpl | tac3];[]; symmetry; rw Xss; simpl; autorewrite with slow;[| tac3];sp.
 
           - apply Heqt1 with (t'':=t'') in Hcsd; auto.
@@ -4024,7 +4024,7 @@ Qed.
 
 
 Ltac arithsimpl := let XX:= fresh "XX" in  repeat match goal with 
-[ |- context [?n-0]] => assert (n-0 = n) as XX by omega; rw XX; clear XX
+[ |- context [?n-0]] => assert (n-0 = n) as XX by lia; rw XX; clear XX
 end.
 
 Hint Resolve isprogram_bt_implies  isprogram_fix : slow.
@@ -4171,7 +4171,7 @@ Proof.
       let t := constr:(fix_approx (S (k-1)) f) in
       let ts := eval simpl in t in
       (assert (ts=t) as X99 by refl; rw X99; clear X99).
-      assert ((S (k - 1)) = k) as X99 by omega; rw X99; clear X99.
+      assert ((S (k - 1)) = k) as X99 by lia; rw X99; clear X99.
       match goal with
       [ |-  context[[?s1,?s2]]] => rewrite (cons_as_app _ s1 [s2])
       end.
@@ -4193,7 +4193,7 @@ Proof.
     simpl.
     dands; auto;[| apply approx_refl; trivial].
     remember (k-1) as kp.
-    assert (k = (S (k - 1))) as X99 by omega; rewrite X99 ; clear X99.
+    assert (k = (S (k - 1))) as X99 by lia; rewrite X99 ; clear X99.
     subst kp.
     apply (is_approx_chain_fix_aprox _ _ Hp (k-1)).
 Qed.
@@ -4328,7 +4328,7 @@ Proof.
         let t := constr:(fix_approx (S (k-1)) f) in
         let ts := eval simpl in t in
                                  (assert (ts=t) as X99 by refl; rw X99; clear X99).
-        assert ((S (k - 1)) = k) as X99 by omega; rw X99; clear X99.
+        assert ((S (k - 1)) = k) as X99 by lia; rw X99; clear X99.
         match goal with
             [ |-  context[[?s1,?s2]]] => rewrite (cons_as_app _ s1 [s2])
         end.
@@ -4350,7 +4350,7 @@ Proof.
         simpl.
         dands; auto;[| apply approx_refl; trivial].
         remember (k-1) as kp.
-        assert (k = (S (k - 1))) as X99 by omega; rewrite X99 ; clear X99.
+        assert (k = (S (k - 1))) as X99 by lia; rewrite X99 ; clear X99.
         subst kp.
         apply (is_approx_chain_fix_aprox _ _ isp (k-1)).
 
@@ -4455,11 +4455,11 @@ Proof.
         dands; auto.
 
         remember (k-1) as kp.
-        assert (k = (S (k - 1))) as X99 by omega; rewrite X99 ; clear X99.
+        assert (k = (S (k - 1))) as X99 by lia; rewrite X99 ; clear X99.
         subst kp.
         apply (is_approx_chain_fix_aprox _ _ isp (k-1)).
 
-        assert (k = (S (k - 1))) as X99 by omega; rewrite X99 ; clear X99.
+        assert (k = (S (k - 1))) as X99 by lia; rewrite X99 ; clear X99.
         simpl.
         apply reduces_to_implies_approx1; auto; prove_isprogram.
         subst.
@@ -4598,7 +4598,7 @@ Proof.
         let t := constr:(fix_approx (S (k-1)) f) in
         let ts := eval simpl in t in
                                  (assert (ts=t) as X99 by refl; rw X99; clear X99).
-        assert ((S (k - 1)) = k) as X99 by omega; rw X99; clear X99.
+        assert ((S (k - 1)) = k) as X99 by lia; rw X99; clear X99.
         match goal with
             [ |-  context[[?s1,?s2]]] => rewrite (cons_as_app _ s1 [s2])
         end.
@@ -4620,7 +4620,7 @@ Proof.
         simpl.
         dands; auto;[| apply approx_refl; trivial].
         remember (k-1) as kp.
-        assert (k = (S (k - 1))) as X99 by omega; rewrite X99 ; clear X99.
+        assert (k = (S (k - 1))) as X99 by lia; rewrite X99 ; clear X99.
         subst kp.
         apply (is_approx_chain_fix_aprox _ _ Hp (k-1)).
 
@@ -4725,11 +4725,11 @@ Proof.
         dands; auto.
 
         remember (k-1) as kp.
-        assert (k = (S (k - 1))) as X99 by omega; rewrite X99 ; clear X99.
+        assert (k = (S (k - 1))) as X99 by lia; rewrite X99 ; clear X99.
         subst kp.
         apply (is_approx_chain_fix_aprox _ _ Hp (k-1)).
 
-        assert (k = (S (k - 1))) as X99 by omega; rewrite X99 ; clear X99.
+        assert (k = (S (k - 1))) as X99 by lia; rewrite X99 ; clear X99.
         simpl.
         apply reduces_to_implies_approx1; auto; prove_isprogram.
         subst.
@@ -4835,7 +4835,7 @@ Proof.
         dands; auto.
 
         { remember (k-1) as kp.
-          assert (k = (S (k - 1))) as X99 by omega; rewrite X99 ; clear X99.
+          assert (k = (S (k - 1))) as X99 by lia; rewrite X99 ; clear X99.
           subst kp.
           apply (is_approx_chain_fix_aprox _ _ Hp (k-1)). }
 
@@ -5068,9 +5068,9 @@ Proof.
     dands; eauto 2 with slow.
     exists (j+j0).
     introv Hlt.
-    dimp (Heqck3 k);[ omega |].
-    dimp (Hcv3 (k-j) );[ omega |].
-    assert ((k - (j + j0)) = (k - j - j0)) as XX by omega.
+    dimp (Heqck3 k);[ lia |].
+    dimp (Hcv3 (k-j) );[ lia |].
+    assert ((k - (j + j0)) = (k - j - j0)) as XX by lia.
     rw XX.
     eapply approx_trans; eauto.
 Qed.
@@ -5123,9 +5123,9 @@ Proof.
     dands; eauto 2 with slow.
     exists (j+j0).
     introv Hlt.
-    dimp (Heqck3 k);[ omega |].
-    dimp (Hcv3 (k-j) );[ omega |].
-    assert ((k - (j + j0)) = (k - j - j0)) as XX by omega.
+    dimp (Heqck3 k);[ lia |].
+    dimp (Hcv3 (k-j) );[ lia |].
+    assert ((k - (j + j0)) = (k - j - j0)) as XX by lia.
     rw XX.
     eapply approx_trans; eauto.
 Qed.
@@ -5177,9 +5177,9 @@ Proof.
     dands; eauto 2 with slow.
     exists (j+j0).
     introv Hlt.
-    dimp (Heqck3 k);[ omega |].
-    dimp (Hcv3 (k-j) );[ omega |].
-    assert ((k - (j + j0)) = (k - j - j0)) as XX by omega.
+    dimp (Heqck3 k);[ lia |].
+    dimp (Hcv3 (k-j) );[ lia |].
+    assert ((k - (j + j0)) = (k - j - j0)) as XX by lia.
     rw XX.
     eapply approx_trans; eauto.
 Qed.
@@ -6144,7 +6144,7 @@ Proof.
 
       * exists v.
         dands; auto.
-        apply no_change_after_val_like2 with (k1:=1); auto; [|omega].
+        apply no_change_after_val_like2 with (k1:=1); auto; [|lia].
         unfolds_base; dands; eauto 3 with slow.
 
       * d_isnoncan Htri0.
@@ -6159,7 +6159,7 @@ Proof.
           dorn H2tri0;
             [exists v;
                dands; auto;
-               apply no_change_after_val_like2 with (k1:=2); auto;[| omega];
+               apply no_change_after_val_like2 with (k1:=2); auto;[| lia];
                unfolds_base; dands; auto; simpl; unfolds_base; simpl; tcsp; rw H1step; auto; fail
                    |].
           (* get ready to apply the induction hyp *) apply c1step_nc in H2tri1.
@@ -6187,7 +6187,7 @@ Proof.
 
       * exists v.
         dands; auto.
-        apply no_change_after_val_like2 with (k1:=1); auto; [|omega].
+        apply no_change_after_val_like2 with (k1:=1); auto; [|lia].
         unfolds_base; dands; eauto 3 with slow.
 
       * d_isabs Htri0.
@@ -6201,7 +6201,7 @@ Proof.
           dorn H2tri0;
             [ exists v;
                 dands; auto;
-                apply no_change_after_val_like2 with (k1:=2); auto;[| omega];
+                apply no_change_after_val_like2 with (k1:=2); auto;[| lia];
                 repeat (rw @computes_to_val_like_in_max_k_steps_S; eexists; dands; eauto);
                 repeat (unfolds_base; dands; auto); fail
                    | ].
@@ -6230,14 +6230,14 @@ Proof.
 
       * exists v.
         dands; auto.
-        apply no_change_after_val_like2 with (k1:=1); auto; [|omega].
+        apply no_change_after_val_like2 with (k1:=1); auto; [|lia].
         unfolds_base; dands; eauto 3 with slow.
 
     + repndors.
 
       * exists v.
         dands; auto.
-        apply no_change_after_val_like2 with (k1:=1); auto; [|omega].
+        apply no_change_after_val_like2 with (k1:=1); auto; [|lia].
         unfolds_base; dands; eauto 3 with slow.
 
       * d_isnoncan Htri0.
@@ -6251,7 +6251,7 @@ Proof.
           dorn H2tri0;
             [ exists v;
                 dands; auto;
-                apply no_change_after_val_like2 with (k1:=2); auto;[| omega];
+                apply no_change_after_val_like2 with (k1:=2); auto;[| lia];
                 repeat (rw @computes_to_val_like_in_max_k_steps_S; eexists; dands; eauto);
                 repeat (unfolds_base; dands; auto); fail
                    | ].
@@ -6281,7 +6281,7 @@ Proof.
 
       * exists v.
         dands; auto.
-        apply no_change_after_val_like2 with (k1:=1); auto; [|omega].
+        apply no_change_after_val_like2 with (k1:=1); auto; [|lia].
         unfolds_base; dands; auto; unfold isvalue_like; complete auto.
 
       * d_isabs Htri0.
@@ -6295,7 +6295,7 @@ Proof.
           dorn H2tri0;
             [ exists v;
                 dands; auto;
-                apply no_change_after_val_like2 with (k1:=2); auto;[| omega];
+                apply no_change_after_val_like2 with (k1:=2); auto;[| lia];
                 repeat (rw @computes_to_val_like_in_max_k_steps_S; eexists; dands; eauto);
                 repeat (unfolds_base; dands; auto); fail
                    | ].
@@ -6324,7 +6324,7 @@ Proof.
 
       * exists v.
         dands; auto.
-        apply no_change_after_val_like2 with (k1:=1); auto; [|omega].
+        apply no_change_after_val_like2 with (k1:=1); auto; [|lia].
         unfolds_base; dands; eauto 3 with slow.
 Qed.
 
@@ -6661,7 +6661,7 @@ Proof.
     + repndors;
       try (complete (exists v; dands; auto;
                             apply no_change_after_val_like2 with (k1:=1);
-                            auto; [|omega];
+                            auto; [|lia];
                             unfolds_base; dands; eauto 3 with slow));[|].
 
       * d_isnoncan Htri0. duplicate Htri1 as H1step.
@@ -6673,7 +6673,7 @@ Proof.
           dorn H2tri0;
             [exists v;
                dands; auto;
-               apply no_change_after_val_like2 with (k1:=2); auto;[| omega];
+               apply no_change_after_val_like2 with (k1:=2); auto;[| lia];
                unfolds_base; dands; auto; simpl; unfolds_base; simpl; tcsp; rw H1step; auto; fail
                    |].
           (* get ready to apply the induction hyp *) apply c1step_nc in H2tri1.
@@ -6708,7 +6708,7 @@ Proof.
           dorn H2tri0;
             [exists v;
                dands; auto;
-               apply no_change_after_val_like2 with (k1:=2); auto;[| omega];
+               apply no_change_after_val_like2 with (k1:=2); auto;[| lia];
              unfolds_base; dands; auto; simpl; unfolds_base; simpl; tcsp; rw H1step; auto; fail
                    |].
           (* get ready to apply the induction hyp *) apply c1step_ab in H2tri1.
@@ -6737,7 +6737,7 @@ Proof.
     + repndors;
       try (complete (exists v; dands; auto;
                             apply no_change_after_val_like2 with (k1:=1);
-                            auto; [|omega];
+                            auto; [|lia];
                             unfolds_base; dands; tcsp; eauto 3 with slow));[|].
 
       * d_isnoncan Htri0. duplicate Htri1 as H1step.
@@ -6749,7 +6749,7 @@ Proof.
           dorn H2tri0;
             [exists v;
                dands; auto;
-             apply no_change_after_val_like2 with (k1:=2); auto;[| omega];
+             apply no_change_after_val_like2 with (k1:=2); auto;[| lia];
              repeat (rw @computes_to_val_like_in_max_k_steps_S; eexists; dands; eauto);
              repeat (unfolds_base; dands; auto); fail
                    |].
@@ -6785,7 +6785,7 @@ Proof.
           dorn H2tri0;
             [exists v;
                dands; auto;
-               apply no_change_after_val_like2 with (k1:=2); auto;[| omega];
+               apply no_change_after_val_like2 with (k1:=2); auto;[| lia];
                repeat (rw @computes_to_val_like_in_max_k_steps_S; eexists; dands; eauto);
                repeat (unfolds_base; dands; auto); fail
                    |].
@@ -7010,7 +7010,7 @@ Proof.
       [exists v;
          dands; auto;
          apply no_change_after_val_like2 with (k1:=1);
-         auto; [|omega];
+         auto; [|lia];
          unfolds_base; dands; auto; unfold isvalue_like; complete auto
             | ].
       dorn Htri0;
@@ -7019,7 +7019,7 @@ Proof.
           [ exists v;
               dands; auto;
               apply no_change_after_val_like2 with (k1:=1);
-              auto; [|omega];
+              auto; [|lia];
               unfolds_base; dands; auto; unfold isvalue_like; complete auto
                  |
           ]
@@ -7034,7 +7034,7 @@ Proof.
         dorn H2tri0;
           [exists v;
              dands; auto;
-             apply no_change_after_val_like2 with (k1:=2); auto;[| omega];
+             apply no_change_after_val_like2 with (k1:=2); auto;[| lia];
              unfolds_base; dands; auto; simpl; unfolds_base; simpl; tcsp; rw H1step; auto; fail
                  |].
         (* get ready to apply the induction hyp *) apply c1step_nc in H2tri1.
@@ -7058,7 +7058,7 @@ Proof.
         [exists v;
            dands; auto;
            apply no_change_after_val_like2 with (k1:=1);
-           auto; [|omega];
+           auto; [|lia];
            unfolds_base; dands; auto; unfold isvalue_like; complete auto
               | ].
         d_isabs Htri0. duplicate Htri1 as H1step.
@@ -7070,7 +7070,7 @@ Proof.
         dorn H2tri0;
           [exists v;
              dands; auto;
-             apply no_change_after_val_like2 with (k1:=2); auto;[| omega];
+             apply no_change_after_val_like2 with (k1:=2); auto;[| lia];
              unfolds_base; dands; auto; simpl; unfolds_base; simpl; tcsp; rw H1step; auto; fail
                  |].
         (* get ready to apply the induction hyp *) apply c1step_ab in H2tri1.
@@ -7094,7 +7094,7 @@ Proof.
       [exists v;
          dands; auto;
          apply no_change_after_val_like2 with (k1:=1);
-         auto; [|omega];
+         auto; [|lia];
          unfolds_base; dands; complete sp
             | ].
       dorn Htri0;
@@ -7103,7 +7103,7 @@ Proof.
           [ exists v;
               dands; auto;
               apply no_change_after_val_like2 with (k1:=1);
-              auto; [|omega];
+              auto; [|lia];
               unfolds_base; dands; complete sp
                  |
           ]
@@ -7118,7 +7118,7 @@ Proof.
         dorn H2tri0;
           [exists v;
              dands; auto;
-             apply no_change_after_val_like2 with (k1:=2); auto;[| omega];
+             apply no_change_after_val_like2 with (k1:=2); auto;[| lia];
               repeat (rw @computes_to_val_like_in_max_k_steps_S; eexists; dands; eauto);
               repeat (unfolds_base; dands; auto); fail
                  |].
@@ -7143,7 +7143,7 @@ Proof.
         [exists v;
            dands; auto;
            apply no_change_after_val_like2 with (k1:=1);
-           auto; [|omega];
+           auto; [|lia];
            unfolds_base; dands; complete sp
               | ].
         d_isabs Htri0. duplicate Htri1 as H1step.
@@ -7155,7 +7155,7 @@ Proof.
         dorn H2tri0;
           [exists v;
              dands; auto;
-             apply no_change_after_val_like2 with (k1:=2); auto;[| omega];
+             apply no_change_after_val_like2 with (k1:=2); auto;[| lia];
               repeat (rw @computes_to_val_like_in_max_k_steps_S; eexists; dands; eauto);
               repeat (unfolds_base; dands; auto); fail
                  |].
@@ -7378,7 +7378,7 @@ Proof.
     + repndors;
       try (complete (exists v; dands; auto;
                             apply no_change_after_val_like2 with (k1:=1);
-                            auto; [|omega];
+                            auto; [|lia];
                             unfolds_base; dands; eauto 3 with slow; sp));[|].
 
       * d_isnoncan Htri0. duplicate Htri1 as H1step.
@@ -7390,7 +7390,7 @@ Proof.
           dorn H2tri0;
             [exists v;
                dands; auto;
-               apply no_change_after_val_like2 with (k1:=2); auto;[| omega];
+               apply no_change_after_val_like2 with (k1:=2); auto;[| lia];
                unfolds_base; dands; auto; simpl; unfolds_base; simpl; tcsp; rw H1step; auto; fail
                    |].
           (* get ready to apply the induction hyp *) apply c1step_nc in H2tri1.
@@ -7425,7 +7425,7 @@ Proof.
           dorn H2tri0;
             [exists v;
              dands; auto;
-             apply no_change_after_val_like2 with (k1:=2); auto;[| omega];
+             apply no_change_after_val_like2 with (k1:=2); auto;[| lia];
              unfolds_base; dands; auto; simpl; unfolds_base; simpl; tcsp; rw H1step; auto; fail
                    |].
           (* get ready to apply the induction hyp *) apply c1step_ab in H2tri1.
@@ -7454,7 +7454,7 @@ Proof.
     + repndors;
       try (complete (exists v; dands; auto;
                             apply no_change_after_val_like2 with (k1:=1);
-                            auto; [|omega];
+                            auto; [|lia];
                             unfolds_base; dands; eauto 3 with slow; sp));[|].
 
       * d_isnoncan Htri0. duplicate Htri1 as H1step.
@@ -7466,7 +7466,7 @@ Proof.
           dorn H2tri0;
             [exists v;
                dands; auto;
-             apply no_change_after_val_like2 with (k1:=2); auto;[| omega];
+             apply no_change_after_val_like2 with (k1:=2); auto;[| lia];
              repeat (rw @computes_to_val_like_in_max_k_steps_S; eexists; dands; eauto);
              repeat (unfolds_base; dands; auto); fail
                    |].
@@ -7502,7 +7502,7 @@ Proof.
           dorn H2tri0;
             [exists v;
                dands; auto;
-               apply no_change_after_val_like2 with (k1:=2); auto;[| omega];
+               apply no_change_after_val_like2 with (k1:=2); auto;[| lia];
                repeat (rw @computes_to_val_like_in_max_k_steps_S; eexists; dands; eauto);
                repeat (unfolds_base; dands; auto); fail
                    |].
@@ -7589,7 +7589,7 @@ Proof.
     exrepnd.
     applydup @computes_to_val_or_exc_in_max_k_steps_preserves_program in Xind2; auto.
     exists tv e' (S k1); auto.
-    dands; auto; try omega.
+    dands; auto; try lia.
 
     + apply @no_change_after_val_or_exc2 with (k1:=k1); auto.
 
@@ -7674,14 +7674,14 @@ Abort.
       [exists v;
          dands; auto;
          apply no_change_after_val_or_exc2 with (k1:=1);
-         auto; [|omega];
+         auto; [|lia];
          unfolds_base; dands; auto; fail
             | ].
       dorn Htri0;
         [|exists v;
            dands; auto;
            apply no_change_after_val_or_exc2 with (k1:=1);
-           auto; [|omega];
+           auto; [|lia];
            unfolds_base; dands; auto; fail].
       d_isnoncan Htri0. duplicate Htri1 as H1step.
       apply c1step in Htri1. apply Hcc in Htri1; auto.
@@ -7691,7 +7691,7 @@ Abort.
         dorn H2tri0;
           [exists v;
              dands; auto;
-             apply no_change_after_val_or_exc2 with (k1:=2); auto;[| omega];
+             apply no_change_after_val_or_exc2 with (k1:=2); auto;[| lia];
              unfolds_base; dands; auto; simpl; unfolds_base; simpl; rw H1step; auto; fail
                  |].
         (* get ready to apply the induction hyp *) apply c1step in H2tri1.
@@ -8404,10 +8404,10 @@ Qed.
  *)
 
 Ltac arithsimpl2 := let XX:= fresh "XX" in  repeat match goal with
-[ |- context [?n-0]] => assert (n-0 = n) as XX by omega; rw XX; clear XX
-|[ |- context [?n-?n]] => assert (n-n = 0) as XX by omega; rw XX; clear XX
-|[ H:  context [?n-0] |- _ ] => assert (n-0 = n) as XX by omega; rewrite XX in H; clear XX
-|[ H: context [?n-?n] |- _ ] => assert (n-n = 0) as XX by omega; rewrite XX in H; clear XX
+[ |- context [?n-0]] => assert (n-0 = n) as XX by lia; rw XX; clear XX
+|[ |- context [?n-?n]] => assert (n-n = 0) as XX by lia; rw XX; clear XX
+|[ H:  context [?n-0] |- _ ] => assert (n-0 = n) as XX by lia; rewrite XX in H; clear XX
+|[ H: context [?n-?n] |- _ ] => assert (n-n = 0) as XX by lia; rewrite XX in H; clear XX
 end.
 
 Lemma compactness_really_aux {o} :
@@ -8453,7 +8453,7 @@ Lemma fix_approx_exc {o} :
     -> computes_to_exception lib a (fix_approx n f) e.
 Proof.
   introv g comp.
-  destruct n; try (complete omega).
+  destruct n; try (complete lia).
   simpl.
   allunfold @computes_to_exception.
   allunfold @reduces_to; exrepnd.
@@ -8904,7 +8904,7 @@ Proof.
     intros lib mm IHmm t e XX Hispbt c0 eclbt f Hp XX0 Hcvb Hub1 e2' Hcv1 Hcv2 j Hcv3.
     rename Hcv3 into Hapa.
     assert (forall i:nat, approx lib (apply_bterm (bterm [nvarx] e2') [fix_approx i f]) t)  as CC by
-     (intro i;dimp ( Hapa (i+j));[omega|];assert (i+j-j = i) as ZZ by omega;rw ZZ in hyp;
+     (intro i;dimp ( Hapa (i+j));[lia|];assert (i+j-j = i) as ZZ by lia;rw ZZ in hyp;
         eapply approx_trans; eauto).
     clear Hub1 Hapa.
     rename Hcv1 into Hdis.
@@ -8939,15 +8939,15 @@ Proof.
     unfolds_base.
     dands;[congruence |].
     introv Hlt. duplicate Hlt as Hltb.
-    dimp (hyp n); [omega|].
+    dimp (hyp n); [lia|].
     rename hyp2 into H0rel.
     dimp ((selectbt_in2 n eclbt));[]. rename hyp into Hbsec.
     exrepnd.
     destruct bt as [ecnlv ecnnt].
-    dimp ((selectbt_in2 n tclbt));[omega|]. rename hyp into Hbstc.
+    dimp ((selectbt_in2 n tclbt));[lia|]. rename hyp into Hbstc.
     exrepnd.
     destruct bt as [tcnlv tcnnt].
-    dimp ((selectbt_in2 n  ecalbt));[omega|]. rename hyp into He2bt'.
+    dimp ((selectbt_in2 n  ecalbt));[lia|]. rename hyp into He2bt'.
     exrepnd. destruct bt as [ecanlv ecannt].
     pose proof (fresh_vars (length ecnlv) (all_vars ecnnt ++ all_vars tcnnt
       ++ ecanlv ++[nvarx] ++ all_vars  ecannt ++ bound_vars f)) as Hf.
@@ -8955,7 +8955,7 @@ Proof.
     exists lvn.
     exists (lsubst ecnnt (var_ren ecnlv lvn)).
     exists (lsubst tcnnt (var_ren tcnlv lvn)).
-    rw @selectbt_map in H0rel; [| omega].
+    rw @selectbt_map in H0rel; [| lia].
     repeat(rwselectbt).
     apply blift_numbvars in H0rel.
     unfold num_bvars in H0rel. simpl in H0rel.
@@ -9030,7 +9030,7 @@ Proof.
     end.
     apply clearbot_relbt in Hapm0.
     repnud Hapm0. (repeat simpl_list). GC.
-    dimp (Hapm0 n);[ omega |]. rename hyp into Hbrel. clear Hapm0.
+    dimp (Hapm0 n);[ lia |]. rename hyp into Hbrel. clear Hapm0.
     rw @selectbt_map in Hbrel;[| congruence].
     repeat(rwselectbt).
     simpl in Hbrel.
@@ -9103,8 +9103,8 @@ Proof.
       as CC
         by
           (intro i;
-           dimp ( Hapa (i+j));[omega|];
-           assert (i+j-j = i) as ZZ by omega;
+           dimp ( Hapa (i+j));[lia|];
+           assert (i+j-j = i) as ZZ by lia;
            rw ZZ in hyp;
            eapply approx_trans; eauto).
     clear Hub1 Hapa.
@@ -9249,8 +9249,8 @@ Proof.
 
     assert (forall i:nat, approx lib (apply_bterm (bterm [nvarx] e2') [fix_approx i f]) t)
       as CC
-        by (intro i;dimp (Hapa (i+j));[omega|];
-            assert (i+j-j = i) as ZZ by omega;
+        by (intro i;dimp (Hapa (i+j));[lia|];
+            assert (i+j-j = i) as ZZ by lia;
             rw ZZ in hyp;
             eapply approx_trans; eauto).
 

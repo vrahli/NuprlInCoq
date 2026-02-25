@@ -573,7 +573,7 @@ Proof.
   apply max_prop1.
   allapply IHnats.
   assert (maxl nats <= max a (maxl nats)) by apply max_prop2.
-  omega.
+  lia.
 Qed.
 
 Fixpoint addl (ts : list nat) : nat :=
@@ -694,10 +694,10 @@ Proof.
   intros ? ? ?. induction l; intros Hin.
   - simpl in Hin. contradiction.
   - simpl in Hin. dorn Hin.
-     + intros. subst. exists 0. split; auto. simpl. omega.
+     + intros. subst. exists 0. split; auto. simpl. lia.
      + intros. apply IHl in Hin. exrepnd.
         simpl.
-         exists (S n) ;split ; try (simpl; omega).
+         exists (S n) ;split ; try (simpl; lia).
          fold (app [a0] l);sp.
 Qed.
 
@@ -711,15 +711,15 @@ Proof.
   intros ? ? ? deq. induction l; intros Hin.
  - simpl in Hin. contradiction.
  - case (deq a a0).
-   + intros. subst. exists 0. split; auto. simpl. omega.
+   + intros. subst. exists 0. split; auto. simpl. lia.
    + intros Hneq. simpl in Hin.
      destruct Hin as [Heq  | Hin].
      * symmetry in Heq. apply Hneq in Heq. contradiction.
      * apply IHl in Hin. clear Hneq. destruct Hin as [m Hp]. repnd.
-       exists (S m) ;split ; try (simpl; omega).
+       exists (S m) ;split ; try (simpl; lia).
        fold (app [a0] l).
-       rewrite app_nth2. simpl.  assert (m-0 =m) as Hrew by omega.
-       rewrite Hrew. auto. simpl. omega.
+       rewrite app_nth2. simpl.  assert (m-0 =m) as Hrew by lia.
+       rewrite Hrew. auto. simpl. lia.
 Qed.
 *)
 
@@ -1516,10 +1516,10 @@ Qed.
 Lemma combine_in_left2 : forall T1 T2 (l1: list T1) (l2: list T2),
  (length l1 <= length l2) -> forall u1, ( LIn u1 l1)  -> {u2 : T2 $ LIn (u1,u2) (combine l1 l2)}.
 Proof. induction l1; intros ? Hlen ?   Hin. inverts Hin as Hin; simpl in Hlen.
-  destruct l2 ; simpl in Hlen. omega. inverts Hin as Hin.
+  destruct l2 ; simpl in Hlen. lia. inverts Hin as Hin.
  -  subst.  exists t. simpl. left; auto.
  - apply IHl1 with l2 u1 in Hin; auto. parallel u2 Hcom.
-   simpl. right; auto. omega.
+   simpl. right; auto. lia.
 Qed.
 
 Lemma cons_as_app :
@@ -1532,7 +1532,7 @@ Lemma length1 :
     length l = 1 <=> {x : T $ l = [x]}.
 Proof.
   introv; split; intro k; exrepnd; subst; allsimpl; tcsp.
-  repeat (destruct l; allsimpl; tcsp; try omega).
+  repeat (destruct l; allsimpl; tcsp; try lia).
   repeat eexists.
 Qed.
 
@@ -1541,7 +1541,7 @@ Lemma length2 :
     length l = 2 <=> {x, y : T $ l = [x,y]}.
 Proof.
   introv; split; intro k; exrepnd; subst; allsimpl; tcsp.
-  repeat (destruct l; allsimpl; tcsp; try omega).
+  repeat (destruct l; allsimpl; tcsp; try lia).
   repeat eexists.
 Qed.
 
@@ -1550,7 +1550,7 @@ Lemma length3 :
     length l = 3 <=> {x, y, z : T $ l = [x,y,z]}.
 Proof.
   introv; split; intro k; exrepnd; subst; allsimpl; tcsp.
-  repeat (destruct l; allsimpl; tcsp; try omega).
+  repeat (destruct l; allsimpl; tcsp; try lia).
   repeat eexists.
 Qed.
 
@@ -1559,7 +1559,7 @@ Lemma length4 :
     length l = 4 <=> {x, y, z , u : T $ l = [x,y,z,u]}.
 Proof.
   introv; split; intro k; exrepnd; subst; allsimpl; tcsp.
-  repeat (destruct l; allsimpl; tcsp; try omega).
+  repeat (destruct l; allsimpl; tcsp; try lia).
   repeat eexists.
 Qed.
 
@@ -1700,7 +1700,7 @@ Qed.
 
 Lemma repeat_length : forall T n (t:T), length(repeat n t)=n.
 Proof.
-  induction n; intros; simpl; try omega. rewrite IHn. auto.
+  induction n; intros; simpl; try lia. rewrite IHn. auto.
 Qed.
 
 Lemma in_repeat : forall T n (u t:T),  LIn u (repeat n t) -> u=t.
@@ -1713,7 +1713,7 @@ Lemma combine_app_eq: forall A B (l1:list A) (l21 l22: list B),
 Proof. induction l1;
  intros ? ? Hle; simpl; auto.
  destruct l21; simpl. inverts Hle.
- rewrite <- IHl1; allsimpl; try omega; auto.
+ rewrite <- IHl1; allsimpl; try lia; auto.
 Qed.
 
 Lemma combine_nil :
@@ -1750,12 +1750,12 @@ Lemma combine_app_app :
 Proof.
   induction l1; intros ? ? Hle. inverts Hle. trw_h length0  H0. subst.
   simpl. auto.
-  simpl. destruct l21; destruct l22; simpl; auto; try omega.
+  simpl. destruct l21; destruct l22; simpl; auto; try lia.
   - fold (app nil l22). rewrite IHl1. rewrite combine_nil. simpl.
-    assert (length l1 - 0 =length l1) as Hmin by omega. rewrite Hmin. auto.
-    simpl. omega.
+    assert (length l1 - 0 =length l1) as Hmin by lia. rewrite Hmin. auto.
+    simpl. lia.
   - rewrite app_nil_r. rewrite firstn_nil. rewrite combine_nil. rewrite app_nil_r. auto.
-  - simpl in Hle. simpl. rewrite  IHl1; auto; omega.
+  - simpl in Hle. simpl. rewrite  IHl1; auto; lia.
 Qed.
 
 Lemma in_firstn :
@@ -1780,7 +1780,7 @@ Lemma in_combine_repeat :
     length al <= n
     -> forall a,  LIn a al ->  LIn (a,t) (combine al (repeat n t)).
 Proof.
-  induction al; simpl; sp; subst; destruct n; try omega;
+  induction al; simpl; sp; subst; destruct n; try lia;
   allapply S_le_inj; simpl; sp.
 Qed.
 
@@ -1789,7 +1789,7 @@ Lemma length_filter :
     length (filter f l) <= length l.
 Proof.
   induction l; simpl; sp.
-  destruct (f a); simpl; omega.
+  destruct (f a); simpl; lia.
 Qed.
 
 Lemma filter_snoc :
@@ -1811,10 +1811,10 @@ Qed.
 
 Theorem nat_compare_dec: forall m n, (n < m [+]  m <= n ).
 Proof. induction m. destruct n. right. auto. 
-    right. omega. intros.  destruct (IHm n); 
+    right. lia. intros.  destruct (IHm n); 
     destruct (eq_nat_dec n m); subst;
-    try( left; omega);    
-    try( right; omega).    
+    try( left; lia);    
+    try( right; lia).    
 Qed. 
 
 Theorem eq_list2
@@ -1825,7 +1825,7 @@ Proof.
   intros. split ; introv H. 
   eapply eq_list  in H. repnd. split; auto.
   repnd. eapply  eq_list; split; eauto.
-  intros. assert (n < length l1 \/  length l1 <= n ) as Hdic by omega.
+  intros. assert (n < length l1 \/  length l1 <= n ) as Hdic by lia.
   destruct Hdic. apply H; auto. repeat (rewrite nth_overflow ); auto.
   rewrite <- H0; auto.
 Qed.
@@ -1855,7 +1855,7 @@ Proof. induction l; simpl. intros. provefalse.
   exact a.
   apply IHl with (n:=(n-1)).
   destruct n. destruct n0. reflexivity.
-  omega.
+  lia.
 Qed.
 
 Theorem  nth3 : forall {A:Type} (l:list A) (n:nat) (ev: n < length l) , {x:A | nth n l x =x} .
@@ -1865,7 +1865,7 @@ Proof. induction l; simpl. intros. provefalse.
   destruct n . subst.
   exact (exist (eq a) a eq_refl ).
   apply IHl with (n:=(n)).
-  omega.
+  lia.
 Qed.
 
 
@@ -1945,8 +1945,8 @@ Theorem last_snoc: forall A (l:list A) (a d:A) ,
 Proof. 
     induction l ; introv . refl. 
     rewrite snoc_as_append. rewrite app_nth2. 
-    simpl. asserts_rewrite (length l - length l=0); try omega. 
-    auto. omega. 
+    simpl. asserts_rewrite (length l - length l=0); try lia. 
+    auto. lia. 
 Qed. 
 
 Theorem eq_maps2:
@@ -1958,12 +1958,12 @@ Proof. induction la using rev_list_ind; introv Hleq Hp.
   invertsn Hleq. symmetry in Hleq. rw length0 in Hleq. subst. 
   reflexivity. allrewrite snoc_as_append. rewrite map_app. 
   rewrite length_app in Hleq. allsimpl. rev_list_dest lc. invertsn Hleq. 
-  omega. allrewrite snoc_as_append. rewrite map_app. allsimpl. 
+  lia. allrewrite snoc_as_append. rewrite map_app. allsimpl. 
   rewrite length_app in Hleq. allsimpl. 
-  assert (length la = length u) as Hleq1 by omega.
+  assert (length la = length u) as Hleq1 by lia.
   f_equal. eapply IHla; eauto. 
   intros. assert (n < length (la++[a])) as Hla. rewrite length_app. 
-  omega. apply Hp in Hla. 
+  lia. apply Hp in Hla. 
   rewrite app_nth1 in Hla; auto.  rewrite app_nth1 in Hla; auto.
   eauto. rewrite <- Hleq1; auto. 
   instlemma (Hp (length la)) as Hle.
@@ -1974,7 +1974,7 @@ Proof. induction la using rev_list_ind; introv Hleq Hp.
   rewrite last_snoc in Hle. 
   f_equal; auto. apply Hle. 
   rewrite <- Hleq1. 
-  rewrite length_snoc; omega. 
+  rewrite length_snoc; lia. 
 Qed.
 
 
@@ -2086,10 +2086,10 @@ Lemma combine_in_right : forall T1 T2 (l2: list T2) (l1: list T1),
   -> {u1 : T1 $ LIn (u1,u2) (combine l1 l2)}.
 Proof. induction l2; intros ? Hlen ?   Hin. inverts Hin as Hin; 
   simpl in Hlen.
-  destruct l1 ; simpl in Hlen. omega. inverts Hin as Hin.
+  destruct l1 ; simpl in Hlen. lia. inverts Hin as Hin.
  -  subst.  exists t. simpl. left; auto.
  - apply IHl2 with l1 u2 in Hin; auto. parallel u Hcom.
-   simpl. right; auto. omega.
+   simpl. right; auto. lia.
 Qed.
 
 (** just like nth, but no need to provide a default element *)
@@ -2118,25 +2118,25 @@ Proof.
   destruct l2; allsimpl; tcsp.
   dorn i.
   - inversion i; subst.
-    exists 0; sp; omega.
+    exists 0; sp; lia.
   - apply IHl1 in i; exrepnd.
-    exists (S n); simpl; sp; omega.
+    exists (S n); simpl; sp; lia.
 Qed.
 
 Lemma nth_select1: forall {A:Type} (n:nat) (l:list A)  (def: A),
   n < length l -> select  n l= Some (nth n l def).
 Proof.
   induction n as [|n Hind]; introv Hl; destruct l;try (inverts Hl;fail); simpl; auto.
-  allsimpl. erewrite Hind; eauto. omega.
+  allsimpl. erewrite Hind; eauto. lia.
 Qed.
 
 Lemma nth_select2: forall {A:Type} (n:nat) (l:list A) ,
   n >= length l <=> select  n l= None.
 Proof.
-  induction n as [|n Hind];  destruct l; allsimpl; try (split;sp;omega;fail).
+  induction n as [|n Hind];  destruct l; allsimpl; try (split;sp;lia;fail).
   split;intro H.
-  apply Hind; auto. omega.
-  apply Hind in H; auto. omega.
+  apply Hind; auto. lia.
+  apply Hind in H; auto. lia.
 Qed.
 
 Lemma first_index {A: Type} (l: list A) (a:A) (deq : Deq A):
@@ -2144,10 +2144,10 @@ Lemma first_index {A: Type} (l: list A) (a:A) (deq : Deq A):
      [+] (! (LIn a l)).
 Proof.
   induction l as [| h l Hind]; [right;sp;fail|].
-  destruct (deq h a); subst; allsimpl;[left ; exists 0; sp; omega | ].
+  destruct (deq h a); subst; allsimpl;[left ; exists 0; sp; lia | ].
   dorn Hind.
-  + exrepnd. left. exists (S n0). split; auto; try omega; split; auto.
-     introv Hlt. destruct m; auto. apply Hind0; omega.
+  + exrepnd. left. exists (S n0). split; auto; try lia; split; auto.
+     introv Hlt. destruct m; auto. apply Hind0; lia.
   + right. intro Hc; sp.
 Defined.
 
@@ -2187,7 +2187,7 @@ Lemma select_lt : forall {A:Type} (l: list A) (a:A) n,
   select n l = Some a -> n < length l.
 Proof.
   introv Heq. 
-  assert (n<length l \/ n>=length l ) as XX by omega.
+  assert (n<length l \/ n>=length l ) as XX by lia.
   dorn XX; auto. apply nth_select2 in XX. rewrite XX in Heq.
   inverts Heq.
 Qed.
@@ -2259,7 +2259,7 @@ Lemma length_combine_eq : forall {A B: Type} (la:list A) (lb: list B),
   -> length (combine la lb) = length la.
 Proof.
   introv XX. rewrite combine_length.
-  rewrite XX. apply Min.min_idempotent.
+  rewrite XX. apply min_idempotent.
 Qed.
 
 Lemma nth_in2:
@@ -2317,7 +2317,7 @@ Lemma is_first_index_unique : forall {T:Type} (l: list T) (t:T) (n1 n2 :nat),
 Proof.
   unfold is_first_index, not_in_prefix. introv s1s s3s.
   repnd.
-  assert (n1<n2 \/ n1=n2 \/ n2<n1) as Htri by omega.
+  assert (n1<n2 \/ n1=n2 \/ n2<n1) as Htri by lia.
   (dorn Htri);[|(dorn Htri)]; sp;
   try (apply s1s in Htri); sp;
   try (apply s3s in Htri); sp.
@@ -2557,7 +2557,7 @@ Qed.
 
 Lemma binrel_list_nil : forall {T : Type } R (def :T ), binrel_list def R nil nil.
 Proof.
-  introv. split;[sp | introv Hlt; simpl in Hlt; omega].
+  introv. split;[sp | introv Hlt; simpl in Hlt; lia].
 Qed.
 
 Tactic Notation "spcf" :=
@@ -2570,10 +2570,10 @@ Proof.
   split; introv hyp; unfold binrel_list in hyp; unfold binrel_list.
   - repnd. 
     simpl. dands;spcf;[]. introv Hlt. destruct n; spc.
-    dimp (hyp0 n); spc; omega.
+    dimp (hyp0 n); spc; lia.
   - allsimpl. repnd. dands ;spcf.
-    + introv Hlt. dimp (hyp (S n));sp; omega.
-    + dimp (hyp 0); spc; omega.
+    + introv Hlt. dimp (hyp (S n));sp; lia.
+    + dimp (hyp 0); spc; lia.
 Qed.
 
 Lemma in_combine_left_eauto :
@@ -2717,9 +2717,9 @@ Lemma in_combine_sel_iff :
 Proof.
   induction l1; simpl; introv; split; intro h; tcsp; destruct l2; allsimpl; tcsp.
   - dorn h; cpx.
-    + exists 0; simpl; sp; omega.
+    + exists 0; simpl; sp; lia.
     + apply IHl1 in h; exrepnd.
-      exists (S n); simpl; sp; omega.
+      exists (S n); simpl; sp; lia.
   - exrepnd; destruct n; allsimpl; cpx.
     right; apply IHl1; exists n; sp.
 Qed.
@@ -2736,12 +2736,12 @@ Lemma LInSeqIff : forall len n m,
 Proof.
   induction len;
   split; introv Hyp; allsimpl; repnd;
-  cpx; try omega;[|].
+  cpx; try lia;[|].
   - dorn Hyp; subst; split; cpx; allsimpl;
-    try (rw IHlen in Hyp); exrepnd; try omega.
+    try (rw IHlen in Hyp); exrepnd; try lia.
   - apply le_lt_eq_dec in Hyp0.
     dorn Hyp0;[right; apply IHlen; dands | left];
-     omega.
+     lia.
 Qed.
 
 Definition monotoneSetFn {A B : Type}
@@ -3167,7 +3167,7 @@ Proof.
   SetReasoning.
   apply subsetSingleFlatMap.
   apply LInSeqIff; dands; cpx.
-  omega.
+  lia.
 Qed.
 
 Lemma no_rep_flat_map_seq2 : forall {A: Type}
@@ -3382,7 +3382,6 @@ Lemma mapin_mapin :
 Proof.
   induction l; introv; simpl; auto.
   apply eq_cons; auto.
-  apply IHl.
 Qed.
 
 Lemma eq_mapins :

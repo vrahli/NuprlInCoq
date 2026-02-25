@@ -89,13 +89,13 @@ Proof.
   prove_alpha_eq4.
 
   introv j.
-  repeat (destruct n; tcsp; try omega); clear j;[].
+  repeat (destruct n; tcsp; try lia); clear j;[].
   apply alphaeqbt_nilv2.
 
   unfold mk_natk, mk_natk_aux, mk_set, nobnd.
   prove_alpha_eq4;[].
   introv j.
-  repeat (destruct n; tcsp; try omega); clear j;[].
+  repeat (destruct n; tcsp; try lia); clear j;[].
 
   pose proof (ex_fresh_var (newvar (mk_less_than (mk_var (newvar (@mk_var o v))) (@mk_var o v))
                                    :: (newvar (mk_less_than (mk_var (newvar x)) x))
@@ -140,35 +140,35 @@ Proof.
   unfold mk_product, nobnd.
   prove_alpha_eq4.
   introv j.
-  repeat (destruct n; tcsp; try omega); clear j;[|].
+  repeat (destruct n; tcsp; try lia); clear j;[|].
 
   { apply alphaeqbt_nilv2.
 
     unfold mk_function, nobnd.
     prove_alpha_eq4.
     introv j.
-    repeat (destruct n; tcsp; try omega); clear j;[|].
+    repeat (destruct n; tcsp; try lia); clear j;[|].
 
     { apply alphaeqbt_nilv2.
       unfold mk_less, nobnd.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alphaeqbt_nilv2.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alphaeqbt_nilv2.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alphaeqbt_nilv2.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alpha_eq_bterm_congr.
       repeat (boolvar; simpl); tcsp.
@@ -177,17 +177,17 @@ Proof.
     { apply alpha_eq_bterm_congr.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alpha_eq_bterm_congr.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alpha_eq_bterm_congr.
       prove_alpha_eq4.
       introv j.
-      repeat (destruct n; tcsp; try omega); clear j;[].
+      repeat (destruct n; tcsp; try lia); clear j;[].
 
       apply alpha_eq_bterm_congr.
       repeat (boolvar; simpl); tcsp.
@@ -246,22 +246,22 @@ Proof.
     unfold mk_less, nobnd.
     prove_alpha_eq4.
     introv j.
-    repeat (destruct n; tcsp; try omega); clear j;[].
+    repeat (destruct n; tcsp; try lia); clear j;[].
 
     apply alpha_eq_bterm_congr.
     prove_alpha_eq4.
     introv j.
-    repeat (destruct n; tcsp; try omega); clear j;[].
+    repeat (destruct n; tcsp; try lia); clear j;[].
 
     apply alpha_eq_bterm_congr.
     prove_alpha_eq4.
     introv j.
-    repeat (destruct n; tcsp; try omega); clear j;[].
+    repeat (destruct n; tcsp; try lia); clear j;[].
 
     apply alpha_eq_bterm_congr.
     prove_alpha_eq4.
     introv j.
-    repeat (destruct n; tcsp; try omega); clear j;[].
+    repeat (destruct n; tcsp; try lia); clear j;[].
 
     apply alpha_eq_bterm_congr.
     repeat (boolvar; subst; simpl; tcsp);
@@ -509,7 +509,6 @@ Lemma csubst_mk_bot {o} :
 Proof.
   introv.
   rw @csubst_trivial; auto.
-  simpl; auto.
 Qed.
 
 Lemma csubst_mk_nat {o} :
@@ -517,7 +516,6 @@ Lemma csubst_mk_nat {o} :
 Proof.
   introv.
   rw @csubst_trivial; auto.
-  simpl; auto.
 Qed.
 
 Definition seq2kseq2 {o} (s n : @CTerm o) (v : NVar) : CTerm :=
@@ -621,11 +619,11 @@ Proof.
 
       { eapply reduces_to_if_split2;[|exact comp4].
         csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl.
-        boolvar;try omega;auto. }
+        boolvar;try lia;auto. }
 
       { eapply reduces_to_if_split2;[|exact comp4].
         csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl.
-        boolvar;try omega;auto. }
+        boolvar;try lia;auto. }
 
     * exrepnd.
       exists tr_subterms; dands; auto.
@@ -659,11 +657,11 @@ Proof.
 
         { eapply reduces_to_if_split2;[|exact comp1].
           csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl.
-          boolvar;try omega;auto. }
+          boolvar;try lia;auto. }
 
         { eapply reduces_to_if_split2;[|exact comp1].
           csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl.
-          boolvar;try omega;auto. }
+          boolvar;try lia;auto. }
       }
 
       { exrepnd.
@@ -735,11 +733,11 @@ Proof.
 
       { eapply reduces_to_if_split2;[|exact comp4].
         csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl.
-        boolvar;try omega;auto. }
+        boolvar;try lia;auto. }
 
       { eapply reduces_to_if_split2;[|exact comp4].
         csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl.
-        boolvar;try omega;auto. }
+        boolvar;try lia;auto. }
 
     * exrepnd.
       exists f'; dands; auto.
@@ -1084,7 +1082,7 @@ Proof.
 
     unfold lblift; simpl; dands; auto.
     introv ltn.
-    destruct n; try omega; clear ltn.
+    destruct n; try lia; clear ltn.
     unfold selectbt; simpl.
     unfold blift.
     exists [v] t1 t2; dands; eauto 3 with slow.
@@ -1342,7 +1340,7 @@ Proof.
          allsimpl; unfold compute_step_comp; simpl;
          allrw @get_param_from_cop_pk2can; auto;
          allrw @co_wf_pk2can;ginv|];[].
-      boolvar;tcsp;try omega.
+      boolvar;tcsp;try lia.
 
     + eapply approx_canonical_form in h4;[|exact comp1].
       destruct h4 as [tr_subterms apr]; repnd.
@@ -1355,7 +1353,7 @@ Proof.
          allsimpl; unfold compute_step_comp; simpl;
          allrw @get_param_from_cop_pk2can; auto;
          allrw @co_wf_pk2can;ginv|];[].
-      boolvar;tcsp;try omega.
+      boolvar;tcsp;try lia.
 
   - introv comp.
     apply computes_to_exception_mk_int_eq in comp; repndors; exrepnd;
@@ -1379,7 +1377,7 @@ Proof.
            allsimpl; unfold compute_step_comp; simpl;
            allrw @get_param_from_cop_pk2can; auto;
            allrw @co_wf_pk2can;ginv|];[].
-        boolvar;tcsp;try omega.
+        boolvar;tcsp;try lia.
 
       * apply computes_to_exception_implies_approx in comp1; eauto 3 with slow;[]; repnd.
         eapply approx_trans in h4;[|exact comp4].
@@ -1393,7 +1391,7 @@ Proof.
            allsimpl; unfold compute_step_comp; simpl;
            allrw @get_param_from_cop_pk2can; auto;
            allrw @co_wf_pk2can;ginv|];[].
-        boolvar;tcsp;try omega.
+        boolvar;tcsp;try lia.
 
     + apply computes_to_exception_implies_approx in comp; eauto 3 with slow;[]; repnd.
       eapply approx_trans in h1;[|exact comp0].
@@ -1445,7 +1443,7 @@ Proof.
          allsimpl; unfold compute_step_comp; simpl;
          allrw @get_param_from_cop_pk2can; auto;
          allrw @co_wf_pk2can;ginv|];[].
-      boolvar;tcsp;try omega.
+      boolvar;tcsp;try lia.
       allunfold @computes_to_value; sp.
 
     + eapply approx_sterm in h4;[|eauto]; exrepnd.
@@ -1457,7 +1455,7 @@ Proof.
          allsimpl; unfold compute_step_comp; simpl;
          allrw @get_param_from_cop_pk2can; auto;
          allrw @co_wf_pk2can;ginv|];[].
-      boolvar;tcsp;try omega.
+      boolvar;tcsp;try lia.
       allunfold @computes_to_value; sp.
 Qed.
 
@@ -1604,7 +1602,7 @@ Proof.
           [apply reduces_to_prinarg;exact comp0|].
         eapply reduces_to_if_split2;
           [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-        boolvar; try omega.
+        boolvar; try lia.
         eapply reduces_to_trans;
           [apply reduces_to_prinarg;exact comp0|].
         eapply reduces_to_if_split2;
@@ -1639,7 +1637,7 @@ Proof.
             [apply reduces_to_prinarg;exact comp3|].
           eapply reduces_to_if_split2;
             [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-          boolvar; try omega; auto. }
+          boolvar; try lia; auto. }
 
         { apply clearbot_relbt2.
           fold (approx_open lib).
@@ -1658,7 +1656,7 @@ Proof.
             [apply reduces_to_prinarg;exact comp3|].
           eapply reduces_to_if_split2;
             [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-          boolvar; try omega; auto.
+          boolvar; try lia; auto.
           eapply reduces_to_trans;
             [apply reduces_to_prinarg;exact comp3|].
           eapply reduces_to_if_split2;
@@ -1692,7 +1690,7 @@ Proof.
           [apply reduces_to_prinarg;exact comp0|].
         eapply reduces_to_if_split2;
           [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-        boolvar; try omega.
+        boolvar; try lia.
         eapply reduces_to_trans;
           [apply reduces_to_prinarg;exact comp0|].
         eapply reduces_to_if_split2;
@@ -1719,7 +1717,7 @@ Proof.
               [apply reduces_to_prinarg;exact comp3|].
             eapply reduces_to_if_split2;
               [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-            boolvar; try omega; auto.
+            boolvar; try lia; auto.
 
           - exists a e.
             applydup @preserve_program_exc2 in comp1; eauto 3 with slow; repnd.
@@ -1729,13 +1727,13 @@ Proof.
               [apply reduces_to_prinarg;exact comp3|].
             eapply reduces_to_if_split2;
               [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-            boolvar; try omega; auto.
+            boolvar; try lia; auto.
 
             eapply reduces_to_trans;
               [apply reduces_to_prinarg;exact comp3|].
             eapply reduces_to_if_split2;
               [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-            boolvar; try omega; ginv; tcsp.
+            boolvar; try lia; ginv; tcsp.
         }
 
         { exists a e.
@@ -1783,7 +1781,7 @@ Proof.
         [apply reduces_to_prinarg;exact comp0|].
       eapply reduces_to_if_split2;
         [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-      boolvar; try omega.
+      boolvar; try lia.
       eapply reduces_to_trans;
         [apply reduces_to_prinarg;exact comp0|].
       eapply reduces_to_if_split2;
@@ -1812,7 +1810,7 @@ Proof.
           [apply reduces_to_prinarg;exact comp3|].
         eapply reduces_to_if_split2;
           [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-        boolvar; try omega; auto.
+        boolvar; try lia; auto.
 
       * exists f.
         dands; auto;
@@ -1825,7 +1823,7 @@ Proof.
           [apply reduces_to_prinarg;exact comp3|].
         eapply reduces_to_if_split2;
           [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-        boolvar; try omega; auto.
+        boolvar; try lia; auto.
         eapply reduces_to_trans;
           [apply reduces_to_prinarg;exact comp3|].
         eapply reduces_to_if_split2;
@@ -1868,12 +1866,12 @@ Proof.
           [apply reduces_to_prinarg;exact comp0|].
         eapply reduces_to_if_split2;
           [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-        boolvar; ginv; try omega.
+        boolvar; ginv; try lia.
         eapply reduces_to_trans;
           [apply reduces_to_prinarg;exact comp0|].
         eapply reduces_to_if_split2;
           [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-        boolvar; tcsp; try omega.
+        boolvar; tcsp; try lia.
 
       * apply clearbot_relbt2.
         fold (approx_open lib).
@@ -1904,7 +1902,7 @@ Proof.
             [apply reduces_to_prinarg;exact comp3|].
           eapply reduces_to_if_split2;
             [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-          boolvar; try omega; tcsp. }
+          boolvar; try lia; tcsp. }
 
         { apply clearbot_relbt2.
           fold (approx_open lib).
@@ -1923,12 +1921,12 @@ Proof.
             [apply reduces_to_prinarg;exact comp3|].
           eapply reduces_to_if_split2;
             [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-          boolvar; ginv; try omega; tcsp.
+          boolvar; ginv; try lia; tcsp.
           eapply reduces_to_trans;
             [apply reduces_to_prinarg;exact comp3|].
           eapply reduces_to_if_split2;
             [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-          boolvar;tcsp;try omega. }
+          boolvar;tcsp;try lia. }
 
         { apply clearbot_relbt2.
           fold (approx_open lib).
@@ -1956,12 +1954,12 @@ Proof.
           [apply reduces_to_prinarg;exact comp0|].
         eapply reduces_to_if_split2;
           [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-        boolvar; ginv; try omega.
+        boolvar; ginv; try lia.
         eapply reduces_to_trans;
           [apply reduces_to_prinarg;exact comp0|].
         eapply reduces_to_if_split2;
           [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-        boolvar; tcsp; try omega.
+        boolvar; tcsp; try lia.
 
       * apply computes_to_exception_mk_int_eq in comp1; eauto 3 with slow.
         repndors; exrepnd.
@@ -1984,7 +1982,7 @@ Proof.
               [apply reduces_to_prinarg;exact comp3|].
             eapply reduces_to_if_split2;
               [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-            boolvar; try omega; tcsp.
+            boolvar; try lia; tcsp.
 
           - exists a e.
             applydup @preserve_program_exc2 in comp1; eauto 3 with slow; repnd.
@@ -1994,13 +1992,13 @@ Proof.
               [apply reduces_to_prinarg;exact comp3|].
             eapply reduces_to_if_split2;
               [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-            boolvar; try omega; tcsp.
+            boolvar; try lia; tcsp.
 
             eapply reduces_to_trans;
               [apply reduces_to_prinarg;exact comp3|].
             eapply reduces_to_if_split2;
               [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-            boolvar; try omega; ginv; tcsp.
+            boolvar; try lia; ginv; tcsp.
         }
 
         { exists a e.
@@ -2047,12 +2045,12 @@ Proof.
         [apply reduces_to_prinarg;exact comp0|].
       eapply reduces_to_if_split2;
         [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-      boolvar; ginv; try omega.
+      boolvar; ginv; try lia.
       eapply reduces_to_trans;
         [apply reduces_to_prinarg;exact comp0|].
       eapply reduces_to_if_split2;
         [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-      boolvar; tcsp; try omega.
+      boolvar; tcsp; try lia.
 
     + apply computes_to_value_mk_int_eq in comp1; eauto 3 with slow.
       exrepnd.
@@ -2077,7 +2075,7 @@ Proof.
           [apply reduces_to_prinarg;exact comp3|].
         eapply reduces_to_if_split2;
           [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-        boolvar; try omega; tcsp.
+        boolvar; try lia; tcsp.
 
       * exists f.
         dands; auto;
@@ -2090,12 +2088,12 @@ Proof.
           [apply reduces_to_prinarg;exact comp3|].
         eapply reduces_to_if_split2;
           [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-        boolvar; ginv; try omega; tcsp.
+        boolvar; ginv; try lia; tcsp.
         eapply reduces_to_trans;
           [apply reduces_to_prinarg;exact comp3|].
         eapply reduces_to_if_split2;
           [csunf;simpl;dcwf h;simpl;unfold compute_step_comp;simpl;auto|].
-        boolvar;tcsp;try omega.
+        boolvar;tcsp;try lia.
 Qed.
 
 Lemma cequivc_inteq_less_swap1 {o} :
@@ -2492,9 +2490,9 @@ Proof.
   allrw @mkc_zero_eq.
 
   eapply cequivc_trans;[|apply cequivc_sym;apply cequivc_mkc_less_nat].
-  boolvar; auto; try omega.
+  boolvar; auto; try lia.
   eapply cequivc_trans;[|apply cequivc_sym;apply cequivc_mkc_less_nat].
-  boolvar; auto; try omega.
+  boolvar; auto; try lia.
 
   eapply cequivc_trans;
     [|apply cequivc_sym;apply implies_cequivc_apply;

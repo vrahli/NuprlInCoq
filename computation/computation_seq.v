@@ -68,16 +68,16 @@ Proof.
 
     + apply isexc_implies2 in comp2; exrepnd; subst.
       apply reduces_in_atmost_k_steps_if_isvalue_like in comp0; eauto 3 with slow; subst.
-      right; exists 0; dands; eauto 3 with slow; try omega.
+      right; exists 0; dands; eauto 3 with slow; try lia.
       apply reduces_in_atmost_k_steps_refl; eauto 3 with slow.
 
     + apply IHk in comp0; auto.
       repndors; exrepnd.
 
-      * left; exists n (S i) j; dands; auto; try omega.
+      * left; exists n (S i) j; dands; auto; try lia.
         rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
 
-      * right; exists (S j); dands; auto; try omega.
+      * right; exists (S j); dands; auto; try lia.
         rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
 Qed.
 
@@ -112,16 +112,16 @@ Proof.
 
     + apply isexc_implies2 in comp2; exrepnd; subst.
       apply reduces_in_atmost_k_steps_if_isvalue_like in comp0; eauto 3 with slow; subst.
-      right; exists 0; dands; eauto 3 with slow; try omega.
+      right; exists 0; dands; eauto 3 with slow; try lia.
       apply reduces_in_atmost_k_steps_refl; eauto 3 with slow.
 
     + apply IHk in comp0; auto.
       repndors; exrepnd.
 
-      * left; exists c (S i) j; dands; auto; try omega.
+      * left; exists c (S i) j; dands; auto; try lia.
         rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
 
-      * right; exists (S j); dands; auto; try omega.
+      * right; exists (S j); dands; auto; try lia.
         rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
 Qed.
 
@@ -150,21 +150,21 @@ Proof.
       repndors; exrepnd; ginv.
       apply reduces_in_atmost_k_steps_if_isvalue_like in comp0; eauto 3 with slow; subst.
       left.
-      exists n 0; dands; auto; try omega.
+      exists n 0; dands; auto; try lia.
       apply reduces_in_atmost_k_steps_0; auto.
 
     + apply isexc_implies2 in comp2; exrepnd; subst.
       apply reduces_in_atmost_k_steps_if_isvalue_like in comp0; eauto 3 with slow; subst.
-      right; exists 0; dands; eauto 3 with slow; try omega.
+      right; exists 0; dands; eauto 3 with slow; try lia.
       apply reduces_in_atmost_k_steps_refl; eauto 3 with slow.
 
     + apply IHk in comp0; auto.
       repndors; exrepnd.
 
-      * left; exists n (S i); dands; auto; try omega.
+      * left; exists n (S i); dands; auto; try lia.
         rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
 
-      * right; exists (S j); dands; auto; try omega.
+      * right; exists (S j); dands; auto; try lia.
         rw @reduces_in_atmost_k_steps_S; eexists; dands; eauto.
 Qed.
 
@@ -333,7 +333,7 @@ Proof.
   apply reduces_to_if_step.
   csunf; simpl.
   dcwf h; allsimpl.
-  boolvar; try omega.
+  boolvar; try lia.
   rw @Znat.Nat2Z.id; auto.
 Qed.
 
@@ -351,7 +351,7 @@ Proof.
   apply reduces_to_if_step.
   csunf; simpl.
   dcwf h; allsimpl.
-  boolvar; try omega.
+  boolvar; try lia.
   rw @Znat.Nat2Z.id; auto.
 Qed.
 
@@ -601,14 +601,14 @@ Proof.
 
     + apply compute_step_eapply2_success in comp1; repnd; GC.
       repndors; exrepnd; subst; ginv.
-      exists (@mk_nat o n) 0; dands; try omega.
+      exists (@mk_nat o n) 0; dands; try lia.
 
       * apply reduces_in_atmost_k_steps_0; auto.
 
       * left; eexists; eauto.
 
     + apply wf_isexc_implies in wf; auto; exrepnd; subst.
-      exists (mk_exception a e) 0; dands; try omega.
+      exists (mk_exception a e) 0; dands; try lia.
 
       * apply reduces_in_atmost_k_steps_0; auto.
 
@@ -617,7 +617,7 @@ Proof.
     + applydup @preserve_nt_wf_compute_step in comp1; auto.
       apply IHk in comp0; auto.
       repndors; exrepnd.
-      exists v (S j); dands; try omega; auto.
+      exists v (S j); dands; try lia; auto.
       apply reduces_in_atmost_k_steps_S; eexists; dands; eauto.
 Qed.
 
@@ -655,16 +655,16 @@ Proof.
 
     + apply compute_step_eapply2_success in comp1; repnd; GC.
       repndors; exrepnd; subst; ginv.
-      exists 0; dands; try omega.
+      exists 0; dands; try lia.
       apply has_value_like_0; eauto 3 with slow.
 
-    + exists 0; dands; try omega.
+    + exists 0; dands; try lia.
       apply has_value_like_0; eauto 3 with slow.
 
     + applydup @preserve_nt_wf_compute_step in comp1; auto.
       apply IHk in comp0; auto.
       exrepnd.
-      exists (S j); dands; auto; try omega.
+      exists (S j); dands; auto; try lia.
       apply has_value_like_S; eexists; dands; eauto.
 Qed.
 
@@ -686,16 +686,16 @@ Proof.
 
     + apply compute_step_eapply2_success in comp1; repnd; GC.
       repndors; exrepnd; subst; ginv.
-      exists 0; dands; try omega.
+      exists 0; dands; try lia.
       apply has_value_like_0; eauto 3 with slow.
 
-    + exists 0; dands; try omega.
+    + exists 0; dands; try lia.
       apply has_value_like_0; eauto 3 with slow.
 
     + applydup @preserve_nt_wf_compute_step in comp1; auto.
       apply IHk in comp0; auto.
       exrepnd.
-      exists (S j); dands; auto; try omega.
+      exists (S j); dands; auto; try lia.
       apply has_value_like_S; eexists; dands; eauto.
 Qed.
 

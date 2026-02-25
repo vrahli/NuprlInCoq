@@ -716,7 +716,7 @@ Tactic Notation "constructors" :=
     anything else *)
 
 Tactic Notation "false_goal" :=
-  elimtype False.
+  assert False;[|auto].
 
 (** [false_post] is the underlying tactic used to prove goals
     of the form [False]. In the default implementation, it proves
@@ -745,12 +745,15 @@ Tactic Notation "tryfalse" :=
     It is equivalent to [try solve \[ false; tac \]]. 
     Example: [tryfalse by congruence/] *)
 
+(*
 Tactic Notation "tryfalse" "by" tactic(tac) "/" :=
   try solve [ false; instantiate; tac ].
+*)
 
 (** [false T] tries [false; apply T], or otherwise adds [T] as
     an assumption and calls [false]. *)
 
+(*
 Tactic Notation "false" constr(T) "by" tactic(tac) "/" :=
   false_goal; first  
     [ first [ apply T | eapply T | rapply T]; instantiate; tac  (* todo: sapply?*)
@@ -758,9 +761,12 @@ Tactic Notation "false" constr(T) "by" tactic(tac) "/" :=
       first [ discriminate H  (* optimization *)
             | false; instantiate; tac ] ].
    (* todo: false (>> H X1 X2)... *)
+*)
 
+(*
 Tactic Notation "false" constr(T) :=
   false T by idtac/.
+*)
 
 (** [false_invert] proves any goal provided there is at least 
     one hypothesis [H] in the context that can be proved absurd
@@ -3043,10 +3049,11 @@ Tactic Notation "auto" "*" constr(E1) constr(E2) constr(E3) :=
 (** [auto_false] is a version of [auto] able to spot some contradictions.
     [auto_false~] and [auto_false*] are also available. *)
 
+(*
 Ltac auto_false_base cont := 
   try solve [ cont tt | tryfalse by congruence/ 
             | try split; intros_all; tryfalse by congruence/ ].
-
+*)
 
 (* ---------------------------------------------------------------------- *)
 (** ** Definitions for parsing compatibility *)
@@ -3998,7 +4005,7 @@ Ltac skip_with_existential :=
 Variable skip_axiom : False. 
   (* To obtain a safe development, change to [skip_axiom : True] *)
 Ltac skip_with_axiom :=
-  elimtype False; apply skip_axiom.
+  assert False; auto; apply skip_axiom.
 
 Tactic Notation "skip" := 
    skip_with_axiom. 

@@ -164,7 +164,7 @@ Proof.
 
       pose proof (simple_lsubst_aux_lsubst_aux_sub_disj
                     t1 (var_ren vs3 vs4) (var_ren vs1 lvn)) as e1.
-      repeat (rw @sub_free_vars_var_ren in e1; auto;try omega;[]).
+      repeat (rw @sub_free_vars_var_ren in e1; auto;try lia;[]).
       rw @sub_bound_vars_var_ren in e1.
       rw @dom_sub_var_ren in e1; auto;[].
       repeat (autodimp e1 hyp); eauto 3 with slow.
@@ -173,7 +173,7 @@ Proof.
 
       pose proof (simple_lsubst_aux_lsubst_aux_sub_disj
                     t2 (var_ren vs0 vs5) (var_ren vs2 lvn)) as e2.
-      repeat (rw @sub_free_vars_var_ren in e2; auto;try omega;[]).
+      repeat (rw @sub_free_vars_var_ren in e2; auto;try lia;[]).
       rw @sub_bound_vars_var_ren in e2.
       rw @dom_sub_var_ren in e2; auto;[].
       repeat (autodimp e2 hyp); eauto 3 with slow.
@@ -186,17 +186,17 @@ Proof.
           eapply disjoint_eqset_r;[apply eqset_sym;exact vr2|];
           apply disjoint_remove_nvars_l; rw remove_nvars_eq; auto].
       rw @sub_filter_disjoint1 in h0;
-        [|rw @dom_sub_var_ren; auto; try omega;
+        [|rw @dom_sub_var_ren; auto; try lia;
           eapply disjoint_eqset_r;[apply eqset_sym;exact vq2|];
           apply disjoint_remove_nvars_l; rw remove_nvars_eq; auto].
 
       rw @lsubst_aux_sub_disj_dom2 in h0;
-        [|rw @sub_free_vars_var_ren;auto;try omega;[];
-          rw @dom_sub_var_ren; auto; try omega;[];
+        [|rw @sub_free_vars_var_ren;auto;try lia;[];
+          rw @dom_sub_var_ren; auto; try lia;[];
           eapply subset_disjoint;[exact vr3|]; eauto 3 with slow].
       rw @lsubst_aux_sub_disj_dom2 in h0;
-        [|rw @sub_free_vars_var_ren;auto;try omega;[];
-          rw @dom_sub_var_ren; auto; try omega;[];
+        [|rw @sub_free_vars_var_ren;auto;try lia;[];
+          rw @dom_sub_var_ren; auto; try lia;[];
           eapply subset_disjoint;[exact vq3|]; eauto 3 with slow].
 
       pose proof (ind t1 (lsubst_aux t1 (var_ren vs1 lvn)) vs1) as r; clear ind.
@@ -206,7 +206,7 @@ Proof.
       repeat (autodimp ih hyp).
       { eapply subset_disjoint_r;[|apply all_vars_lsubst_aux_var_ren_subset; auto];[].
         repeat (rw disjoint_app_r); dands; eauto 3 with slow. }
-      { eapply subset_disjoint_r;[|apply all_vars_lsubst_aux_var_ren_subset; auto; try omega];[].
+      { eapply subset_disjoint_r;[|apply all_vars_lsubst_aux_var_ren_subset; auto; try lia];[].
         repeat (rw disjoint_app_r); dands; eauto 3 with slow. }
 
       rw <- vr0 in h0.
@@ -216,13 +216,13 @@ Proof.
       rw @lsubst_aux_sub_filter in h0; auto.
 
       { eapply subset_disjoint;[apply free_vars_lsubst_aux_subset|].
-        rewrite @dom_sub_var_ren; auto; try omega.
-        rw @sub_free_vars_var_ren; auto; try omega.
+        rewrite @dom_sub_var_ren; auto; try lia.
+        rw @sub_free_vars_var_ren; auto; try lia.
         apply disjoint_app_l; dands; eauto 3 with slow. }
 
       { eapply subset_disjoint;[apply free_vars_lsubst_aux_subset|].
-        rewrite @dom_sub_var_ren; auto; try omega.
-        rw @sub_free_vars_var_ren; auto; try omega.
+        rewrite @dom_sub_var_ren; auto; try lia.
+        rw @sub_free_vars_var_ren; auto; try lia.
         apply disjoint_app_l; dands; eauto 3 with slow. }
 Qed.
 
@@ -524,7 +524,7 @@ Proof.
       pose proof (fresh_vars (length l1) (l ++ all_vars t1 ++ all_vars t2)) as fv.
       exrepnd.
       allrw disjoint_app_r; repnd.
-      apply (al_bterm_aux lvn); auto; try omega.
+      apply (al_bterm_aux lvn); auto; try lia.
       { allrw disjoint_app_r; dands; auto. }
       { pose proof (h (lsubst_bterm_aux (bterm l1 t1) (ax_sub l))
                       (lsubst_bterm_aux (bterm l2 t2) (ax_sub l))) as q.
@@ -573,7 +573,7 @@ Proof.
       apply (alphabt_change_var_aux _ _ _ _ lvn0) in q; repnd; GC; auto;
       allrw disjoint_app_r; tcsp;[].
 
-      apply (alpha_eq_var_ren _ _ lvn lvn0); auto; try omega;
+      apply (alpha_eq_var_ren _ _ lvn lvn0); auto; try lia;
       try (complete (allrw disjoint_app_r; tcsp)).
 
       assert (disjoint lvn (dom_sub sub2)) as dlvn2.
@@ -583,11 +583,11 @@ Proof.
                     (lsubst_aux t1 (var_ren l1 lvn))
                     sub1
                     (var_ren lvn lvn0)) as e1.
-      rw @sub_free_vars_var_ren in e1; auto; try omega;[].
+      rw @sub_free_vars_var_ren in e1; auto; try lia;[].
       rw @sub_free_vars_if_cl_sub in e1; auto;[].
       rw @cl_lsubst_aux_sub_trivial in e1; auto;[].
-      rw @sub_filter_disjoint in e1; auto; try omega;[].
-      rw @lsubst_aux_nest_vars_same in e1; auto; try omega;
+      rw @sub_filter_disjoint in e1; auto; try lia;[].
+      rw @lsubst_aux_nest_vars_same in e1; auto; try lia;
       [|apply disjoint_app_l; dands; eauto 3 with slow];[].
       repeat (autodimp e1 hyp); eauto 2 with slow.
 
@@ -595,29 +595,29 @@ Proof.
                     (lsubst_aux t2 (var_ren l2 lvn))
                     sub2
                     (var_ren lvn lvn0)) as e2.
-      rw @sub_free_vars_var_ren in e2; auto; try omega;[].
+      rw @sub_free_vars_var_ren in e2; auto; try lia;[].
       rw @sub_free_vars_if_cl_sub in e2; auto;[].
       rw @cl_lsubst_aux_sub_trivial in e2; auto;[].
-      rw @sub_filter_disjoint in e2; auto; try omega;[].
-      rw @lsubst_aux_nest_vars_same in e2; auto; try omega;
+      rw @sub_filter_disjoint in e2; auto; try lia;[].
+      rw @lsubst_aux_nest_vars_same in e2; auto; try lia;
       [|apply disjoint_app_l; dands; eauto 3 with slow];[].
       repeat (autodimp e2 hyp); eauto 2 with slow.
 
       rw <- e1; rw <- e2; clear e1 e2.
 
       pose proof (simple_lsubst_aux_lsubst_aux_sub t1 (var_ren l1 lvn0) sub1) as e1.
-      rw @sub_free_vars_var_ren in e1; auto;try omega;[].
+      rw @sub_free_vars_var_ren in e1; auto;try lia;[].
       repeat (autodimp e1 hyp); eauto 2 with slow;[].
 
       pose proof (simple_lsubst_aux_lsubst_aux_sub t2 (var_ren l2 lvn0) sub2) as e2.
-      rw @sub_free_vars_var_ren in e2; auto;try omega;[].
+      rw @sub_free_vars_var_ren in e2; auto;try lia;[].
       repeat (autodimp e2 hyp); eauto 2 with slow;[].
 
       rw <- e1; rw <- e2; clear e1 e2.
-      repeat (rw @dom_sub_var_ren; try omega;[]).
+      repeat (rw @dom_sub_var_ren; try lia;[]).
 
-      rw @lsubst_aux_sub_disj_dom2;[|rw @sub_free_vars_var_ren; auto; try omega].
-      rw @lsubst_aux_sub_disj_dom2;[|rw @sub_free_vars_var_ren; auto; try omega].
+      rw @lsubst_aux_sub_disj_dom2;[|rw @sub_free_vars_var_ren; auto; try lia].
+      rw @lsubst_aux_sub_disj_dom2;[|rw @sub_free_vars_var_ren; auto; try lia].
       auto.
 Qed.
 
@@ -653,9 +653,9 @@ Proof.
 
   pose proof (simple_lsubst_aux_lsubst_aux_sub
                  t2 (var_ren l2 lvn) sub2) as x2.
-  rw @sub_free_vars_var_ren in x2; auto; try omega.
-  rw @dom_sub_var_ren in x2; auto; try omega.
-  rw (lsubst_aux_trivial_cl t2 (sub_filter sub2 l2)) in x2; eauto 3 with slow; try omega;
+  rw @sub_free_vars_var_ren in x2; auto; try lia.
+  rw @dom_sub_var_ren in x2; auto; try lia.
+  rw (lsubst_aux_trivial_cl t2 (sub_filter sub2 l2)) in x2; eauto 3 with slow; try lia;
   [|rw <- @dom_sub_sub_filter; apply disjoint_remove_nvars2; subst; rw <- e2; auto].
   repeat (autodimp x2 hyp); eauto 3 with slow.
 
@@ -664,20 +664,20 @@ Proof.
   apply imp; eauto 3 with slow.
 
   - apply implies_cl_sub_lsubst_aux_sub; auto.
-    apply covered_var_ren; auto; try omega.
+    apply covered_var_ren; auto; try lia.
     rw e1; auto.
 
   - apply implies_cl_sub_lsubst_aux_sub; auto.
-    apply covered_var_ren; auto; try omega.
+    apply covered_var_ren; auto; try lia.
     rw e2; auto.
 
-  - apply cl_alphaeq_sub_range_lsubst_aux_sub_var_ren; eauto 3 with slow; try omega.
+  - apply cl_alphaeq_sub_range_lsubst_aux_sub_var_ren; eauto 3 with slow; try lia.
 
   - rw @dom_sub_lsubst_aux_sub.
     rw @dom_sub_var_ren; auto.
 
   - rw @dom_sub_lsubst_aux_sub.
-    rw @dom_sub_var_ren; auto; try omega.
+    rw @dom_sub_var_ren; auto; try lia.
 Qed.
 
 Lemma lsubst_alpha_congr6_aux {o} :
@@ -770,7 +770,7 @@ Proof.
       pose proof (fresh_vars (length l1) (l ++ all_vars t1 ++ all_vars t2)) as fv.
       exrepnd.
       allrw disjoint_app_r; repnd.
-      apply (al_bterm_aux lvn); auto; try omega.
+      apply (al_bterm_aux lvn); auto; try lia.
       { allrw disjoint_app_r; dands; auto. }
       { pose proof (h (lsubst_bterm_aux (bterm l1 t1) (ax_sub l))
                       (lsubst_bterm_aux (bterm l2 t2) (ax_sub l))) as q.
@@ -817,18 +817,18 @@ Proof.
       apply (alphabt_change_var_aux _ _ _ _ lvn0) in q; repnd; GC; auto;
       allrw disjoint_app_r; tcsp;[].
 
-      apply (alpha_eq_var_ren _ _ lvn lvn0); auto; try omega;
+      apply (alpha_eq_var_ren _ _ lvn lvn0); auto; try lia;
       try (complete (allrw disjoint_app_r; tcsp)).
 
       pose proof (simple_lsubst_aux_lsubst_aux_sub_disj
                     (lsubst_aux t1 (var_ren l1 lvn))
                     sub
                     (var_ren lvn lvn0)) as e1.
-      rw @sub_free_vars_var_ren in e1; auto; try omega;[].
+      rw @sub_free_vars_var_ren in e1; auto; try lia;[].
       rw @sub_free_vars_if_cl_sub in e1; auto;[].
       rw @cl_lsubst_aux_sub_trivial in e1; auto;[].
-      rw @sub_filter_disjoint in e1; auto; try omega;[].
-      rw @lsubst_aux_nest_vars_same in e1; auto; try omega;
+      rw @sub_filter_disjoint in e1; auto; try lia;[].
+      rw @lsubst_aux_nest_vars_same in e1; auto; try lia;
       [|apply disjoint_app_l; dands; eauto 3 with slow];[].
       repeat (autodimp e1 hyp); eauto 2 with slow.
 
@@ -836,29 +836,29 @@ Proof.
                     (lsubst_aux t2 (var_ren l2 lvn))
                     sub
                     (var_ren lvn lvn0)) as e2.
-      rw @sub_free_vars_var_ren in e2; auto; try omega;[].
+      rw @sub_free_vars_var_ren in e2; auto; try lia;[].
       rw @sub_free_vars_if_cl_sub in e2; auto;[].
       rw @cl_lsubst_aux_sub_trivial in e2; auto;[].
-      rw @sub_filter_disjoint in e2; auto; try omega;[].
-      rw @lsubst_aux_nest_vars_same in e2; auto; try omega;
+      rw @sub_filter_disjoint in e2; auto; try lia;[].
+      rw @lsubst_aux_nest_vars_same in e2; auto; try lia;
       [|apply disjoint_app_l; dands; eauto 3 with slow];[].
       repeat (autodimp e2 hyp); eauto 2 with slow.
 
       rw <- e1; rw <- e2; clear e1 e2.
 
       pose proof (simple_lsubst_aux_lsubst_aux_sub t1 (var_ren l1 lvn0) sub) as e1.
-      rw @sub_free_vars_var_ren in e1; auto;try omega;[].
+      rw @sub_free_vars_var_ren in e1; auto;try lia;[].
       repeat (autodimp e1 hyp); eauto 2 with slow;[].
 
       pose proof (simple_lsubst_aux_lsubst_aux_sub t2 (var_ren l2 lvn0) sub) as e2.
-      rw @sub_free_vars_var_ren in e2; auto;try omega;[].
+      rw @sub_free_vars_var_ren in e2; auto;try lia;[].
       repeat (autodimp e2 hyp); eauto 2 with slow;[].
 
       rw <- e1; rw <- e2; clear e1 e2.
-      repeat (rw @dom_sub_var_ren; try omega;[]).
+      repeat (rw @dom_sub_var_ren; try lia;[]).
 
-      rw @lsubst_aux_sub_disj_dom2;[|rw @sub_free_vars_var_ren; auto; try omega].
-      rw @lsubst_aux_sub_disj_dom2;[|rw @sub_free_vars_var_ren; auto; try omega].
+      rw @lsubst_aux_sub_disj_dom2;[|rw @sub_free_vars_var_ren; auto; try lia].
+      rw @lsubst_aux_sub_disj_dom2;[|rw @sub_free_vars_var_ren; auto; try lia].
       auto.
 Qed.
 
@@ -958,7 +958,7 @@ Proof.
       pose proof (fresh_vars (length l1) (l ++ all_vars t1 ++ all_vars t2)) as fv.
       exrepnd.
       allrw disjoint_app_r; repnd.
-      apply (al_bterm_aux lvn); auto; try omega.
+      apply (al_bterm_aux lvn); auto; try lia.
       { allrw disjoint_app_r; dands; auto. }
       { pose proof (h (lsubst_bterm_aux (bterm l1 t1) (ax_sub l))
                       (lsubst_bterm_aux (bterm l2 t2) (ax_sub l))) as q.
@@ -1007,7 +1007,7 @@ Proof.
       apply (alphabt_change_var_aux _ _ _ _ lvn0) in q; repnd; GC; auto;
       allrw disjoint_app_r; tcsp;[].
 
-      apply (alpha_eq_var_ren _ _ lvn lvn0); auto; try omega;
+      apply (alpha_eq_var_ren _ _ lvn lvn0); auto; try lia;
       try (complete (allrw disjoint_app_r; tcsp)).
 
       assert (disjoint lvn (dom_sub sub2)) as dlvn2.
@@ -1017,11 +1017,11 @@ Proof.
                     (lsubst_aux t1 (var_ren l1 lvn))
                     sub1
                     (var_ren lvn lvn0)) as e1.
-      rw @sub_free_vars_var_ren in e1; auto; try omega;[].
+      rw @sub_free_vars_var_ren in e1; auto; try lia;[].
       rw @sub_free_vars_if_cl_sub in e1; auto;[].
       rw @cl_lsubst_aux_sub_trivial in e1; auto;[].
-      rw @sub_filter_disjoint in e1; auto; try omega;[].
-      rw @lsubst_aux_nest_vars_same in e1; auto; try omega;
+      rw @sub_filter_disjoint in e1; auto; try lia;[].
+      rw @lsubst_aux_nest_vars_same in e1; auto; try lia;
       [|apply disjoint_app_l; dands; eauto 3 with slow];[].
       repeat (autodimp e1 hyp); eauto 2 with slow.
 
@@ -1029,29 +1029,29 @@ Proof.
                     (lsubst_aux t2 (var_ren l2 lvn))
                     sub2
                     (var_ren lvn lvn0)) as e2.
-      rw @sub_free_vars_var_ren in e2; auto; try omega;[].
+      rw @sub_free_vars_var_ren in e2; auto; try lia;[].
       rw @sub_free_vars_if_cl_sub in e2; auto;[].
       rw @cl_lsubst_aux_sub_trivial in e2; auto;[].
-      rw @sub_filter_disjoint in e2; auto; try omega;[].
-      rw @lsubst_aux_nest_vars_same in e2; auto; try omega;
+      rw @sub_filter_disjoint in e2; auto; try lia;[].
+      rw @lsubst_aux_nest_vars_same in e2; auto; try lia;
       [|apply disjoint_app_l; dands; eauto 3 with slow];[].
       repeat (autodimp e2 hyp); eauto 2 with slow.
 
       rw <- e1; rw <- e2; clear e1 e2.
 
       pose proof (simple_lsubst_aux_lsubst_aux_sub t1 (var_ren l1 lvn0) sub1) as e1.
-      rw @sub_free_vars_var_ren in e1; auto;try omega;[].
+      rw @sub_free_vars_var_ren in e1; auto;try lia;[].
       repeat (autodimp e1 hyp); eauto 2 with slow;[].
 
       pose proof (simple_lsubst_aux_lsubst_aux_sub t2 (var_ren l2 lvn0) sub2) as e2.
-      rw @sub_free_vars_var_ren in e2; auto;try omega;[].
+      rw @sub_free_vars_var_ren in e2; auto;try lia;[].
       repeat (autodimp e2 hyp); eauto 2 with slow;[].
 
       rw <- e1; rw <- e2; clear e1 e2.
-      repeat (rw @dom_sub_var_ren; try omega;[]).
+      repeat (rw @dom_sub_var_ren; try lia;[]).
 
-      rw @lsubst_aux_sub_disj_dom2;[|rw @sub_free_vars_var_ren; auto; try omega].
-      rw @lsubst_aux_sub_disj_dom2;[|rw @sub_free_vars_var_ren; auto; try omega].
+      rw @lsubst_aux_sub_disj_dom2;[|rw @sub_free_vars_var_ren; auto; try lia].
+      rw @lsubst_aux_sub_disj_dom2;[|rw @sub_free_vars_var_ren; auto; try lia].
       auto.
 Qed.
 
@@ -1087,9 +1087,9 @@ Proof.
 
   pose proof (simple_lsubst_aux_lsubst_aux_sub
                  t2 (var_ren l2 lvn) sub2) as x2.
-  rw @sub_free_vars_var_ren in x2; auto; try omega.
-  rw @dom_sub_var_ren in x2; auto; try omega.
-  rw (lsubst_aux_trivial_cl t2 (sub_filter sub2 l2)) in x2; eauto 3 with slow; try omega;
+  rw @sub_free_vars_var_ren in x2; auto; try lia.
+  rw @dom_sub_var_ren in x2; auto; try lia.
+  rw (lsubst_aux_trivial_cl t2 (sub_filter sub2 l2)) in x2; eauto 3 with slow; try lia;
   [|rw <- @dom_sub_sub_filter; apply disjoint_remove_nvars2; subst; rw <- e2; auto].
   repeat (autodimp x2 hyp); eauto 3 with slow.
 
@@ -1098,14 +1098,14 @@ Proof.
   apply imp; eauto 3 with slow.
 
   - apply implies_cl_sub_lsubst_aux_sub; auto.
-    apply covered_var_ren; auto; try omega.
+    apply covered_var_ren; auto; try lia.
     rw e1; auto.
 
   - apply implies_cl_sub_lsubst_aux_sub; auto.
-    apply covered_var_ren; auto; try omega.
+    apply covered_var_ren; auto; try lia.
     rw e2; auto.
 
-  - repeat (rw @cl_lsubst_aux_sub_var_ren_eq_dom; auto; try omega).
+  - repeat (rw @cl_lsubst_aux_sub_var_ren_eq_dom; auto; try lia).
     repeat (rw @range_combine); auto; rw @length_range; subst;
     allrw @length_dom; auto.
     rw <- @length_dom; rw <- e2; rw @length_dom; rw <- len; auto.
@@ -1114,7 +1114,7 @@ Proof.
     rw @dom_sub_var_ren; auto.
 
   - rw @dom_sub_lsubst_aux_sub.
-    rw @dom_sub_var_ren; auto; try omega.
+    rw @dom_sub_var_ren; auto; try lia.
 Qed.
 
 Lemma prog_sub_zero_sub {o} :
@@ -1220,7 +1220,7 @@ Proof.
       pose proof (fresh_vars (length l1) (l ++ all_vars t1 ++ all_vars t2)) as fv.
       exrepnd.
       allrw disjoint_app_r; repnd.
-      apply (al_bterm_aux lvn); auto; try omega.
+      apply (al_bterm_aux lvn); auto; try lia.
       { allrw disjoint_app_r; dands; auto. }
       { pose proof (h (lsubst_bterm_aux (bterm l1 t1) (ax_sub l))
                       (lsubst_bterm_aux (bterm l2 t2) (ax_sub l))) as q.
@@ -1269,7 +1269,7 @@ Proof.
       apply (alphabt_change_var_aux _ _ _ _ lvn0) in q; repnd; GC; auto;
       allrw disjoint_app_r; tcsp;[].
 
-      apply (alpha_eq_var_ren _ _ lvn lvn0); auto; try omega;
+      apply (alpha_eq_var_ren _ _ lvn lvn0); auto; try lia;
       try (complete (allrw disjoint_app_r; tcsp)).
 
       assert (disjoint lvn (dom_sub sub2)) as dlvn2.
@@ -1279,11 +1279,11 @@ Proof.
                     (lsubst_aux t1 (var_ren l1 lvn))
                     sub1
                     (var_ren lvn lvn0)) as e1.
-      rw @sub_free_vars_var_ren in e1; auto; try omega;[].
+      rw @sub_free_vars_var_ren in e1; auto; try lia;[].
       rw @sub_free_vars_if_cl_sub in e1; eauto 2 with slow;[].
       rw @cl_lsubst_aux_sub_trivial in e1; eauto 2 with slow;[].
-      rw @sub_filter_disjoint in e1; auto; try omega;[].
-      rw @lsubst_aux_nest_vars_same in e1; auto; try omega;
+      rw @sub_filter_disjoint in e1; auto; try lia;[].
+      rw @lsubst_aux_nest_vars_same in e1; auto; try lia;
       [|apply disjoint_app_l; dands; eauto 3 with slow];[].
       repeat (autodimp e1 hyp); eauto 2 with slow.
 
@@ -1291,29 +1291,29 @@ Proof.
                     (lsubst_aux t2 (var_ren l2 lvn))
                     sub2
                     (var_ren lvn lvn0)) as e2.
-      rw @sub_free_vars_var_ren in e2; auto; try omega;[].
+      rw @sub_free_vars_var_ren in e2; auto; try lia;[].
       rw @sub_free_vars_if_cl_sub in e2; eauto 2 with slow;[].
       rw @cl_lsubst_aux_sub_trivial in e2; eauto 2 with slow;[].
-      rw @sub_filter_disjoint in e2; auto; try omega;[].
-      rw @lsubst_aux_nest_vars_same in e2; auto; try omega;
+      rw @sub_filter_disjoint in e2; auto; try lia;[].
+      rw @lsubst_aux_nest_vars_same in e2; auto; try lia;
       [|apply disjoint_app_l; dands; eauto 3 with slow];[].
       repeat (autodimp e2 hyp); eauto 2 with slow.
 
       rw <- e1; rw <- e2; clear e1 e2.
 
       pose proof (simple_lsubst_aux_lsubst_aux_sub t1 (var_ren l1 lvn0) sub1) as e1.
-      rw @sub_free_vars_var_ren in e1; auto;try omega;[].
+      rw @sub_free_vars_var_ren in e1; auto;try lia;[].
       repeat (autodimp e1 hyp); eauto 2 with slow;[].
 
       pose proof (simple_lsubst_aux_lsubst_aux_sub t2 (var_ren l2 lvn0) sub2) as e2.
-      rw @sub_free_vars_var_ren in e2; auto;try omega;[].
+      rw @sub_free_vars_var_ren in e2; auto;try lia;[].
       repeat (autodimp e2 hyp); eauto 2 with slow;[].
 
       rw <- e1; rw <- e2; clear e1 e2.
-      repeat (rw @dom_sub_var_ren; try omega;[]).
+      repeat (rw @dom_sub_var_ren; try lia;[]).
 
-      rw @lsubst_aux_sub_disj_dom2;[|rw @sub_free_vars_var_ren; auto; try omega].
-      rw @lsubst_aux_sub_disj_dom2;[|rw @sub_free_vars_var_ren; auto; try omega].
+      rw @lsubst_aux_sub_disj_dom2;[|rw @sub_free_vars_var_ren; auto; try lia].
+      rw @lsubst_aux_sub_disj_dom2;[|rw @sub_free_vars_var_ren; auto; try lia].
       auto.
 Qed.
 
@@ -1367,9 +1367,9 @@ Proof.
 
   pose proof (simple_lsubst_aux_lsubst_aux_sub
                  t2 (var_ren l2 lvn) sub2) as x2.
-  rw @sub_free_vars_var_ren in x2; auto; try omega.
-  rw @dom_sub_var_ren in x2; auto; try omega.
-  rw (lsubst_aux_trivial_cl t2 (sub_filter sub2 l2)) in x2; eauto 3 with slow; try omega;
+  rw @sub_free_vars_var_ren in x2; auto; try lia.
+  rw @dom_sub_var_ren in x2; auto; try lia.
+  rw (lsubst_aux_trivial_cl t2 (sub_filter sub2 l2)) in x2; eauto 3 with slow; try lia;
   [|rw <- @dom_sub_sub_filter; apply disjoint_remove_nvars2; subst; rw <- e2; auto].
   repeat (autodimp x2 hyp); eauto 3 with slow.
 
@@ -1378,14 +1378,14 @@ Proof.
   apply imp; eauto 3 with slow.
 
   - apply implies_prog_sub_lsubst_aux_sub; auto.
-    apply covered_var_ren; auto; try omega.
+    apply covered_var_ren; auto; try lia.
     rw e1; auto.
 
   - apply implies_prog_sub_lsubst_aux_sub; auto.
-    apply covered_var_ren; auto; try omega.
+    apply covered_var_ren; auto; try lia.
     rw e2; auto.
 
-  - repeat (rw @cl_lsubst_aux_sub_var_ren_eq_dom; eauto 2 with slow; try omega).
+  - repeat (rw @cl_lsubst_aux_sub_var_ren_eq_dom; eauto 2 with slow; try lia).
     repeat (rw @range_combine); auto; rw @length_range; subst;
     allrw @length_dom; auto.
     rw <- @length_dom; rw <- e2; rw @length_dom; rw <- len; auto.
@@ -1394,7 +1394,7 @@ Proof.
     rw @dom_sub_var_ren; auto.
 
   - rw @dom_sub_lsubst_aux_sub.
-    rw @dom_sub_var_ren; auto; try omega.
+    rw @dom_sub_var_ren; auto; try lia.
 Qed.
 
 Lemma implies_alphaeqc_mkc_function {o} :

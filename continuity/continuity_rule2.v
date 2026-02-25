@@ -187,7 +187,7 @@ Proof.
                            eauto with slow)).
 
             destruct (Z_le_gt_dec 0 k); tcsp.
-            right; dands; omega. }
+            right; dands; lia. }
 
           revert e1 e4.
 
@@ -209,7 +209,7 @@ Proof.
           dands; spcast; auto.
 
           destruct (Z_lt_ge_dec (Z.of_nat k) (Z.of_nat k3)); tcsp.
-          right; dands; omega.
+          right; dands; lia.
 
         + right.
           unfold absolute_value, mk_natk_aux.
@@ -479,7 +479,7 @@ Proof.
                            eauto with slow));
             try (complete (apply computes_to_valc_absolute_value; auto;
                            apply computes_to_valc_iff_reduces_toc; eauto with slow)).
-            destruct i; allsimpl; try omega; apply Pos2Z.is_nonneg.
+            destruct i; allsimpl; try lia; apply Pos2Z.is_nonneg.
           }
 
           {
@@ -499,7 +499,7 @@ Proof.
             try (complete (apply computes_to_valc_absolute_value; auto;
                            apply computes_to_valc_iff_reduces_toc; eauto with slow)).
             revert l; intro l.
-            destruct i; allsimpl; try omega; rw <- Znat.positive_nat_Z; apply Znat.inj_lt; auto.
+            destruct i; allsimpl; try lia; rw <- Znat.positive_nat_Z; apply Znat.inj_lt; auto.
           }
         }
 

@@ -263,7 +263,7 @@ Proof.
      spcast.
      autorewrite with core in *.
      allrw @length_snoc; cpx.
-     apply app_split in sim0; allrw @length_snoc; cpx; try omega.
+     apply app_split in sim0; allrw @length_snoc; cpx; try lia.
      repnd; subst. 
      apply snoc_inj in sim5.
      repnd; ginv; subst. 
@@ -273,7 +273,7 @@ Proof.
      autodimp eqhh xx.
      { apply similarity_app.
        eexists; eexists; eexists; eexists; dands; eauto;
-       try (allrw length_snoc; omega).
+       try (allrw length_snoc; lia).
        apply similarity_snoc; simpl.
         eexists; eexists;eexists; eexists. exists w4 p0; dands; eauto.
        allsimpl.
@@ -348,8 +348,8 @@ Proof.
    apply eq_hyps_app in eqhh; exrepnd.
     apply eq_hyps_snoc in eqhh5; exrepnd; subst.
     allrw length_snoc.
-    apply app_split in eqhh2;[|repeat (rw length_snoc); omega]; repnd; subst.
-    apply app_split in eqhh0;[|repeat (rw length_snoc); omega]; repnd; subst.
+    apply app_split in eqhh2;[|repeat (rw length_snoc); lia]; repnd; subst.
+    apply app_split in eqhh0;[|repeat (rw length_snoc); lia]; repnd; subst.
     cpx; simpl in *; GC; ginv.
     repeat (match goal with
               | [ H : context[htyp (mk_hyp _ _)] |- _ ] => simpl in H
@@ -371,7 +371,7 @@ Proof.
     
    apply eq_hyps_app.
     eexists; eexists; eexists; eexists; dands; eauto;
-    repeat (rw length_snoc); try omega.
+    repeat (rw length_snoc); try lia.
   
    { apply eq_hyps_snoc; simpl.
       eexists; eexists; eexists; eexists.

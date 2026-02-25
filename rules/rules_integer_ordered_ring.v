@@ -218,11 +218,11 @@ Proof.
      pose proof (@mkc_less_than_comp2 o lib x1 y1 x0 x3) as xx.
      rw @mkc_less_than_eq in xx.
      apply xx; auto. 
-     omega. 
+     lia. 
     (* we have a member of False *)
     rw @equality_in_false in H0. inversion H0.
    (* Now we have x0 < x3 *)
-  assert (x0+x4 < x3+x4)%Z. omega.
+  assert (x0+x4 < x3+x4)%Z. lia.
   split.
   - (* tequality *) apply @tequality_mkc_less. 
     exists (x0+x4)%Z. exists (x3+x4)%Z. exists (x0+x4)%Z. exists (x3+x4)%Z. 
@@ -324,7 +324,7 @@ Proof.
      pose proof (@mkc_less_than_comp2 o lib x1 y1 x0 x3) as xx.
      rw @mkc_less_than_eq in xx.
      apply xx; auto. 
-     omega. 
+     lia. 
     (* we have a member of False *)
     rw @equality_in_false in H0. inversion H0.
    (* Now we have x0 < x3 *)
@@ -340,11 +340,11 @@ Proof.
      pose proof (@mkc_less_than_comp2 o lib y1 z1 x3 x4) as xx.
      rw @mkc_less_than_eq in xx.
      apply xx; auto. 
-     omega. 
+     lia. 
     (* we have a member of False *)
     rw @equality_in_false in H0. inversion H0.
    (* Now we have x3 < x4 *)
-  assert (x0 < x4)%Z. omega.
+  assert (x0 < x4)%Z. lia.
   split.
   - (* tequality *) apply @tequality_mkc_less. 
     exists x0%Z. exists (x4)%Z. exists (x0)%Z. exists (x4)%Z. 
@@ -426,7 +426,7 @@ Proof.
      rw @mkc_less_than_eq in xx.
      apply xx; auto. 
      apply computes_to_valc_refl. apply iscvalue_mkc_integer. clear - H.
-     omega. 
+     lia. 
     (* we have a member of False *)
     rw @equality_in_false in H0. inversion H0.
    (* Now we have 0 < x *)
@@ -443,7 +443,7 @@ Proof.
      rw @mkc_less_than_eq in xx.
      apply xx; auto. 
      apply computes_to_valc_refl. apply iscvalue_mkc_integer. clear - H.
-     omega. 
+     lia. 
     (* we have a member of False *)
     rw @equality_in_false in H0. inversion H0.
    (* Now we have 0 < x0 *)
@@ -534,7 +534,7 @@ Proof.
      pose proof (@mkc_not_less_than_comp1 o lib y1 z1 x x0) as xx.
      rw @mkc_not_less_than_eq in xx.
      apply xx; auto. 
-     omega. 
+     lia. 
     (* we have a member of False *)
     rw @equality_in_false in H0. inversion H0.
    (* Now we have x0 <= x *)
@@ -550,11 +550,11 @@ Proof.
      pose proof (@mkc_not_less_than_comp1 o lib z1 y1 x0 x) as xx.
      rw @mkc_not_less_than_eq in xx.
      apply xx; auto. 
-     omega. 
+     lia. 
     (* we have a member of False *)
     rw @equality_in_false in H0. inversion H0.
    (* Now we have x <= x0 *)
-  assert (x = x0)%Z. omega.
+  assert (x = x0)%Z. lia.
   split.
    - (* tequality *) 
      apply @tequality_mkc_equality2. split.
@@ -630,7 +630,7 @@ Proof.
      pose proof (@mkc_less_than_comp2 o lib y1 z1 x x0) as xx.
      rw @mkc_less_than_eq in xx.
      apply xx; auto. 
-     omega. 
+     lia. 
     (* we have a member of False *)
     rw @equality_in_false in H0. inversion H0.
    (* Now we have x < x0 *)
@@ -651,11 +651,11 @@ Proof.
     pose proof (@computes_to_valc_arithop o lib ArithOpAdd (mkc_integer 1) y1 1 x) as xxx.
     apply xxx; auto. 
     apply computes_to_valc_refl. apply iscvalue_mkc_integer. 
-    omega.
+    lia.
     (* we have a member of False *)
     rw @equality_in_false in H0. inversion H0.
    (* Now we have x0 <= 1+x *)
-  assert (1+x = x0)%Z. omega.
+  assert (1+x = x0)%Z. lia.
   split.
    - (* tequality *) apply @tequality_mkc_equality2; split.
     + apply tequality_int.
